@@ -1,11 +1,25 @@
 import { useMemo, useCallback, useRef, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import EventCard from './EventCard';
-import { Calendar, Loader2 } from 'lucide-react';
+import { Calendar, Loader2, Radar } from 'lucide-react';
 import type { Event } from '@/types/event';
 import { groupEventsByMonth } from '@/utils/eventGrouping';
 import { useEventCardStats } from '@/hooks/useEventCardStats';
+import { useLatestCrmImportCompanyIds } from '@/hooks/useLatestCrmImportCompanyIds';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+
+type SortMode = 'date' | 'exhibitors' | 'novelties';
 
 // Offset sticky: header (4rem) + StickyFiltersBar (~3.5rem) + SectorIconBar (~3.5rem)
 const STICKY_TOP = 'calc(4rem + 3.5rem + 3.5rem)';
@@ -128,9 +142,24 @@ export const EventsResultsInfinite = ({
   const observerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
+  const [sortMode, setSortMode] = useState<SortMode>('date');
+  const [radarTeaserOpen, setRadarTeaserOpen] = useState(false);
+
+  // Statut Radar : authentifié + import CRM terminé (au moins 1 entreprise)
+  const { session } = useAuth();
+  const isAuthenticated = !!session?.user?.id;
+  const { data: crmCompanyIds } = useLatestCrmImportCompanyIds();
+  const hasRadar = isAuthenticated && (crmCompanyIds?.length ?? 0) > 0;
+
   // Batched public stats (exposants + nouveautés) pour toutes les cartes affichées
   const eventIds = useMemo(() => (events ?? []).map((e) => e.id), [events]);
   const { data: statsMap } = useEventCardStats(eventIds);
+
+  // Préchargement des stats pour toute la liste filtrée quand un tri par métrique est actif
+  const allFilteredIds = useMemo(() => (events ?? []).map((e) => e.id), [events]);
+  const { data: sortStatsMap } = useEventCardStats(
+    sortMode === 'date' ? [] : allFilteredIds
+  );
 
   // Intersection Observer for infinite scroll
   const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
@@ -154,22 +183,49 @@ export const EventsResultsInfinite = ({
     return () => observer.disconnect();
   }, [handleObserver]);
 
-  // Séparer les événements en cours des événements à venir
-  const { ongoingEvents, groupedEvents } = useMemo(() => {
+  // Séparer les événements en cours des événements à venir, en respectant le tri
+  const { ongoingEvents, groupedEvents, upcomingFlat } = useMemo(() => {
     if (!events || events.length === 0) {
-      return { ongoingEvents: [] as Event[], groupedEvents: [] as ReturnType<typeof groupEventsByMonth> };
+      return {
+        ongoingEvents: [] as Event[],
+        groupedEvents: [] as ReturnType<typeof groupEventsByMonth>,
+        upcomingFlat: [] as Event[],
+      };
     }
 
     const today = todayYmdLocal();
-    const sortedEvents = [...events].sort(
-      (a, b) => new Date(a.date_debut).getTime() - new Date(b.date_debut).getTime()
-    );
+    const metricOf = (e: Event): number => {
+      const s = sortStatsMap?.[e.id];
+      if (!s) return -1;
+      return sortMode === 'exhibitors' ? s.exhibitor_count : s.novelty_count;
+    };
 
-    const ongoing = sortedEvents.filter((e) => isOngoing(e, today));
-    const upcoming = sortedEvents.filter((e) => !isOngoing(e, today));
+    const sorted = [...events].sort((a, b) => {
+      if (sortMode === 'date') {
+        return new Date(a.date_debut).getTime() - new Date(b.date_debut).getTime();
+      }
+      const diff = metricOf(b) - metricOf(a);
+      if (diff !== 0) return diff;
+      // Fallback stable : date ASC
+      return new Date(a.date_debut).getTime() - new Date(b.date_debut).getTime();
+    });
 
-    return { ongoingEvents: ongoing, groupedEvents: groupEventsByMonth(upcoming) };
-  }, [events]);
+    const ongoing = sorted.filter((e) => isOngoing(e, today));
+    const upcoming = sorted.filter((e) => !isOngoing(e, today));
+
+    if (sortMode === 'date') {
+      return {
+        ongoingEvents: ongoing,
+        groupedEvents: groupEventsByMonth(upcoming),
+        upcomingFlat: [] as Event[],
+      };
+    }
+    return {
+      ongoingEvents: ongoing,
+      groupedEvents: [] as ReturnType<typeof groupEventsByMonth>,
+      upcomingFlat: upcoming,
+    };
+  }, [events, sortMode, sortStatsMap]);
 
   const renderCard = useCallback(
     (event: Event) => {
@@ -230,8 +286,81 @@ export const EventsResultsInfinite = ({
     );
   }
 
+  const SortAndRadarBar = (
+    <div className="flex flex-wrap items-center justify-end gap-3 mb-4 pt-4">
+      {/* Interrupteur promotionnel Radar CRM */}
+      {hasRadar ? (
+        <div className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1.5">
+          <Radar className="h-4 w-4 text-primary" aria-hidden="true" />
+          <Label htmlFor="radar-toggle" className="text-sm font-medium text-foreground cursor-default">
+            Comptes Radar CRM
+          </Label>
+          <Switch
+            id="radar-toggle"
+            checked
+            onCheckedChange={() => { /* verrouillé côté Radar user */ }}
+            aria-label="Comptes Radar CRM (activé)"
+          />
+        </div>
+      ) : (
+        <Popover open={radarTeaserOpen} onOpenChange={setRadarTeaserOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-2 rounded-full border border-border bg-surface hover:bg-muted transition-colors px-3 py-1.5 group"
+              aria-label="En savoir plus sur Radar CRM"
+            >
+              <Radar className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" aria-hidden="true" />
+              <span className="text-sm font-medium text-foreground">Comptes Radar CRM</span>
+              <Switch
+                checked={false}
+                onCheckedChange={() => setRadarTeaserOpen(true)}
+                aria-hidden="true"
+                tabIndex={-1}
+                className="pointer-events-none"
+              />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-80">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Radar className="h-4 w-4 text-primary" aria-hidden="true" />
+                <p className="text-sm font-semibold text-foreground">Radar CRM</p>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Voyez à quels salons les entreprises de votre CRM exposent. Importez votre CRM
+                (Excel ou CSV) et Lotexpo fait le rapprochement automatiquement.
+              </p>
+              <Link to="/radar-crm" onClick={() => setRadarTeaserOpen(false)}>
+                <Button size="sm" className="w-full">Découvrir Radar CRM</Button>
+              </Link>
+            </div>
+          </PopoverContent>
+        </Popover>
+      )}
+
+      {/* Contrôle de tri */}
+      <div className="flex items-center gap-2">
+        <Label htmlFor="sort-select" className="text-sm text-muted-foreground">
+          Trier par
+        </Label>
+        <Select value={sortMode} onValueChange={(v) => setSortMode(v as SortMode)}>
+          <SelectTrigger id="sort-select" className="h-9 w-[220px] rounded-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="date">Date (plus proche)</SelectItem>
+            <SelectItem value="exhibitors">Nombre d'exposants</SelectItem>
+            <SelectItem value="novelties">Nombre de nouveautés</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+      {SortAndRadarBar}
       {ongoingEvents.length > 0 && (
         <section className="mb-10">
           <SectionHeader label="Événements en cours" count={ongoingEvents.length} ongoing />
@@ -243,7 +372,7 @@ export const EventsResultsInfinite = ({
         </section>
       )}
 
-      {groupedEvents.map(({ monthLabel, events: monthEvents }) => (
+      {sortMode === 'date' && groupedEvents.map(({ monthLabel, events: monthEvents }) => (
         <section key={monthLabel} className="mb-10">
           <SectionHeader label={monthLabel} count={monthEvents.length} />
           <div className="flex flex-col">
@@ -253,6 +382,16 @@ export const EventsResultsInfinite = ({
           </div>
         </section>
       ))}
+
+      {sortMode !== 'date' && upcomingFlat.length > 0 && (
+        <section className="mb-10">
+          <div className="flex flex-col">
+            {upcomingFlat.map((event, i) => (
+              <RevealItem key={event.id} index={i}>{renderCard(event)}</RevealItem>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Infinite scroll trigger */}
       <div ref={observerRef} className="flex justify-center py-8">
