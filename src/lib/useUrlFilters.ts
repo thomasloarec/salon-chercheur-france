@@ -9,7 +9,7 @@ export type UrlFilters = {
   type: string | null;    // code (ou null)
   month: string | null;   // "01".."12" (ou null)
   region: string | null;  // slug région (ou null)
-  q: string | null;       // recherche plein texte (ou null)
+  q?: string | null;      // recherche plein texte (ou null)
 };
 
 function norm(v: string | null): string | null {
