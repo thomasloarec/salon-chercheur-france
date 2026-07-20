@@ -1,0 +1,1 @@
+UPDATE public.event_ai SET accroche = NULL;
