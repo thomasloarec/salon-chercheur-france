@@ -398,7 +398,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
   // ------- Mise en page LANDING (page dédiée) : hero + recherche + démo -------
   if (isLandingPage) {
     return (
-      <div className="flex flex-col">
+      <div className="flex flex-col animate-fade-in">
         {heroBlock}
 
         {/* Barre de recherche intégrée au hero */}
@@ -418,7 +418,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
 
   // ------- Mise en page CONVERSATION / SIDEBAR -------
   return (
-    <div className={isSidebar ? 'flex h-full flex-col' : 'flex flex-col'}>
+    <div className={isSidebar ? 'flex h-full flex-col' : 'flex flex-col flex-1 min-h-0'}>
       {/* Zone défilante : hero + conversation.
           En sidebar : remplit le Sheet (flex-1).
           En page : hauteur bornée au viewport pour scroller à l'intérieur. */}
@@ -427,7 +427,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
         className={
           isSidebar
             ? 'flex-1 overflow-y-auto min-h-0 px-1'
-            : 'overflow-y-auto max-h-[calc(100vh-16rem)]'
+            : 'flex-1 min-h-0 overflow-y-auto'
         }
       >
         {heroBlock}
@@ -440,14 +440,17 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
           <div className="flex-1 space-y-5">
             {messages.map((m) =>
               m.role === 'user' ? (
-                <div key={m.id} className="flex justify-end">
+                <div key={m.id} className="flex justify-end animate-fade-in">
                   <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-primary text-primary-foreground px-4 py-2.5 text-[15px]">
                     {m.content}
                   </div>
                 </div>
               ) : (
-                <div key={m.id} className="flex justify-start">
-                  <div className="max-w-[92%] rounded-2xl rounded-bl-sm bg-secondary/60 border border-border px-4 py-3">
+                <div key={m.id} className="flex justify-start gap-2 animate-fade-in">
+                  <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+                    L
+                  </div>
+                  <div className="max-w-[92%] rounded-2xl rounded-bl-sm bg-background/80 backdrop-blur border border-border px-4 py-3 shadow-sm">
                     <AnswerMarkdown>{m.content}</AnswerMarkdown>
                   </div>
                 </div>
@@ -481,7 +484,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
         {creditsBadge && (
           <div className={isSidebar ? 'mb-3' : 'mt-4'}>{creditsBadge}</div>
         )}
-        <form onSubmit={onSubmit} className={isSidebar ? '' : 'mt-4 sticky bottom-4'}>
+        <form onSubmit={onSubmit} className={isSidebar ? '' : 'mt-4'}>
           {inputBar}
           {annuaireNote}
         </form>
