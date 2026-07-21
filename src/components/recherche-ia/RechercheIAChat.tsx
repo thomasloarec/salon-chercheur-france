@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import AnswerMarkdown from '@/components/recherche-ia/AnswerMarkdown';
 import SignupWallDialog from '@/components/recherche-ia/SignupWallDialog';
+import ThinkingIndicator from '@/components/recherche-ia/ThinkingIndicator';
 // import RechercheIAShowcase from '@/components/recherche-ia/RechercheIAShowcase';
 
 type Role = 'user' | 'assistant';
@@ -458,12 +459,10 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
             )}
 
             {asking && (
-              <div className="flex justify-start">
-                <div className="rounded-2xl rounded-bl-sm bg-secondary/60 border border-border px-4 py-3 text-sm text-muted-foreground flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-foreground" />
-                  {deepSearch ? 'Question plus complexe, j\'approfondis la recherche…' : "L'assistant analyse les salons…"}
-                </div>
-              </div>
+              <ThinkingIndicator
+                question={messages[messages.length - 1]?.content ?? ''}
+                deepSearch={deepSearch}
+              />
             )}
 
             {wall && (
