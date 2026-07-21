@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import AnswerMarkdown from '@/components/recherche-ia/AnswerMarkdown';
 import SignupWallDialog from '@/components/recherche-ia/SignupWallDialog';
-import RechercheIAShowcase from '@/components/recherche-ia/RechercheIAShowcase';
+// import RechercheIAShowcase from '@/components/recherche-ia/RechercheIAShowcase';
 
 type Role = 'user' | 'assistant';
 interface ChatMessage {
@@ -24,10 +24,19 @@ interface Credits {
 type WallType = 'signup' | 'paywall';
 
 const EXAMPLES = [
-  'À quels salons aller pour voir des logiciels de gestion pour la restauration ?',
-  'Sur quel salon exposer si je fais du logiciel resto-tech ?',
-  'Où expose IDELINK ?',
-  "Quels salons pour l'emballage écoresponsable ?",
+  'Je cherche un salon pour la restauration',
+  'Sur quel salon exposer si je vends du logiciel RH ?',
+  'Quels salons de la santé cet automne ?',
+  'Où rencontrer des distributeurs en agroalimentaire ?',
+  "Quels exposants sur le prochain salon de l'industrie ?",
+];
+
+// Suggestions cliquables affichées sous le champ (écran d'accueil).
+const SUGGESTIONS = [
+  'Où expose Banque Populaire ?',
+  'Les prochains salons de la mode et du textile',
+  'Quels salons CSE près de Lyon ?',
+  'Salons de la tech à Paris en 2026',
 ];
 
 /** Respecte prefers-reduced-motion. */
