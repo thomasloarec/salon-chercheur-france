@@ -9,7 +9,7 @@ import remarkGfm from 'remark-gfm';
  */
 const AnswerMarkdown = ({ children }: { children: string }) => {
   return (
-    <div className="text-[15px] leading-relaxed text-foreground [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+    <div className="answer-reveal text-[15px] leading-relaxed text-foreground [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
