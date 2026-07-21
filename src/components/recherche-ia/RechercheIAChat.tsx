@@ -313,8 +313,8 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
             : 'text-3xl md:text-5xl'
         }`}
       >
-        Toutes les opportunités des salons professionnels,
-        <span className="block text-primary">révélées par l'IA.</span>
+        Posez votre question,
+        <span className="block text-primary">trouvez votre salon.</span>
       </Heading>
       {!hasStarted && (
         <p
@@ -322,9 +322,8 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
             isSidebar ? 'text-sm' : 'text-base md:text-lg'
           }`}
         >
-          Le marché des salons est illisible. L'IA de Lotexpo a lu tous les salons et
-          leurs exposants : décrivez ce que vous cherchez en une phrase, elle vous dit
-          où aller et à qui parler.
+          L'IA de Lotexpo a lu les 350 salons et leurs 22 000 exposants. Décrivez ce que
+          vous cherchez en une phrase : elle vous dit où aller et à qui parler.
         </p>
       )}
     </section>
@@ -368,6 +367,9 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
   );
 
   const annuaireNote = (
+    null
+  );
+  const _annuaireNotePlaceholder = (
     <p className="mt-2 text-center text-xs text-muted-foreground">
       Besoin d'explorer par filtres ?{' '}
       <Link to="/salons" className="text-primary hover:underline font-medium">
