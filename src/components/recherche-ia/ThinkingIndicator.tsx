@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 
-// Cadence d'apparition des étapes (ms). Baisser vers 3000 pour plus d'étapes visibles
-// sur des recherches courtes, monter vers 5000 pour un rythme plus posé.
-const STEP_INTERVAL = 4500;
+const STEP_INTERVAL = 4500;   // durée d'affichage de chaque texte (ms)
+const FLASH_DURATION = 550;   // durée de la coche verte en fin d'étape (ms)
+const SHOW_STEP_CHECK = true; // false = spinner seul, sans coche (encore plus épuré)
 
 const HOLDING_MESSAGES = [
   'Recoupement des résultats',
@@ -73,65 +73,73 @@ interface ThinkingIndicatorProps {
 export default function ThinkingIndicator({ question, deepSearch = false }: ThinkingIndicatorProps) {
   const reducedMotion = usePrefersReducedMotion();
   const steps = useMemo(() => buildSteps(question), [question]);
-  const lastIndex = steps.length - 1;
-
-  const [step, setStep] = useState(0);
-  const [phase, setPhase] = useState<'steps' | 'holding'>('steps');
-  const [hold, setHold] = useState(0);
-
-  // Avance d'une étape toutes les STEP_INTERVAL, puis bascule en phase d'attente.
-  useEffect(() => {
-    setStep(0);
-    setPhase('steps');
-    setHold(0);
-    const id = setInterval(() => {
-      setStep((s) => {
-        if (s >= lastIndex) {
-          setPhase('holding');
-          return s;
-        }
-        return s + 1;
-      });
-    }, STEP_INTERVAL);
-    return () => clearInterval(id);
-  }, [steps, lastIndex]);
-
-  // En phase d'attente, fait défiler un message pour garder du mouvement.
-  useEffect(() => {
-    if (phase !== 'holding') return;
-    const id = setInterval(() => setHold((h) => h + 1), STEP_INTERVAL);
-    return () => clearInterval(id);
-  }, [phase]);
-
-  const revealClass = reducedMotion ? '' : 'animate-fade-in';
   const holdingMessages = deepSearch ? HOLDING_MESSAGES_DEEP : HOLDING_MESSAGES;
 
-  return (
-    <div className="flex justify-start">
-      <div className="max-w-[92%] rounded-2xl rounded-bl-sm bg-background/80 backdrop-blur border border-border px-4 py-3 shadow-sm space-y-2">
-        {steps.map((label, i) => {
-          const visible = phase === 'holding' || i <= step;
-          if (!visible) return null;
-          const done = phase === 'holding' || i < step;
-          return (
-            <div key={label} className={`flex items-center gap-2 text-sm ${done ? 'text-muted-foreground' : 'text-foreground'} ${revealClass}`}>
-              {done ? (
-                <Check className="h-4 w-4 text-primary shrink-0" />
-              ) : (
-                <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
-              )}
-              <span>{label}</span>
-            </div>
-          );
-        })}
+  const [stepIndex, setStepIndex] = useState(0);
+  const [completed, setCompleted] = useState(false);
+  const [holding, setHolding] = useState(false);
+  const [holdIndex, setHoldIndex] = useState(0);
 
-        {phase === 'holding' && (
-          <div className={`flex items-center gap-2 text-sm text-foreground ${revealClass}`}>
-            <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
-            <span>{holdingMessages[hold % holdingMessages.length]}</span>
-          </div>
-        )}
-      </div>
+  // Réinitialise à chaque nouvelle question.
+  useEffect(() => {
+    setStepIndex(0);
+    setCompleted(false);
+    setHolding(false);
+    setHoldIndex(0);
+  }, [steps]);
+
+  // Étapes contextuelles : une ligne à la fois, puis passage à la suivante.
+  useEffect(() => {
+    if (holding) return;
+
+    const advance = () => {
+      if (stepIndex >= steps.length - 1) {
+        setHolding(true);
+      } else {
+        setStepIndex((i) => i + 1);
+      }
+    };
+
+    if (SHOW_STEP_CHECK) {
+      let flashTimer: ReturnType<typeof setTimeout>;
+      const workTimer = setTimeout(() => {
+        setCompleted(true); // brève coche verte en fin d'étape
+        flashTimer = setTimeout(() => {
+          setCompleted(false);
+          advance();
+        }, FLASH_DURATION);
+      }, Math.max(0, STEP_INTERVAL - FLASH_DURATION));
+      return () => {
+        clearTimeout(workTimer);
+        clearTimeout(flashTimer);
+      };
+    }
+
+    const workTimer = setTimeout(advance, STEP_INTERVAL);
+    return () => clearTimeout(workTimer);
+  }, [stepIndex, holding, steps.length]);
+
+  // Phase d'attente : messages qui défilent (spinner uniquement).
+  useEffect(() => {
+    if (!holding) return;
+    const id = setInterval(() => setHoldIndex((h) => h + 1), STEP_INTERVAL);
+    return () => clearInterval(id);
+  }, [holding]);
+
+  const text = holding ? holdingMessages[holdIndex % holdingMessages.length] : steps[stepIndex];
+  const showCheck = !holding && completed;
+  const lineKey = holding ? `h-${holdIndex}` : `s-${stepIndex}`;
+
+  return (
+    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      {showCheck ? (
+        <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+      ) : (
+        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-primary" />
+      )}
+      <span key={lineKey} className={reducedMotion ? '' : 'animate-fade-in'}>
+        {text}
+      </span>
     </div>
   );
 }
