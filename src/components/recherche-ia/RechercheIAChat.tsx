@@ -314,7 +314,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
             : 'text-3xl md:text-5xl'
         }`}
       >
-        Posez votre question,
+        <span className="text-foreground">Posez votre question,</span>
         <span className="block text-primary">trouvez votre salon.</span>
       </Heading>
       {!hasStarted && (
