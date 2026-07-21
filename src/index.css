@@ -200,27 +200,16 @@
 
 }
 
-/* Apparition en cascade des blocs d'une réponse de l'agent. */
+/* Apparition douce de la réponse de l'agent (bloc entier, une fois). */
 @keyframes answerReveal {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
-.answer-reveal > * {
+.answer-reveal {
   animation: answerReveal 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.answer-reveal > *:nth-child(1)   { animation-delay: 0ms; }
-.answer-reveal > *:nth-child(2)   { animation-delay: 45ms; }
-.answer-reveal > *:nth-child(3)   { animation-delay: 90ms; }
-.answer-reveal > *:nth-child(4)   { animation-delay: 135ms; }
-.answer-reveal > *:nth-child(5)   { animation-delay: 180ms; }
-.answer-reveal > *:nth-child(6)   { animation-delay: 225ms; }
-.answer-reveal > *:nth-child(7)   { animation-delay: 270ms; }
-.answer-reveal > *:nth-child(8)   { animation-delay: 315ms; }
-.answer-reveal > *:nth-child(n+9) { animation-delay: 360ms; }
-
 @media (prefers-reduced-motion: reduce) {
-  .answer-reveal > * { animation: none; }
+  .answer-reveal { animation: none; }
 }
 
 /* Custom animations for smooth interactions */
