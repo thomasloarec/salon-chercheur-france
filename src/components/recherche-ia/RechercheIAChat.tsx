@@ -367,9 +367,6 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
   );
 
   const annuaireNote = (
-    null
-  );
-  const _annuaireNotePlaceholder = (
     <p className="mt-2 text-center text-xs text-muted-foreground">
       Besoin d'explorer par filtres ?{' '}
       <Link to="/salons" className="text-primary hover:underline font-medium">
