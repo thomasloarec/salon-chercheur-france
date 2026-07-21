@@ -379,6 +379,22 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
     <SignupWallDialog open={signupOpen} onOpenChange={setSignupOpen} onUpgraded={handleUpgraded} />
   );
 
+  const suggestionsRow = (
+    <div className="mt-4 flex flex-wrap justify-center gap-2">
+      {SUGGESTIONS.map((s) => (
+        <button
+          key={s}
+          type="button"
+          onClick={() => send(s)}
+          disabled={!authReady || asking || hardWallActive}
+          className="rounded-full border border-border bg-background px-3.5 py-2 text-sm text-foreground transition-colors hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {s}
+        </button>
+      ))}
+    </div>
+  );
+
   // ------- Mise en page LANDING (page dédiée) : hero + recherche + démo -------
   if (isLandingPage) {
     return (
@@ -388,11 +404,12 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
         {/* Barre de recherche intégrée au hero */}
         <form onSubmit={onSubmit} className="mt-8 w-full max-w-2xl mx-auto">
           {inputBar}
+          {suggestionsRow}
           {annuaireNote}
         </form>
 
-        {/* Démo « L'IA en action » */}
-        <RechercheIAShowcase />
+        {/* Showcase mis de côté : données fictives, à remplacer par de vraies réponses de l'agent */}
+        {/* <RechercheIAShowcase /> */}
 
         {signupDialog}
       </div>
@@ -415,8 +432,8 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
       >
         {heroBlock}
 
-        {/* Écran d'accueil sidebar : démo « L'IA en action » */}
-        {!hasStarted && <RechercheIAShowcase />}
+        {/* Showcase mis de côté : données fictives, à remplacer par de vraies réponses de l'agent */}
+        {/* {!hasStarted && <RechercheIAShowcase />} */}
 
         {/* Conversation */}
         {hasStarted && (
