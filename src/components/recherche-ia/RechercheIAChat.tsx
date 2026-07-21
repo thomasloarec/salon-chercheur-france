@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import AnswerMarkdown from '@/components/recherche-ia/AnswerMarkdown';
 import SignupWallDialog from '@/components/recherche-ia/SignupWallDialog';
-import RechercheIAShowcase from '@/components/recherche-ia/RechercheIAShowcase';
+// import RechercheIAShowcase from '@/components/recherche-ia/RechercheIAShowcase';
 
 type Role = 'user' | 'assistant';
 interface ChatMessage {
@@ -24,10 +24,19 @@ interface Credits {
 type WallType = 'signup' | 'paywall';
 
 const EXAMPLES = [
-  'À quels salons aller pour voir des logiciels de gestion pour la restauration ?',
-  'Sur quel salon exposer si je fais du logiciel resto-tech ?',
-  'Où expose IDELINK ?',
-  "Quels salons pour l'emballage écoresponsable ?",
+  'Je cherche un salon pour la restauration',
+  'Sur quel salon exposer si je vends du logiciel RH ?',
+  'Quels salons de la santé cet automne ?',
+  'Où rencontrer des distributeurs en agroalimentaire ?',
+  "Quels exposants sur le prochain salon de l'industrie ?",
+];
+
+// Suggestions cliquables affichées sous le champ (écran d'accueil).
+const SUGGESTIONS = [
+  'Où expose Banque Populaire ?',
+  'Les prochains salons de la mode et du textile',
+  'Quels salons CSE près de Lyon ?',
+  'Salons de la tech à Paris en 2026',
 ];
 
 /** Respecte prefers-reduced-motion. */
@@ -304,8 +313,8 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
             : 'text-3xl md:text-5xl'
         }`}
       >
-        Toutes les opportunités des salons professionnels,
-        <span className="block text-primary">révélées par l'IA.</span>
+        Posez votre question,
+        <span className="block text-primary">trouvez votre salon.</span>
       </Heading>
       {!hasStarted && (
         <p
@@ -313,9 +322,8 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
             isSidebar ? 'text-sm' : 'text-base md:text-lg'
           }`}
         >
-          Le marché des salons est illisible. L'IA de Lotexpo a lu tous les salons et
-          leurs exposants : décrivez ce que vous cherchez en une phrase, elle vous dit
-          où aller et à qui parler.
+          L'IA de Lotexpo a lu les 350 salons et leurs 22 000 exposants. Décrivez ce que
+          vous cherchez en une phrase : elle vous dit où aller et à qui parler.
         </p>
       )}
     </section>
@@ -371,6 +379,22 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
     <SignupWallDialog open={signupOpen} onOpenChange={setSignupOpen} onUpgraded={handleUpgraded} />
   );
 
+  const suggestionsRow = (
+    <div className="mt-4 flex flex-wrap justify-center gap-2">
+      {SUGGESTIONS.map((s) => (
+        <button
+          key={s}
+          type="button"
+          onClick={() => send(s)}
+          disabled={!authReady || asking || hardWallActive}
+          className="rounded-full border border-border bg-background px-3.5 py-2 text-sm text-foreground transition-colors hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {s}
+        </button>
+      ))}
+    </div>
+  );
+
   // ------- Mise en page LANDING (page dédiée) : hero + recherche + démo -------
   if (isLandingPage) {
     return (
@@ -380,11 +404,12 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
         {/* Barre de recherche intégrée au hero */}
         <form onSubmit={onSubmit} className="mt-8 w-full max-w-2xl mx-auto">
           {inputBar}
+          {suggestionsRow}
           {annuaireNote}
         </form>
 
-        {/* Démo « L'IA en action » */}
-        <RechercheIAShowcase />
+        {/* Showcase mis de côté : données fictives, à remplacer par de vraies réponses de l'agent */}
+        {/* <RechercheIAShowcase /> */}
 
         {signupDialog}
       </div>
@@ -407,8 +432,8 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
       >
         {heroBlock}
 
-        {/* Écran d'accueil sidebar : démo « L'IA en action » */}
-        {!hasStarted && <RechercheIAShowcase />}
+        {/* Showcase mis de côté : données fictives, à remplacer par de vraies réponses de l'agent */}
+        {/* {!hasStarted && <RechercheIAShowcase />} */}
 
         {/* Conversation */}
         {hasStarted && (
