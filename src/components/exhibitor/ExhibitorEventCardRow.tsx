@@ -39,11 +39,8 @@ function getEventStatus(
   const diffDays = Math.round(
     (startDate.getTime() - today.getTime()) / 86_400_000
   );
-  if (diffDays <= 0) return { label: 'À venir', ongoing: false };
-  if (diffDays === 1) return { label: 'Demain', ongoing: false };
-  if (diffDays <= 7) return { label: `Dans ${diffDays} jours`, ongoing: false };
-  if (diffDays <= 30) return { label: 'Bientôt', ongoing: false };
-  return { label: 'À venir', ongoing: false };
+  if (diffDays === 0) return { label: "Aujourd'hui", ongoing: false };
+  return { label: `J-${diffDays}`, ongoing: false };
 }
 
 /* --------------------------- Upcoming event row -------------------------- */
@@ -78,9 +75,6 @@ export default function ExhibitorEventCardRow({
       <Card className="rounded-2xl border-primary/30 bg-bubble/40 shadow-sm">
         <CardContent className="p-5">
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <Badge variant="outline" className="bg-background">
-              Prochain salon
-            </Badge>
             {StatusBadge}
           </div>
           <h3 className="heading-display text-[1.2rem] leading-tight text-foreground">{event.nom_event}</h3>
