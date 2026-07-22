@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 import {
   useExhibitorParticipationHistory,
@@ -17,6 +18,17 @@ import {
 import { trackExhibitorEvent } from '@/lib/exhibitorTracking';
 
 const HISTORY_PAGE_SIZE = 8;
+
+function daysUntil(start: string | null): number | null {
+  if (!start) return null;
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const d = new Date(start);
+  d.setHours(0, 0, 0, 0);
+  const ms = d.getTime() - now.getTime();
+  if (Number.isNaN(ms)) return null;
+  return Math.round(ms / 86_400_000);
+}
 
 function formatPeriod(start: string | null, end: string | null) {
   if (!start) return '';
@@ -31,7 +43,13 @@ function formatPeriod(start: string | null, end: string | null) {
   return `${s} – ${e}`;
 }
 
-function StatusBadge({ status }: { status: ExhibitorParticipation['status'] }) {
+function StatusBadge({
+  status,
+  dateDebut,
+}: {
+  status: ExhibitorParticipation['status'];
+  dateDebut: string | null;
+}) {
   if (status === 'ongoing') {
     return (
       <Badge className="gap-1 bg-primary text-primary-foreground">
@@ -41,7 +59,9 @@ function StatusBadge({ status }: { status: ExhibitorParticipation['status'] }) {
     );
   }
   if (status === 'upcoming') {
-    return <Badge variant="secondary">À venir</Badge>;
+    const days = daysUntil(dateDebut);
+    const label = days === null ? 'À venir' : days <= 0 ? "Aujourd'hui" : `J-${days}`;
+    return <Badge variant="secondary">{label}</Badge>;
   }
   return (
     <Badge variant="outline" className="text-muted-foreground">
@@ -58,12 +78,18 @@ function ParticipationRow({
   slug: string;
 }) {
   const place = [item.ville, item.nom_lieu].filter(Boolean).join(' · ');
+  const future = item.status === 'ongoing' || item.status === 'upcoming';
 
   return (
     <li className="relative pl-6 py-1">
       {/* timeline dot */}
       <span
-        className="absolute left-0 top-2.5 h-2.5 w-2.5 rounded-full border-2 border-primary bg-background"
+        className={cn(
+          'absolute left-0 top-2.5 h-2.5 w-2.5 rounded-full',
+          future
+            ? 'bg-primary'
+            : 'border-2 border-muted-foreground/40 bg-background'
+        )}
         aria-hidden="true"
       />
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -84,7 +110,7 @@ function ParticipationRow({
             ) : (
               <span className="heading-display text-[1.05rem] leading-tight text-foreground">{item.nom_event}</span>
             )}
-            <StatusBadge status={item.status} />
+            <StatusBadge status={item.status} dateDebut={item.date_debut} />
           </div>
           <div className="mt-1.5 flex flex-col gap-1 text-sm text-muted-foreground sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4">
             <span className="flex items-center gap-1.5">
@@ -173,9 +199,15 @@ export default function ExhibitorParticipationHistory({
         <div className="space-y-7">
           {groups.map((group) => (
             <div key={group.year}>
-              <p className="text-sm font-semibold text-foreground mb-3">
-                {group.year}
-              </p>
+              <div className="flex items-center gap-3 mb-3">
+                <h3 className="heading-display text-xl md:text-2xl text-foreground capitalize">
+                  {group.year}
+                </h3>
+                <span className="flex-1 h-px bg-border/70" aria-hidden="true" />
+                <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground text-xs font-medium px-2.5 py-1 shrink-0">
+                  {group.items.length} participation{group.items.length > 1 ? 's' : ''}
+                </span>
+              </div>
               <ul className="space-y-5 border-l border-border pl-4">
                 {group.items.map((item) => (
                   <ParticipationRow key={item.id} item={item} slug={slug} />
