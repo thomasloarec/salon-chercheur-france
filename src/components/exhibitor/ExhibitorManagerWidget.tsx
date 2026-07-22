@@ -60,7 +60,7 @@ export default function ExhibitorManagerWidget({
 }: {
   profile: PublicExhibitorProfile;
 }) {
-  const { user } = useAuth();
+  const { isRealUser } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -76,7 +76,7 @@ export default function ExhibitorManagerWidget({
   );
 
   const canManage = canEditExhibitorProfile({
-    isAuthenticated: !!user,
+    isAuthenticated: isRealUser,
     exhibitorId: profile.exhibitor_id,
     isTest: profile.is_test,
     isManager: governance.isManager,
