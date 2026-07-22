@@ -35,7 +35,6 @@ export default function ExhibitorHero({
   const websiteUrl = normalizeExternalUrl(profile.website);
   const linkedinUrl = normalizeLinkedInUrl(profile.linkedin_url);
   const { data: aiData } = useExhibitorProducts(profile.public_slug || undefined);
-  const sector = aiData?.secteur_principal ?? null;
   const products = aiData?.produits_services ?? [];
 
   return (
