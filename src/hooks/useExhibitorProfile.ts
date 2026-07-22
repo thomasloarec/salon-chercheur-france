@@ -337,3 +337,30 @@ export function useExhibitorNovelties(exhibitorId: string | null | undefined) {
     staleTime: 60_000,
   });
 }
+
+export type ExhibitorProducts = {
+  produits_services: string[];
+  sous_secteurs: string[];
+  secteur_principal: string | null;
+};
+
+/**
+ * Fetches structured products/services and sector taxonomy for an exhibitor
+ * via the `get_exhibitor_products` RPC. Returns the first row or undefined.
+ */
+export function useExhibitorProducts(publicSlug?: string) {
+  return useQuery({
+    queryKey: ['exhibitor-products', publicSlug],
+    queryFn: async (): Promise<ExhibitorProducts | undefined> => {
+      if (!publicSlug) return undefined;
+      const { data, error } = await supabase.rpc('get_exhibitor_products', {
+        p_public_slug: publicSlug,
+      });
+      if (error) throw error;
+      const row = (data as unknown as ExhibitorProducts[] | null)?.[0];
+      return row ?? undefined;
+    },
+    enabled: !!publicSlug,
+    staleTime: 60_000,
+  });
+}
