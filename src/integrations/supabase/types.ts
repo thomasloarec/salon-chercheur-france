@@ -7770,6 +7770,14 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_exhibitor_products: {
+        Args: { p_public_slug: string }
+        Returns: {
+          produits_services: Json
+          secteur_principal: string
+          sous_secteurs: Json
+        }[]
+      }
       get_exhibitor_salons: {
         Args: { p_exhibitor_id: string; p_upcoming_only?: boolean }
         Returns: {
