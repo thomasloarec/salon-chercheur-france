@@ -1,12 +1,9 @@
 import {
   BadgeCheck,
-  CalendarClock,
   Globe,
   Linkedin,
   ShieldCheck,
 } from 'lucide-react';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { PublicExhibitorProfile } from '@/hooks/useExhibitorProfile';
@@ -101,27 +98,11 @@ export default function ExhibitorTrustInfo({ profile }: { profile: PublicExhibit
           value={
             profile.is_claimed
               ? 'Revendiquée par l\u2019entreprise'
-              : 'Non revendiquée'
+              : profile.is_verified
+                ? 'Vérifiée par Lotexpo'
+                : 'Non revendiquée'
           }
         />
-
-        {profile.is_verified && (
-          <InfoRow
-            icon={ShieldCheck}
-            label="Vérification"
-            value="Fiche vérifiée"
-          />
-        )}
-
-        {profile.last_activity_at && (
-          <InfoRow
-            icon={CalendarClock}
-            label="Dernière activité"
-            value={format(new Date(profile.last_activity_at), 'dd MMMM yyyy', {
-              locale: fr,
-            })}
-          />
-        )}
       </CardContent>
     </Card>
   );
