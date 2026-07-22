@@ -134,6 +134,15 @@ export default function NoveltyEventCard({
           ? 'J-1'
           : `J-${daysUntil}`;
 
+  // Événement passé : on masque les CTA qui n'ont plus de sens
+  // (rendez-vous, ajout aux stands à voir). On se base sur date_fin si dispo,
+  // sinon sur date_debut.
+  const eventEndDate =
+    (event as any)?.date_fin ?? (event as any)?.date_debut ?? eventDateDebut ?? null;
+  const isPastEvent = eventEndDate
+    ? new Date(eventEndDate).getTime() < new Date().setHours(0, 0, 0, 0)
+    : false;
+
   const description = [novelty.reason_1, novelty.reason_2, novelty.reason_3]
     .filter(Boolean)
     .join('\n\n');
@@ -349,6 +358,7 @@ export default function NoveltyEventCard({
             {/* CTA */}
             <div className="flex items-center gap-2 pt-1 mt-auto flex-wrap">
               {/* CTA principal — Demander un rendez-vous (chaîne de lead) */}
+              {!isPastEvent && (
               <Button
                 onClick={handleMeetingRequest}
                 size="sm"
@@ -357,6 +367,7 @@ export default function NoveltyEventCard({
                 <CalendarCheck className="h-3.5 w-3.5" />
                 Demander un rendez-vous
               </Button>
+              )}
 
               {/* Secondaire — Télécharger la brochure (uniquement si PDF) */}
               {novelty.doc_url && (
@@ -372,6 +383,7 @@ export default function NoveltyEventCard({
               )}
 
               {/* Stands à voir — bouton secondaire outline explicite (icône + texte) */}
+              {!isPastEvent && (
               <Button
                 onClick={handleInterestToggle}
                 disabled={isPending}
@@ -393,6 +405,7 @@ export default function NoveltyEventCard({
                   <span className="text-xs tabular-nums opacity-70">{likesCount}</span>
                 )}
               </Button>
+              )}
 
               {/* Menu "···" — actions secondaires (copier le lien) */}
               {novelty.slug && (
