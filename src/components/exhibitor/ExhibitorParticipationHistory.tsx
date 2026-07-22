@@ -7,7 +7,6 @@ import { fr } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 import {
@@ -63,11 +62,7 @@ function StatusBadge({
     const label = days === null ? 'À venir' : days <= 0 ? "Aujourd'hui" : `J-${days}`;
     return <Badge variant="secondary">{label}</Badge>;
   }
-  return (
-    <Badge variant="outline" className="text-muted-foreground">
-      Passé
-    </Badge>
-  );
+  return null;
 }
 
 function ParticipationRow({
@@ -81,16 +76,13 @@ function ParticipationRow({
   const future = item.status === 'ongoing' || item.status === 'upcoming';
 
   return (
-    <li className="relative pl-6 py-1">
-      {/* timeline dot */}
+    <article className="group relative pl-8 pr-3 py-3 border-b border-border/60 last:border-b-0 transition-colors duration-200 ease-out hover:bg-muted/40 motion-reduce:transition-none">
       <span
-        className={cn(
-          'absolute left-0 top-2.5 h-2.5 w-2.5 rounded-full',
-          future
-            ? 'bg-primary'
-            : 'border-2 border-muted-foreground/40 bg-background'
-        )}
         aria-hidden="true"
+        className={cn(
+          'absolute left-0 top-[1.4rem] h-2.5 w-2.5 rounded-full ring-4 ring-background',
+          future ? 'bg-primary' : 'border-2 border-muted-foreground/40 bg-background'
+        )}
       />
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
@@ -103,7 +95,7 @@ function ParticipationRow({
                     event_slug: item.slug,
                   })
                 }
-                className="heading-display text-[1.05rem] leading-tight text-foreground hover:text-primary hover:underline transition-colors"
+                className="heading-display text-[1.05rem] leading-tight text-foreground group-hover:text-primary transition-colors after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm"
               >
                 {item.nom_event}
               </Link>
@@ -131,7 +123,7 @@ function ParticipationRow({
           </span>
         )}
       </div>
-    </li>
+    </article>
   );
 }
 
@@ -157,16 +149,16 @@ export default function ExhibitorParticipationHistory({
 
   if (isLoading) {
     return (
-      <Card className="rounded-2xl">
-        <CardHeader className="pb-3">
-          <CardTitle className="heading-display text-xl">Présence sur les salons</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="heading-display section-rule text-xl font-bold">Présence sur les salons</h2>
+        </div>
+        <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-16 rounded-lg" />
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     );
   }
 
@@ -186,48 +178,52 @@ export default function ExhibitorParticipationHistory({
   }
 
   return (
-    <Card className="rounded-2xl">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between gap-3">
-          <CardTitle className="heading-display text-xl">Présence sur les salons</CardTitle>
-          <span className="text-sm text-muted-foreground shrink-0">
-            {items.length} participation{items.length > 1 ? 's' : ''}
-          </span>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-7">
-          {groups.map((group) => (
-            <div key={group.year}>
-              <div className="flex items-center gap-3 mb-3">
-                <h3 className="heading-display text-xl md:text-2xl text-foreground capitalize">
-                  {group.year}
-                </h3>
-                <span className="flex-1 h-px bg-border/70" aria-hidden="true" />
-                <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground text-xs font-medium px-2.5 py-1 shrink-0">
-                  {group.items.length} participation{group.items.length > 1 ? 's' : ''}
-                </span>
-              </div>
-              <ul className="space-y-5 border-l border-border pl-4">
-                {group.items.map((item) => (
-                  <ParticipationRow key={item.id} item={item} slug={slug} />
-                ))}
-              </ul>
+    <section>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="heading-display section-rule text-xl font-bold">Présence sur les salons</h2>
+        <span className="text-sm text-muted-foreground shrink-0">
+          {items.length} participation{items.length > 1 ? 's' : ''}
+        </span>
+      </div>
+      <div className="relative">
+        <span
+          aria-hidden="true"
+          className="absolute left-[5px] top-2 bottom-2 w-px bg-border"
+        />
+        {groups.map((group) => (
+          <div key={group.year}>
+            <div className="relative flex items-center gap-3 pl-8 pt-7 pb-2 first:pt-0">
+              <span
+                aria-hidden="true"
+                className="absolute left-0 top-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-muted-foreground/30 ring-4 ring-background"
+              />
+              <h3 className="heading-display text-xl md:text-2xl text-foreground capitalize">
+                {group.year}
+              </h3>
+              <span className="flex-1 h-px bg-border/70" aria-hidden="true" />
+              <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground text-xs font-medium px-2.5 py-1 shrink-0">
+                {group.items.length} participation{group.items.length > 1 ? 's' : ''}
+              </span>
             </div>
-          ))}
-        </div>
-
-        {remaining > 0 && (
-          <div className="mt-5 text-center">
-            <Button
-              variant="ghost"
-              onClick={() => setVisible((v) => v + HISTORY_PAGE_SIZE)}
-            >
-              Voir {remaining} participation{remaining > 1 ? 's' : ''} de plus
-            </Button>
+            <div>
+              {group.items.map((item) => (
+                <ParticipationRow key={item.id} item={item} slug={slug} />
+              ))}
+            </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        ))}
+      </div>
+
+      {remaining > 0 && (
+        <div className="mt-5 text-center">
+          <Button
+            variant="ghost"
+            onClick={() => setVisible((v) => v + HISTORY_PAGE_SIZE)}
+          >
+            Voir {remaining} participation{remaining > 1 ? 's' : ''} de plus
+          </Button>
+        </div>
+      )}
+    </section>
   );
 }
