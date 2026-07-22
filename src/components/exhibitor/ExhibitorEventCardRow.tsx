@@ -72,12 +72,11 @@ export default function ExhibitorEventCardRow({
 
   if (featured) {
     return (
-      <Card className="rounded-2xl border-primary/30 bg-bubble/40 shadow-sm">
-        <CardContent className="p-5">
+      <div className="relative rounded-r-xl border-l-2 border-l-primary bg-bubble/60 p-5">
           <div className="flex flex-wrap items-center gap-2 mb-2">
             {StatusBadge}
           </div>
-          <h3 className="heading-display text-[1.2rem] leading-tight text-foreground">{event.nom_event}</h3>
+          <h3 className="heading-display text-[1.35rem] leading-tight text-foreground">{event.nom_event}</h3>
           <div className="mt-2 space-y-1">
             <p className="text-sm text-muted-foreground flex items-center gap-1.5">
               <CalendarDays className="h-4 w-4 shrink-0" />
@@ -106,8 +105,7 @@ export default function ExhibitorEventCardRow({
               <Link to={`/events/${event.slug}`}>Voir le salon</Link>
             </Button>
           )}
-        </CardContent>
-      </Card>
+      </div>
     );
   }
 
