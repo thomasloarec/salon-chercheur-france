@@ -8,7 +8,6 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 
 import type { PublicExhibitorProfile } from '@/hooks/useExhibitorProfile';
 import ExhibitorAlertButton from '@/components/exhibitor/ExhibitorAlertButton';
@@ -36,14 +35,24 @@ export default function ExhibitorHero({
   const linkedinUrl = normalizeLinkedInUrl(profile.linkedin_url);
 
   return (
-    <Card className="rounded-2xl overflow-hidden border shadow-sm">
-      {/* Bande d'accent premium — purement décorative */}
+    <section
+      aria-label="En-tête de la fiche exposant"
+      className="relative w-full overflow-hidden border-b bg-gradient-to-r from-primary/10 via-bubble to-primary/5 hero-in"
+    >
+      {/* Couche décorative 1 : nom en très grand, débordant à gauche */}
       <div
-        className="h-20 bg-gradient-to-r from-primary/10 via-bubble to-primary/5"
         aria-hidden="true"
+        className="pointer-events-none select-none absolute -left-8 top-1/2 -translate-y-1/2 heading-display font-bold text-foreground/5 whitespace-nowrap text-[12rem] leading-none tracking-tight"
+      >
+        {name}
+      </div>
+      {/* Couche décorative 2 : halo derrière la tuile logo */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-4 sm:left-8 top-8 w-48 h-48 rounded-full bg-primary/15 blur-3xl"
       />
-      <CardContent className="p-6 pt-0">
-        <div className="flex flex-col sm:flex-row sm:items-end gap-5 -mt-12">
+      <div className="relative max-w-6xl mx-auto px-4 py-10 sm:py-14">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-5">
           {/* Logo / avatar fallback */}
           <div className="w-24 h-24 rounded-2xl bg-white border shadow-sm flex items-center justify-center flex-shrink-0 overflow-hidden">
             {logo ? (
@@ -65,18 +74,17 @@ export default function ExhibitorHero({
                 <Building2 className="h-3 w-3" />
                 Entreprise exposante
               </Badge>
-              {profile.is_claimed && (
-                <Badge variant="secondary" className="gap-1">
-                  <BadgeCheck className="h-3 w-3" />
-                  Fiche revendiquée
-                </Badge>
-              )}
-              {profile.is_verified && (
+              {profile.is_claimed ? (
                 <Badge className="gap-1">
-                  <ShieldCheck className="h-3 w-3" />
-                  Vérifiée
+                  <BadgeCheck className="h-3 w-3" />
+                  Revendiquée par l’entreprise
                 </Badge>
-              )}
+              ) : profile.is_verified ? (
+                <Badge variant="secondary" className="gap-1">
+                  <ShieldCheck className="h-3 w-3" />
+                  Vérifiée par Lotexpo
+                </Badge>
+              ) : null}
             </div>
 
             <h1 className="heading-display text-2xl sm:text-3xl font-bold leading-tight">
@@ -89,12 +97,17 @@ export default function ExhibitorHero({
             (ex. « Données insuffisantes… ») sont filtrés et remplacés par un
             libellé lisible. Tronquée à 3 lignes avec bascule « Voir plus ». */}
         {cleanAiDescription(profile.description) ? (
-          <ExpandableText
-            text={cleanAiDescription(profile.description) as string}
-            className="mt-4"
-          />
+          <div className="hero-in" style={{ animationDelay: '200ms' }}>
+            <ExpandableText
+              text={cleanAiDescription(profile.description) as string}
+              className="mt-4"
+            />
+          </div>
         ) : (
-          <p className="text-sm text-muted-foreground italic mt-4">
+          <p
+            className="text-sm text-muted-foreground italic mt-4 hero-in"
+            style={{ animationDelay: '200ms' }}
+          >
             {NO_DESCRIPTION_LABEL}
           </p>
         )}
@@ -108,7 +121,10 @@ export default function ExhibitorHero({
         {/* CTAs — hiérarchie : 1 action principale, le reste en secondaire.
             Site officiel reste l'action principale quand il existe ; sinon
             la revendication / modification devient l'action principale. */}
-        <div className="flex flex-wrap items-center gap-2 mt-5">
+        <div
+          className="flex flex-wrap items-center gap-2 mt-5 hero-in"
+          style={{ animationDelay: '260ms' }}
+        >
           {websiteUrl && (
             <Button
               asChild
@@ -148,7 +164,7 @@ export default function ExhibitorHero({
             <ExhibitorAlertButton publicSlug={profile.public_slug} />
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
