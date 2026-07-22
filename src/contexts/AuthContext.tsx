@@ -35,7 +35,7 @@ const clearStaleAuthStorage = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [rawUser, setRawUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -123,7 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const resetAuthState = () => {
       pendingPlanProcessed.current = false;
       setSession(null);
-      setUser(null);
+      setRawUser(null);
       setLoading(false);
     };
 
@@ -142,7 +142,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         setSession(nextSession);
-        setUser(nextSession?.user ?? null);
+        setRawUser(nextSession?.user ?? null);
         if (event !== 'INITIAL_SESSION' || authBootstrapped.current) {
           setLoading(false);
         }
@@ -176,7 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         setSession(data.session);
-        setUser(data.session?.user ?? null);
+        setRawUser(data.session?.user ?? null);
       } catch (error) {
         await handleInvalidSession(error);
         return;
@@ -232,7 +232,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const isRealUser = !!user && user.is_anonymous !== true;
+  const isRealUser = !!rawUser && rawUser.is_anonymous !== true;
+
+  // `user` est volontairement null pour les sessions anonymes : les gardes
+  // d'autorisation du projet testent `if (!user)` et doivent traiter un
+  // visiteur anonyme comme non connecté. `session` reste intact, donc le JWT
+  // part toujours avec les requêtes et le comportement RLS est inchangé.
+  const user = isRealUser ? rawUser : null;
 
   const value = {
     user,
