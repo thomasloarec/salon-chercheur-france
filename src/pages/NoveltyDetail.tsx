@@ -131,6 +131,11 @@ export default function NoveltyDetail() {
           ? 'J-1'
           : `J-${daysUntil}`;
 
+  // Événement passé : on masque les CTA « rendez-vous » et « stand à voir ».
+  const isPastEvent = novelty.event_date_debut
+    ? new Date(novelty.event_date_debut).getTime() < new Date().setHours(0, 0, 0, 0)
+    : false;
+
   const canonical = `${SITE_ORIGIN}/nouveautes/${novelty.slug}`;
   const metaDescription =
     (novelty.summary ||
@@ -352,6 +357,7 @@ export default function NoveltyDetail() {
             )}
 
             {/* Lead capture */}
+            {!isPastEvent && (
             <Card className="space-y-3 border-primary/20 bg-primary/[0.03] p-4">
               <p className="text-sm font-medium">Intéressé·e par cette nouveauté ?</p>
               <div className="flex flex-wrap gap-2">
@@ -403,6 +409,7 @@ export default function NoveltyDetail() {
                 </p>
               )}
             </Card>
+            )}
 
             {/* Event block */}
             {novelty.event_slug && novelty.event_name && (
