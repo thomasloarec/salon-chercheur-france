@@ -61,11 +61,10 @@ export default function ExhibitorProfile() {
         ) : (
           <>
             <ExhibitorProfileSEO profile={profile} />
+            {/* A. Header exposant — section pleine largeur, gère son propre conteneur interne */}
+            <ExhibitorHero profile={profile} hasAnyActivity={hasAnyActivity} />
             <div className="max-w-6xl mx-auto px-4 pt-8 pb-16 sm:pb-20 space-y-8">
-              {/* A. Header exposant — pleine largeur */}
-              <ExhibitorHero profile={profile} hasAnyActivity={hasAnyActivity} />
-
-              {/* B. Statistiques principales — pleine largeur */}
+              {/* B. Statistiques principales */}
               {hasAnyActivity && <ExhibitorStats profile={profile} />}
 
               {/* C. Layout 2 colonnes (desktop) / 1 colonne (mobile) */}
