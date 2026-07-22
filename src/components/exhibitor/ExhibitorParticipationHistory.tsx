@@ -77,12 +77,12 @@ function ParticipationRow({
                     event_slug: item.slug,
                   })
                 }
-                className="font-semibold leading-snug hover:text-primary hover:underline"
+                className="heading-display text-[1.05rem] leading-tight text-foreground hover:text-primary hover:underline transition-colors"
               >
                 {item.nom_event}
               </Link>
             ) : (
-              <span className="font-semibold leading-snug">{item.nom_event}</span>
+              <span className="heading-display text-[1.05rem] leading-tight text-foreground">{item.nom_event}</span>
             )}
             <StatusBadge status={item.status} />
           </div>
