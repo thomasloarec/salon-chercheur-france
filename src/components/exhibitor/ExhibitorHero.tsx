@@ -35,7 +35,6 @@ export default function ExhibitorHero({
   const websiteUrl = normalizeExternalUrl(profile.website);
   const linkedinUrl = normalizeLinkedInUrl(profile.linkedin_url);
   const { data: aiData } = useExhibitorProducts(profile.public_slug || undefined);
-  const sector = aiData?.secteur_principal ?? null;
   const products = aiData?.produits_services ?? [];
 
   return (
@@ -94,14 +93,6 @@ export default function ExhibitorHero({
             <h1 className="heading-display text-2xl sm:text-3xl font-bold leading-tight hero-in" style={{ animationDelay: '140ms' }}>
               {name}
             </h1>
-            {sector && (
-              <p
-                className="text-sm text-muted-foreground mt-1 hero-in"
-                style={{ animationDelay: '170ms' }}
-              >
-                {sector}
-              </p>
-            )}
           </div>
         </div>
 
