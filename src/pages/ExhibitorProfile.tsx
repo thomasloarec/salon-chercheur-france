@@ -72,12 +72,12 @@ export default function ExhibitorProfile() {
                 <div className="col-span-12 lg:col-span-8 lg:order-none space-y-8">
                   <ExhibitorUpcomingEvents profile={profile} />
                   <ExhibitorNovelties profile={profile} />
+                  {/* Produits et services : données structurées distinctes
+                      de la description du header, remontées avant l'historique. */}
+                  <ExhibitorAbout profile={profile} />
                   {/* Historique complet des participations (passées + à venir),
                       avec liens internes crawlables vers /events/:slug. */}
                   <ExhibitorParticipationHistory profile={profile} />
-                  {/* À propos : ne s'affiche que si le contenu n'est pas redondant
-                      avec la description du header (sécurité SEO garantie côté composant). */}
-                  <ExhibitorAbout profile={profile} />
                 </div>
 
                 {/* Sidebar droite. Sur mobile elle remonte en tête de pile

@@ -1,28 +1,41 @@
 import type { PublicExhibitorProfile } from '@/hooks/useExhibitorProfile';
+import { useExhibitorProducts } from '@/hooks/useExhibitorProfile';
 
-/* ------------------------------- About block ----------------------------- */
+/* --------------------------- Produits et services ------------------------- */
 
-/**
- * "À propos" block.
- *
- * Product decision: the company description now lives exclusively in the
- * header (always present in the DOM for SEO). To avoid two near-identical
- * descriptions of the same company, this block must ONLY render when it can
- * surface genuinely different, *structured* information (produits / services,
- * tags métiers, sous-secteurs, profils visiteurs, …).
- *
- * These structured fields are not yet exposed by the
- * `public_exhibitor_profiles` view, so — per the agreed step — the block is
- * hidden entirely. A free-text AI summary is intentionally NOT shown here, as
- * it reads as a duplicate of the header description for the user.
- *
- * SEO safety: hiding this block never removes content from the page — the main
- * `profile.description` stays in the header DOM (visually clamped, fully
- * present in the markup).
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function ExhibitorAbout({ profile }: { profile: PublicExhibitorProfile }) {
-  // No structured data available yet → render nothing to remove the
-  // header/about description redundancy.
-  return null;
+  const { data } = useExhibitorProducts(profile.public_slug || undefined);
+  const products = data?.produits_services ?? [];
+
+  if (products.length === 0) return null;
+
+  const shown = products.slice(0, 8);
+  const remaining = products.length - shown.length;
+
+  return (
+    <section aria-labelledby="exhibitor-products-heading" className="space-y-4">
+      <h2
+        id="exhibitor-products-heading"
+        className="heading-display text-xl text-foreground"
+      >
+        Produits et services
+      </h2>
+      <ul className="flex flex-wrap gap-2">
+        {shown.map((p) => (
+          <li
+            key={p}
+            title={p}
+            className="max-w-full truncate rounded-full bg-bubble px-3 py-1 text-sm text-foreground"
+          >
+            {p}
+          </li>
+        ))}
+        {remaining > 0 && (
+          <li className="rounded-full px-3 py-1 text-sm text-muted-foreground">
+            et {remaining} autre{remaining > 1 ? 's' : ''}
+          </li>
+        )}
+      </ul>
+    </section>
+  );
 }
