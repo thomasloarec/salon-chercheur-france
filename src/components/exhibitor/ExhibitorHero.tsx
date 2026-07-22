@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 import type { PublicExhibitorProfile } from '@/hooks/useExhibitorProfile';
+import { useExhibitorProducts } from '@/hooks/useExhibitorProfile';
 import ExhibitorAlertButton from '@/components/exhibitor/ExhibitorAlertButton';
 import ExhibitorClaimCta from '@/components/exhibitor/ExhibitorClaimCta';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
@@ -33,6 +34,9 @@ export default function ExhibitorHero({
   // Normalized external links — CTAs only render for valid, absolute URLs.
   const websiteUrl = normalizeExternalUrl(profile.website);
   const linkedinUrl = normalizeLinkedInUrl(profile.linkedin_url);
+  const { data: aiData } = useExhibitorProducts(profile.public_slug || undefined);
+  const sector = aiData?.secteur_principal ?? null;
+  const products = aiData?.produits_services ?? [];
 
   return (
     <section
@@ -90,6 +94,14 @@ export default function ExhibitorHero({
             <h1 className="heading-display text-2xl sm:text-3xl font-bold leading-tight hero-in" style={{ animationDelay: '140ms' }}>
               {name}
             </h1>
+            {sector && (
+              <p
+                className="text-sm text-muted-foreground mt-1 hero-in"
+                style={{ animationDelay: '170ms' }}
+              >
+                {sector}
+              </p>
+            )}
           </div>
         </div>
 
@@ -116,6 +128,23 @@ export default function ExhibitorHero({
           <p className="text-sm text-muted-foreground mt-2">
             Aucune participation aux salons identifiée pour le moment.
           </p>
+        )}
+
+        {products.length > 0 && (
+          <ul
+            className="flex flex-wrap gap-2 mt-4 hero-in"
+            style={{ animationDelay: '230ms' }}
+          >
+            {products.slice(0, 4).map((p) => (
+              <li
+                key={p}
+                title={p}
+                className="max-w-full truncate rounded-full border border-border px-3 py-1 text-xs text-muted-foreground"
+              >
+                {p}
+              </li>
+            ))}
+          </ul>
         )}
 
         {/* CTAs — hiérarchie : 1 action principale, le reste en secondaire.
