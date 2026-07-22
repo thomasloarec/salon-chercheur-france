@@ -27,7 +27,7 @@ export default function ExhibitorClaimCta({
    *  primary (default) button so the hierarchy keeps one clear main action. */
   websiteAvailable?: boolean;
 }) {
-  const { user } = useAuth();
+  const { isRealUser } = useAuth();
   const [claimOpen, setClaimOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -63,7 +63,7 @@ export default function ExhibitorClaimCta({
   // l'utilisateur est gestionnaire validé (owner direct ou team member
   // owner/admin actif). Les profils legacy purs / test n'affichent rien.
   const canEdit = canEditExhibitorProfile({
-    isAuthenticated: !!user,
+    isAuthenticated: isRealUser,
     exhibitorId: profile.exhibitor_id,
     isTest: profile.is_test,
     isManager: governance.isManager,
@@ -76,9 +76,9 @@ export default function ExhibitorClaimCta({
 
   const handleClaimClick = () => {
     trackExhibitorEvent('claim_click', slug, {
-      authenticated: !!user,
+      authenticated: isRealUser,
     });
-    if (!user) {
+    if (!isRealUser) {
       setAuthOpen(true);
     } else {
       setClaimOpen(true);
