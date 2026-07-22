@@ -13,6 +13,28 @@ import { trackExhibitorEvent } from '@/lib/exhibitorTracking';
 
 const NOVELTIES_PAGE_SIZE = 4;
 
+/* ------------------------------ Empty state ------------------------------ */
+
+/**
+ * État vide public de la section « Nouveautés publiées ». Purement explicatif :
+ * aucun bouton, aucun lien, aucun suivi. Le CTA de publication est réservé aux
+ * gestionnaires et vit dans ExhibitorManagerWidget (sidebar).
+ */
+function NoveltiesEmptyState() {
+  return (
+    <div className="border-y border-dashed border-border py-10 text-center">
+      <p className="heading-display text-xl text-foreground">
+        Aucune nouveauté publiée
+      </p>
+      <p className="mt-3 mx-auto max-w-lg text-sm text-muted-foreground">
+        Une nouveauté est un temps fort annoncé par un exposant avant un salon :
+        lancement de produit, innovation présentée sur le stand, démonstration ou
+        conférence.
+      </p>
+    </div>
+  );
+}
+
 /* ------------------------------ Novelties block -------------------------- */
 
 /**
@@ -63,11 +85,7 @@ export default function ExhibitorNovelties({
     return (
       <section>
         <h2 className="heading-display section-rule text-xl font-bold mb-4">Nouveautés publiées</h2>
-        <div className="rounded-xl border border-dashed bg-muted/30 p-6 text-center">
-          <p className="text-muted-foreground">
-            Aucune nouveauté publiée pour le moment.
-          </p>
-        </div>
+        <NoveltiesEmptyState />
       </section>
     );
   }
@@ -89,11 +107,7 @@ export default function ExhibitorNovelties({
           ))}
         </div>
       ) : novelties.length === 0 ? (
-        <div className="rounded-xl border border-dashed bg-muted/30 p-6 text-center">
-          <p className="text-muted-foreground">
-            Aucune nouveauté publiée pour le moment.
-          </p>
-        </div>
+        <NoveltiesEmptyState />
       ) : (
         <>
           <div className="space-y-6">
