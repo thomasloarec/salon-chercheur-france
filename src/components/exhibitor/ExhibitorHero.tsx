@@ -94,14 +94,6 @@ export default function ExhibitorHero({
             <h1 className="heading-display text-2xl sm:text-3xl font-bold leading-tight hero-in" style={{ animationDelay: '140ms' }}>
               {name}
             </h1>
-            {sector && (
-              <p
-                className="text-sm text-muted-foreground mt-1 hero-in"
-                style={{ animationDelay: '170ms' }}
-              >
-                {sector}
-              </p>
-            )}
           </div>
         </div>
 
