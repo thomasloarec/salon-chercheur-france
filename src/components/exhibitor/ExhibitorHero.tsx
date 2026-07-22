@@ -37,24 +37,24 @@ export default function ExhibitorHero({
   return (
     <section
       aria-label="En-tête de la fiche exposant"
-      className="relative w-full overflow-hidden border-b bg-gradient-to-r from-primary/10 via-bubble to-primary/5 hero-in"
+      className="relative w-full overflow-hidden border-b bg-gradient-to-b from-bubble/60 via-background to-background"
     >
       {/* Couche décorative 1 : nom en très grand, débordant à gauche */}
       <div
         aria-hidden="true"
-        className="pointer-events-none select-none absolute -left-8 top-1/2 -translate-y-1/2 heading-display font-bold text-foreground/5 whitespace-nowrap text-[12rem] leading-none tracking-tight"
+        className="pointer-events-none select-none absolute -left-8 top-1/2 -translate-y-1/2 heading-display text-foreground/[0.04] whitespace-nowrap text-[12rem] leading-none tracking-tight [mask-image:linear-gradient(to_bottom,black_0%,black_40%,transparent_78%)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_40%,transparent_78%)]"
       >
         {name}
       </div>
       {/* Couche décorative 2 : halo derrière la tuile logo */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-4 sm:left-8 top-8 w-48 h-48 rounded-full bg-primary/15 blur-3xl"
+        className="pointer-events-none absolute left-0 top-0 w-64 h-64 -translate-x-1/4 -translate-y-1/3 rounded-full bg-primary/10 blur-3xl"
       />
       <div className="relative max-w-6xl mx-auto px-4 py-10 sm:py-14">
         <div className="flex flex-col sm:flex-row sm:items-end gap-5">
           {/* Logo / avatar fallback */}
-          <div className="w-24 h-24 rounded-2xl bg-white border shadow-sm flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <div className="w-24 h-24 rounded-2xl bg-white border shadow-sm flex items-center justify-center flex-shrink-0 overflow-hidden hero-in">
             {logo ? (
               <img
                 src={logo}
@@ -69,7 +69,7 @@ export default function ExhibitorHero({
           </div>
 
           <div className="flex-1 min-w-0 sm:pb-1">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
+            <div className="flex flex-wrap items-center gap-2 mb-2 hero-in" style={{ animationDelay: '80ms' }}>
               <Badge variant="outline" className="gap-1">
                 <Building2 className="h-3 w-3" />
                 Entreprise exposante
@@ -87,7 +87,7 @@ export default function ExhibitorHero({
               ) : null}
             </div>
 
-            <h1 className="heading-display text-2xl sm:text-3xl font-bold leading-tight">
+            <h1 className="heading-display text-2xl sm:text-3xl font-bold leading-tight hero-in" style={{ animationDelay: '140ms' }}>
               {name}
             </h1>
           </div>
@@ -97,7 +97,7 @@ export default function ExhibitorHero({
             (ex. « Données insuffisantes… ») sont filtrés et remplacés par un
             libellé lisible. Tronquée à 3 lignes avec bascule « Voir plus ». */}
         {cleanAiDescription(profile.description) ? (
-          <div className="hero-in" style={{ animationDelay: '200ms' }}>
+          <div className="hero-in [&_p]:text-foreground/90" style={{ animationDelay: '200ms' }}>
             <ExpandableText
               text={cleanAiDescription(profile.description) as string}
               className="mt-4"
