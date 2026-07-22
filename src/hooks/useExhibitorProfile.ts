@@ -294,6 +294,7 @@ export function useExhibitorNovelties(exhibitorId: string | null | undefined) {
         .from('novelties')
         .select(`
           id,
+          slug,
           event_id,
           exhibitor_id,
           title,
@@ -321,7 +322,8 @@ export function useExhibitorNovelties(exhibitorId: string | null | undefined) {
             id,
             nom_event,
             slug,
-            ville
+            ville,
+            date_debut
           )
         `)
         .eq('exhibitor_id', exhibitorId)
