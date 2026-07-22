@@ -2,7 +2,6 @@ import {
   BadgeCheck,
   Globe,
   Linkedin,
-  ShieldCheck,
 } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
