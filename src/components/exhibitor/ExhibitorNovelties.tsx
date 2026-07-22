@@ -7,7 +7,7 @@ import {
   useExhibitorNovelties,
   type PublicExhibitorProfile,
 } from '@/hooks/useExhibitorProfile';
-import NoveltyCard from '@/components/novelty/NoveltyCard';
+import NoveltyEventCard from '@/components/novelty/NoveltyEventCard';
 import type { Novelty } from '@/hooks/useNovelties';
 import { trackExhibitorEvent } from '@/lib/exhibitorTracking';
 
@@ -62,7 +62,13 @@ function TrackedNovelty({
 
   return (
     <div onClickCapture={handleClickCapture}>
-      <NoveltyCard novelty={novelty} />
+      <NoveltyEventCard
+        novelty={novelty}
+        eventSlug={(novelty as any).events?.slug ?? null}
+        eventDateDebut={(novelty as any).events?.date_debut ?? null}
+        eventName={(novelty as any).events?.nom_event ?? null}
+        eventVille={(novelty as any).events?.ville ?? null}
+      />
     </div>
   );
 }
