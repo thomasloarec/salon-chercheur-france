@@ -83,7 +83,7 @@ export default function ExhibitorEventCardRow({
             </Badge>
             {StatusBadge}
           </div>
-          <h3 className="text-lg font-bold leading-snug">{event.nom_event}</h3>
+          <h3 className="heading-display text-[1.2rem] leading-tight text-foreground">{event.nom_event}</h3>
           <div className="mt-2 space-y-1">
             <p className="text-sm text-muted-foreground flex items-center gap-1.5">
               <CalendarDays className="h-4 w-4 shrink-0" />
@@ -122,7 +122,7 @@ export default function ExhibitorEventCardRow({
       <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-semibold leading-snug">{event.nom_event}</h3>
+            <h3 className="heading-display text-[1.05rem] leading-tight text-foreground">{event.nom_event}</h3>
             {StatusBadge}
           </div>
           <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
