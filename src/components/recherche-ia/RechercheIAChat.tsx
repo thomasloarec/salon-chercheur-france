@@ -36,7 +36,7 @@ const EXAMPLES = [
 const SUGGESTIONS = [
   'Où expose Banque Populaire ?',
   'Les prochains salons de la mode et du textile',
-  'A quels salons exposent mes concurrents ?',
+  'Mes concurrents sont X, Y et Z : à quels salons exposent-ils ?',
   'Salons de la tech à Paris en 2026',
 ];
 
