@@ -7629,14 +7629,19 @@ export type Database = {
       create_missing_outreach_campaigns: { Args: never; Returns: Json }
       create_novelty_atomic: {
         Args: {
+          p_audience_tags?: string[]
           p_brochure_pdf?: string
           p_created_by: string
           p_event_id: string
           p_exhibitor_id: string
           p_images: string[]
+          p_is_platform_admin?: boolean
           p_pending_exhibitor_id?: string
           p_reason: string
+          p_reason_2?: string
+          p_reason_3?: string
           p_stand_info?: string
+          p_summary?: string
           p_title: string
           p_type: string
         }
