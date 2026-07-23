@@ -350,10 +350,6 @@ Deno.serve(async (req) => {
         .slice(-10)
     : [];
 
-  // Debug instrumentation (§4 batterie de référence) — requiert isAdmin serveur ET body.debug === true.
-  // Un client non-admin qui envoie debug: true n'obtient JAMAIS le bloc debug.
-  const debugRequested = body?.debug === true;
-
   const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null;
 
   const conversationKey = (typeof body?.conversation_key === "string" && /^[0-9a-f-]{36}$/i.test(body.conversation_key))
@@ -380,8 +376,6 @@ Deno.serve(async (req) => {
   }
   // Les admins ont une allocation illimitée (999999) ; anonyme = 3, inscrit = 6.
   const isAdmin = (credit?.allowed ?? 0) > 6;
-  const debugEnabled = isAdmin && debugRequested;
-  const debugTrace: any[] = [];
 
   // 4) Rate-limit IP anti-abus (hash d'IP salé, non réversible) — non-admins
   if (!isAdmin && ipHash) {
@@ -427,23 +421,16 @@ Deno.serve(async (req) => {
 
       if (data.stop_reason === "tool_use") {
         const toolResults: any[] = [];
-        const turnToolUses: any[] = [];
         for (const block of data.content ?? []) {
           if (block.type === "tool_use") {
             const result = await runTool(admin, block.name, block.input ?? {});
             collectSlugs(result, retrievedSlugs);
-            if (debugEnabled) {
-              turnToolUses.push({ name: block.name, input: block.input ?? {} });
-            }
             toolResults.push({
               type: "tool_result",
               tool_use_id: block.id,
               content: JSON.stringify(result),
             });
           }
-        }
-        if (debugEnabled) {
-          debugTrace.push({ turn: i, stop_reason: "tool_use", tool_uses: turnToolUses });
         }
         messages.push({ role: "user", content: toolResults });
         continue;
@@ -454,9 +441,6 @@ Deno.serve(async (req) => {
         .map((b: any) => b.text)
         .join("\n")
         .trim();
-      if (debugEnabled) {
-        debugTrace.push({ turn: i, stop_reason: data.stop_reason ?? "end_turn", tool_uses: [] });
-      }
       break;
     }
   } catch (e) {
@@ -487,6 +471,5 @@ Deno.serve(async (req) => {
     // Indice "mur imminent" pour que le front prépare le CTA (sans logguer d'event ici :
     // l'event sera loggé au prochain appel effectivement bloqué).
     wall: remainingAfter <= 0 ? { type: isAnon ? "signup" : "paywall", soft: true } : null,
-    ...(debugEnabled ? { debug: { trace: debugTrace } } : {}),
   });
 });

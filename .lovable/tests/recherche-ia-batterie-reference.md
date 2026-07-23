@@ -95,7 +95,9 @@ A2 et A8 échouent aujourd'hui. Ce sont des échecs de référence : ils doivent
 
 `check_ai_credits` accorde 999 999 crédits à tout compte portant le rôle `admin` (`has_role(p_user_id, 'admin')`), contre 6 en connecté simple et 3 en anonyme. Le passage s'exécute donc depuis `admin@lotexpo.com`, sans purge ni découpage en lots.
 
-L'appel exige un jeton utilisateur valide : la fonction lit `Authorization` et appelle `getUser(jwt)`, avec un `401` si le jeton est absent ou invalide. Un `user_id` simulé côté `service_role` ne fonctionne pas. Le `service_role` frappe donc un jeton réel pour le compte admin via l'API d'administration (`auth.admin.generateLink` en `magiclink`, puis `verifyOtp` sur le `token_hash` pour obtenir une session), et la boucle l'utilise tel quel.
+L'appel exige un jeton utilisateur valide : la fonction lit `Authorization` et appelle `getUser(jwt)`, avec un `401` si le jeton est absent ou invalide. Le runner reçoit donc un `access_token` de session obtenu depuis un navigateur connecté sur `admin@lotexpo.com`, passé en variable d'environnement et valable environ une heure. Aucune clé `service_role` n'intervient dans le passage de la batterie.
+
+Le runner écrit, pour chaque question et dans l'ordre : horodatage, question, réponse verbatim et intégrale (jamais résumée), et la liste des `tool_use` par tour extraite du champ `debug.trace` de la réponse (activé côté serveur pour les admins uniquement lorsque le corps contient `debug: true`).
 
 Ce chemin active `isAdmin`, qui contourne le rate-limit IP. D'après l'audit du 23/07, `isAdmin` n'influence ni le prompt système, ni la liste des outils, ni leurs paramètres : le comportement mesuré est celui d'une session navigateur. La contrepartie est que la batterie ne teste pas le limiteur de débit, ce qui est hors de son objet.
 
