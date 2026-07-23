@@ -113,6 +113,10 @@ serve(async (req) => {
 
     const admin = createClient(supabaseUrl, serviceKey);
 
+    // Remonté hors du garde EXHIBITOR_ALREADY_MANAGED pour être accessible
+    // lors de l'appel RPC (exonération de quota administrateur).
+    let platformAdmin: { role: string } | null = null;
+
     // Vérifier l'événement
     const { data: ev, error: evErr } = await admin
       .from("events")
@@ -203,12 +207,13 @@ serve(async (req) => {
         .in("role", ["owner", "admin"])
         .maybeSingle();
 
-      const { data: platformAdmin } = await admin
+      const { data: platformAdminRow } = await admin
         .from("user_roles")
         .select("role")
         .eq("user_id", authenticatedUserId)
         .eq("role", "admin")
         .maybeSingle();
+      platformAdmin = platformAdminRow ?? null;
 
       const isOwnerUser = !!(exhibitorRow?.owner_user_id && exhibitorRow.owner_user_id === authenticatedUserId);
       const hasAdmin = (activeAdminCount ?? 0) > 0
@@ -251,6 +256,11 @@ serve(async (req) => {
       p_brochure_pdf: data.brochure_pdf ?? null,
       p_stand_info: data.stand_info ?? null,
       p_pending_exhibitor_id: data.pending_exhibitor_id ?? null,
+      p_reason_2: data.reason_2 ?? null,
+      p_reason_3: data.reason_3 ?? null,
+      p_summary: data.summary ?? null,
+      p_audience_tags: data.audience_tags ?? null,
+      p_is_platform_admin: !!platformAdmin,
     });
 
     if (rpcErr) {
