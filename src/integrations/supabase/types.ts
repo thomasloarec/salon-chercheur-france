@@ -8196,6 +8196,10 @@ export type Database = {
       normalize_domain: { Args: { input_url: string }; Returns: string }
       normalize_event_domain: { Args: { p_url: string }; Returns: string }
       normalize_event_url: { Args: { p_url: string }; Returns: string }
+      nouveautes_d_un_salon: {
+        Args: { p_salon: string; p_type?: string }
+        Returns: Json
+      }
       novelty_quota_status: {
         Args: { p_event_id: string; p_exhibitor_id: string }
         Returns: Json
