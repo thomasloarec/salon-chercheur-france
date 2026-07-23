@@ -3677,6 +3677,46 @@ export type Database = {
           },
         ]
       }
+      novelty_embeddings: {
+        Row: {
+          embedded_at: string
+          embedding: string
+          novelty_id: string
+        }
+        Insert: {
+          embedded_at?: string
+          embedding: string
+          novelty_id: string
+        }
+        Update: {
+          embedded_at?: string
+          embedding?: string
+          novelty_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "novelty_embeddings_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: true
+            referencedRelation: "novelties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_embeddings_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: true
+            referencedRelation: "public_novelties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_embeddings_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: true
+            referencedRelation: "v_novelty_visit_signals"
+            referencedColumns: ["novelty_id"]
+          },
+        ]
+      }
       novelty_images: {
         Row: {
           created_at: string
@@ -7661,6 +7701,10 @@ export type Database = {
         Args: { p_max_batches?: number }
         Returns: number
       }
+      embed_pending_novelties: {
+        Args: { p_max_batches?: number }
+        Returns: number
+      }
       ensure_exhibitor_public_identity: {
         Args: { p_exhibitor_id?: string; p_legacy_exposant_id?: string }
         Returns: string
@@ -8080,6 +8124,33 @@ export type Database = {
           similarity: number
           sous_secteurs: Json
           website: string
+        }[]
+      }
+      match_novelties_semantic: {
+        Args: {
+          p_event_id?: string
+          p_k?: number
+          p_query: string
+          p_threshold?: number
+          p_upcoming_only?: boolean
+        }
+        Returns: {
+          event_date: string
+          event_name: string
+          event_slug: string
+          event_ville: string
+          exhibitor_name: string
+          exhibitor_slug: string
+          has_document: boolean
+          novelty_id: string
+          novelty_slug: string
+          novelty_type: string
+          reason_1: string
+          reason_2: string
+          reason_3: string
+          resume: string
+          similarity: number
+          title: string
         }[]
       }
       match_salons_semantic: {
