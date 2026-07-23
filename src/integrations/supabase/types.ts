@@ -1358,6 +1358,60 @@ export type Database = {
         }
         Relationships: []
       }
+      event_embeddings: {
+        Row: {
+          embedded_at: string
+          embedding: string
+          event_id: string
+        }
+        Insert: {
+          embedded_at?: string
+          embedding: string
+          event_id: string
+        }
+        Update: {
+          embedded_at?: string
+          embedding?: string
+          event_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_embeddings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_embeddings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_embeddings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_embeddings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_embeddings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_sectors: {
         Row: {
           created_at: string
@@ -7702,6 +7756,10 @@ export type Database = {
           status: string
         }[]
       }
+      embed_pending_events: {
+        Args: { p_max_batches?: number }
+        Returns: number
+      }
       embed_pending_exhibitors: {
         Args: { p_max_batches?: number }
         Returns: number
@@ -8091,6 +8149,17 @@ export type Database = {
         Returns: undefined
       }
       log_funnel_event: { Args: { p_event_type: string }; Returns: undefined }
+      match_events_semantic: {
+        Args: {
+          p_date_max?: string
+          p_k?: number
+          p_query?: string
+          p_threshold?: number
+          p_upcoming_only?: boolean
+          p_ville?: string
+        }
+        Returns: Json
+      }
       match_exhibitors_global: {
         Args: {
           p_k?: number
