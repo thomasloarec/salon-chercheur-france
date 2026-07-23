@@ -8132,6 +8132,7 @@ export type Database = {
           p_k?: number
           p_query: string
           p_threshold?: number
+          p_type?: string
           p_upcoming_only?: boolean
         }
         Returns: {
