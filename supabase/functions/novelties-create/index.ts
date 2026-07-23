@@ -16,6 +16,10 @@ const schema = z.object({
   brochure_pdf: url.optional().nullable(),
   stand_info: z.string().max(200).optional().nullable(),
   pending_exhibitor_id: uuid.optional().nullable(),
+  reason_2: z.string().max(1000).optional().nullable(),
+  reason_3: z.string().max(1000).optional().nullable(),
+  summary: z.string().max(500).optional().nullable(),
+  audience_tags: z.array(z.string().max(60)).max(10).optional().nullable(),
 });
 
 function corsHeaders() {
