@@ -12,6 +12,7 @@ import { Loader2, Mail, CheckCircle2, XCircle, Clock, AlertTriangle, Ban, X, Sea
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import UnsubscribesSection from '@/components/admin/campaigns/UnsubscribesSection';
 
 // ─────────── Types ───────────
 interface CampaignRow {
@@ -696,6 +697,7 @@ export default function AdminOutreachDashboard() {
           })()}
         </SheetContent>
       </Sheet>
+      <UnsubscribesSection />
     </div>
   );
 }

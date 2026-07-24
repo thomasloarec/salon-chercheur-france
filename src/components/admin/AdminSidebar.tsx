@@ -30,7 +30,6 @@ import {
   Mail,
   Radar,
   Inbox,
-  UserMinus,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAdminPendingCounts } from '@/hooks/useAdminPendingCounts';
@@ -73,7 +72,6 @@ const navSections = [
       { title: 'IA Visite', url: '/admin/ia-visite', icon: Sparkles },
       { title: 'Radar CRM', url: '/admin/radar-crm', icon: Radar },
       { title: 'Suivi des leads', url: '/admin/leads', icon: Inbox },
-      { title: 'Désinscriptions', url: '/admin/desinscriptions', icon: UserMinus },
     ],
   },
   {
