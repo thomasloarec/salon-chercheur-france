@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.get_active_editorial_prompt(text) FROM authenticated;
