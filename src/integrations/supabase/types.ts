@@ -173,6 +173,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_editorial_prompts: {
+        Row: {
+          actif: boolean
+          action: string
+          created_at: string
+          id: string
+          model_validated_on: string | null
+          notes: string | null
+          prompt: string
+          version: number
+        }
+        Insert: {
+          actif?: boolean
+          action: string
+          created_at?: string
+          id?: string
+          model_validated_on?: string | null
+          notes?: string | null
+          prompt: string
+          version: number
+        }
+        Update: {
+          actif?: boolean
+          action?: string
+          created_at?: string
+          id?: string
+          model_validated_on?: string | null
+          notes?: string | null
+          prompt?: string
+          version?: number
+        }
+        Relationships: []
+      }
       ai_event_visibility_daily: {
         Row: {
           appearances: number
@@ -8088,6 +8121,7 @@ export type Database = {
         Args: { event_city: string; event_name: string; event_year: number }
         Returns: string
       }
+      get_active_editorial_prompt: { Args: { p_action: string }; Returns: Json }
       get_admin_leads_stats: { Args: never; Returns: Json }
       get_current_user_role: {
         Args: never
