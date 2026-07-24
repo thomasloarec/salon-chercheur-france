@@ -38,9 +38,9 @@ PARTIE 1 — LES ANCRES DE SPÉCIFICITÉ
 Sept familles, UNE SEULE suffit :
 1. designation — un nom de produit, une référence, un modèle, une gamme, une version
 2. exclusivite — première présentation, avant-première, primeur, lancement
-3. experience — quelque chose à voir, toucher, tester, essayer, goûter, manipuler sur le stand
+3. experience — quelque chose à voir, toucher, tester, essayer, goûter, manipuler sur le stand. Recevoir un document, un livre, une brochure ou un cadeau n'est PAS une experience : c'est une contrepartie (famille 6). L'experience suppose que le visiteur agit ou observe quelque chose de spécifique sur le stand.
 4. rendez_vous — conférence, atelier, démonstration à horaire, table ronde, masterclass, dégustation
-5. preuve — un chiffre, un résultat client, une certification, un brevet, une norme, un label
+5. preuve — un chiffre, un résultat client, une certification, un brevet, une norme, un label. Un âge d'entreprise, une date de création, un nombre d'années d'existence ou un nombre de collaborateurs ne sont PAS des preuves : ce sont des faits d'entreprise, pas des résultats vérifiant l'intérêt de ce qui est présenté. Une preuve porte sur ce que l'annonce apporte, pas sur l'ancienneté de l'exposant.
 6. contrepartie — une offre, une condition ou un tarif spécifiques au salon
 7. tiers — un partenaire, un client, une institution nommés
 
