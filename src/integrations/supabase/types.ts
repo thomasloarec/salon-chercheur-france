@@ -14,6 +14,117 @@ export type Database = {
   }
   public: {
     Tables: {
+      _backup_outreach_sportair_20260724: {
+        Row: {
+          campaign_status: string | null
+          claim_status: string | null
+          claim_step: number | null
+          claimed_at: string | null
+          claude_classification: string | null
+          company_name: string | null
+          company_name_normalized: string | null
+          contact_email: string | null
+          created_at: string | null
+          current_step: number | null
+          decline_reason: string | null
+          email_source: string | null
+          event_id: string | null
+          exhibitor_id: string | null
+          hunter_poste: string | null
+          hunter_prenom: string | null
+          hunter_score: number | null
+          hunter_status: string | null
+          id: string | null
+          id_exposant_legacy: string | null
+          last_sent_at: string | null
+          next_send_at: string | null
+          novelty_id: string | null
+          novelty_status: string | null
+          novelty_step: number | null
+          opt_out: boolean | null
+          participation_id: string | null
+          reply_status: string | null
+          stop_note: string | null
+          stop_reason: string | null
+          stopped_at: string | null
+          stopped_by: string | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          campaign_status?: string | null
+          claim_status?: string | null
+          claim_step?: number | null
+          claimed_at?: string | null
+          claude_classification?: string | null
+          company_name?: string | null
+          company_name_normalized?: string | null
+          contact_email?: string | null
+          created_at?: string | null
+          current_step?: number | null
+          decline_reason?: string | null
+          email_source?: string | null
+          event_id?: string | null
+          exhibitor_id?: string | null
+          hunter_poste?: string | null
+          hunter_prenom?: string | null
+          hunter_score?: number | null
+          hunter_status?: string | null
+          id?: string | null
+          id_exposant_legacy?: string | null
+          last_sent_at?: string | null
+          next_send_at?: string | null
+          novelty_id?: string | null
+          novelty_status?: string | null
+          novelty_step?: number | null
+          opt_out?: boolean | null
+          participation_id?: string | null
+          reply_status?: string | null
+          stop_note?: string | null
+          stop_reason?: string | null
+          stopped_at?: string | null
+          stopped_by?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          campaign_status?: string | null
+          claim_status?: string | null
+          claim_step?: number | null
+          claimed_at?: string | null
+          claude_classification?: string | null
+          company_name?: string | null
+          company_name_normalized?: string | null
+          contact_email?: string | null
+          created_at?: string | null
+          current_step?: number | null
+          decline_reason?: string | null
+          email_source?: string | null
+          event_id?: string | null
+          exhibitor_id?: string | null
+          hunter_poste?: string | null
+          hunter_prenom?: string | null
+          hunter_score?: number | null
+          hunter_status?: string | null
+          id?: string | null
+          id_exposant_legacy?: string | null
+          last_sent_at?: string | null
+          next_send_at?: string | null
+          novelty_id?: string | null
+          novelty_status?: string | null
+          novelty_step?: number | null
+          opt_out?: boolean | null
+          participation_id?: string | null
+          reply_status?: string | null
+          stop_note?: string | null
+          stop_reason?: string | null
+          stopped_at?: string | null
+          stopped_by?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       admin_data_cleaning_logs: {
         Row: {
           action: string
