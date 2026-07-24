@@ -310,7 +310,26 @@ Deno.serve(async (req) => {
   userMessageParts.push(`=== TEXTE DE L'EXPOSANT ===`, trimmed);
   const userMessage = userMessageParts.join('\n');
 
-  const system = action === 'analyser' ? SYSTEM_ANALYSER : SYSTEM_GENERER;
+  // Prompt système : version active en base, avec la constante en dur comme filet.
+  const fallbackSystem = action === 'analyser' ? SYSTEM_ANALYSER : SYSTEM_GENERER;
+  let system = fallbackSystem;
+  let promptVersion: number | null = null;
+  try {
+    const { data: promptRow, error: promptErr } = await supabase.rpc('get_active_editorial_prompt', {
+      p_action: action,
+    });
+    if (!promptErr && promptRow && typeof promptRow === 'object'
+        && typeof (promptRow as any).prompt === 'string'
+        && (promptRow as any).prompt.trim().length > 0) {
+      system = (promptRow as any).prompt;
+      promptVersion = typeof (promptRow as any).version === 'number' ? (promptRow as any).version : null;
+    } else if (promptErr) {
+      console.error('[novelty-ai-draft] prompt version load failed, using fallback:', promptErr.message);
+    }
+  } catch (e) {
+    console.error('[novelty-ai-draft] prompt version load threw, using fallback:', e instanceof Error ? e.message : String(e));
+  }
+
   const maxTokens = action === 'analyser' ? 1200 : 3000;
 
   const res = await callAnthropic({
@@ -386,6 +405,7 @@ Deno.serve(async (req) => {
       suffisant,
       question,
       model: res.model,
+      prompt_version: promptVersion,
     });
   }
 
@@ -437,5 +457,5 @@ Deno.serve(async (req) => {
     ? p.temps_ecartes.filter((t: any) => t && typeof t === 'object')
     : [];
 
-  return jsonResp({ angles, faits_utilises, temps_ecartes: temps_ecartes_global, alertes, model: res.model });
+  return jsonResp({ angles, faits_utilises, temps_ecartes: temps_ecartes_global, alertes, model: res.model, prompt_version: promptVersion });
 });
