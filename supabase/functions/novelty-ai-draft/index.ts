@@ -47,7 +47,7 @@ Sept familles, UNE SEULE suffit :
 PARTIE 2 — LES AUTORISATIONS NARRATIVES
 Ce ne sont PAS des ancres. Elles ne comptent pas dans le nombre d'ancres et n'entrent pas dans le calcul de "suffisant". Elles servent uniquement à autoriser ou interdire des temps du récit lors de la rédaction.
 
-- obstacle_source : les mots EXACTS du texte qui énoncent une difficulté, un manque, une limite, une contrainte ou un problème rencontré. Si le texte n'en énonce aucun, c'est null. Ne déduis rien, ne devine rien, ne considère pas qu'un besoin implicite est un obstacle. Une annonce sans obstacle est parfaitement normale : une dégustation, un anniversaire, une nouvelle gamme de coloris ou un partenariat n'ont aucune raison d'en avoir un.
+- obstacle_source : les mots EXACTS du texte qui énoncent une difficulté, un manque, une limite, une contrainte ou un problème rencontré. Si le texte n'en énonce aucun, c'est null. Ne déduis rien, ne devine rien, ne considère pas qu'un besoin implicite est un obstacle. Une annonce sans obstacle est parfaitement normale : une dégustation, un anniversaire, une nouvelle gamme de coloris ou un partenariat n'ont aucune raison d'en avoir un. Un titre, un thème ou un intitulé de session n'est pas un obstacle, même s'il contient un verbe d'amélioration comme réduire, optimiser ou simplifier. Un obstacle est une difficulté que le texte affirme rencontrer, pas un sujet traité.
 - beneficiaire_source : les mots EXACTS désignant à qui cela s'adresse, si le texte le dit. Sinon null.
 
 PARTIE 3 — LES FORMULATIONS CREUSES
