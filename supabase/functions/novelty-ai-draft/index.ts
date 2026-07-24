@@ -249,6 +249,30 @@ Deno.serve(async (req) => {
         message: "L'action generer doit recevoir le résultat de l'action analyser.",
       }, 400);
     }
+    // Recalcul serveur de "suffisant" : on ne fait pas confiance au verdict du modèle.
+    const ancresAnalyse = Array.isArray((analyseInput as any).ancres)
+      ? (analyseInput as any).ancres.filter(
+          (a: any) =>
+            a &&
+            typeof a.famille === 'string' &&
+            ANCRE_FAMILLES.has(a.famille) &&
+            typeof a.extrait === 'string' &&
+            a.extrait.trim().length > 0,
+        )
+      : [];
+    const suffisantServeur = ancresAnalyse.length > 0;
+    if (!suffisantServeur) {
+      return jsonResp({
+        error: 'matiere_insuffisante',
+        question:
+          typeof (analyseInput as any).question === 'string' &&
+          (analyseInput as any).question.trim().length > 0
+            ? (analyseInput as any).question
+            : null,
+        nb_ancres: ancresAnalyse.length,
+        suffisant: false,
+      }, 400);
+    }
   }
 
   // --- Contexte via RPC ---
