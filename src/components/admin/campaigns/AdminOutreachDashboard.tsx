@@ -697,6 +697,7 @@ export default function AdminOutreachDashboard() {
           })()}
         </SheetContent>
       </Sheet>
+      <UnsubscribesSection />
     </div>
   );
 }
