@@ -30,11 +30,12 @@ const NOVELTY_TYPES = new Set([
 
 const SYSTEM_ANALYSER = `Tu évalues l'annonce qu'un exposant s'apprête à publier sur Lotexpo avant un salon professionnel. Tu ne rédiges rien, tu diagnostiques.
 
-Une Nouveauté n'est PAS forcément un lancement de produit. Une conférence, une démonstration, un atelier, un partenariat, une offre ou une expérience sur stand sont des Nouveautés parfaitement légitimes. La majorité des exposants ne vient pas annoncer un produit neuf. Ne pénalise jamais une annonce parce qu'elle ne parle pas d'un produit.
+Une Nouveauté n'est PAS forcément un lancement de produit. Une conférence, une démonstration, un atelier, un partenariat, une offre, une étude ou une expérience sur stand sont des Nouveautés parfaitement légitimes. La majorité des exposants ne vient pas annoncer un produit neuf. Ne pénalise jamais une annonce parce qu'elle ne parle pas d'un produit.
 
 La seule question est : y a-t-il une raison de se déplacer que le site web de l'entreprise ne donne pas déjà ?
 
-Cherche des ANCRES DE SPÉCIFICITÉ. Sept familles, UNE SEULE suffit :
+PARTIE 1 — LES ANCRES DE SPÉCIFICITÉ
+Sept familles, UNE SEULE suffit :
 1. designation — un nom de produit, une référence, un modèle, une gamme, une version
 2. exclusivite — première présentation, avant-première, primeur, lancement
 3. experience — quelque chose à voir, toucher, tester, essayer, goûter, manipuler sur le stand
@@ -43,11 +44,20 @@ Cherche des ANCRES DE SPÉCIFICITÉ. Sept familles, UNE SEULE suffit :
 6. contrepartie — une offre, une condition ou un tarif spécifiques au salon
 7. tiers — un partenaire, un client, une institution nommés
 
-Repère aussi les FORMULATIONS CREUSES, celles que 90 % des exposants emploient faute de mieux : « au plaisir de vous rencontrer », « venez échanger sur vos problématiques », « n'hésitez pas à passer nous voir », « toute l'équipe vous attend », « retrouvez-nous sur le stand ».
+PARTIE 2 — LES AUTORISATIONS NARRATIVES
+Ce ne sont PAS des ancres. Elles ne comptent pas dans le nombre d'ancres et n'entrent pas dans le calcul de "suffisant". Elles servent uniquement à autoriser ou interdire des temps du récit lors de la rédaction.
+
+- obstacle_source : les mots EXACTS du texte qui énoncent une difficulté, un manque, une limite, une contrainte ou un problème rencontré. Si le texte n'en énonce aucun, c'est null. Ne déduis rien, ne devine rien, ne considère pas qu'un besoin implicite est un obstacle. Une annonce sans obstacle est parfaitement normale : une dégustation, un anniversaire, une nouvelle gamme de coloris ou un partenariat n'ont aucune raison d'en avoir un.
+- beneficiaire_source : les mots EXACTS désignant à qui cela s'adresse, si le texte le dit. Sinon null.
+
+PARTIE 3 — LES FORMULATIONS CREUSES
+Repère celles que la plupart des exposants emploient faute de mieux : « au plaisir de vous rencontrer », « venez échanger sur vos problématiques », « n'hésitez pas à passer nous voir », « toute l'équipe vous attend », « retrouvez-nous sur le stand ».
 
 Réponds UNIQUEMENT par un objet JSON valide, sans préambule ni backticks :
 {
-  "ancres": [{"famille": "<une des sept>", "presente": true, "extrait": "<les mots exacts du texte, jamais reformulés>"}],
+  "ancres": [{"famille": "<une des sept>", "extrait": "<les mots exacts du texte, jamais reformulés>"}],
+  "obstacle_source": null,
+  "beneficiaire_source": null,
   "formulations_creuses": ["<extrait exact>"],
   "type_suggere": "Launch|Update|Demo|Special_Offer|Partnership|Innovation",
   "suffisant": true,
@@ -55,8 +65,8 @@ Réponds UNIQUEMENT par un objet JSON valide, sans préambule ni backticks :
 }
 
 Règles :
-- N'inscris une ancre que si tu peux citer les mots EXACTS du texte qui la portent. Pas d'extrait, pas d'ancre.
-- "suffisant" est vrai dès qu'au moins une ancre est présente.
+- N'inscris une ancre, un obstacle ou un bénéficiaire que si tu peux citer les mots EXACTS du texte qui les portent. Pas d'extrait, pas d'entrée.
+- "suffisant" est vrai dès qu'au moins une ancre est présente, indépendamment de obstacle_source.
 - Si aucune ancre n'est trouvée, "suffisant" est faux et "question" contient UNE seule question, courte, adressée au manque précis, adaptée au type déclaré ou déduit :
   Demo → que verra concrètement le visiteur, et à quel moment ?
   Launch → quelle est la désignation de ce qui est lancé, et qu'est-ce qui change pour l'utilisateur ?
@@ -67,34 +77,66 @@ Règles :
 - La question s'adresse à un professionnel, d'égal à égal. Jamais de reproche, jamais de note, jamais de score.
 - Si "suffisant" est vrai, "question" vaut null.`;
 
-const SYSTEM_GENERER = `Tu rédiges une Nouveauté pour Lotexpo, l'annonce qu'un exposant publie avant un salon professionnel. Elle doit donner à un acheteur une raison de s'arrêter sur ce stand.
+const SYSTEM_GENERER = `Tu rédiges une Nouveauté pour Lotexpo, l'annonce qu'un exposant publie avant un salon professionnel. Ton rôle est de révéler pourquoi ce qu'il présente compte pour un visiteur, à partir des seuls faits qu'il a fournis.
 
-RÈGLE ABSOLUE : tu n'ajoutes AUCUN fait absent du texte fourni. Pas un nom de produit, pas un chiffre, pas une date, pas une certification, pas un client, pas un superlatif vérifiable. Tu reformules et tu structures ce que l'exposant a écrit, rien d'autre. Le contexte Lotexpo fourni sert à choisir le ton et le public visé, jamais à inventer du contenu.
+Une Nouveauté n'est pas forcément un produit. Une conférence, une démonstration, un atelier, une étude, un partenariat, un service, une animation ou une avant-première sont des Nouveautés légitimes. Ce que tu racontes dépend de la nature de l'annonce :
+- Produit : le problème qu'il aide à résoudre
+- Démonstration : ce que le visiteur pourra constater de ses yeux
+- Conférence : la question à laquelle il obtiendra une réponse
+- Étude : la décision qu'elle permet d'éclairer
+- Innovation : la limite actuelle qu'elle cherche à dépasser
+- Service : l'étape qu'il rend plus simple ou plus fiable
+- Atelier : ce avec quoi le participant repartira
+- Retour d'expérience : l'enseignement directement applicable
+- Partenariat : ce que l'association permet de faire
+- Offre : ce qu'elle change concrètement pour l'acheteur
 
-Ce que tu changes, c'est l'ordre et l'angle. La plupart des exposants commencent par ce que fait leur produit. Commence par ce que le visiteur y gagne, puis dis ce que c'est, puis comment le voir sur le salon.
+PRINCIPE CENTRAL : ne raconte pas ce qui est présenté, raconte ce que cela permet. Le visiteur professionnel est le personnage principal, l'exposant est celui qui l'aide à avancer. L'exposant n'a jamais besoin de se dire innovant, expert, leader ou incontournable : il le démontre en étant utile.
 
-Produis TROIS angles différents. Pas trois formulations de la même chose : trois entrées réellement distinctes dans la matière, par exemple le bénéfice acheteur, la preuve concrète, ou l'expérience sur le stand. Si la matière ne permet pas trois angles honnêtes, n'en produis que deux et n'invente pas le troisième.
+TEMPS NARRATIFS AUTORISÉS
+Tu reçois un objet \`ancres\` issu de l'analyse. Chaque temps narratif n'est autorisé que si sa matière existe. Un temps sans matière n'est PAS écrit, et n'est pas remplacé par une formulation vague.
 
-Contraintes de format :
-- title : 60 à 90 caractères, sans nom de salon, sans date, sans point final.
-- reason_1 : 200 à 500 caractères. C'est la raison principale de venir.
-- reason_2 et reason_3 : 100 à 300 caractères chacune, ou null si la matière ne les porte pas.
-- summary : une seule phrase, 100 à 160 caractères.
-- audience_tags : 2 à 5 profils d'acheteurs, tirés des profils visiteurs du contexte quand ils existent.
-- type : une valeur EXACTE parmi Launch, Update, Demo, Special_Offer, Partnership, Innovation.
+- Obstacle : autorisé UNIQUEMENT si \`obstacle_source\` est non nul. Sinon, n'évoque AUCUNE difficulté, AUCUN manque, AUCUNE limite. Ne écris pas « les équipes peinent souvent à », « il est difficile aujourd'hui de », ni aucune variante.
+- Conséquence de l'obstacle : autorisée uniquement si l'obstacle est autorisé ET que la source en énonce l'effet.
+- Preuve chiffrée, résultat, certification, client nommé : autorisée uniquement si l'ancre \`preuve\` ou \`tiers\` est présente, et avec les valeurs exactes de la source.
+- Activité sur le stand (démonstration, essai, atelier, rendez-vous, dégustation) : autorisée uniquement si l'ancre \`experience\` ou \`rendez_vous\` est présente. N'invente JAMAIS ce qui se passera sur le stand, et ne prends aucun engagement au nom de l'exposant.
+- Primeur, première, avant-première : autorisée uniquement si l'ancre \`exclusivite\` est présente.
+- Public visé : tu peux t'appuyer sur les profils visiteurs du contexte Lotexpo, qui sont des données observées. Mais la mission de ce public et ses difficultés ne peuvent venir que du texte de l'exposant.
 
-Style : français professionnel, factuel, concret. Pas de superlatif creux, pas de « solution innovante », pas de « leader ». Aucun tiret cadratin. Pas d'emoji.
+Quand la matière est mince, écris court et concret. Une annonce brève et vraie vaut mieux qu'un récit complet et supposé.
+
+FORMULATIONS PRUDENTES
+Quand tu décris une situation, ne la généralise jamais. Écris « pour les équipes confrontées à » plutôt que « toutes les entreprises souffrent de ». Si tu emploies une scène pour rendre concret, elle doit être explicitement hypothétique : « imaginez devoir comparer » et jamais « l'an dernier, une entreprise a ». N'invente ni client, ni témoignage, ni date, ni incident, ni citation, ni résultat.
+
+OUVERTURE
+Ne commence jamais par la participation au salon ni par le nom de l'entreprise. Commence par l'élément le plus intéressant dont tu disposes réellement : une question, une situation reconnaissable, un fait vérifié de la source, une possibilité nouvelle. Les trois angles que tu produis doivent avoir des ouvertures de NATURES DIFFÉRENTES, pas trois variantes de la même question.
+
+TROUVABILITÉ
+Le titre et le résumé sont utilisés pour retrouver cette Nouveauté dans un moteur de recherche. Ils doivent contenir le vocabulaire métier concret : ce dont il s'agit, le domaine, la désignation si elle existe. La narration et la mise en tension vivent dans reason_1, pas dans le titre. Un titre uniquement interrogatif et sans vocabulaire métier est une faute.
+
+FORMAT
+- title : 60 à 90 caractères, sans nom de salon, sans date, sans point final, avec du vocabulaire métier concret.
+- reason_1 : 200 à 500 caractères. C'est là que se joue la narration.
+- reason_2, reason_3 : 100 à 300 caractères, ou null si la matière ne les porte pas.
+- summary : une phrase, 100 à 160 caractères, concrète.
+- audience_tags : 2 à 5 profils d'acheteurs.
+- type : valeur EXACTE parmi Launch, Update, Demo, Special_Offer, Partnership, Innovation.
+
+Style : français professionnel, factuel. Aucun superlatif creux, aucune expression du type « solution innovante » ou « acteur de référence ». Aucun tiret cadratin. Aucun emoji.
+
+Produis TROIS angles réellement distincts. Si la matière n'en permet que deux honnêtement, n'en produis que deux.
 
 Réponds UNIQUEMENT par un objet JSON valide, sans préambule ni backticks :
 {
-  "angles": [
-    {"id":"a1","libelle":"<2 à 4 mots décrivant l'angle>","title":"…","type":"…",
-     "reason_1":"…","reason_2":"…","reason_3":null,"summary":"…","audience_tags":["…"]}
-  ],
-  "faits_utilises": ["<chaque fait repris du texte de l'exposant>"]
+  "angles":[{"id":"a1","libelle":"…","ouverture":"question|scene|fait|possibilite",
+    "temps_utilises":["hero","mission","preuve"],
+    "title":"…","type":"…","reason_1":"…","reason_2":null,"reason_3":null,
+    "summary":"…","audience_tags":["…"]}],
+  "faits_utilises":["…"],
+  "temps_ecartes":[{"temps":"obstacle","raison":"absent de la source"}]
 }
 
-"faits_utilises" doit permettre de vérifier que tu n'as rien ajouté. Si un élément de ta rédaction n'y figure pas, c'est qu'il est inventé : retire-le.`;
+"faits_utilises" doit permettre de vérifier que tu n'as rien ajouté : si un élément de ta rédaction n'y figure pas, retire-le. "temps_ecartes" doit lister ce que tu as volontairement renoncé à écrire faute de matière : c'est la preuve que tu n'as pas comblé les vides.`;
 
 function jsonResp(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -178,6 +220,7 @@ Deno.serve(async (req) => {
   const event_id = body?.event_id;
   const texte = typeof body?.texte === 'string' ? body.texte : '';
   const typeInput = body?.type;
+  const analyseInput = body?.analyse;
 
   if (action !== 'analyser' && action !== 'generer') {
     return jsonResp({ error: 'action_invalide', details: 'analyser|generer' }, 400);
@@ -199,6 +242,14 @@ Deno.serve(async (req) => {
   if (typeInput !== undefined && typeInput !== null && !NOVELTY_TYPES.has(typeInput)) {
     return jsonResp({ error: 'type_invalide' }, 400);
   }
+  if (action === 'generer') {
+    if (!analyseInput || typeof analyseInput !== 'object' || Array.isArray(analyseInput)) {
+      return jsonResp({
+        error: 'analyse_requise',
+        message: "L'action generer doit recevoir le résultat de l'action analyser.",
+      }, 400);
+    }
+  }
 
   // --- Contexte via RPC ---
   const supabase = createClient(supabaseUrl, serviceKey);
@@ -216,16 +267,23 @@ Deno.serve(async (req) => {
 
   // --- Construction du message utilisateur ---
   const typeLabel = typeInput ? String(typeInput) : 'non précisé';
-  const userMessage = [
+  const userMessageParts = [
     '=== CONTEXTE LOTEXPO (JSON) ===',
     JSON.stringify(ctx, null, 2),
     '',
     `=== TYPE DÉCLARÉ PAR L'EXPOSANT ===`,
     typeLabel,
     '',
-    `=== TEXTE DE L'EXPOSANT ===`,
-    trimmed,
-  ].join('\n');
+  ];
+  if (action === 'generer') {
+    userMessageParts.push(
+      '=== ANALYSE (résultat de l\'action analyser, JSON) ===',
+      JSON.stringify(analyseInput, null, 2),
+      '',
+    );
+  }
+  userMessageParts.push(`=== TEXTE DE L'EXPOSANT ===`, trimmed);
+  const userMessage = userMessageParts.join('\n');
 
   const system = action === 'analyser' ? SYSTEM_ANALYSER : SYSTEM_GENERER;
   const maxTokens = action === 'analyser' ? 1200 : 3000;
@@ -270,7 +328,6 @@ Deno.serve(async (req) => {
         a.extrait.trim().length > 0,
     ).map((a: any) => ({
       famille: a.famille,
-      presente: a.presente !== false,
       extrait: a.extrait,
     }));
 
@@ -282,12 +339,23 @@ Deno.serve(async (req) => {
       ? p.type_suggere
       : (typeInput && NOVELTY_TYPES.has(typeInput) ? typeInput : null);
 
+    const obstacle_source =
+      typeof p.obstacle_source === 'string' && p.obstacle_source.trim().length > 0
+        ? p.obstacle_source
+        : null;
+    const beneficiaire_source =
+      typeof p.beneficiaire_source === 'string' && p.beneficiaire_source.trim().length > 0
+        ? p.beneficiaire_source
+        : null;
+
     const suffisant = ancres.length > 0;
     const question = suffisant ? null : (typeof p.question === 'string' ? p.question : null);
 
     return jsonResp({
       ancres,
       nb_ancres: ancres.length,
+      obstacle_source,
+      beneficiaire_source,
       formulations_creuses,
       type_suggere,
       suffisant,
@@ -300,23 +368,49 @@ Deno.serve(async (req) => {
   const p = parsed as any;
   const anglesIn = Array.isArray(p.angles) ? p.angles : [];
   const fallbackType = typeInput && NOVELTY_TYPES.has(typeInput) ? typeInput : 'Innovation';
-  const angles = anglesIn.map((a: any, i: number) => ({
-    id: typeof a?.id === 'string' && a.id ? a.id : `a${i + 1}`,
-    libelle: typeof a?.libelle === 'string' ? a.libelle : '',
-    title: typeof a?.title === 'string' ? a.title : '',
-    type: NOVELTY_TYPES.has(a?.type) ? a.type : fallbackType,
-    reason_1: typeof a?.reason_1 === 'string' ? a.reason_1 : '',
-    reason_2: typeof a?.reason_2 === 'string' ? a.reason_2 : null,
-    reason_3: typeof a?.reason_3 === 'string' ? a.reason_3 : null,
-    summary: typeof a?.summary === 'string' ? a.summary : '',
-    audience_tags: Array.isArray(a?.audience_tags)
-      ? a.audience_tags.filter((t: any) => typeof t === 'string' && t.trim().length > 0)
-      : [],
-  }));
+  const obstacleSourceAnalyse =
+    typeof (analyseInput as any)?.obstacle_source === 'string' &&
+    (analyseInput as any).obstacle_source.trim().length > 0
+      ? (analyseInput as any).obstacle_source
+      : null;
+  const alertes: string[] = [];
+  const angles = anglesIn.map((a: any, i: number) => {
+    const temps_utilises = Array.isArray(a?.temps_utilises)
+      ? a.temps_utilises.filter((t: any) => typeof t === 'string' && t.trim().length > 0)
+      : [];
+    const temps_ecartes = Array.isArray(a?.temps_ecartes)
+      ? a.temps_ecartes.filter((t: any) => t && typeof t === 'object')
+      : [];
+    const angle: Record<string, unknown> = {
+      id: typeof a?.id === 'string' && a.id ? a.id : `a${i + 1}`,
+      libelle: typeof a?.libelle === 'string' ? a.libelle : '',
+      ouverture: typeof a?.ouverture === 'string' ? a.ouverture : null,
+      temps_utilises,
+      temps_ecartes,
+      title: typeof a?.title === 'string' ? a.title : '',
+      type: NOVELTY_TYPES.has(a?.type) ? a.type : fallbackType,
+      reason_1: typeof a?.reason_1 === 'string' ? a.reason_1 : '',
+      reason_2: typeof a?.reason_2 === 'string' ? a.reason_2 : null,
+      reason_3: typeof a?.reason_3 === 'string' ? a.reason_3 : null,
+      summary: typeof a?.summary === 'string' ? a.summary : '',
+      audience_tags: Array.isArray(a?.audience_tags)
+        ? a.audience_tags.filter((t: any) => typeof t === 'string' && t.trim().length > 0)
+        : [],
+    };
+    if (temps_utilises.includes('obstacle') && !obstacleSourceAnalyse) {
+      angle.alerte = 'obstacle_non_source';
+      if (!alertes.includes('obstacle_non_source')) alertes.push('obstacle_non_source');
+    }
+    return angle;
+  });
 
   const faits_utilises = Array.isArray(p.faits_utilises)
     ? p.faits_utilises.filter((s: any) => typeof s === 'string' && s.trim().length > 0)
     : [];
 
-  return jsonResp({ angles, faits_utilises, model: res.model });
+  const temps_ecartes_global = Array.isArray(p.temps_ecartes)
+    ? p.temps_ecartes.filter((t: any) => t && typeof t === 'object')
+    : [];
+
+  return jsonResp({ angles, faits_utilises, temps_ecartes: temps_ecartes_global, alertes, model: res.model });
 });
