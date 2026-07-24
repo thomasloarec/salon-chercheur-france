@@ -116,6 +116,26 @@ const TOOLS = [
       required: ["salon"],
     },
   },
+  {
+    name: "rechercher_salons_catalogue",
+    description:
+      "Recherche dans le CATALOGUE complet des salons (479), y compris ceux dont Lotexpo ne connaît pas encore les exposants. " +
+      "À utiliser dans TROIS cas : (a) rechercher_salons ne renvoie rien ou rien de pertinent ; " +
+      "(b) la question comporte une VILLE ; (c) la question comporte une période ou une échéance. " +
+      "`sujet` est optionnel : si la question ne porte que sur un lieu (ex: 'salons à Lille'), laisse-le vide et renseigne `ville`. " +
+      "Renvoie DEUX tableaux distincts qu'il ne faut jamais fusionner : `salons_exploitables` (recommandables) " +
+      "et `salons_peu_couverts` (existants mais sans liste d'exposants sur Lotexpo). Voir la règle dédiée dans les instructions.",
+    input_schema: {
+      type: "object",
+      properties: {
+        sujet: { type: "string", description: "Optionnel. Thème ou besoin métier. Laisser vide pour une recherche purement géographique." },
+        ville: { type: "string", description: "Optionnel. Nom de ville (ex: 'Lille', 'Paris')." },
+        pour_visiter: { type: "boolean", description: "true = éditions à venir seulement (défaut). false = tout l'historique." },
+        avant_le: { type: "string", description: "Optionnel. Date ISO (AAAA-MM-JJ) : ne renvoie que les salons commençant avant cette date. Utile pour 'cet automne', 'avant décembre'." },
+      },
+      required: [],
+    },
+  },
 ];
 
 // --- System prompt : la discipline anti-échec-silencieux ---------------------
@@ -152,6 +172,19 @@ PERTINENCE DES SALONS :
 - Un salon avec un seul exposant matchant, surtout s'il est généraliste et sans rapport avec le thème (ex. un salon de collectivités pour une requête « logiciel de restauration »), n'est PAS « un salon pour ce domaine ». Ne le présente pas comme une recommandation.
 - Au mieux, mentionne-le en le qualifiant honnêtement : « l'entreprise X de votre domaine y expose, mais ce salon n'est pas centré sur votre sujet ».
 - Priorise toujours les salons denses / spécialisés (plusieurs exposants matchants). S'il y a peu de salons vraiment pertinents à venir, dis-le franchement plutôt que de compléter avec des salons tangentiels.
+
+QUEL OUTIL POUR TROUVER DES SALONS :
+- Par défaut : rechercher_salons. Il classe par densité d'exposants du domaine, c'est la meilleure réponse quand la donnée est là.
+- Appelle rechercher_salons_catalogue quand : rechercher_salons ne renvoie rien ou rien de pertinent ; OU la question comporte une VILLE ; OU la question comporte une période ou une échéance (« cet automne », « avant décembre »). Dans ce dernier cas, calcule la date à partir de la date du jour et passe-la dans avant_le.
+- Pour une question purement géographique (« salons à Lille »), appelle rechercher_salons_catalogue en laissant sujet vide et en renseignant ville.
+- Tu peux appeler les deux outils et combiner leurs résultats, en respectant la règle des deux tableaux ci-dessous.
+
+SALONS PEU COUVERTS — RÈGLE DE RECOMMANDATION :
+- rechercher_salons_catalogue renvoie DEUX tableaux qui n'ont pas le même statut. Ne les fusionne jamais.
+- salons_exploitables : Lotexpo connaît assez d'exposants pour que la page du salon soit utile au visiteur. Ce sont les SEULS que tu recommandes. Présente-les en premier, avec leur lien.
+- salons_peu_couverts : ces salons existent et correspondent au sujet, mais Lotexpo n'en référence pas encore assez d'exposants pour en dire quoi que ce soit d'utile. Tu peux les CITER brièvement, APRÈS les exploitables, pour ne pas laisser croire qu'ils n'existent pas, en précisant que leur liste d'exposants n'est pas encore disponible sur Lotexpo.
+- Ne recommande JAMAIS un salon peu couvert. Ne le place jamais avant un exploitable. N'explique JAMAIS pourquoi sa donnée manque : tu ne le sais pas.
+- Ne renvoie JAMAIS le visiteur vers un site externe, un site officiel de salon, un organisateur ou une source de presse, même quand Lotexpo couvre mal le sujet. Si seuls des salons peu couverts correspondent, dis-le et propose les salons exploitables les plus proches du besoin.
 
 EXPOSANTS ET CATÉGORIES D'UN SALON (« qui expose à X », « quelles catégories à X ») :
 - Appelle exposants_d_un_salon avec le nom ou le slug du salon. L'information PRINCIPALE que tu restitues = les CATÉGORIES et leurs volumes (categories_macro + 2-3 sous-secteurs marquants). C'est là qu'est la valeur.
@@ -217,6 +250,18 @@ async function runTool(admin: any, name: string, input: any) {
       return await callRpc(admin, "exposants_d_un_salon", {
         p_salon: String(input.salon ?? ""),
         p_sous_secteur: input.sous_secteur ? String(input.sous_secteur) : null,
+      });
+    }
+    if (name === "rechercher_salons_catalogue") {
+      const sujet = String(input.sujet ?? "").trim();
+      const ville = String(input.ville ?? "").trim();
+      return await callRpc(admin, "match_events_semantic", {
+        p_query: sujet.length > 0 ? sujet : null,
+        p_ville: ville.length > 0 ? ville : null,
+        p_upcoming_only: input.pour_visiter ?? true,
+        p_date_max: input.avant_le ? String(input.avant_le) : null,
+        p_threshold: 0.32,
+        p_k: 12,
       });
     }
     return { error: "outil inconnu" };
