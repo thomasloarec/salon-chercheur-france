@@ -116,6 +116,26 @@ const TOOLS = [
       required: ["salon"],
     },
   },
+  {
+    name: "rechercher_salons_catalogue",
+    description:
+      "Recherche dans le CATALOGUE complet des salons (479), y compris ceux dont Lotexpo ne connaît pas encore les exposants. " +
+      "À utiliser dans TROIS cas : (a) rechercher_salons ne renvoie rien ou rien de pertinent ; " +
+      "(b) la question comporte une VILLE ; (c) la question comporte une période ou une échéance. " +
+      "`sujet` est optionnel : si la question ne porte que sur un lieu (ex: 'salons à Lille'), laisse-le vide et renseigne `ville`. " +
+      "Renvoie DEUX tableaux distincts qu'il ne faut jamais fusionner : `salons_exploitables` (recommandables) " +
+      "et `salons_peu_couverts` (existants mais sans liste d'exposants sur Lotexpo). Voir la règle dédiée dans les instructions.",
+    input_schema: {
+      type: "object",
+      properties: {
+        sujet: { type: "string", description: "Optionnel. Thème ou besoin métier. Laisser vide pour une recherche purement géographique." },
+        ville: { type: "string", description: "Optionnel. Nom de ville (ex: 'Lille', 'Paris')." },
+        pour_visiter: { type: "boolean", description: "true = éditions à venir seulement (défaut). false = tout l'historique." },
+        avant_le: { type: "string", description: "Optionnel. Date ISO (AAAA-MM-JJ) : ne renvoie que les salons commençant avant cette date. Utile pour 'cet automne', 'avant décembre'." },
+      },
+      required: [],
+    },
+  },
 ];
 
 // --- System prompt : la discipline anti-échec-silencieux ---------------------
@@ -217,6 +237,18 @@ async function runTool(admin: any, name: string, input: any) {
       return await callRpc(admin, "exposants_d_un_salon", {
         p_salon: String(input.salon ?? ""),
         p_sous_secteur: input.sous_secteur ? String(input.sous_secteur) : null,
+      });
+    }
+    if (name === "rechercher_salons_catalogue") {
+      const sujet = String(input.sujet ?? "").trim();
+      const ville = String(input.ville ?? "").trim();
+      return await callRpc(admin, "match_events_semantic", {
+        p_query: sujet.length > 0 ? sujet : null,
+        p_ville: ville.length > 0 ? ville : null,
+        p_upcoming_only: input.pour_visiter ?? true,
+        p_date_max: input.avant_le ? String(input.avant_le) : null,
+        p_threshold: 0.32,
+        p_k: 12,
       });
     }
     return { error: "outil inconnu" };
