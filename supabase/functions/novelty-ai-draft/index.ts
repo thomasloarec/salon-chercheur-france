@@ -207,6 +207,8 @@ Deno.serve(async (req) => {
     }
   }
 
+  const supabase = createClient(supabaseUrl, serviceKey);
+
   // --- Validation d'entrée ---
   let body: any;
   try {
@@ -276,7 +278,6 @@ Deno.serve(async (req) => {
   }
 
   // --- Contexte via RPC ---
-  const supabase = createClient(supabaseUrl, serviceKey);
   const { data: ctx, error: ctxError } = await supabase.rpc('get_novelty_ai_context', {
     p_exhibitor_id: exhibitor_id,
     p_event_id: event_id,
