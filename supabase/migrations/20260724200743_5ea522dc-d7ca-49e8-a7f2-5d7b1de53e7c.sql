@@ -1,0 +1,1 @@
+UPDATE public.ai_editorial_prompts SET actif = false WHERE action = 'analyser' AND version = 1;
