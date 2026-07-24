@@ -4462,6 +4462,127 @@ export type Database = {
           },
         ]
       }
+      outreach_unsubscribe_events: {
+        Row: {
+          campaign_id: string | null
+          company_name: string | null
+          created_at: string
+          email_normalized: string
+          event_id: string | null
+          event_name: string | null
+          id: string
+          sequence_type: string
+          user_agent: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          company_name?: string | null
+          created_at?: string
+          email_normalized: string
+          event_id?: string | null
+          event_name?: string | null
+          id?: string
+          sequence_type?: string
+          user_agent?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          company_name?: string | null
+          created_at?: string
+          email_normalized?: string
+          event_id?: string | null
+          event_name?: string | null
+          id?: string
+          sequence_type?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_unsubscribe_events_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_unsubscribe_events_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_a_classifier"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_unsubscribe_events_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_a_enrichir"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_unsubscribe_events_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_a_enrichir_test"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_unsubscribe_events_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_eligibles_nouveaute"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_unsubscribe_events_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_eligibles_revendication"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_unsubscribe_events_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_exposants_eligibles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_unsubscribe_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "outreach_unsubscribe_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "outreach_unsubscribe_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_unsubscribe_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_unsubscribe_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participation: {
         Row: {
           created_at: string | null
@@ -6999,6 +7120,23 @@ export type Database = {
         }
         Relationships: []
       }
+      v_admin_desinscriptions: {
+        Row: {
+          auto_desinscrit: boolean | null
+          blackliste_le: string | null
+          company_name: string | null
+          derniere_desinscription: string | null
+          email_normalized: string | null
+          event_name: string | null
+          nb_clics: number | null
+          note: string | null
+          origine_libelle: string | null
+          reason: string | null
+          sequence_type: string | null
+          source: string | null
+        }
+        Relationships: []
+      }
       v_eligibles_nouveaute: {
         Row: {
           company_name: string | null
@@ -8386,6 +8524,14 @@ export type Database = {
       }
       novelty_quota_status: {
         Args: { p_event_id: string; p_exhibitor_id: string }
+        Returns: Json
+      }
+      outreach_unsubscribe: {
+        Args: {
+          p_campaign_id: string
+          p_sequence?: string
+          p_user_agent?: string
+        }
         Returns: Json
       }
       parse_affluence_int: { Args: { p: string }; Returns: number }
