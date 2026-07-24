@@ -7919,6 +7919,10 @@ export type Database = {
       }
       get_my_radar_team: { Args: never; Returns: Json }
       get_my_radar_view: { Args: { p_import_id?: string }; Returns: Json }
+      get_novelty_ai_context: {
+        Args: { p_event_id: string; p_exhibitor_id: string }
+        Returns: Json
+      }
       get_novelty_likes_count: {
         Args: { novelty_uuid: string }
         Returns: number
