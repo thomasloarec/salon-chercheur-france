@@ -217,6 +217,11 @@ Deno.serve(async (req) => {
   const texte = typeof body?.texte === 'string' ? body.texte : '';
   const typeInput = body?.type;
   const analyseInput = body?.analyse;
+  const promptVersionOverrideRaw = body?.prompt_version_override;
+  const promptVersionOverride =
+    typeof promptVersionOverrideRaw === 'number' && Number.isInteger(promptVersionOverrideRaw)
+      ? promptVersionOverrideRaw
+      : null;
 
   if (action !== 'analyser' && action !== 'generer') {
     return jsonResp({ error: 'action_invalide', details: 'analyser|generer' }, 400);
@@ -327,16 +332,37 @@ Deno.serve(async (req) => {
   let system = fallbackSystem;
   let promptVersion: number | null = null;
   try {
-    const { data: promptRow, error: promptErr } = await supabase.rpc('get_active_editorial_prompt', {
-      p_action: action,
-    });
-    if (!promptErr && promptRow && typeof promptRow === 'object'
-        && typeof (promptRow as any).prompt === 'string'
-        && (promptRow as any).prompt.trim().length > 0) {
-      system = (promptRow as any).prompt;
-      promptVersion = typeof (promptRow as any).version === 'number' ? (promptRow as any).version : null;
-    } else if (promptErr) {
-      console.error('[novelty-ai-draft] prompt version load failed, using fallback:', promptErr.message);
+    let overrideApplied = false;
+    if (promptVersionOverride !== null) {
+      const { data: overrideRow, error: overrideErr } = await supabase
+        .from('ai_editorial_prompts')
+        .select('version, prompt')
+        .eq('action', action)
+        .eq('version', promptVersionOverride)
+        .maybeSingle();
+      if (!overrideErr && overrideRow && typeof (overrideRow as any).prompt === 'string'
+          && (overrideRow as any).prompt.trim().length > 0) {
+        system = (overrideRow as any).prompt;
+        promptVersion = typeof (overrideRow as any).version === 'number'
+          ? (overrideRow as any).version
+          : promptVersionOverride;
+        overrideApplied = true;
+      } else if (overrideErr) {
+        console.error('[novelty-ai-draft] prompt override load failed:', overrideErr.message);
+      }
+    }
+    if (!overrideApplied) {
+      const { data: promptRow, error: promptErr } = await supabase.rpc('get_active_editorial_prompt', {
+        p_action: action,
+      });
+      if (!promptErr && promptRow && typeof promptRow === 'object'
+          && typeof (promptRow as any).prompt === 'string'
+          && (promptRow as any).prompt.trim().length > 0) {
+        system = (promptRow as any).prompt;
+        promptVersion = typeof (promptRow as any).version === 'number' ? (promptRow as any).version : null;
+      } else if (promptErr) {
+        console.error('[novelty-ai-draft] prompt version load failed, using fallback:', promptErr.message);
+      }
     }
   } catch (e) {
     console.error('[novelty-ai-draft] prompt version load threw, using fallback:', e instanceof Error ? e.message : String(e));
