@@ -271,6 +271,24 @@ Deno.serve(async (req) => {
     }
   }
 
+  // --- Frein anti-rafale (jamais pour le service_role) ---
+  if (callerUserId) {
+    const { data: rate, error: rateErr } = await supabase.rpc('novelty_ai_rate_check', {
+      p_user_id: callerUserId,
+      p_action: action,
+    });
+    if (rateErr) {
+      console.error('[novelty-ai-draft] rate check failed:', rateErr.message);
+      // En cas de panne du frein, on n'empêche pas l'utilisateur légitime de travailler.
+    } else if (rate && (rate as any).autorise === false) {
+      return jsonResp({
+        error: 'frein_anti_rafale',
+        minutes_avant_reouverture: (rate as any).minutes_avant_reouverture ?? 60,
+        message: `Vous avez généré beaucoup de propositions récemment. Vos crédits de génération reviennent dans ${(rate as any).minutes_avant_reouverture ?? 60} minute(s).`,
+      }, 429);
+    }
+  }
+
   // --- Contexte via RPC ---
   const { data: ctx, error: ctxError } = await supabase.rpc('get_novelty_ai_context', {
     p_exhibitor_id: exhibitor_id,
