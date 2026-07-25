@@ -131,7 +131,7 @@ export default function AtelierNouveaute() {
     if (!files) return;
     const next: PickedImage[] = [];
     for (const file of Array.from(files)) {
-      if (images.length + next.length >= MAX_IMAGES) {
+      if (images.length + next.length > MAX_IMAGES) {
         toast({ title: `Maximum ${MAX_IMAGES} images`, variant: 'destructive' });
         break;
       }
