@@ -386,8 +386,8 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             {/* À propos de cette fiche — indépendance de la plateforme */}
             <aside className="rounded-xl border border-border bg-muted/40 px-4 py-3">
               <p className="text-xs leading-relaxed text-muted-foreground">
-                <span className="font-medium text-foreground/80">À propos de cette fiche — </span>
-                Lotexpo est une plateforme indépendante. La présence de cet événement ne signifie pas que Lotexpo est affilié à l'organisateur, partenaire officiel ou mandaté par lui, sauf mention explicite. Les informations officielles restent celles publiées par l'organisateur sur son site.{' '}
+                <span className="font-medium text-foreground/80">À propos de cette fiche. </span>
+                Lotexpo est une plateforme indépendante. Cette fiche est établie à partir d'informations publiques. Sa présence n'implique ni affiliation, ni partenariat officiel, ni mandat de l'organisateur, sauf mention contraire sur cette page. Les marques citées appartiennent à leurs titulaires et sont utilisées à seule fin d'identifier l'événement. Les informations officielles restent celles publiées par l'organisateur. Demande de correction ou de retrait : contact@lotexpo.com.{' '}
                 <Link to="/organisateurs" className="text-primary hover:underline">
                   Organisateurs de salons
                 </Link>
