@@ -194,6 +194,14 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                   <Eye className="h-4 w-4 mr-2" />
                   Éditer
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(`/publier-nouveaute/atelier?event=${event.id}`)}
+                  className="text-muted-foreground hover:bg-muted"
+                >
+                  Essayer le nouvel atelier (beta)
+                </Button>
               </div>
             </div>
           </div>
