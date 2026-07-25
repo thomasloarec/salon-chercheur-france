@@ -21,9 +21,8 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import NoveltyPreviewCard, {
-  NOVELTY_TYPE_LABELS,
-} from '@/components/novelty/atelier/NoveltyPreviewCard';
+import NoveltyDetailView from '@/components/novelty/NoveltyDetailView';
+import { NOVELTY_TYPE_LABELS } from '@/hooks/useNoveltyPublic';
 
 const TITLE_MIN = 3;
 const TITLE_MAX = 120;
@@ -79,7 +78,7 @@ export default function AtelierNouveaute() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('id, nom_event, slug, ville')
+        .select('id, nom_event, slug, ville, date_debut')
         .eq('id', eventId)
         .maybeSingle();
       if (error) throw error;
@@ -111,20 +110,23 @@ export default function AtelierNouveaute() {
     !!exhibitorId &&
     !submitting;
 
-  const previewData = useMemo(
+  const previewNovelty = useMemo(
     () => ({
       title: title.trim(),
       type,
-      reason_1: reason.trim() || undefined,
-      reason_2: reason2.trim() || undefined,
-      reason_3: reason3.trim() || undefined,
-      audience_tags: audienceTags,
+      reason_1: reason.trim() || null,
+      reason_2: reason2.trim() || null,
+      reason_3: reason3.trim() || null,
+      summary: summary.trim() || null,
       media_urls: images.map((i) => i.previewUrl),
       doc_url: brochure ? 'local' : null,
-      exhibitorName: exhibitor?.name || 'Votre entreprise',
-      exhibitorLogoUrl: exhibitor?.logo_url || null,
+      exhibitor_display_name: exhibitor?.name || 'Votre entreprise',
+      exhibitor_logo_url: exhibitor?.logo_url || null,
+      event_name: (event as any)?.nom_event ?? null,
+      event_ville: (event as any)?.ville ?? null,
+      event_date_debut: (event as any)?.date_debut ?? null,
     }),
-    [title, type, reason, reason2, reason3, audienceTags, images, brochure, exhibitor],
+    [title, type, reason, reason2, reason3, summary, images, brochure, exhibitor, event],
   );
 
   const handleImages = (files: FileList | null) => {
@@ -330,9 +332,9 @@ export default function AtelierNouveaute() {
             <h1 className="heading-display text-xl md:text-2xl">Publier une nouveauté</h1>
           </div>
 
-          <div className="grid gap-12 lg:grid-cols-[minmax(0,560px)_minmax(0,1fr)]">
+          <div className="space-y-14">
             {/* Colonne de saisie */}
-            <div className="space-y-10">
+            <div className="max-w-[560px] space-y-10">
               <div className="space-y-2">
                 <Label htmlFor="title" className="text-sm font-medium">
                   Titre de la nouveauté
@@ -572,12 +574,14 @@ export default function AtelierNouveaute() {
             </div>
 
             {/* Colonne aperçu */}
-            <div className="lg:sticky lg:top-24 lg:self-start space-y-3">
+            <div className="space-y-3">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 Aperçu en direct
               </p>
-              <div className="rounded-2xl bg-muted/30 border p-4 md:p-6">
-                <NoveltyPreviewCard data={previewData} />
+              <div className="rounded-2xl border bg-muted/20 p-4 md:p-8">
+                <div className="rounded-xl bg-background p-4 md:p-8">
+                  <NoveltyDetailView novelty={previewNovelty} preview />
+                </div>
               </div>
               <p className="text-xs text-muted-foreground">
                 Tout ce que vous saisissez apparaît ici, tel qu'un visiteur le verra.
