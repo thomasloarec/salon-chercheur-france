@@ -3823,6 +3823,27 @@ export type Database = {
           },
         ]
       }
+      novelty_ai_generation_log: {
+        Row: {
+          action: string
+          created_at: string
+          id: number
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: never
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: never
+          user_id?: string
+        }
+        Relationships: []
+      }
       novelty_comments: {
         Row: {
           content: string
@@ -8554,6 +8575,10 @@ export type Database = {
       normalize_event_url: { Args: { p_url: string }; Returns: string }
       nouveautes_d_un_salon: {
         Args: { p_salon: string; p_type?: string }
+        Returns: Json
+      }
+      novelty_ai_rate_check: {
+        Args: { p_action: string; p_user_id: string }
         Returns: Json
       }
       novelty_quota_status: {
