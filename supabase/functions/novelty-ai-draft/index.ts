@@ -183,12 +183,13 @@ Deno.serve(async (req) => {
     return jsonResp({ error: 'Missing required secrets' }, 500);
   }
 
-  // --- Auth : service_role OU utilisateur admin (motif generate-event-accroches) ---
+  // --- Auth : service_role OU tout utilisateur authentifié ---
   const authHeader = req.headers.get('Authorization') || '';
   if (!authHeader.startsWith('Bearer ')) {
     return jsonResp({ error: 'Unauthorized' }, 401);
   }
   const token = authHeader.slice('Bearer '.length);
+  let callerUserId: string | null = null;
   if (token !== serviceKey) {
     const authClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
@@ -197,14 +198,7 @@ Deno.serve(async (req) => {
     if (claimsError || !claimsData?.claims?.sub) {
       return jsonResp({ error: 'Unauthorized' }, 401);
     }
-    const admin = createClient(supabaseUrl, serviceKey);
-    const { data: isAdmin, error: roleError } = await admin.rpc('has_role', {
-      _user_id: claimsData.claims.sub,
-      _role: 'admin',
-    });
-    if (roleError || !isAdmin) {
-      return jsonResp({ error: 'Forbidden: admin only' }, 403);
-    }
+    callerUserId = claimsData.claims.sub as string;
   }
 
   const supabase = createClient(supabaseUrl, serviceKey);
