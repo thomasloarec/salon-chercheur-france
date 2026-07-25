@@ -479,6 +479,10 @@ Deno.serve(async (req) => {
       audience_tags: Array.isArray(a?.audience_tags)
         ? a.audience_tags.filter((t: any) => typeof t === 'string' && t.trim().length > 0)
         : [],
+      note_expert:
+        typeof a?.note_expert === 'string' && a.note_expert.trim().length > 0
+          ? a.note_expert
+          : null,
     };
     if (temps_utilises.includes('obstacle') && !obstacleSourceAnalyse) {
       angle.alerte = 'obstacle_non_source';
