@@ -229,6 +229,7 @@ export function useExhibitorSelection({
         .order('name_final', { ascending: true, nullsFirst: false });
 
       const s = debouncedSearch?.trim();
+      console.log('[DIAG catalogue] terme de recherche s =', JSON.stringify(s), '| longueur =', s?.length);
       if (s) q = q.ilike('name_final', `%${s}%`);
 
       const { data: participations, error: partErr } = await q;
@@ -286,6 +287,7 @@ export function useExhibitorSelection({
       // ── Catalogue Lotexpo : entreprises déjà connues, hors event en cours ──
       if (s) {
         const eventExhibitorIds = new Set(uniqueExhibitors.map((e) => e.id));
+        console.log('[DIAG catalogue] lancement requête catalogue pour', s);
         const { data: globals, error: globErr } = await supabase
           .from('exhibitors')
           .select('id, name, website, logo_url, approved, stand_info')
@@ -294,6 +296,8 @@ export function useExhibitorSelection({
           .order('approved', { ascending: false })
           .order('name', { ascending: true })
           .limit(20);
+        console.log('[DIAG catalogue] réponse brute globals =', globals?.length, 'résultats', globals?.map((g) => g.name));
+        console.log('[DIAG catalogue] erreur éventuelle =', globErr);
         if (!globErr && globals) {
           const filteredGlobals: DbExhibitor[] = globals
             .filter((g) => !eventExhibitorIds.has(g.id))
@@ -306,6 +310,8 @@ export function useExhibitorSelection({
               stand_info: g.stand_info || undefined,
               needs_participation: true,
             }));
+          console.log('[DIAG catalogue] après filtrage (retrait des exposants déjà sur le salon) =', filteredGlobals.length, filteredGlobals.map((g) => g.name));
+          console.log('[DIAG catalogue] ids exposants du salon exclus =', Array.from(eventExhibitorIds));
           setGlobalExhibitors(filteredGlobals);
         } else {
           setGlobalExhibitors([]);
