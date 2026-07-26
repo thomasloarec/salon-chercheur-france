@@ -245,6 +245,8 @@ export interface NoveltyDetailViewProps {
   onSummaryChange?: (v: string) => void;
   onAddImages?: (files: FileList | null) => void;
   onRemoveImage?: (index: number) => void;
+  /** Réorganisation des images (glisser-déposer) en mode editable. */
+  onReorderImages?: (from: number, to: number) => void;
   onSetBrochure?: (file: File | null) => void;
   /** Nom du PDF choisi, en mode editable. */
   brochureName?: string | null;
@@ -275,6 +277,7 @@ export default function NoveltyDetailView({
   onSummaryChange,
   onAddImages,
   onRemoveImage,
+  onReorderImages,
   onSetBrochure,
   brochureName = null,
   className,
