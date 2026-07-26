@@ -527,11 +527,12 @@ export default function AtelierNouveaute() {
 
   const panelRest = (
     <div className="space-y-8">
-      {/* Assistant IA (nécessite un exposant déjà enregistré) */}
-      {!!exhibitorId && (
+      {/* Assistant IA (exposant existant ou à créer au premier usage) */}
+      {(!!exhibitorId || hasExhibitorToCreate) && (
         <NoveltyAiAssistant
           eventId={eventId}
           exhibitorId={exhibitorId}
+          ensureExhibitorId={ensureExhibitor}
           currentType={type || undefined}
           canvasHasContent={canvasHasContent}
           onApplyAngle={applyAngle}
