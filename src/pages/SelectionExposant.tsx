@@ -169,7 +169,8 @@ function SelectionInner({
     resolveLoading,
     confirmedLegacyMatch,
     handleUseExistingMatch,
-    blockedByAdminMatch,
+    blockedByAdmin,
+    selectedRightsLoading,
     quota,
     userData,
     setUserData,
@@ -396,17 +397,20 @@ function SelectionInner({
               </Alert>
             )}
 
-            {blockedByAdminMatch && (
-              <Alert variant="destructive">
-                <Lock className="h-4 w-4" />
-                <AlertDescription className="text-sm">
-                  Cette entreprise est déjà administrée sur Lotexpo. Pour publier en son nom, demandez à être
-                  ajouté à son équipe.
-                </AlertDescription>
-              </Alert>
-            )}
           </div>
         </section>
+      )}
+
+      {/* ── Entreprise déjà administrée ─────────────────────── */}
+      {blockedByAdmin && (
+        <Alert variant="destructive">
+          <Lock className="h-4 w-4" />
+          <AlertDescription className="text-sm">
+            Cette entreprise est déjà administrée sur Lotexpo par une autre personne. Pour publier une
+            nouveauté en son nom, demandez à son responsable de vous ajouter à son équipe. Vous ne pouvez pas
+            continuer avec cette entreprise.
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* ── Quota ───────────────────────────────────────────── */}
@@ -488,13 +492,17 @@ function SelectionInner({
       {/* ── Continuer ───────────────────────────────────────── */}
       <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t py-4 flex items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">
-          {isValid
+          {blockedByAdmin
+            ? 'Vous ne pouvez pas publier pour cette entreprise.'
+            : selectedRightsLoading
+            ? 'Vérification des droits…'
+            : isValid
             ? selectedExhibitor
               ? `${selectedExhibitor.name} — prêt à continuer`
               : 'Entreprise renseignée — prêt à continuer'
             : 'Choisissez ou créez votre entreprise pour continuer.'}
         </p>
-        <Button size="lg" disabled={!isValid} onClick={handleContinue} className="rounded-full">
+        <Button size="lg" disabled={!isValid || blockedByAdmin} onClick={handleContinue} className="rounded-full">
           Continuer <ArrowRight className="h-4 w-4 ml-2" />
         </Button>
       </div>
