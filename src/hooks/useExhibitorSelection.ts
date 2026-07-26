@@ -139,6 +139,7 @@ export function useExhibitorSelection({
   );
 
   const blockedByAdmin = blockedByAdminMatch || blockedBySelectedExhibitor;
+  console.log('[DIAG rights] selectedExhibitorRights =', JSON.stringify(selectedExhibitorRights), '| blockedByAdmin =', blockedByAdmin, '| selectedExhibitor =', selectedExhibitor?.name);
 
   // Vérification des droits dès qu'un exposant existant est sélectionné
   useEffect(() => {
@@ -164,6 +165,8 @@ export function useExhibitorSelection({
           return;
         }
         const m = data as ResolveCandidateMatch;
+        console.log('[DIAG rights] exposant sélectionné =', selectedExhibitor?.name, '| website envoyé =', selectedExhibitor?.website);
+        console.log('[DIAG rights] resolve_candidate a renvoyé =', JSON.stringify(data));
         setSelectedExhibitorRights({
           has_admin: !!m.has_admin,
           current_user_can_create_novelty: !!m.current_user_can_create_novelty,
