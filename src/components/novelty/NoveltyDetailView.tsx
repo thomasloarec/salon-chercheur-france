@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Calendar,
@@ -9,6 +9,10 @@ import {
   Download,
   CalendarCheck,
   ChevronRight,
+  ImagePlus,
+  X,
+  Plus,
+  ChevronDown,
 } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -23,12 +27,90 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { NOVELTY_TYPE_LABELS } from '@/hooks/useNoveltyPublic';
 import { cn } from '@/lib/utils';
 
 function isImage(url: string) {
   return /^blob:|^data:image\//i.test(url) || /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(url);
+}
+
+/* ------------------------------------------------------------------ *
+ * Édition en place — primitives internes (mode `editable` uniquement) *
+ * ------------------------------------------------------------------ */
+
+const EDITABLE_ZONE =
+  'cursor-text rounded-md transition-colors hover:bg-muted/50 focus-within:bg-muted/40';
+
+interface InPlaceTextProps {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  min?: number;
+  max: number;
+  className?: string;
+  /** Message de limite affiché uniquement pendant l'édition. */
+  hint?: string;
+  ariaLabel: string;
+}
+
+/** Zone de texte auto-extensible, sans allure de formulaire. */
+function InPlaceText({
+  value,
+  onChange,
+  placeholder,
+  min,
+  max,
+  className,
+  hint,
+  ariaLabel,
+}: InPlaceTextProps) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const [focused, setFocused] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+
+  const tooShort = min !== undefined && value.trim().length > 0 && value.trim().length < min;
+
+  return (
+    <div className={cn(EDITABLE_ZONE, '-mx-2 px-2 py-1')}>
+      <textarea
+        ref={ref}
+        rows={1}
+        value={value}
+        maxLength={max}
+        aria-label={ariaLabel}
+        placeholder={placeholder}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          'w-full resize-none overflow-hidden border-0 bg-transparent p-0 outline-none ring-0 placeholder:text-muted-foreground/40 focus:outline-none focus:ring-0',
+          className,
+        )}
+      />
+      {focused && (
+        <p className="pt-1 text-[11px] text-muted-foreground/70">
+          {hint ? `${hint} · ` : ''}
+          <span className={cn('tabular-nums', tooShort && 'text-destructive')}>
+            {value.trim().length}
+          </span>
+          /{max}
+        </p>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -72,6 +154,23 @@ export interface NoveltyDetailViewProps {
    * inertes, et des textes d'attente remplacent les champs vides.
    */
   preview?: boolean;
+  /**
+   * Mode édition en place (atelier) : les zones éditables deviennent des
+   * éditeurs, les zones de contexte restent identiques aux autres modes.
+   * Aucun chargement de données ici non plus.
+   */
+  editable?: boolean;
+  onTitleChange?: (v: string) => void;
+  onTypeChange?: (v: string) => void;
+  onReason1Change?: (v: string) => void;
+  onReason2Change?: (v: string | null) => void;
+  onReason3Change?: (v: string | null) => void;
+  onSummaryChange?: (v: string) => void;
+  onAddImages?: (files: FileList | null) => void;
+  onRemoveImage?: (index: number) => void;
+  onSetBrochure?: (file: File | null) => void;
+  /** Nom du PDF choisi, en mode editable. */
+  brochureName?: string | null;
   className?: string;
 }
 
@@ -90,6 +189,17 @@ export default function NoveltyDetailView({
   onDownloadBrochure,
   headerActions,
   preview = false,
+  editable = false,
+  onTitleChange,
+  onTypeChange,
+  onReason1Change,
+  onReason2Change,
+  onReason3Change,
+  onSummaryChange,
+  onAddImages,
+  onRemoveImage,
+  onSetBrochure,
+  brochureName = null,
   className,
 }: NoveltyDetailViewProps) {
   const typeLabel = NOVELTY_TYPE_LABELS[novelty.type] || novelty.type;
@@ -101,6 +211,14 @@ export default function NoveltyDetailView({
   const reasons = [novelty.reason_1, novelty.reason_2, novelty.reason_3].filter(
     Boolean,
   ) as string[];
+
+  const inert = preview || editable;
+  const MAX_IMAGES = 3;
+  const canAddReason =
+    editable &&
+    (novelty.reason_2 === null || novelty.reason_2 === undefined
+      ? true
+      : novelty.reason_3 === null || novelty.reason_3 === undefined);
 
   const daysUntil = novelty.event_date_debut
     ? differenceInDays(new Date(novelty.event_date_debut), new Date())
@@ -124,8 +242,61 @@ export default function NoveltyDetailView({
   return (
     <div className={cn('grid grid-cols-1 gap-8 lg:grid-cols-2', className)}>
       {/* LEFT — image carousel, original aspect, capped height on mobile */}
-      <div className={cn(!preview && 'lg:sticky lg:top-24 lg:self-start')}>
-        {images.length > 0 ? (
+      <div className={cn(!inert && 'lg:sticky lg:top-24 lg:self-start')}>
+        {editable ? (
+          <div className="space-y-3">
+            {images.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3">
+                {images.map((src, i) => (
+                  <div
+                    key={src}
+                    className="group relative flex max-h-[52vh] items-center justify-center overflow-hidden rounded-xl border bg-muted"
+                  >
+                    <img
+                      src={src}
+                      alt={`${imgAlt} (${i + 1})`}
+                      className="max-h-[52vh] w-auto max-w-full object-contain"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => onRemoveImage?.(i)}
+                      aria-label="Retirer l'image"
+                      className="absolute right-2 top-2 rounded-full border bg-background/90 p-1.5 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            {images.length < MAX_IMAGES && (
+              <label
+                className={cn(
+                  'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed text-muted-foreground transition-colors hover:border-foreground/30 hover:bg-muted/40 hover:text-foreground',
+                  images.length === 0 ? 'aspect-[4/3]' : 'h-24',
+                )}
+              >
+                <ImagePlus className="h-6 w-6" />
+                <span className="text-sm">
+                  {images.length === 0 ? 'Ajouter une image' : 'Ajouter une autre image'}
+                </span>
+                <span className="text-[11px] text-muted-foreground/70">
+                  JPG, PNG ou WEBP · 5 Mo max · {images.length}/{MAX_IMAGES}
+                </span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    onAddImages?.(e.target.files);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+            )}
+          </div>
+        ) : images.length > 0 ? (
           <Carousel className="w-full" opts={{ loop: images.length > 1 }}>
             <CarouselContent>
               {images.map((src, i) => (
@@ -163,7 +334,28 @@ export default function NoveltyDetailView({
       {/* RIGHT — vertical details column */}
       <div className="flex flex-col gap-5">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary" className="font-medium">{typeLabel}</Badge>
+          {editable ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 rounded-md bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary/70"
+                >
+                  {typeLabel}
+                  <ChevronDown className="h-3 w-3 opacity-60" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {Object.entries(NOVELTY_TYPE_LABELS).map(([value, label]) => (
+                  <DropdownMenuItem key={value} onSelect={() => onTypeChange?.(value)}>
+                    {label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Badge variant="secondary" className="font-medium">{typeLabel}</Badge>
+          )}
           {countdownLabel && (
             <span
               className={
@@ -180,14 +372,27 @@ export default function NoveltyDetailView({
           {headerActions && <div className="ml-auto">{headerActions}</div>}
         </div>
 
-        <h1
-          className={cn(
-            'heading-display text-2xl font-bold leading-tight tracking-tight md:text-3xl',
-            preview && !novelty.title && 'font-normal italic text-muted-foreground/50',
-          )}
-        >
-          {novelty.title || (preview ? 'Votre titre apparaîtra ici' : '')}
-        </h1>
+        {editable ? (
+          <InPlaceText
+            value={novelty.title || ''}
+            onChange={(v) => onTitleChange?.(v)}
+            placeholder="Votre titre"
+            ariaLabel="Titre de la nouveauté"
+            min={3}
+            max={120}
+            hint="3 à 120 caractères"
+            className="heading-display text-2xl font-bold leading-tight tracking-tight md:text-3xl"
+          />
+        ) : (
+          <h1
+            className={cn(
+              'heading-display text-2xl font-bold leading-tight tracking-tight md:text-3xl',
+              preview && !novelty.title && 'font-normal italic text-muted-foreground/50',
+            )}
+          >
+            {novelty.title || (preview ? 'Votre titre apparaîtra ici' : '')}
+          </h1>
+        )}
 
         {/* Exhibitor */}
         <div className="flex items-center gap-3">
@@ -198,7 +403,7 @@ export default function NoveltyDetailView({
           ) : (
             <Building2 className="h-8 w-8 shrink-0 text-muted-foreground" />
           )}
-          {novelty.exhibitor_public_slug && !preview ? (
+          {novelty.exhibitor_public_slug && !inert ? (
             <Link
               to={`/exposants/${novelty.exhibitor_public_slug}`}
               className="font-semibold text-primary hover:underline"
@@ -214,7 +419,87 @@ export default function NoveltyDetailView({
         </div>
 
         {/* Reasons to visit */}
-        {reasons.length > 0 ? (
+        {editable ? (
+          <div className="space-y-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Pourquoi c'est intéressant
+            </h2>
+            <div className="flex gap-2">
+              <ChevronRight className="mt-1.5 h-4 w-4 shrink-0 text-foreground" />
+              <div className="min-w-0 flex-1">
+                <InPlaceText
+                  value={novelty.reason_1 || ''}
+                  onChange={(v) => onReason1Change?.(v)}
+                  placeholder="Pourquoi faut-il venir la voir ?"
+                  ariaLabel="Raison principale"
+                  min={10}
+                  max={1000}
+                  hint="10 à 1000 caractères"
+                  className="text-sm leading-relaxed"
+                />
+              </div>
+            </div>
+            {novelty.reason_2 !== null && novelty.reason_2 !== undefined && (
+              <div className="flex gap-2">
+                <ChevronRight className="mt-1.5 h-4 w-4 shrink-0 text-foreground" />
+                <div className="min-w-0 flex-1">
+                  <InPlaceText
+                    value={novelty.reason_2 || ''}
+                    onChange={(v) => onReason2Change?.(v)}
+                    placeholder="Une deuxième raison"
+                    ariaLabel="Deuxième raison"
+                    max={1000}
+                    className="text-sm leading-relaxed"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onReason2Change?.(null)}
+                  aria-label="Retirer cette raison"
+                  className="mt-1 h-fit rounded p-1 text-muted-foreground/50 hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+            {novelty.reason_3 !== null && novelty.reason_3 !== undefined && (
+              <div className="flex gap-2">
+                <ChevronRight className="mt-1.5 h-4 w-4 shrink-0 text-foreground" />
+                <div className="min-w-0 flex-1">
+                  <InPlaceText
+                    value={novelty.reason_3 || ''}
+                    onChange={(v) => onReason3Change?.(v)}
+                    placeholder="Une troisième raison"
+                    ariaLabel="Troisième raison"
+                    max={1000}
+                    className="text-sm leading-relaxed"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onReason3Change?.(null)}
+                  aria-label="Retirer cette raison"
+                  className="mt-1 h-fit rounded p-1 text-muted-foreground/50 hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+            {canAddReason && (
+              <button
+                type="button"
+                onClick={() =>
+                  novelty.reason_2 === null || novelty.reason_2 === undefined
+                    ? onReason2Change?.('')
+                    : onReason3Change?.('')
+                }
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <Plus className="h-3 w-3" /> ajouter une raison
+              </button>
+            )}
+          </div>
+        ) : reasons.length > 0 ? (
           <div className="space-y-2">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Pourquoi c'est intéressant
@@ -240,12 +525,21 @@ export default function NoveltyDetailView({
         ) : null}
 
         {/* Summary / details */}
-        {(novelty.summary || novelty.details) && (
+        {editable ? (
+          <InPlaceText
+            value={novelty.summary || ''}
+            onChange={(v) => onSummaryChange?.(v)}
+            placeholder="Résumé court (facultatif)"
+            ariaLabel="Résumé"
+            max={500}
+            className="text-sm font-medium leading-relaxed text-foreground/90"
+          />
+        ) : (novelty.summary || novelty.details) ? (
           <div className="space-y-3 text-sm leading-relaxed text-foreground/90">
             {novelty.summary && <p className="whitespace-pre-line font-medium">{novelty.summary}</p>}
             {novelty.details && <p className="whitespace-pre-line text-muted-foreground">{novelty.details}</p>}
           </div>
-        )}
+        ) : null}
 
         {/* Lead capture */}
         {!isPastEvent && (
@@ -253,27 +547,56 @@ export default function NoveltyDetailView({
             <p className="text-sm font-medium">Intéressé·e par cette nouveauté ?</p>
             <div className="flex flex-wrap gap-2">
               <Button
-                onClick={preview ? undefined : onRequestMeeting}
-                disabled={preview}
+                onClick={inert ? undefined : onRequestMeeting}
+                disabled={inert}
                 className="gap-1.5"
               >
                 <CalendarCheck className="h-4 w-4" />
                 Demander un rendez-vous
               </Button>
-              {hasBrochure && (
+              {editable ? (
+                brochureName ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-sm text-primary">
+                    <FileText className="h-4 w-4" />
+                    <span className="max-w-[180px] truncate">{brochureName}</span>
+                    <button
+                      type="button"
+                      onClick={() => onSetBrochure?.(null)}
+                      aria-label="Retirer la brochure"
+                      className="opacity-70 hover:opacity-100"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
+                ) : (
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground">
+                    <Plus className="h-3.5 w-3.5" />
+                    ajouter une brochure PDF
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        onSetBrochure?.(e.target.files?.[0] ?? null);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                )
+              ) : hasBrochure ? (
                 <Button
                   variant="outline"
-                  onClick={preview ? undefined : onDownloadBrochure}
-                  disabled={preview}
+                  onClick={inert ? undefined : onDownloadBrochure}
+                  disabled={inert}
                   className="gap-1.5 border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground hover:border-primary"
                 >
                   <Download className="h-4 w-4" />
                   Télécharger la brochure
                 </Button>
-              )}
+              ) : null}
               <Button
-                onClick={preview ? undefined : onInterestToggle}
-                disabled={preview || interestPending}
+                onClick={inert ? undefined : onInterestToggle}
+                disabled={inert || interestPending}
                 variant="outline"
                 className={cn(
                   'gap-1.5',
@@ -290,7 +613,7 @@ export default function NoveltyDetailView({
                 )}
               </Button>
             </div>
-            {hasBrochure && (
+            {hasBrochure && !editable && (
               <p className="flex items-center gap-1 text-xs text-muted-foreground">
                 <FileText className="h-3 w-3" /> Document disponible
               </p>
@@ -320,7 +643,7 @@ export default function NoveltyDetailView({
                 </div>
               </>
             );
-            if (novelty.event_slug && !preview) {
+            if (novelty.event_slug && !inert) {
               return (
                 <Link
                   to={`/events/${novelty.event_slug}`}

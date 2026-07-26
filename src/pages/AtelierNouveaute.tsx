@@ -2,33 +2,23 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ChevronDown, ImagePlus, Loader2, X, FileText } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Loader2, Sparkles, X, PanelRightOpen } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import NoveltyDetailView from '@/components/novelty/NoveltyDetailView';
-import { NOVELTY_TYPE_LABELS } from '@/hooks/useNoveltyPublic';
 
 const TITLE_MIN = 3;
 const TITLE_MAX = 120;
 const REASON_MIN = 10;
 const REASON_MAX = 1000;
-const SUMMARY_MAX = 500;
 const MAX_IMAGES = 3;
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const MAX_PDF_SIZE = 20 * 1024 * 1024;
@@ -57,13 +47,13 @@ export default function AtelierNouveaute() {
   const [title, setTitle] = useState('');
   const [type, setType] = useState('Launch');
   const [reason, setReason] = useState('');
-  const [images, setImages] = useState<PickedImage[]>([]);
+  const [reason2, setReason2] = useState<string | null>(null);
+  const [reason3, setReason3] = useState<string | null>(null);
   const [summary, setSummary] = useState('');
-  const [reason2, setReason2] = useState('');
-  const [reason3, setReason3] = useState('');
+  const [images, setImages] = useState<PickedImage[]>([]);
+  const [brochure, setBrochure] = useState<File | null>(null);
   const [audienceInput, setAudienceInput] = useState('');
   const [audienceTags, setAudienceTags] = useState<string[]>([]);
-  const [brochure, setBrochure] = useState<File | null>(null);
   const [extrasOpen, setExtrasOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -100,40 +90,32 @@ export default function AtelierNouveaute() {
     },
   });
 
-  const canPublish =
-    title.trim().length >= TITLE_MIN &&
-    title.trim().length <= TITLE_MAX &&
-    reason.trim().length >= REASON_MIN &&
-    reason.trim().length <= REASON_MAX &&
-    images.length >= 1 &&
-    !!eventId &&
-    !!exhibitorId &&
-    !submitting;
+  /* ---------------- Canevas : la Nouveauté brouillon ---------------- */
 
-  const previewNovelty = useMemo(
+  const draft = useMemo(
     () => ({
-      title: title.trim(),
+      title,
       type,
-      reason_1: reason.trim() || null,
-      reason_2: reason2.trim() || null,
-      reason_3: reason3.trim() || null,
-      summary: summary.trim() || null,
+      reason_1: reason,
+      reason_2: reason2,
+      reason_3: reason3,
+      summary,
       media_urls: images.map((i) => i.previewUrl),
-      doc_url: brochure ? 'local' : null,
+      doc_url: null,
       exhibitor_display_name: exhibitor?.name || 'Votre entreprise',
       exhibitor_logo_url: exhibitor?.logo_url || null,
       event_name: (event as any)?.nom_event ?? null,
       event_ville: (event as any)?.ville ?? null,
       event_date_debut: (event as any)?.date_debut ?? null,
     }),
-    [title, type, reason, reason2, reason3, summary, images, brochure, exhibitor, event],
+    [title, type, reason, reason2, reason3, summary, images, exhibitor, event],
   );
 
   const handleImages = (files: FileList | null) => {
     if (!files) return;
     const next: PickedImage[] = [];
     for (const file of Array.from(files)) {
-      if (images.length + next.length > MAX_IMAGES) {
+      if (images.length + next.length >= MAX_IMAGES) {
         toast({ title: `Maximum ${MAX_IMAGES} images`, variant: 'destructive' });
         break;
       }
@@ -177,6 +159,20 @@ export default function AtelierNouveaute() {
     setAudienceInput('');
   };
 
+  /* ---------------- Complétude ---------------- */
+
+  const missing: string[] = [];
+  if (title.trim().length < TITLE_MIN) missing.push('Écrivez un titre (3 caractères minimum)');
+  if (title.trim().length > TITLE_MAX) missing.push('Le titre dépasse 120 caractères');
+  if (reason.trim().length < REASON_MIN)
+    missing.push('Dites pourquoi venir la voir (10 caractères minimum)');
+  if (reason.trim().length > REASON_MAX) missing.push('La raison dépasse 1000 caractères');
+  if (images.length === 0) missing.push('Ajoutez au moins une image');
+
+  const canPublish = missing.length === 0 && !!eventId && !!exhibitorId && !submitting;
+
+  /* ---------------- Publication ---------------- */
+
   const uploadFile = async (file: File, folder: 'images' | 'brochures') => {
     const filePath = `${folder}/${Date.now()}-${sanitizeFileName(file.name)}`;
     const { error } = await supabase.storage.from('novelties').upload(filePath, file);
@@ -204,8 +200,8 @@ export default function AtelierNouveaute() {
         images: imageUrls,
         brochure_pdf: brochureUrl,
       };
-      if (reason2.trim()) payload.reason_2 = reason2.trim();
-      if (reason3.trim()) payload.reason_3 = reason3.trim();
+      if (reason2?.trim()) payload.reason_2 = reason2.trim();
+      if (reason3?.trim()) payload.reason_3 = reason3.trim();
       if (summary.trim()) payload.summary = summary.trim();
       if (audienceTags.length > 0) payload.audience_tags = audienceTags;
 
@@ -278,7 +274,8 @@ export default function AtelierNouveaute() {
     }
   };
 
-  // --- États bloquants ---
+  /* ---------------- États bloquants ---------------- */
+
   if (!authLoading && !isRealUser) {
     return (
       <MainLayout title="Publier une nouveauté">
@@ -312,6 +309,112 @@ export default function AtelierNouveaute() {
     );
   }
 
+  /* ---------------- Panneau droit ---------------- */
+
+  const panel = (
+    <div className="space-y-8">
+      {/* Assistant IA — emplacement réservé (6c) */}
+      <section className="rounded-xl border border-[#6b51ff]/25 bg-[#6b51ff]/[0.05] p-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-[#6b51ff]">
+          <Sparkles className="h-4 w-4" />
+          Assistant IA
+        </div>
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          Bientôt : décrivez votre nouveauté en vrac, l'assistant proposera des angles et remplira
+          la page pour vous.
+        </p>
+      </section>
+
+      {/* Publication */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold">Publication</h2>
+        {missing.length > 0 ? (
+          <ul className="space-y-1.5 text-xs text-muted-foreground">
+            {missing.map((m) => (
+              <li key={m} className="flex gap-2">
+                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-muted-foreground/50" />
+                {m}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-muted-foreground">Tout est prêt, vous pouvez publier.</p>
+        )}
+        <Button onClick={handlePublish} disabled={!canPublish} className="w-full">
+          {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Publier ma nouveauté
+        </Button>
+      </section>
+
+      {/* Détails optionnels */}
+      <Collapsible open={extrasOpen} onOpenChange={setExtrasOpen}>
+        <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+          <ChevronDown className={cn('h-4 w-4 transition-transform', extrasOpen && 'rotate-180')} />
+          Détails optionnels
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-3 pt-4">
+          <Label htmlFor="audience" className="text-xs font-medium">
+            Profils visés (facultatif)
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              id="audience"
+              value={audienceInput}
+              onChange={(e) => setAudienceInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addTag();
+                }
+              }}
+              placeholder="Ex : responsable production"
+              className="h-9 text-sm"
+            />
+            <Button type="button" variant="outline" size="sm" onClick={addTag}>
+              Ajouter
+            </Button>
+          </div>
+          {audienceTags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {audienceTags.map((t) => (
+                <span
+                  key={t}
+                  className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs"
+                >
+                  {t}
+                  <button
+                    type="button"
+                    onClick={() => setAudienceTags((prev) => prev.filter((x) => x !== t))}
+                    aria-label={`Retirer ${t}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
+  );
+
+  const canvas = (
+    <NoveltyDetailView
+      novelty={draft}
+      editable
+      brochureName={brochure?.name ?? null}
+      onTitleChange={setTitle}
+      onTypeChange={setType}
+      onReason1Change={setReason}
+      onReason2Change={setReason2}
+      onReason3Change={setReason3}
+      onSummaryChange={setSummary}
+      onAddImages={handleImages}
+      onRemoveImage={removeImage}
+      onSetBrochure={handlePdf}
+    />
+  );
+
   return (
     <>
       <Helmet>
@@ -319,274 +422,38 @@ export default function AtelierNouveaute() {
       </Helmet>
       <MainLayout title="Publier une nouveauté">
         <div className="py-8 md:py-12">
-          {/* En-tête */}
-          <div className="flex items-center justify-between gap-4 mb-10 border-b pb-6">
+          <div className="mb-8 flex items-center justify-between gap-4 border-b pb-6">
             <button
               type="button"
-              onClick={() => navigate(event?.slug ? `/events/${event.slug}` : -1 as any)}
-              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => navigate(event?.slug ? `/events/${event.slug}` : (-1 as any))}
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
               {event?.nom_event || 'Retour'}
             </button>
-            <h1 className="heading-display text-xl md:text-2xl">Publier une nouveauté</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="heading-display text-xl md:text-2xl">Publier une nouveauté</h1>
+              <div className="lg:hidden">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button size="sm" variant="outline" className="gap-1.5">
+                      <PanelRightOpen className="h-4 w-4" />
+                      Publier
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
+                    <div className="pt-4">{panel}</div>
+                  </SheetContent>
+                </Sheet>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-14">
-            {/* Colonne de saisie */}
-            <div className="max-w-[560px] space-y-10">
-              <div className="space-y-2">
-                <Label htmlFor="title" className="text-sm font-medium">
-                  Titre de la nouveauté
-                </Label>
-                <Input
-                  id="title"
-                  value={title}
-                  maxLength={TITLE_MAX}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ex : Presse hydraulique X200, pilotage à distance"
-                  className="h-12 text-base"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {TITLE_MIN} à {TITLE_MAX} caractères · {title.trim().length}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Type</Label>
-                <Select value={type} onValueChange={setType}>
-                  <SelectTrigger className="h-12">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(NOVELTY_TYPE_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="reason" className="text-sm font-medium">
-                  Pourquoi venir la voir ?
-                </Label>
-                <Textarea
-                  id="reason"
-                  value={reason}
-                  maxLength={REASON_MAX}
-                  onChange={(e) => setReason(e.target.value)}
-                  rows={7}
-                  placeholder="Ce que le visiteur verra, comprendra ou repartira avec, sur votre stand."
-                  className="text-base resize-none"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {REASON_MIN} à {REASON_MAX} caractères · {reason.trim().length}
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Images (1 à 3, requis)</Label>
-                <div className="flex flex-wrap gap-3">
-                  {images.map((img, idx) => (
-                    <div
-                      key={img.previewUrl}
-                      className="relative h-24 w-24 rounded-lg overflow-hidden border bg-muted"
-                    >
-                      <img src={img.previewUrl} alt="" className="h-full w-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(idx)}
-                        className="absolute top-1 right-1 rounded-full bg-background/90 border p-1"
-                        aria-label="Retirer l'image"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                  {images.length < MAX_IMAGES && (
-                    <label
-                      className={cn(
-                        'h-24 w-24 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-1 cursor-pointer text-muted-foreground hover:border-foreground/30 hover:text-foreground transition-colors',
-                        images.length === 0 && 'border-foreground/25',
-                      )}
-                    >
-                      <ImagePlus className="h-5 w-5" />
-                      <span className="text-[11px]">Ajouter</span>
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        multiple
-                        className="hidden"
-                        onChange={(e) => {
-                          handleImages(e.target.files);
-                          e.target.value = '';
-                        }}
-                      />
-                    </label>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">JPG, PNG ou WEBP · 5 Mo maximum par image</p>
-              </div>
-
-              {/* Repli discret */}
-              <Collapsible open={extrasOpen} onOpenChange={setExtrasOpen}>
-                <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  <ChevronDown
-                    className={cn('h-4 w-4 transition-transform', extrasOpen && 'rotate-180')}
-                  />
-                  Éléments complémentaires
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-6 space-y-8">
-                  <div className="space-y-2">
-                    <Label htmlFor="summary" className="text-sm font-medium">
-                      Résumé court
-                    </Label>
-                    <Textarea
-                      id="summary"
-                      value={summary}
-                      maxLength={SUMMARY_MAX}
-                      rows={3}
-                      onChange={(e) => setSummary(e.target.value)}
-                      className="resize-none"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {summary.length} / {SUMMARY_MAX}
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="reason2" className="text-sm font-medium">
-                      Deuxième raison
-                    </Label>
-                    <Textarea
-                      id="reason2"
-                      value={reason2}
-                      maxLength={REASON_MAX}
-                      rows={3}
-                      onChange={(e) => setReason2(e.target.value)}
-                      className="resize-none"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="reason3" className="text-sm font-medium">
-                      Troisième raison
-                    </Label>
-                    <Textarea
-                      id="reason3"
-                      value={reason3}
-                      maxLength={REASON_MAX}
-                      rows={3}
-                      onChange={(e) => setReason3(e.target.value)}
-                      className="resize-none"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="audience" className="text-sm font-medium">
-                      Profils visés
-                    </Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="audience"
-                        value={audienceInput}
-                        onChange={(e) => setAudienceInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            addTag();
-                          }
-                        }}
-                        placeholder="Ex : responsable maintenance"
-                      />
-                      <Button type="button" variant="outline" onClick={addTag}>
-                        Ajouter
-                      </Button>
-                    </div>
-                    {audienceTags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        {audienceTags.map((tag) => (
-                          <Badge
-                            key={tag}
-                            variant="secondary"
-                            className="cursor-pointer"
-                            onClick={() => setAudienceTags((p) => p.filter((t) => t !== tag))}
-                          >
-                            {tag} <X className="h-3 w-3 ml-1" />
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Document de présentation (PDF)</Label>
-                    {brochure ? (
-                      <div className="flex items-center gap-2 text-sm">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="truncate max-w-[280px]">{brochure.name}</span>
-                        <button
-                          type="button"
-                          onClick={() => setBrochure(null)}
-                          className="text-muted-foreground hover:text-foreground"
-                          aria-label="Retirer le PDF"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <label className="inline-flex items-center gap-2 text-sm text-muted-foreground border rounded-lg px-4 py-2 cursor-pointer hover:text-foreground transition-colors">
-                        <FileText className="h-4 w-4" />
-                        Choisir un PDF (20 Mo max)
-                        <input
-                          type="file"
-                          accept="application/pdf"
-                          className="hidden"
-                          onChange={(e) => {
-                            handlePdf(e.target.files?.[0] || null);
-                            e.target.value = '';
-                          }}
-                        />
-                      </label>
-                    )}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-
-              <div className="pt-2 space-y-2">
-                <Button
-                  size="lg"
-                  className="w-full sm:w-auto"
-                  disabled={!canPublish}
-                  onClick={handlePublish}
-                >
-                  {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Publier ma nouveauté
-                </Button>
-                {!canPublish && !submitting && (
-                  <p className="text-xs text-muted-foreground">
-                    Il faut un titre, un texte et au moins une image.
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Colonne aperçu */}
-            <div className="space-y-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Aperçu en direct
-              </p>
-              <div className="rounded-2xl border bg-muted/20 p-4 md:p-8">
-                <div className="rounded-xl bg-background p-4 md:p-8">
-                  <NoveltyDetailView novelty={previewNovelty} preview />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Tout ce que vous saisissez apparaît ici, tel qu'un visiteur le verra.
-              </p>
-            </div>
+          <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-12">
+            <div className="min-w-0 flex-1">{canvas}</div>
+            <aside className="hidden w-[360px] shrink-0 lg:block xl:w-[380px]">
+              <div className="sticky top-24 rounded-xl border bg-card p-5">{panel}</div>
+            </aside>
           </div>
         </div>
       </MainLayout>
