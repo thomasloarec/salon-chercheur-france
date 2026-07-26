@@ -64,7 +64,7 @@ export default function SelectionExposant() {
   const stateEvent = (location.state as any)?.event as Event | undefined;
   const eventId = params.get('event') || stateEvent?.id || '';
 
-  const { data: fetchedEvent, isLoading: eventLoading } = useQuery({
+  const { data: fetchedEvent, isLoading: eventLoading, isFetched: eventFetched } = useQuery({
     queryKey: ['selection-exposant-event', eventId],
     enabled: !!eventId && !stateEvent,
     queryFn: async () => {
@@ -112,11 +112,27 @@ export default function SelectionExposant() {
     );
   }
 
-  if (!event) {
+  if (!event && !eventFetched) {
     return (
       <MainLayout title="Choisir votre entreprise">
         <div className="py-24 flex justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!event) {
+    return (
+      <MainLayout title="Choisir votre entreprise">
+        <div className="max-w-lg mx-auto py-24 text-center space-y-4">
+          <h1 className="heading-display text-2xl">Ce salon est introuvable</h1>
+          <p className="text-muted-foreground">
+            Le lien est peut-être expiré ou le salon a été retiré du catalogue.
+          </p>
+          <Button variant="outline" asChild>
+            <Link to="/salons">Voir les salons</Link>
+          </Button>
         </div>
       </MainLayout>
     );
@@ -194,22 +210,45 @@ function SelectionInner({
   const eventName = (event as any)?.nom_event ?? (event as any)?.name ?? 'ce salon';
 
   const handleContinue = () => {
-    if (selectedExhibitor?.id) {
-      navigate(`/publier-nouveaute/atelier?event=${encodeURIComponent(eventId)}&exhibitor=${encodeURIComponent(selectedExhibitor.id)}`);
-      return;
-    }
-    // Nouvel exposant : pas encore d'identifiant, la création arrive au 6d-3.
-    console.log('[6d-2] Temps 1 complet — nouvel exposant à créer', {
-      event_id: eventId,
-      new_exhibitor: {
-        name: newExhibitorData.name,
-        website: newExhibitorData.website,
-        description: newExhibitorData.description,
-        logo: null,
-        stand_info: null,
-      },
-      legacy_id_exposant: confirmedLegacyMatch?.legacy_id_exposant ?? null,
-      user: user ? { id: user.id } : userData,
+    const isUuid = (v?: string | null) =>
+      !!v && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+
+    // La page de sélection ne CRÉE rien : elle transmet l'exposant résolu.
+    const resolvedExhibitor =
+      selectedExhibitor && isUuid(selectedExhibitor.id)
+        ? {
+            id: selectedExhibitor.id,
+            name: selectedExhibitor.name,
+            website: selectedExhibitor.website || null,
+            needs_participation: selectedExhibitor.needs_participation === true,
+            legacy_id_exposant: null as string | null,
+          }
+        : {
+            id: null as string | null,
+            name: selectedExhibitor?.name || newExhibitorData.name,
+            website: selectedExhibitor?.website || newExhibitorData.website || null,
+            needs_participation: false,
+            // fiche legacy : id non-UUID sélectionné, ou match legacy confirmé
+            legacy_id_exposant:
+              (selectedExhibitor && !isUuid(selectedExhibitor.id) ? selectedExhibitor.id : null) ??
+              ((confirmedLegacyMatch as any)?.legacy_id_exposant || null),
+          };
+
+    const identity = user
+      ? null
+      : {
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          email: userData.email,
+          phone: userData.phone,
+          role: userData.role,
+        };
+
+    const search = new URLSearchParams({ event: eventId });
+    if (resolvedExhibitor.id) search.set('exhibitor', resolvedExhibitor.id);
+
+    navigate(`/publier-nouveaute/atelier?${search.toString()}`, {
+      state: { eventId, exhibitor: resolvedExhibitor, identity },
     });
   };
 
