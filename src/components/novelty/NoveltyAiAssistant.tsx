@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Check, Loader2, Sparkles, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -77,10 +77,6 @@ export default function NoveltyAiAssistant({
   const [pause, setPause] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [angles, setAngles] = useState<NoveltyAngle[]>([]);
-  const [expanded, setExpanded] = useState(false);
-
-  useEffect(() => setExpanded(false), [angles]);
-
   const call = async (body: Record<string, unknown>) => {
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token || null;
