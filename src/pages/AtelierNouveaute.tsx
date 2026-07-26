@@ -345,7 +345,32 @@ export default function AtelierNouveaute() {
 
   /* ---------------- Panneau droit ---------------- */
 
-  const panel = (
+  const publicationBlock = (
+    <section className="space-y-3">
+      <h2 className="text-sm font-semibold">Publication</h2>
+      {missing.length > 0 ? (
+        <>
+          <p className="text-xs font-medium text-foreground">Avant de publier, complétez :</p>
+          <ul className="space-y-1.5 text-xs text-muted-foreground">
+            {missing.map((m) => (
+              <li key={m} className="flex gap-2">
+                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-muted-foreground/50" />
+                {m}
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <p className="text-xs text-muted-foreground">Tout est prêt, vous pouvez publier.</p>
+      )}
+      <Button onClick={handlePublish} disabled={!canPublish} className="w-full">
+        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        Publier ma nouveauté
+      </Button>
+    </section>
+  );
+
+  const panelRest = (
     <div className="space-y-8">
       {/* Assistant IA */}
       <NoveltyAiAssistant
@@ -355,27 +380,6 @@ export default function AtelierNouveaute() {
         canvasHasContent={canvasHasContent}
         onApplyAngle={applyAngle}
       />
-
-      {/* Publication */}
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold">Publication</h2>
-        {missing.length > 0 ? (
-          <ul className="space-y-1.5 text-xs text-muted-foreground">
-            {missing.map((m) => (
-              <li key={m} className="flex gap-2">
-                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-muted-foreground/50" />
-                {m}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-xs text-muted-foreground">Tout est prêt, vous pouvez publier.</p>
-        )}
-        <Button onClick={handlePublish} disabled={!canPublish} className="w-full">
-          {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Publier ma nouveauté
-        </Button>
-      </section>
 
       {/* Détails optionnels */}
       <Collapsible open={extrasOpen} onOpenChange={setExtrasOpen}>
@@ -426,6 +430,13 @@ export default function AtelierNouveaute() {
           )}
         </CollapsibleContent>
       </Collapsible>
+    </div>
+  );
+
+  const panel = (
+    <div className="space-y-8">
+      {publicationBlock}
+      {panelRest}
     </div>
   );
 
@@ -484,8 +495,9 @@ export default function AtelierNouveaute() {
           <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-12">
             <div className="min-w-0 flex-1">{canvas}</div>
             <aside className="hidden w-[360px] shrink-0 lg:block xl:w-[380px]">
-              <div className="sticky top-24 rounded-2xl border-2 border-[#6b51ff]/20 bg-muted/40 p-5 shadow-sm">
-                {panel}
+              <div className="sticky top-24 flex max-h-[calc(100vh-8rem)] flex-col rounded-2xl border-2 border-[#6b51ff]/20 bg-muted/40 shadow-sm">
+                <div className="shrink-0 border-b border-[#6b51ff]/15 p-5">{publicationBlock}</div>
+                <div className="min-h-0 flex-1 overflow-y-auto p-5">{panelRest}</div>
               </div>
             </aside>
           </div>
