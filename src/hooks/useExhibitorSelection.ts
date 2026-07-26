@@ -63,6 +63,9 @@ export function useExhibitorSelection({
   const { user } = useAuth();
   const { toast } = useToast();
 
+  // Identifiant d'événement tolérant aux deux formes (id_event texte ou id)
+  const resolvedEventId = ((event as any)?.id_event || (event as any)?.id || '') as string;
+
   const [exhibitors, setExhibitors] = useState<DbExhibitor[]>([]);
   const [globalExhibitors, setGlobalExhibitors] = useState<DbExhibitor[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -109,7 +112,7 @@ export function useExhibitorSelection({
   useEffect(() => {
     loadExhibitors();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, event?.id_event]);
+  }, [debouncedSearch, resolvedEventId]);
 
   // Bloquer si un match existant est administré par un autre utilisateur
   const blockedByAdminMatch = !!(
@@ -199,7 +202,7 @@ export function useExhibitorSelection({
     try {
       setLoading(true);
 
-      const eventId = event?.id_event ?? null;
+      const eventId = resolvedEventId || null;
       if (!eventId) {
         console.warn('[useExhibitorSelection] Aucun id_event défini');
         setExhibitors([]);
