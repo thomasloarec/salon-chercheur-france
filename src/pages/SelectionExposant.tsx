@@ -180,6 +180,11 @@ function SelectionInner({
   const emailInvalid = !!userData.email && !isProfessionalEmail(userData.email);
   const quotaBlocked = !!(selectedExhibitor && quota && !quota.allowed);
 
+  const hasQuery = searchQuery.trim().length > 0;
+  const PREVIEW_COUNT = 6;
+  const previewExhibitors = exhibitors.slice(0, PREVIEW_COUNT);
+  const remainingCount = Math.max(0, exhibitors.length - PREVIEW_COUNT);
+
   const eventName = (event as any)?.nom_event ?? (event as any)?.name ?? 'ce salon';
 
   const handleContinue = () => {
@@ -223,7 +228,7 @@ function SelectionInner({
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher une entreprise…"
+              placeholder="Cherchez votre entreprise par son nom"
               className="h-14 pl-12 text-base rounded-2xl"
             />
           </div>
@@ -234,7 +239,40 @@ function SelectionInner({
             </div>
           )}
 
-          {!loading && (
+          {!loading && !hasQuery && (
+            <div className="space-y-3">
+              {exhibitors.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {noExhibitorsForEvent
+                    ? "Aucun exposant n'est encore répertorié sur ce salon."
+                    : 'Aucun exposant ne correspond à votre recherche.'}
+                </p>
+              ) : (
+                <>
+                  <h2 className="heading-display text-lg">Quelques exposants de ce salon</h2>
+                  <div className="grid gap-2">
+                    {previewExhibitors.map((ex) => (
+                      <ExhibitorRow
+                        key={ex.id}
+                        exhibitor={ex}
+                        selected={selectedExhibitor?.id === ex.id}
+                        onSelect={handleExhibitorSelect}
+                      />
+                    ))}
+                  </div>
+                  {remainingCount > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      et {remainingCount} autre{remainingCount > 1 ? 's' : ''} entreprise
+                      {remainingCount > 1 ? 's' : ''} sur ce salon — cherchez la vôtre ci-dessus.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {!loading && hasQuery && (
+            <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-1">
             <>
               <div className="space-y-3">
                 <h2 className="heading-display text-lg">Exposants de ce salon</h2>
@@ -279,6 +317,7 @@ function SelectionInner({
                 </div>
               )}
             </>
+            </div>
           )}
 
           <div className="pt-2">
