@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, ChevronDown, Loader2, X, PanelRightOpen, CheckCircle2 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
@@ -47,13 +47,42 @@ interface PickedImage {
   previewUrl: string;
 }
 
+interface ResolvedExhibitorState {
+  id: string | null;
+  name: string;
+  website: string | null;
+  needs_participation: boolean;
+  legacy_id_exposant: string | null;
+}
+
+interface IdentityState {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  role: string;
+}
+
 export default function AtelierNouveaute() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isRealUser, loading: authLoading } = useAuth() as any;
 
-  const eventId = params.get('event') || '';
-  const exhibitorId = params.get('exhibitor') || '';
+  const navState = (location.state || {}) as {
+    eventId?: string;
+    exhibitor?: ResolvedExhibitorState;
+    identity?: IdentityState | null;
+  };
+  const resolvedExhibitor = navState.exhibitor ?? null;
+  const identity = navState.identity ?? null;
+
+  const eventId = params.get('event') || navState.eventId || '';
+  // Exposant existant : identifiant connu dès maintenant. Nouvel exposant : créé à la publication.
+  const exhibitorId = params.get('exhibitor') || resolvedExhibitor?.id || '';
+  const hasExhibitorToCreate = !exhibitorId && !!resolvedExhibitor?.name;
+
+  const [publishStep, setPublishStep] = useState<string | null>(null);
 
   const [title, setTitle] = useState('');
   const [type, setType] = useState('');
@@ -74,7 +103,7 @@ export default function AtelierNouveaute() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const { data: event } = useQuery({
+  const { data: event, isFetched: eventFetched } = useQuery({
     queryKey: ['atelier-event', eventId],
     enabled: !!eventId,
     queryFn: async () => {
@@ -114,13 +143,13 @@ export default function AtelierNouveaute() {
       summary,
       media_urls: images.map((i) => i.previewUrl),
       doc_url: null,
-      exhibitor_display_name: exhibitor?.name || 'Votre entreprise',
+      exhibitor_display_name: exhibitor?.name || resolvedExhibitor?.name || 'Votre entreprise',
       exhibitor_logo_url: exhibitor?.logo_url || null,
       event_name: (event as any)?.nom_event ?? null,
       event_ville: (event as any)?.ville ?? null,
       event_date_debut: (event as any)?.date_debut ?? null,
     }),
-    [title, type, reason, reason2, reason3, summary, images, exhibitor, event],
+    [title, type, reason, reason2, reason3, summary, images, exhibitor, event, resolvedExhibitor],
   );
 
   const handleImages = (files: FileList | null) => {
@@ -214,7 +243,8 @@ export default function AtelierNouveaute() {
   if (!type) missing.push('Choisissez le type de nouveauté');
   if (images.length === 0) missing.push('Ajoutez au moins une image');
 
-  const canPublish = missing.length === 0 && !!eventId && !!exhibitorId && !submitting;
+  const canPublish =
+    missing.length === 0 && !!eventId && (!!exhibitorId || hasExhibitorToCreate) && !submitting;
 
   /* ---------------- Publication ---------------- */
 
@@ -230,6 +260,85 @@ export default function AtelierNouveaute() {
     if (!canPublish) return;
     setSubmitting(true);
     try {
+      /* ── Étape 1 — Créer le compte si l'utilisateur n'est pas connecté ── */
+      if (!isRealUser && identity?.email) {
+        setPublishStep('Création de votre compte…');
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: identity.email,
+          password: Math.random().toString(36).slice(-12),
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              first_name: identity.first_name,
+              last_name: identity.last_name,
+              phone: identity.phone,
+              role: identity.role,
+            },
+          },
+        });
+        if (signUpError) {
+          toast({
+            title: "Inscription impossible",
+            description:
+              signUpError.message ||
+              "Cette adresse est peut-être déjà utilisée. Connectez-vous puis réessayez.",
+            variant: 'destructive',
+          });
+          return;
+        }
+        await supabase.auth.resetPasswordForEmail(identity.email, {
+          redirectTo: `${window.location.origin}/`,
+        });
+      }
+
+      /* ── Étape 2 — Créer l'exposant si nouveau (une seule fois, sans logo ni stand) ── */
+      let finalExhibitorId = exhibitorId;
+      let pendingExhibitorId: string | null = null;
+      if (!finalExhibitorId && resolvedExhibitor) {
+        setPublishStep('Création de votre entreprise…');
+        const { data: created, error: createError } = await supabase.functions.invoke(
+          'exhibitors-manage',
+          {
+            body: {
+              action: 'create',
+              name: resolvedExhibitor.name,
+              website: resolvedExhibitor.website || null,
+              ...(resolvedExhibitor.legacy_id_exposant
+                ? { legacy_id_exposant: resolvedExhibitor.legacy_id_exposant }
+                : {}),
+              defer_participation: true,
+            },
+          },
+        );
+        if (createError || !created?.id) {
+          toast({
+            title: "Création de l'entreprise impossible",
+            description: createError?.message || 'Réessayez dans un instant.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        finalExhibitorId = created.id as string;
+        pendingExhibitorId = created.id as string;
+      }
+
+      /* ── Étape 3 — Participation si l'exposant vient du catalogue ── */
+      if (resolvedExhibitor?.needs_participation === true && finalExhibitorId) {
+        setPublishStep('Rattachement au salon…');
+        const { error: ensureError } = await supabase.functions.invoke('exhibitors-manage', {
+          body: {
+            action: 'ensure_participation',
+            exhibitor_id: finalExhibitorId,
+            event_id: eventId,
+            stand_info: null,
+          },
+        });
+        // Échec non bloquant : le filet serveur de novelties-create le refera.
+        if (ensureError) console.error('[atelier] ensure_participation a échoué', ensureError);
+      }
+
+      /* ── Étape 4 — Publier la nouveauté ── */
+      setPublishStep('Envoi de votre nouveauté…');
       const imageUrls: string[] = [];
       for (const img of images) {
         imageUrls.push(await uploadFile(img.file, 'images'));
@@ -238,12 +347,13 @@ export default function AtelierNouveaute() {
 
       const payload: Record<string, unknown> = {
         event_id: eventId,
-        exhibitor_id: exhibitorId,
+        exhibitor_id: finalExhibitorId,
         title: title.trim(),
         novelty_type: type,
         reason: reason.trim(),
         images: imageUrls,
         brochure_pdf: brochureUrl,
+        pending_exhibitor_id: pendingExhibitorId,
       };
       if (reason2?.trim()) payload.reason_2 = reason2.trim();
       if (reason3?.trim()) payload.reason_3 = reason3.trim();
@@ -312,12 +422,13 @@ export default function AtelierNouveaute() {
       });
     } finally {
       setSubmitting(false);
+      setPublishStep(null);
     }
   };
 
   /* ---------------- États bloquants ---------------- */
 
-  if (!authLoading && !isRealUser) {
+  if (!authLoading && !isRealUser && !identity?.email) {
     return (
       <MainLayout title="Publier une nouveauté">
         <div className="max-w-lg mx-auto py-24 text-center space-y-4">
@@ -333,7 +444,7 @@ export default function AtelierNouveaute() {
     );
   }
 
-  if (!eventId || !exhibitorId) {
+  if (!eventId || (!exhibitorId && !hasExhibitorToCreate)) {
     return (
       <MainLayout title="Atelier nouveauté">
         <div className="max-w-lg mx-auto py-24 text-center space-y-4">
@@ -352,7 +463,23 @@ export default function AtelierNouveaute() {
 
   /* ---------------- Panneau droit ---------------- */
 
-  const isReady = missing.length === 0 && !!eventId && !!exhibitorId;
+  if (eventFetched && !event) {
+    return (
+      <MainLayout title="Atelier nouveauté">
+        <div className="max-w-lg mx-auto py-24 text-center space-y-4">
+          <h1 className="heading-display text-2xl">Ce salon est introuvable</h1>
+          <p className="text-muted-foreground">
+            Le lien est peut-être expiré ou le salon a été retiré du catalogue.
+          </p>
+          <Button variant="outline" asChild>
+            <Link to="/salons">Voir les salons</Link>
+          </Button>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  const isReady = missing.length === 0 && !!eventId && (!!exhibitorId || hasExhibitorToCreate);
 
   const publicationBar = isReady ? (
     <div className="space-y-2.5">
@@ -366,7 +493,7 @@ export default function AtelierNouveaute() {
         className="h-11 w-full bg-[#6b51ff] text-sm font-semibold text-white shadow-sm hover:bg-[#5b43e6]"
       >
         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Publier ma nouveauté
+        {submitting ? publishStep || 'Publication en cours…' : 'Publier ma nouveauté'}
       </Button>
     </div>
   ) : (
@@ -405,14 +532,16 @@ export default function AtelierNouveaute() {
 
   const panelRest = (
     <div className="space-y-8">
-      {/* Assistant IA */}
-      <NoveltyAiAssistant
-        eventId={eventId}
-        exhibitorId={exhibitorId}
-        currentType={type || undefined}
-        canvasHasContent={canvasHasContent}
-        onApplyAngle={applyAngle}
-      />
+      {/* Assistant IA (nécessite un exposant déjà enregistré) */}
+      {!!exhibitorId && (
+        <NoveltyAiAssistant
+          eventId={eventId}
+          exhibitorId={exhibitorId}
+          currentType={type || undefined}
+          canvasHasContent={canvasHasContent}
+          onApplyAngle={applyAngle}
+        />
+      )}
 
       {/* Détails optionnels */}
       <Collapsible open={extrasOpen} onOpenChange={setExtrasOpen}>
