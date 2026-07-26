@@ -59,6 +59,7 @@ import Exposants from '@/pages/Exposants';
 import ExhibitorProfile from '@/pages/ExhibitorProfile';
 import PublierNouveaute from '@/pages/PublierNouveaute';
 import AtelierNouveaute from '@/pages/AtelierNouveaute';
+import SelectionExposant from '@/pages/SelectionExposant';
 import TrouverSalon from '@/pages/TrouverSalon';
 import RechercheIA from '@/pages/RechercheIA';
 import CGU from '@/pages/CGU';
@@ -142,6 +143,7 @@ function App() {
             <Route path="/exposants/:slug" element={<ExhibitorProfile />} />
             <Route path="/premium" element={<Exposants />} />
             <Route path="/publier-nouveaute" element={<PublierNouveaute />} />
+            <Route path="/publier-nouveaute/exposant" element={<SelectionExposant />} />
             <Route path="/publier-nouveaute/atelier" element={<AtelierNouveaute />} />
             <Route path="/trouver-un-salon" element={<TrouverSalon />} />
             <Route path="/recherche-ia" element={<RechercheIA />} />
