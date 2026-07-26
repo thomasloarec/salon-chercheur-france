@@ -303,6 +303,7 @@ export default function AtelierNouveaute() {
               action: 'create',
               name: resolvedExhibitor.name,
               website: resolvedExhibitor.website || null,
+              event_id: eventId,
               ...(resolvedExhibitor.legacy_id_exposant
                 ? { legacy_id_exposant: resolvedExhibitor.legacy_id_exposant }
                 : {}),
