@@ -1,6 +1,24 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
   Calendar,
   MapPin,
   Building2,
@@ -13,6 +31,7 @@ import {
   X,
   Plus,
   ChevronDown,
+  GripVertical,
 } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -109,6 +128,64 @@ function InPlaceText({
           /{max}
         </p>
       )}
+    </div>
+  );
+}
+
+/* --------------------------- Vignette triable --------------------------- */
+
+function SortableImage({
+  src,
+  index,
+  alt,
+  onRemove,
+}: {
+  src: string;
+  index: number;
+  alt: string;
+  onRemove?: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: src,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cn(
+        'group relative flex max-h-[52vh] items-center justify-center overflow-hidden rounded-xl border bg-muted',
+        isDragging && 'z-10 opacity-80 shadow-lg',
+      )}
+    >
+      <img src={src} alt={alt} className="max-h-[52vh] w-auto max-w-full object-contain" />
+      <span
+        className={cn(
+          'absolute left-2 top-2 rounded-full px-2 py-0.5 text-[11px] font-medium',
+          index === 0
+            ? 'bg-foreground text-background'
+            : 'bg-background/90 text-muted-foreground border',
+        )}
+      >
+        {index === 0 ? "Image d'entête" : index + 1}
+      </span>
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        aria-label="Déplacer l'image"
+        className="absolute bottom-2 left-2 cursor-grab touch-none rounded-full border bg-background/90 p-1.5 active:cursor-grabbing"
+      >
+        <GripVertical className="h-3.5 w-3.5" />
+      </button>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label="Retirer l'image"
+        className="absolute right-2 top-2 rounded-full border bg-background/90 p-1.5 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
     </div>
   );
 }
