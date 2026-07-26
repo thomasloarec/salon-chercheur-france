@@ -205,10 +205,8 @@ function SelectionInner({
   return (
     <div className="max-w-3xl mx-auto py-10 space-y-10">
       <div className="space-y-3">
-        <Button variant="ghost" size="sm" asChild className="-ml-2 text-muted-foreground">
-          <Link to={-1 as any}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Retour
-          </Link>
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="-ml-2 text-muted-foreground">
+          <ArrowLeft className="h-4 w-4 mr-1" /> Retour
         </Button>
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Étape 1 sur 2</p>
         <h1 className="heading-display text-3xl md:text-4xl">Quelle entreprise publie cette nouveauté&nbsp;?</h1>
@@ -376,8 +374,8 @@ function SelectionInner({
       {quotaBlocked && (
         <Alert variant="destructive">
           <AlertDescription className="text-sm">
-            {quota?.reason ||
-              "Cette entreprise a atteint son nombre maximum de nouveautés pour ce salon."}
+            Cette entreprise a atteint son nombre maximum de nouveautés pour ce salon
+            {typeof quota?.limit === 'number' ? ` (${quota.current}/${quota.limit})` : ''}.
           </AlertDescription>
         </Alert>
       )}
