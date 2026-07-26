@@ -319,6 +319,21 @@ export default function NoveltyDetailView({
 
   const hasBrochure = !!(novelty.doc_url || novelty.resource_url);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const from = images.indexOf(String(active.id));
+    const to = images.indexOf(String(over.id));
+    if (from < 0 || to < 0) return;
+    onReorderImages?.(from, to);
+  };
+
   return (
     <div className={cn('grid grid-cols-1 gap-8 lg:grid-cols-2', className)}>
       {/* LEFT — image carousel, original aspect, capped height on mobile */}
@@ -326,34 +341,31 @@ export default function NoveltyDetailView({
         {editable ? (
           <div className="space-y-3">
             {images.length > 0 ? (
-              <div className="grid grid-cols-1 gap-3">
-                {images.map((src, i) => (
-                  <div
-                    key={src}
-                    className="group relative flex max-h-[52vh] items-center justify-center overflow-hidden rounded-xl border bg-muted"
-                  >
-                    <img
-                      src={src}
-                      alt={`${imgAlt} (${i + 1})`}
-                      className="max-h-[52vh] w-auto max-w-full object-contain"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => onRemoveImage?.(i)}
-                      aria-label="Retirer l'image"
-                      className="absolute right-2 top-2 rounded-full border bg-background/90 p-1.5 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext items={images} strategy={verticalListSortingStrategy}>
+                  <div className="grid grid-cols-1 gap-3">
+                    {images.map((src, i) => (
+                      <SortableImage
+                        key={src}
+                        src={src}
+                        index={i}
+                        alt={`${imgAlt} (${i + 1})`}
+                        onRemove={() => onRemoveImage?.(i)}
+                      />
+                    ))}
                   </div>
-                ))}
-              </div>
+                </SortableContext>
+              </DndContext>
             ) : null}
             {images.length < MAX_IMAGES && (
               <label
                 className={cn(
                   'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed text-muted-foreground transition-colors hover:border-foreground/30 hover:bg-muted/40 hover:text-foreground',
-                  images.length === 0 ? 'aspect-[4/3]' : 'h-24',
+                  images.length === 0 ? 'aspect-[4/5]' : 'h-24',
                 )}
               >
                 <ImagePlus className="h-6 w-6" />
@@ -361,7 +373,7 @@ export default function NoveltyDetailView({
                   {images.length === 0 ? 'Ajouter une image' : 'Ajouter une autre image'}
                 </span>
                 <span className="text-[11px] text-muted-foreground/70">
-                  JPG, PNG ou WEBP · 5 Mo max · {images.length}/{MAX_IMAGES}
+                  {images.length}/{MAX_IMAGES}
                 </span>
                 <input
                   type="file"
@@ -375,6 +387,10 @@ export default function NoveltyDetailView({
                 />
               </label>
             )}
+            <p className="text-[11px] leading-relaxed text-muted-foreground/70">
+              Format vertical recommandé (4:5). JPG, PNG ou WEBP, 5 Mo maximum par image.
+              {images.length > 1 && ' Glissez les vignettes pour changer l’image d’entête.'}
+            </p>
           </div>
         ) : images.length > 0 ? (
           <Carousel className="w-full" opts={{ loop: images.length > 1 }}>
