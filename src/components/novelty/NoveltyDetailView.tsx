@@ -1,6 +1,24 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
   Calendar,
   MapPin,
   Building2,
@@ -13,6 +31,7 @@ import {
   X,
   Plus,
   ChevronDown,
+  GripVertical,
 } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -113,6 +132,64 @@ function InPlaceText({
   );
 }
 
+/* --------------------------- Vignette triable --------------------------- */
+
+function SortableImage({
+  src,
+  index,
+  alt,
+  onRemove,
+}: {
+  src: string;
+  index: number;
+  alt: string;
+  onRemove?: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: src,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cn(
+        'group relative flex max-h-[52vh] items-center justify-center overflow-hidden rounded-xl border bg-muted',
+        isDragging && 'z-10 opacity-80 shadow-lg',
+      )}
+    >
+      <img src={src} alt={alt} className="max-h-[52vh] w-auto max-w-full object-contain" />
+      <span
+        className={cn(
+          'absolute left-2 top-2 rounded-full px-2 py-0.5 text-[11px] font-medium',
+          index === 0
+            ? 'bg-foreground text-background'
+            : 'bg-background/90 text-muted-foreground border',
+        )}
+      >
+        {index === 0 ? "Image d'entête" : index + 1}
+      </span>
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        aria-label="Déplacer l'image"
+        className="absolute bottom-2 left-2 cursor-grab touch-none rounded-full border bg-background/90 p-1.5 active:cursor-grabbing"
+      >
+        <GripVertical className="h-3.5 w-3.5" />
+      </button>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label="Retirer l'image"
+        className="absolute right-2 top-2 rounded-full border bg-background/90 p-1.5 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
 /**
  * Forme minimale nécessaire à l'affichage. Compatible PublicNovelty, mais
  * aussi avec un objet construit en mémoire (atelier de publication).
@@ -168,6 +245,8 @@ export interface NoveltyDetailViewProps {
   onSummaryChange?: (v: string) => void;
   onAddImages?: (files: FileList | null) => void;
   onRemoveImage?: (index: number) => void;
+  /** Réorganisation des images (glisser-déposer) en mode editable. */
+  onReorderImages?: (from: number, to: number) => void;
   onSetBrochure?: (file: File | null) => void;
   /** Nom du PDF choisi, en mode editable. */
   brochureName?: string | null;
@@ -198,6 +277,7 @@ export default function NoveltyDetailView({
   onSummaryChange,
   onAddImages,
   onRemoveImage,
+  onReorderImages,
   onSetBrochure,
   brochureName = null,
   className,
@@ -239,6 +319,21 @@ export default function NoveltyDetailView({
 
   const hasBrochure = !!(novelty.doc_url || novelty.resource_url);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const from = images.indexOf(String(active.id));
+    const to = images.indexOf(String(over.id));
+    if (from < 0 || to < 0) return;
+    onReorderImages?.(from, to);
+  };
+
   return (
     <div className={cn('grid grid-cols-1 gap-8 lg:grid-cols-2', className)}>
       {/* LEFT — image carousel, original aspect, capped height on mobile */}
@@ -246,34 +341,31 @@ export default function NoveltyDetailView({
         {editable ? (
           <div className="space-y-3">
             {images.length > 0 ? (
-              <div className="grid grid-cols-1 gap-3">
-                {images.map((src, i) => (
-                  <div
-                    key={src}
-                    className="group relative flex max-h-[52vh] items-center justify-center overflow-hidden rounded-xl border bg-muted"
-                  >
-                    <img
-                      src={src}
-                      alt={`${imgAlt} (${i + 1})`}
-                      className="max-h-[52vh] w-auto max-w-full object-contain"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => onRemoveImage?.(i)}
-                      aria-label="Retirer l'image"
-                      className="absolute right-2 top-2 rounded-full border bg-background/90 p-1.5 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext items={images} strategy={verticalListSortingStrategy}>
+                  <div className="grid grid-cols-1 gap-3">
+                    {images.map((src, i) => (
+                      <SortableImage
+                        key={src}
+                        src={src}
+                        index={i}
+                        alt={`${imgAlt} (${i + 1})`}
+                        onRemove={() => onRemoveImage?.(i)}
+                      />
+                    ))}
                   </div>
-                ))}
-              </div>
+                </SortableContext>
+              </DndContext>
             ) : null}
             {images.length < MAX_IMAGES && (
               <label
                 className={cn(
                   'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed text-muted-foreground transition-colors hover:border-foreground/30 hover:bg-muted/40 hover:text-foreground',
-                  images.length === 0 ? 'aspect-[4/3]' : 'h-24',
+                  images.length === 0 ? 'aspect-[4/5]' : 'h-24',
                 )}
               >
                 <ImagePlus className="h-6 w-6" />
@@ -281,7 +373,7 @@ export default function NoveltyDetailView({
                   {images.length === 0 ? 'Ajouter une image' : 'Ajouter une autre image'}
                 </span>
                 <span className="text-[11px] text-muted-foreground/70">
-                  JPG, PNG ou WEBP · 5 Mo max · {images.length}/{MAX_IMAGES}
+                  {images.length}/{MAX_IMAGES}
                 </span>
                 <input
                   type="file"
@@ -295,6 +387,10 @@ export default function NoveltyDetailView({
                 />
               </label>
             )}
+            <p className="text-[11px] leading-relaxed text-muted-foreground/70">
+              Format vertical recommandé (4:5). JPG, PNG ou WEBP, 5 Mo maximum par image.
+              {images.length > 1 && ' Glissez les vignettes pour changer l’image d’entête.'}
+            </p>
           </div>
         ) : images.length > 0 ? (
           <Carousel className="w-full" opts={{ loop: images.length > 1 }}>
