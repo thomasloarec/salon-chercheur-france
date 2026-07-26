@@ -45,7 +45,7 @@ export default function AtelierNouveaute() {
   const exhibitorId = params.get('exhibitor') || '';
 
   const [title, setTitle] = useState('');
-  const [type, setType] = useState('Launch');
+  const [type, setType] = useState('');
   const [reason, setReason] = useState('');
   const [reason2, setReason2] = useState<string | null>(null);
   const [reason3, setReason3] = useState<string | null>(null);
@@ -176,6 +176,7 @@ export default function AtelierNouveaute() {
   if (reason.trim().length < REASON_MIN)
     missing.push('Dites pourquoi venir la voir (10 caractères minimum)');
   if (reason.trim().length > REASON_MAX) missing.push('La raison dépasse 1000 caractères');
+  if (!type) missing.push('Choisissez le type de nouveauté');
   if (images.length === 0) missing.push('Ajoutez au moins une image');
 
   const canPublish = missing.length === 0 && !!eventId && !!exhibitorId && !submitting;
