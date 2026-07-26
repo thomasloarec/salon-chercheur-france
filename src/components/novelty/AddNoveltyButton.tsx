@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Lock } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import {
   Tooltip,
   TooltipContent,
@@ -12,7 +12,6 @@ import {
 } from '@/components/ui/tooltip';
 import AddNoveltyStepper from './AddNoveltyStepper';
 import type { Event } from '@/types/event';
-import AuthRequiredModal from '@/components/AuthRequiredModal';
 
 interface AddNoveltyButtonProps {
   event: Event;
@@ -30,9 +29,9 @@ export default function AddNoveltyButton({
   label
 }: AddNoveltyButtonProps) {
   const defaultLabel = 'Exposant ? Ajouter votre nouveauté';
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  // Filet de sécurité : la modale reste montée mais n'est jamais ouverte.
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Vérifier si on est en période de pré-lancement (plus de 90 jours avant l'événement)
   const daysUntilEvent = differenceInDays(new Date(event.date_debut), new Date());
@@ -48,15 +47,8 @@ export default function AddNoveltyButton({
   const isPastEvent = new Date() > eventEndDate;
 
   const handleClick = () => {
-    // Not logged in - show auth modal
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
-    // Logged in (admin or not) - open the Stepper directly.
-    // Permission enforcement is delegated to the server (exhibitors-manage,
-    // novelties-create, RLS). The button only opens the flow.
-    setIsModalOpen(true);
+    // Nouveau parcours pleine page (connecté ou non).
+    navigate(`/publier-nouveaute/exposant?event=${event.id}`);
   };
 
   // Événement terminé : on masque complètement le bouton de publication.
@@ -111,12 +103,6 @@ export default function AddNoveltyButton({
         event={event}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-      />
-
-      <AuthRequiredModal
-        open={showAuthModal}
-        onOpenChange={setShowAuthModal}
-        actionType="add-novelty"
       />
     </>
   );
