@@ -10,6 +10,15 @@ import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -58,6 +67,7 @@ export default function AtelierNouveaute() {
   const [audienceTags, setAudienceTags] = useState<string[]>([]);
   const [extrasOpen, setExtrasOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
 
   useEffect(() => {
     return () => images.forEach((i) => URL.revokeObjectURL(i.previewUrl));
@@ -293,11 +303,7 @@ export default function AtelierNouveaute() {
         return;
       }
 
-      toast({
-        title: 'Nouveauté publiée ✓',
-        description: 'Elle apparaîtra sur la page du salon.',
-      });
-      navigate(event?.slug ? `/events/${event.slug}` : '/nouveautes');
+      setSuccessOpen(true);
     } catch (e: any) {
       toast({
         title: 'Une erreur est survenue',
@@ -537,6 +543,28 @@ export default function AtelierNouveaute() {
           </div>
         </div>
       </MainLayout>
+
+      <AlertDialog open={successOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Votre nouveauté a bien été transmise</AlertDialogTitle>
+            <AlertDialogDescription>
+              Elle va être examinée par l'équipe Lotexpo sous 24 h avant sa mise en ligne.
+              Vous serez informé dès qu'elle sera publiée.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              onClick={() => {
+                setSuccessOpen(false);
+                navigate(event?.slug ? `/events/${event.slug}` : '/nouveautes');
+              }}
+            >
+              Compris
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
