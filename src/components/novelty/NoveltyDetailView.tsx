@@ -77,6 +77,8 @@ interface InPlaceTextProps {
   /** Message de limite affiché uniquement pendant l'édition. */
   hint?: string;
   ariaLabel: string;
+  /** Signal violet : cette zone est attendue et encore vide. */
+  awaiting?: boolean;
 }
 
 /** Zone de texte auto-extensible, sans allure de formulaire. */
@@ -89,6 +91,7 @@ function InPlaceText({
   className,
   hint,
   ariaLabel,
+  awaiting = false,
 }: InPlaceTextProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [focused, setFocused] = useState(false);
@@ -101,9 +104,16 @@ function InPlaceText({
   }, [value]);
 
   const tooShort = min !== undefined && value.trim().length > 0 && value.trim().length < min;
+  const signal = awaiting && value.trim().length === 0;
 
   return (
-    <div className={cn(EDITABLE_ZONE, '-mx-2 px-2 py-1')}>
+    <div
+      className={cn(
+        EDITABLE_ZONE,
+        '-mx-2 px-2 py-1',
+        signal && 'rounded-md border border-dashed border-[#6b51ff]/50 bg-[#6b51ff]/[0.04]',
+      )}
+    >
       <textarea
         ref={ref}
         rows={1}
@@ -116,6 +126,7 @@ function InPlaceText({
         onChange={(e) => onChange(e.target.value)}
         className={cn(
           'w-full resize-none overflow-hidden border-0 bg-transparent p-0 outline-none ring-0 placeholder:text-muted-foreground/40 focus:outline-none focus:ring-0',
+          signal && 'placeholder:text-[#6b51ff]/60',
           className,
         )}
       />
