@@ -497,6 +497,11 @@ export default function AtelierNouveaute() {
         <meta name="robots" content="noindex" />
       </Helmet>
       <MainLayout title="Publier une nouveauté">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat opacity-40"
+          style={{ backgroundImage: "url('/backgrounds/recherche-ia-bg.jpg')" }}
+        />
         <div className="py-8 md:py-12">
           <div className="mb-8 flex items-center justify-between gap-4 border-b pb-6">
             <button

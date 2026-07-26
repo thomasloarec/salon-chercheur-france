@@ -124,6 +124,11 @@ export default function SelectionExposant() {
 
   return (
     <MainLayout title="Choisir votre entreprise">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat opacity-40"
+        style={{ backgroundImage: "url('/backgrounds/recherche-ia-bg.jpg')" }}
+      />
       <SelectionInner
         event={event}
         eventId={eventId}
