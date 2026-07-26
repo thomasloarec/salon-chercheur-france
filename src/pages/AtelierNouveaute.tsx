@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ChevronDown, Loader2, Sparkles, X, PanelRightOpen } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Loader2, X, PanelRightOpen } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import NoveltyDetailView from '@/components/novelty/NoveltyDetailView';
+import NoveltyAiAssistant, { type NoveltyAngle } from '@/components/novelty/NoveltyAiAssistant';
 
 const TITLE_MIN = 3;
 const TITLE_MAX = 120;
@@ -166,6 +167,29 @@ export default function AtelierNouveaute() {
     if (!t) return;
     if (!audienceTags.includes(t)) setAudienceTags((prev) => [...prev, t]);
     setAudienceInput('');
+  };
+
+  /* ---------------- Assistant IA : application d'un angle ---------------- */
+
+  const canvasHasContent =
+    title.trim().length > 0 ||
+    reason.trim().length > 0 ||
+    (reason2 ?? '').trim().length > 0 ||
+    (reason3 ?? '').trim().length > 0 ||
+    summary.trim().length > 0;
+
+  const applyAngle = (angle: NoveltyAngle) => {
+    setTitle(angle.title || '');
+    if (angle.type) setType(angle.type);
+    setReason(angle.reason_1 || '');
+    setReason2(angle.reason_2 ?? null);
+    setReason3(angle.reason_3 ?? null);
+    setSummary(angle.summary || '');
+    if (Array.isArray(angle.audience_tags)) setAudienceTags(angle.audience_tags.filter(Boolean));
+    toast({
+      title: 'Angle appliqué',
+      description: 'Ajustez librement chaque zone du canevas.',
+    });
   };
 
   /* ---------------- Complétude ---------------- */
@@ -323,26 +347,14 @@ export default function AtelierNouveaute() {
 
   const panel = (
     <div className="space-y-8">
-      {/* Assistant IA — emplacement réservé (6c) */}
-      <section className="rounded-xl border border-[#6b51ff]/30 bg-[#6b51ff]/[0.07] p-4">
-        <div className="flex items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6b51ff] text-white">
-            <Sparkles className="h-4 w-4" />
-          </span>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-semibold text-[#6b51ff]">Assistant IA</span>
-              <span className="rounded-full border border-[#6b51ff]/30 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#6b51ff]">
-                Bientôt
-              </span>
-            </div>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              Votre assistant pour rédiger une nouveauté qui donne envie de venir : décrivez-la en
-              vrac, il proposera des angles et remplira la page pour vous.
-            </p>
-          </div>
-        </div>
-      </section>
+      {/* Assistant IA */}
+      <NoveltyAiAssistant
+        eventId={eventId}
+        exhibitorId={exhibitorId}
+        currentType={type || undefined}
+        canvasHasContent={canvasHasContent}
+        onApplyAngle={applyAngle}
+      />
 
       {/* Publication */}
       <section className="space-y-3">
