@@ -169,7 +169,8 @@ function SelectionInner({
     resolveLoading,
     confirmedLegacyMatch,
     handleUseExistingMatch,
-    blockedByAdminMatch,
+    blockedByAdmin,
+    selectedRightsLoading,
     quota,
     userData,
     setUserData,
@@ -396,17 +397,20 @@ function SelectionInner({
               </Alert>
             )}
 
-            {blockedByAdminMatch && (
-              <Alert variant="destructive">
-                <Lock className="h-4 w-4" />
-                <AlertDescription className="text-sm">
-                  Cette entreprise est déjà administrée sur Lotexpo. Pour publier en son nom, demandez à être
-                  ajouté à son équipe.
-                </AlertDescription>
-              </Alert>
-            )}
           </div>
         </section>
+      )}
+
+      {/* ── Entreprise déjà administrée ─────────────────────── */}
+      {blockedByAdmin && (
+        <Alert variant="destructive">
+          <Lock className="h-4 w-4" />
+          <AlertDescription className="text-sm">
+            Cette entreprise est déjà administrée sur Lotexpo par une autre personne. Pour publier une
+            nouveauté en son nom, demandez à son responsable de vous ajouter à son équipe. Vous ne pouvez pas
+            continuer avec cette entreprise.
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* ── Quota ───────────────────────────────────────────── */}
