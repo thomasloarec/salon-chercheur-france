@@ -293,7 +293,12 @@ export default function NoveltyDetailView({
   brochureName = null,
   className,
 }: NoveltyDetailViewProps) {
-  const typeLabel = NOVELTY_TYPE_LABELS[novelty.type] || novelty.type;
+  const hasType = Boolean(novelty.type && NOVELTY_TYPE_LABELS[novelty.type]);
+  const typeLabel = hasType
+    ? NOVELTY_TYPE_LABELS[novelty.type]
+    : editable
+      ? 'Choisir le type'
+      : novelty.type;
   const images = (novelty.media_urls ?? []).filter((u) => u && isImage(u)) as string[];
   const logo = getExhibitorLogoUrl(novelty.exhibitor_logo_url ?? undefined, undefined);
   const exhibitorName = novelty.exhibitor_display_name || 'Exposant';
@@ -375,7 +380,10 @@ export default function NoveltyDetailView({
             {images.length < MAX_IMAGES && (
               <label
                 className={cn(
-                  'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed text-muted-foreground transition-colors hover:border-foreground/30 hover:bg-muted/40 hover:text-foreground',
+                  'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition-colors',
+                  images.length === 0
+                    ? 'border-[#6b51ff]/50 bg-[#6b51ff]/[0.04] text-[#6b51ff]/70 hover:border-[#6b51ff] hover:bg-[#6b51ff]/[0.08]'
+                    : 'text-muted-foreground hover:border-foreground/30 hover:bg-muted/40 hover:text-foreground',
                   images.length === 0
                     ? 'mx-auto aspect-[4/5] w-full max-w-[340px] max-h-[420px]'
                     : 'h-24',
@@ -385,7 +393,12 @@ export default function NoveltyDetailView({
                 <span className="text-sm">
                   {images.length === 0 ? 'Ajouter une image' : 'Ajouter une autre image'}
                 </span>
-                <span className="text-[11px] text-muted-foreground/70">
+                <span
+                  className={cn(
+                    'text-[11px]',
+                    images.length === 0 ? 'text-[#6b51ff]/60' : 'text-muted-foreground/70',
+                  )}
+                >
                   {images.length}/{MAX_IMAGES}
                 </span>
                 <input
@@ -448,7 +461,12 @@ export default function NoveltyDetailView({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1 rounded-md bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary/70"
+                  className={cn(
+                    'inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-xs font-medium transition-colors',
+                    hasType
+                      ? 'bg-secondary text-secondary-foreground hover:bg-secondary/70'
+                      : 'border border-dashed border-[#6b51ff]/60 bg-[#6b51ff]/[0.06] text-[#6b51ff] hover:bg-[#6b51ff]/[0.12]',
+                  )}
                 >
                   {typeLabel}
                   <ChevronDown className="h-3 w-3 opacity-60" />
@@ -490,6 +508,7 @@ export default function NoveltyDetailView({
             min={3}
             max={120}
             hint="3 à 120 caractères"
+            awaiting
             className="heading-display text-2xl font-bold leading-tight tracking-tight md:text-3xl"
           />
         ) : (
@@ -544,6 +563,7 @@ export default function NoveltyDetailView({
                   min={10}
                   max={1000}
                   hint="10 à 1000 caractères"
+                  awaiting
                   className="text-sm leading-relaxed"
                 />
               </div>
