@@ -65,6 +65,8 @@ export function useExhibitorSelection({
 
   // Identifiant d'événement tolérant aux deux formes (id_event texte ou id)
   const resolvedEventId = ((event as any)?.id_event || (event as any)?.id || '') as string;
+  console.log('[DIAG event] event brut =', JSON.stringify(event));
+  console.log('[DIAG event] resolvedEventId =', resolvedEventId, '| event.id =', (event as any)?.id, '| event.id_event =', (event as any)?.id_event);
 
   const [exhibitors, setExhibitors] = useState<DbExhibitor[]>([]);
   const [globalExhibitors, setGlobalExhibitors] = useState<DbExhibitor[]>([]);
@@ -236,6 +238,7 @@ export function useExhibitorSelection({
       if (s) q = q.ilike('name_final', `%${s}%`);
 
       const { data: participations, error: partErr } = await q;
+      console.log('[DIAG event] requête salon : eventId utilisé =', eventId, '| participations reçues =', participations?.length, '| erreur =', partErr);
       if (partErr) {
         console.error('[useExhibitorSelection] participations error', partErr);
         throw partErr;
