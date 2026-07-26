@@ -77,6 +77,12 @@ export function useExhibitorSelection({
   const [selectedExhibitor, setSelectedExhibitor] = useState<DbExhibitor | null>(null);
   const [selectedExhibitorLogo, setSelectedExhibitorLogo] = useState<File | null>(null);
   const [selectedExhibitorStandInfo, setSelectedExhibitorStandInfo] = useState<string>('');
+  // Droits de l'utilisateur sur l'exposant sélectionné (résolus côté serveur)
+  const [selectedExhibitorRights, setSelectedExhibitorRights] = useState<{
+    has_admin: boolean;
+    current_user_can_create_novelty: boolean;
+  } | null>(null);
+  const [selectedRightsLoading, setSelectedRightsLoading] = useState(false);
   // ✅ Track whether the event has any exhibitor at all (independent of search filter)
   const [eventHasAnyExhibitor, setEventHasAnyExhibitor] = useState<boolean | null>(null);
 
@@ -124,6 +130,55 @@ export function useExhibitorSelection({
     !candidateMatch.current_user_can_create_novelty
   );
 
+  // Blocage lors de la sélection directe d'un exposant existant
+  const blockedBySelectedExhibitor = !!(
+    selectedExhibitor &&
+    selectedExhibitorRights &&
+    selectedExhibitorRights.has_admin &&
+    !selectedExhibitorRights.current_user_can_create_novelty
+  );
+
+  const blockedByAdmin = blockedByAdminMatch || blockedBySelectedExhibitor;
+
+  // Vérification des droits dès qu'un exposant existant est sélectionné
+  useEffect(() => {
+    if (!selectedExhibitor) {
+      setSelectedExhibitorRights(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        setSelectedRightsLoading(true);
+        const { data, error } = await supabase.functions.invoke('exhibitors-manage', {
+          body: {
+            action: 'resolve_candidate',
+            name: selectedExhibitor.name || undefined,
+            website: selectedExhibitor.website || undefined,
+            event_id: resolvedEventId || undefined,
+          },
+        });
+        if (cancelled) return;
+        if (error || !data) {
+          setSelectedExhibitorRights(null);
+          return;
+        }
+        const m = data as ResolveCandidateMatch;
+        setSelectedExhibitorRights({
+          has_admin: !!m.has_admin,
+          current_user_can_create_novelty: !!m.current_user_can_create_novelty,
+        });
+      } catch {
+        if (!cancelled) setSelectedExhibitorRights(null);
+      } finally {
+        if (!cancelled) setSelectedRightsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedExhibitor?.id, selectedExhibitor?.name, selectedExhibitor?.website, resolvedEventId]);
+
   // Validate form data
   useEffect(() => {
     const hasExhibitor = selectedExhibitor || (newExhibitorData.name && newExhibitorData.website);
@@ -138,10 +193,14 @@ export function useExhibitorSelection({
     const quotaOk = !selectedExhibitor || !quota || quota.allowed;
 
     const blocked = !!(
-      !selectedExhibitor &&
-      candidateMatch &&
-      candidateMatch.has_admin &&
-      !candidateMatch.current_user_can_create_novelty
+      (!selectedExhibitor &&
+        candidateMatch &&
+        candidateMatch.has_admin &&
+        !candidateMatch.current_user_can_create_novelty) ||
+      (selectedExhibitor &&
+        selectedExhibitorRights &&
+        selectedExhibitorRights.has_admin &&
+        !selectedExhibitorRights.current_user_can_create_novelty)
     );
 
     const isValid = hasExhibitor && hasUserData && emailValid && quotaOk && !blocked;
@@ -198,6 +257,7 @@ export function useExhibitorSelection({
     selectedExhibitorLogo,
     selectedExhibitorStandInfo,
     candidateMatch,
+    selectedExhibitorRights,
   ]);
 
   const loadExhibitors = async () => {
@@ -456,6 +516,7 @@ export function useExhibitorSelection({
   const resetSelection = () => {
     setSelectedExhibitor(null);
     setSelectedExhibitorStandInfo('');
+    setSelectedExhibitorRights(null);
     setShowNewExhibitorForm(eventHasAnyExhibitor === false);
     setNewExhibitorData({ name: '', website: '', description: '', stand_info: '', logo: null });
     setCandidateMatch(null);
@@ -494,6 +555,10 @@ export function useExhibitorSelection({
     setConfirmedLegacyMatch,
     handleUseExistingMatch,
     blockedByAdminMatch,
+    blockedBySelectedExhibitor,
+    blockedByAdmin,
+    selectedExhibitorRights,
+    selectedRightsLoading,
     // quota
     quota,
     // identité
