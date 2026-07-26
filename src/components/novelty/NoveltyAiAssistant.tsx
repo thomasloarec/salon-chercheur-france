@@ -23,6 +23,8 @@ export interface NoveltyAngle {
 interface Props {
   eventId: string;
   exhibitorId: string;
+  /** Retourne l'identifiant de l'exposant, en le créant au besoin (une seule fois). */
+  ensureExhibitorId?: () => Promise<string | null>;
   currentType?: string;
   canvasHasContent: boolean;
   onApplyAngle: (angle: NoveltyAngle) => void;
@@ -67,6 +69,7 @@ function AssistantSteps({ phase }: { phase: Exclude<Phase, 'idle'> }) {
 export default function NoveltyAiAssistant({
   eventId,
   exhibitorId,
+  ensureExhibitorId,
   currentType,
   canvasHasContent,
   onApplyAngle,
@@ -131,14 +134,22 @@ export default function NoveltyAiAssistant({
     setAngles([]);
     setPhase('analyse');
 
-    const base: Record<string, unknown> = {
-      exhibitor_id: exhibitorId,
-      event_id: eventId,
-      texte: matiere.trim(),
-      ...(currentType ? { type: currentType } : {}),
-    };
-
     try {
+      const resolvedExhibitorId = exhibitorId || (ensureExhibitorId ? await ensureExhibitorId() : null);
+      if (!resolvedExhibitorId) {
+        setErreur(
+          "Impossible d'enregistrer votre entreprise pour le moment. Réessayez dans un instant.",
+        );
+        return;
+      }
+
+      const base: Record<string, unknown> = {
+        exhibitor_id: resolvedExhibitorId,
+        event_id: eventId,
+        texte: matiere.trim(),
+        ...(currentType ? { type: currentType } : {}),
+      };
+
       const { res: r1, json: analyse } = await call({ action: 'analyser', ...base });
       if (handleFailure(r1, analyse)) return;
       console.log('[novelty-ai] analyser', analyse);

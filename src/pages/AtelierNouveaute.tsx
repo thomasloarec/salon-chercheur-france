@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -78,9 +78,12 @@ export default function AtelierNouveaute() {
   const identity = navState.identity ?? null;
 
   const eventId = params.get('event') || navState.eventId || '';
-  // Exposant existant : identifiant connu dès maintenant. Nouvel exposant : créé à la publication.
-  const exhibitorId = params.get('exhibitor') || resolvedExhibitor?.id || '';
-  const hasExhibitorToCreate = !exhibitorId && !!resolvedExhibitor?.name;
+  // Exposant existant : identifiant connu dès maintenant.
+  // Nouvel exposant : créé au premier usage de l'IA OU à la publication (une seule fois).
+  const exhibitorIdInitial = params.get('exhibitor') || resolvedExhibitor?.id || '';
+  const [createdExhibitorId, setCreatedExhibitorId] = useState<string | null>(null);
+  const exhibitorId = exhibitorIdInitial || createdExhibitorId || '';
+  const hasExhibitorToCreate = !exhibitorIdInitial && !!resolvedExhibitor?.name;
 
   const [publishStep, setPublishStep] = useState<string | null>(null);
 
@@ -116,6 +119,37 @@ export default function AtelierNouveaute() {
       return data;
     },
   });
+
+  /* ------- Source UNIQUE de création de l'exposant (IA ou publication) ------- */
+  const createdIdRef = useRef<string | null>(null);
+  const ensureExhibitor = useCallback(async (): Promise<string | null> => {
+    const current = exhibitorIdInitial || createdExhibitorId || createdIdRef.current;
+    if (current) return current;
+    if (!resolvedExhibitor?.name || !eventId) return null;
+    const { data: created, error } = await supabase.functions.invoke('exhibitors-manage', {
+      body: {
+        action: 'create',
+        name: resolvedExhibitor.name,
+        website: resolvedExhibitor.website || null,
+        event_id: eventId,
+        ...(resolvedExhibitor.legacy_id_exposant
+          ? { legacy_id_exposant: resolvedExhibitor.legacy_id_exposant }
+          : {}),
+        defer_participation: true,
+      },
+    });
+    if (error || !created?.id) {
+      toast({
+        title: "Création de l'entreprise impossible",
+        description: error?.message || 'Réessayez dans un instant.',
+        variant: 'destructive',
+      });
+      return null;
+    }
+    createdIdRef.current = created.id as string;
+    setCreatedExhibitorId(created.id as string);
+    return created.id as string;
+  }, [exhibitorIdInitial, createdExhibitorId, resolvedExhibitor, eventId]);
 
   const { data: exhibitor } = useQuery({
     queryKey: ['atelier-exhibitor', exhibitorId],
@@ -292,36 +326,12 @@ export default function AtelierNouveaute() {
       }
 
       /* ── Étape 2 — Créer l'exposant si nouveau (une seule fois, sans logo ni stand) ── */
-      let finalExhibitorId = exhibitorId;
-      let pendingExhibitorId: string | null = null;
-      if (!finalExhibitorId && resolvedExhibitor) {
+      if (!exhibitorIdInitial && !createdExhibitorId && !createdIdRef.current) {
         setPublishStep('Création de votre entreprise…');
-        const { data: created, error: createError } = await supabase.functions.invoke(
-          'exhibitors-manage',
-          {
-            body: {
-              action: 'create',
-              name: resolvedExhibitor.name,
-              website: resolvedExhibitor.website || null,
-              event_id: eventId,
-              ...(resolvedExhibitor.legacy_id_exposant
-                ? { legacy_id_exposant: resolvedExhibitor.legacy_id_exposant }
-                : {}),
-              defer_participation: true,
-            },
-          },
-        );
-        if (createError || !created?.id) {
-          toast({
-            title: "Création de l'entreprise impossible",
-            description: createError?.message || 'Réessayez dans un instant.',
-            variant: 'destructive',
-          });
-          return;
-        }
-        finalExhibitorId = created.id as string;
-        pendingExhibitorId = created.id as string;
       }
+      const finalExhibitorId = await ensureExhibitor();
+      if (!finalExhibitorId) return;
+      const pendingExhibitorId: string | null = exhibitorIdInitial ? null : finalExhibitorId;
 
       /* ── Étape 3 — Participation si l'exposant vient du catalogue ── */
       if (resolvedExhibitor?.needs_participation === true && finalExhibitorId) {
@@ -517,11 +527,12 @@ export default function AtelierNouveaute() {
 
   const panelRest = (
     <div className="space-y-8">
-      {/* Assistant IA (nécessite un exposant déjà enregistré) */}
-      {!!exhibitorId && (
+      {/* Assistant IA (exposant existant ou à créer au premier usage) */}
+      {(!!exhibitorId || hasExhibitorToCreate) && (
         <NoveltyAiAssistant
           eventId={eventId}
           exhibitorId={exhibitorId}
+          ensureExhibitorId={ensureExhibitor}
           currentType={type || undefined}
           canvasHasContent={canvasHasContent}
           onApplyAngle={applyAngle}
