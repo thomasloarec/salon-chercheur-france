@@ -65,8 +65,6 @@ export function useExhibitorSelection({
 
   // Identifiant d'événement tolérant aux deux formes (id_event texte ou id)
   const resolvedEventId = ((event as any)?.id_event || (event as any)?.id || '') as string;
-  console.log('[DIAG event] event brut =', JSON.stringify(event));
-  console.log('[DIAG event] resolvedEventId =', resolvedEventId, '| event.id =', (event as any)?.id, '| event.id_event =', (event as any)?.id_event);
 
   const [exhibitors, setExhibitors] = useState<DbExhibitor[]>([]);
   const [globalExhibitors, setGlobalExhibitors] = useState<DbExhibitor[]>([]);
@@ -139,7 +137,6 @@ export function useExhibitorSelection({
   );
 
   const blockedByAdmin = blockedByAdminMatch || blockedBySelectedExhibitor;
-  console.log('[DIAG rights] selectedExhibitorRights =', JSON.stringify(selectedExhibitorRights), '| blockedByAdmin =', blockedByAdmin, '| selectedExhibitor =', selectedExhibitor?.name);
 
   // Vérification des droits dès qu'un exposant existant est sélectionné
   useEffect(() => {
@@ -165,8 +162,6 @@ export function useExhibitorSelection({
           return;
         }
         const m = data as ResolveCandidateMatch;
-        console.log('[DIAG rights] exposant sélectionné =', selectedExhibitor?.name, '| website envoyé =', selectedExhibitor?.website);
-        console.log('[DIAG rights] resolve_candidate a renvoyé =', JSON.stringify(data));
         setSelectedExhibitorRights({
           has_admin: !!m.has_admin,
           current_user_can_create_novelty: !!m.current_user_can_create_novelty,
@@ -297,11 +292,9 @@ export function useExhibitorSelection({
         .order('name_final', { ascending: true, nullsFirst: false });
 
       const s = debouncedSearch?.trim();
-      console.log('[DIAG catalogue] terme de recherche s =', JSON.stringify(s), '| longueur =', s?.length);
       if (s) q = q.ilike('name_final', `%${s}%`);
 
       const { data: participations, error: partErr } = await q;
-      console.log('[DIAG event] requête salon : eventId utilisé =', eventId, '| participations reçues =', participations?.length, '| erreur =', partErr);
       if (partErr) {
         console.error('[useExhibitorSelection] participations error', partErr);
         throw partErr;
@@ -351,7 +344,6 @@ export function useExhibitorSelection({
       // ── Catalogue Lotexpo : entreprises déjà connues, hors event en cours ──
       if (s) {
         const eventExhibitorIds = new Set(uniqueExhibitors.map((e) => e.id));
-        console.log('[DIAG catalogue] lancement requête catalogue pour', s);
         const { data: globals, error: globErr } = await supabase
           .from('exhibitors')
           .select('id, name, website, logo_url, approved, stand_info')
@@ -360,8 +352,6 @@ export function useExhibitorSelection({
           .order('approved', { ascending: false })
           .order('name', { ascending: true })
           .limit(20);
-        console.log('[DIAG catalogue] réponse brute globals =', globals?.length, 'résultats', globals?.map((g) => g.name));
-        console.log('[DIAG catalogue] erreur éventuelle =', globErr);
         if (!globErr && globals) {
           const filteredGlobals: DbExhibitor[] = globals
             .filter((g) => !eventExhibitorIds.has(g.id))
@@ -374,8 +364,6 @@ export function useExhibitorSelection({
               stand_info: g.stand_info || undefined,
               needs_participation: true,
             }));
-          console.log('[DIAG catalogue] après filtrage (retrait des exposants déjà sur le salon) =', filteredGlobals.length, filteredGlobals.map((g) => g.name));
-          console.log('[DIAG catalogue] ids exposants du salon exclus =', Array.from(eventExhibitorIds));
           setGlobalExhibitors(filteredGlobals);
         } else {
           setGlobalExhibitors([]);
