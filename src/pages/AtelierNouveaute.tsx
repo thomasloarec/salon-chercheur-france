@@ -357,19 +357,19 @@ export default function AtelierNouveaute() {
       <Button
         onClick={handlePublish}
         disabled={!canPublish}
-        className="w-full bg-[#6b51ff] text-white shadow-sm hover:bg-[#5b43e6]"
+        className="h-11 w-full bg-[#6b51ff] text-sm font-semibold text-white shadow-sm hover:bg-[#5b43e6]"
       >
         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         Publier ma nouveauté
       </Button>
     </div>
   ) : (
-    <div className="flex items-center justify-between gap-3">
+    <div className="space-y-2.5">
       <Popover>
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="text-left text-xs text-muted-foreground underline decoration-dotted underline-offset-4 transition-colors hover:text-foreground"
+            className="text-left text-sm font-medium text-foreground/80 underline decoration-dotted underline-offset-4 transition-colors hover:text-foreground"
           >
             Encore {missing.length} élément{missing.length > 1 ? 's' : ''} à compléter avant de
             publier
@@ -388,12 +388,11 @@ export default function AtelierNouveaute() {
         </PopoverContent>
       </Popover>
       <Button
-        variant="ghost"
+        variant="secondary"
         disabled
-        className="shrink-0 text-xs text-muted-foreground/70"
-        size="sm"
+        className="h-11 w-full border border-border bg-muted text-sm font-semibold text-foreground opacity-80 disabled:opacity-80"
       >
-        Publier
+        Publier ma nouveauté
       </Button>
     </div>
   );
@@ -527,7 +526,7 @@ export default function AtelierNouveaute() {
                 <div className="min-h-0 flex-1 overflow-y-auto p-5">{panelRest}</div>
                 <div
                   className={cn(
-                    'shrink-0 border-t p-4',
+                    'shrink-0 border-t p-4 pb-5',
                     isReady ? 'border-[#6b51ff]/20 bg-background' : 'bg-muted/40',
                   )}
                 >
