@@ -326,7 +326,7 @@ export default function AtelierNouveaute() {
       <section className="rounded-xl border border-[#6b51ff]/30 bg-[#6b51ff]/[0.07] p-4">
         <div className="flex items-start gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6b51ff] text-white">
-            <Sparkles className="h-4.5 w-4.5" />
+            <Sparkles className="h-4 w-4" />
           </span>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
