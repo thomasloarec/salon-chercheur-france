@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -326,36 +326,12 @@ export default function AtelierNouveaute() {
       }
 
       /* ── Étape 2 — Créer l'exposant si nouveau (une seule fois, sans logo ni stand) ── */
-      let finalExhibitorId = exhibitorId;
-      let pendingExhibitorId: string | null = null;
-      if (!finalExhibitorId && resolvedExhibitor) {
+      if (!exhibitorIdInitial && !createdExhibitorId && !createdIdRef.current) {
         setPublishStep('Création de votre entreprise…');
-        const { data: created, error: createError } = await supabase.functions.invoke(
-          'exhibitors-manage',
-          {
-            body: {
-              action: 'create',
-              name: resolvedExhibitor.name,
-              website: resolvedExhibitor.website || null,
-              event_id: eventId,
-              ...(resolvedExhibitor.legacy_id_exposant
-                ? { legacy_id_exposant: resolvedExhibitor.legacy_id_exposant }
-                : {}),
-              defer_participation: true,
-            },
-          },
-        );
-        if (createError || !created?.id) {
-          toast({
-            title: "Création de l'entreprise impossible",
-            description: createError?.message || 'Réessayez dans un instant.',
-            variant: 'destructive',
-          });
-          return;
-        }
-        finalExhibitorId = created.id as string;
-        pendingExhibitorId = created.id as string;
       }
+      const finalExhibitorId = await ensureExhibitor();
+      if (!finalExhibitorId) return;
+      const pendingExhibitorId: string | null = exhibitorIdInitial ? null : finalExhibitorId;
 
       /* ── Étape 3 — Participation si l'exposant vient du catalogue ── */
       if (resolvedExhibitor?.needs_participation === true && finalExhibitorId) {
