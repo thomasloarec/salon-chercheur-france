@@ -2,13 +2,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ChevronDown, Loader2, X, PanelRightOpen } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Loader2, X, PanelRightOpen, CheckCircle2 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -345,12 +346,37 @@ export default function AtelierNouveaute() {
 
   /* ---------------- Panneau droit ---------------- */
 
-  const publicationBlock = (
-    <section className="space-y-3">
-      <h2 className="text-sm font-semibold">Publication</h2>
-      {missing.length > 0 ? (
-        <>
-          <p className="text-xs font-medium text-foreground">Avant de publier, complétez :</p>
+  const isReady = missing.length === 0 && !!eventId && !!exhibitorId;
+
+  const publicationBar = isReady ? (
+    <div className="space-y-2.5">
+      <p className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+        <CheckCircle2 className="h-3.5 w-3.5 text-[#6b51ff]" />
+        Votre nouveauté est prête.
+      </p>
+      <Button
+        onClick={handlePublish}
+        disabled={!canPublish}
+        className="w-full bg-[#6b51ff] text-white shadow-sm hover:bg-[#5b43e6]"
+      >
+        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        Publier ma nouveauté
+      </Button>
+    </div>
+  ) : (
+    <div className="flex items-center justify-between gap-3">
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="text-left text-xs text-muted-foreground underline decoration-dotted underline-offset-4 transition-colors hover:text-foreground"
+          >
+            Encore {missing.length} élément{missing.length > 1 ? 's' : ''} à compléter avant de
+            publier
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" side="top" className="w-72">
+          <p className="mb-2 text-xs font-medium text-foreground">Avant de publier, complétez :</p>
           <ul className="space-y-1.5 text-xs text-muted-foreground">
             {missing.map((m) => (
               <li key={m} className="flex gap-2">
@@ -359,15 +385,17 @@ export default function AtelierNouveaute() {
               </li>
             ))}
           </ul>
-        </>
-      ) : (
-        <p className="text-xs text-muted-foreground">Tout est prêt, vous pouvez publier.</p>
-      )}
-      <Button onClick={handlePublish} disabled={!canPublish} className="w-full">
-        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Publier ma nouveauté
+        </PopoverContent>
+      </Popover>
+      <Button
+        variant="ghost"
+        disabled
+        className="shrink-0 text-xs text-muted-foreground/70"
+        size="sm"
+      >
+        Publier
       </Button>
-    </section>
+    </div>
   );
 
   const panelRest = (
@@ -434,9 +462,9 @@ export default function AtelierNouveaute() {
   );
 
   const panel = (
-    <div className="space-y-8">
-      {publicationBlock}
+    <div className="space-y-6">
       {panelRest}
+      <div className="border-t pt-4">{publicationBar}</div>
     </div>
   );
 
@@ -495,9 +523,16 @@ export default function AtelierNouveaute() {
           <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-12">
             <div className="min-w-0 flex-1">{canvas}</div>
             <aside className="hidden w-[360px] shrink-0 lg:block xl:w-[380px]">
-              <div className="sticky top-24 flex max-h-[calc(100vh-8rem)] flex-col rounded-2xl border-2 border-[#6b51ff]/20 bg-muted/40 shadow-sm">
-                <div className="shrink-0 border-b border-[#6b51ff]/15 p-5">{publicationBlock}</div>
+              <div className="sticky top-16 flex h-[calc(100vh-4rem)] flex-col border-l bg-muted/30">
                 <div className="min-h-0 flex-1 overflow-y-auto p-5">{panelRest}</div>
+                <div
+                  className={cn(
+                    'shrink-0 border-t p-4',
+                    isReady ? 'border-[#6b51ff]/20 bg-background' : 'bg-muted/40',
+                  )}
+                >
+                  {publicationBar}
+                </div>
               </div>
             </aside>
           </div>
