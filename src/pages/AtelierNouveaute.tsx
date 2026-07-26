@@ -78,9 +78,12 @@ export default function AtelierNouveaute() {
   const identity = navState.identity ?? null;
 
   const eventId = params.get('event') || navState.eventId || '';
-  // Exposant existant : identifiant connu dès maintenant. Nouvel exposant : créé à la publication.
-  const exhibitorId = params.get('exhibitor') || resolvedExhibitor?.id || '';
-  const hasExhibitorToCreate = !exhibitorId && !!resolvedExhibitor?.name;
+  // Exposant existant : identifiant connu dès maintenant.
+  // Nouvel exposant : créé au premier usage de l'IA OU à la publication (une seule fois).
+  const exhibitorIdInitial = params.get('exhibitor') || resolvedExhibitor?.id || '';
+  const [createdExhibitorId, setCreatedExhibitorId] = useState<string | null>(null);
+  const exhibitorId = exhibitorIdInitial || createdExhibitorId || '';
+  const hasExhibitorToCreate = !exhibitorIdInitial && !!resolvedExhibitor?.name;
 
   const [publishStep, setPublishStep] = useState<string | null>(null);
 
