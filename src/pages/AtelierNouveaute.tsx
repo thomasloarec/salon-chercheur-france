@@ -139,6 +139,15 @@ export default function AtelierNouveaute() {
     });
   };
 
+  const reorderImages = (from: number, to: number) => {
+    setImages((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  };
+
   const handlePdf = (file: File | null) => {
     if (!file) return setBrochure(null);
     if (file.type !== 'application/pdf') {
@@ -411,6 +420,7 @@ export default function AtelierNouveaute() {
       onSummaryChange={setSummary}
       onAddImages={handleImages}
       onRemoveImage={removeImage}
+      onReorderImages={reorderImages}
       onSetBrochure={handlePdf}
     />
   );
