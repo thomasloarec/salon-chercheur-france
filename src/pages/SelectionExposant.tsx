@@ -42,9 +42,11 @@ function ExhibitorRow({
         </div>
       )}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0">
           <span className="font-medium truncate">{exhibitor.name}</span>
-          {exhibitor.approved && <Badge variant="secondary" className="text-[10px]">Vérifiée</Badge>}
+          {exhibitor.approved && (
+            <Badge variant="secondary" className="text-[10px] flex-shrink-0">Vérifiée</Badge>
+          )}
         </div>
         {exhibitor.website && (
           <p className="text-xs text-muted-foreground truncate">{exhibitor.website}</p>
