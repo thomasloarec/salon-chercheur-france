@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMyPendingClaims } from '@/hooks/useMyPendingClaims';
+import { useMyNovelties } from '@/hooks/useMyNovelties';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 
 /**
@@ -18,6 +19,9 @@ import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
  */
 const MyPendingClaimsSection = () => {
   const { data: claims, isLoading } = useMyPendingClaims();
+  const { data: novelties, isLoading: noveltiesLoading } = useMyNovelties();
+  const hasSubmittedNovelty = (novelties?.length ?? 0) > 0;
+  const canShowNoveltyCta = !noveltiesLoading && !hasSubmittedNovelty;
 
   if (isLoading) {
     return (
@@ -53,7 +57,7 @@ const MyPendingClaimsSection = () => {
       </h2>
       <p className="text-sm text-muted-foreground mb-4">
         Ces entreprises sont en attente de validation par l'équipe Lotexpo.
-        Vous pouvez déjà soumettre une nouveauté pendant l'attente.
+        {canShowNoveltyCta && ' Vous pouvez déjà soumettre une nouveauté pendant l\'attente.'}
       </p>
 
       <div className="space-y-3">
@@ -96,14 +100,20 @@ const MyPendingClaimsSection = () => {
                 </p>
               </div>
 
-              <div className="flex-shrink-0">
-                <Button size="sm" variant="outline" asChild>
-                  <Link to="/publier-nouveaute">
-                    <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                    Soumettre une nouveauté
-                  </Link>
-                </Button>
-              </div>
+              {canShowNoveltyCta ? (
+                <div className="flex-shrink-0">
+                  <Button size="sm" variant="outline" asChild>
+                    <Link to="/publier-nouveaute">
+                      <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                      Soumettre une nouveauté
+                    </Link>
+                  </Button>
+                </div>
+              ) : hasSubmittedNovelty ? (
+                <div className="flex-shrink-0 text-xs text-muted-foreground">
+                  Nouveauté soumise, en attente de validation.
+                </div>
+              ) : null}
             </div>
           );
         })}
