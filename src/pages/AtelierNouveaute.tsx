@@ -120,6 +120,37 @@ export default function AtelierNouveaute() {
     },
   });
 
+  /* ------- Source UNIQUE de création de l'exposant (IA ou publication) ------- */
+  const createdIdRef = useRef<string | null>(null);
+  const ensureExhibitor = useCallback(async (): Promise<string | null> => {
+    const current = exhibitorIdInitial || createdExhibitorId || createdIdRef.current;
+    if (current) return current;
+    if (!resolvedExhibitor?.name || !eventId) return null;
+    const { data: created, error } = await supabase.functions.invoke('exhibitors-manage', {
+      body: {
+        action: 'create',
+        name: resolvedExhibitor.name,
+        website: resolvedExhibitor.website || null,
+        event_id: eventId,
+        ...(resolvedExhibitor.legacy_id_exposant
+          ? { legacy_id_exposant: resolvedExhibitor.legacy_id_exposant }
+          : {}),
+        defer_participation: true,
+      },
+    });
+    if (error || !created?.id) {
+      toast({
+        title: "Création de l'entreprise impossible",
+        description: error?.message || 'Réessayez dans un instant.',
+        variant: 'destructive',
+      });
+      return null;
+    }
+    createdIdRef.current = created.id as string;
+    setCreatedExhibitorId(created.id as string);
+    return created.id as string;
+  }, [exhibitorIdInitial, createdExhibitorId, resolvedExhibitor, eventId]);
+
   const { data: exhibitor } = useQuery({
     queryKey: ['atelier-exhibitor', exhibitorId],
     enabled: !!exhibitorId,
