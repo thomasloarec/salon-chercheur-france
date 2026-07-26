@@ -323,15 +323,24 @@ export default function AtelierNouveaute() {
   const panel = (
     <div className="space-y-8">
       {/* Assistant IA — emplacement réservé (6c) */}
-      <section className="rounded-xl border border-[#6b51ff]/25 bg-[#6b51ff]/[0.05] p-4">
-        <div className="flex items-center gap-2 text-sm font-medium text-[#6b51ff]">
-          <Sparkles className="h-4 w-4" />
-          Assistant IA
+      <section className="rounded-xl border border-[#6b51ff]/30 bg-[#6b51ff]/[0.07] p-4">
+        <div className="flex items-start gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6b51ff] text-white">
+            <Sparkles className="h-4.5 w-4.5" />
+          </span>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-semibold text-[#6b51ff]">Assistant IA</span>
+              <span className="rounded-full border border-[#6b51ff]/30 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#6b51ff]">
+                Bientôt
+              </span>
+            </div>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Votre assistant pour rédiger une nouveauté qui donne envie de venir : décrivez-la en
+              vrac, il proposera des angles et remplira la page pour vous.
+            </p>
+          </div>
         </div>
-        <p className="mt-1.5 text-xs text-muted-foreground">
-          Bientôt : décrivez votre nouveauté en vrac, l'assistant proposera des angles et remplira
-          la page pour vous.
-        </p>
       </section>
 
       {/* Publication */}
@@ -462,7 +471,9 @@ export default function AtelierNouveaute() {
           <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-12">
             <div className="min-w-0 flex-1">{canvas}</div>
             <aside className="hidden w-[360px] shrink-0 lg:block xl:w-[380px]">
-              <div className="sticky top-24 rounded-xl border bg-card p-5">{panel}</div>
+              <div className="sticky top-24 rounded-2xl border-2 border-[#6b51ff]/20 bg-muted/40 p-5 shadow-sm">
+                {panel}
+              </div>
             </aside>
           </div>
         </div>
