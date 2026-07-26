@@ -462,8 +462,8 @@ export default function AtelierNouveaute() {
 
   const panel = (
     <div className="space-y-6">
+      <div className="rounded-lg border bg-background p-4">{publicationBar}</div>
       {panelRest}
-      <div className="border-t pt-4">{publicationBar}</div>
     </div>
   );
 
@@ -523,15 +523,15 @@ export default function AtelierNouveaute() {
             <div className="min-w-0 flex-1">{canvas}</div>
             <aside className="hidden w-[360px] shrink-0 lg:block xl:w-[380px]">
               <div className="sticky top-16 flex h-[calc(100vh-4rem)] flex-col border-l bg-muted/30">
-                <div className="min-h-0 flex-1 overflow-y-auto p-5">{panelRest}</div>
                 <div
                   className={cn(
-                    'shrink-0 border-t p-4 pb-5',
+                    'shrink-0 border-b p-4 pb-5',
                     isReady ? 'border-[#6b51ff]/20 bg-background' : 'bg-muted/40',
                   )}
                 >
                   {publicationBar}
                 </div>
+                <div className="min-h-0 flex-1 overflow-y-auto p-5">{panelRest}</div>
               </div>
             </aside>
           </div>
