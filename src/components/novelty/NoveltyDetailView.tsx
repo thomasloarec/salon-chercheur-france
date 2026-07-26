@@ -365,7 +365,9 @@ export default function NoveltyDetailView({
               <label
                 className={cn(
                   'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed text-muted-foreground transition-colors hover:border-foreground/30 hover:bg-muted/40 hover:text-foreground',
-                  images.length === 0 ? 'aspect-[4/5]' : 'h-24',
+                  images.length === 0
+                    ? 'mx-auto aspect-[4/5] w-full max-w-[340px] max-h-[420px]'
+                    : 'h-24',
                 )}
               >
                 <ImagePlus className="h-6 w-6" />
