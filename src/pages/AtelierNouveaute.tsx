@@ -429,22 +429,6 @@ export default function AtelierNouveaute() {
 
   /* ---------------- États bloquants ---------------- */
 
-  if (!authLoading && !isRealUser && !identity?.email) {
-    return (
-      <MainLayout title="Publier une nouveauté">
-        <div className="max-w-lg mx-auto py-24 text-center space-y-4">
-          <h1 className="heading-display text-2xl">Connectez-vous pour publier</h1>
-          <p className="text-muted-foreground">
-            La publication d'une nouveauté nécessite un compte professionnel.
-          </p>
-          <Button asChild>
-            <Link to="/auth">Se connecter</Link>
-          </Button>
-        </div>
-      </MainLayout>
-    );
-  }
-
   if (!eventId || (!exhibitorId && !hasExhibitorToCreate)) {
     return (
       <MainLayout title="Atelier nouveauté">
