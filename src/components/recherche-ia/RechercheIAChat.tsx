@@ -9,6 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import AnswerMarkdown from '@/components/recherche-ia/AnswerMarkdown';
 import SignupWallDialog from '@/components/recherche-ia/SignupWallDialog';
 import ThinkingIndicator from '@/components/recherche-ia/ThinkingIndicator';
+import { usePublicStats } from '@/hooks/usePublicStats';
 // import RechercheIAShowcase from '@/components/recherche-ia/RechercheIAShowcase';
 
 type Role = 'user' | 'assistant';
