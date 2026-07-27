@@ -68,7 +68,20 @@ const EventCard = ({ event, view = 'grid', adminPreview = false, onPublish, exhi
   const eventSlug = event.slug;
   const targetHref = adminPreview ? `/admin/events/${event.id}` : `/events/${eventSlug}`;
   const days = ongoing ? null : daysUntil(event.date_debut);
-  const accroche = (event as unknown as { accroche?: string }).accroche ?? event.description_event ?? '';
+  const rawAccroche = (event as unknown as { accroche?: string }).accroche ?? event.description_event ?? '';
+  // Certaines descriptions contiennent du HTML (<p>, <br/>, entités) : on affiche du texte brut
+  const accroche = (typeof rawAccroche === 'string' ? rawAccroche : '')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/(p|div|li|h[1-6])>/gi, ' ')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
   const hasAccroche = typeof accroche === 'string' && accroche.trim().length > 0;
 
   const showMetrics = hasExhibitors || hasNovelties || hasCrmMatches || !adminPreview;
