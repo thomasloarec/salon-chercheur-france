@@ -281,13 +281,14 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
     // PROTECTION STAND : ne jamais écraser un stand verrouillé par l'exposant.
     // On récupère les participations déjà en base avec stand_locked = true et on
     // réinjecte leur stand_exposant ACTUEL dans le batch (au lieu de la valeur Airtable).
+    // Clé STABLE indépendante du stand : (id_exposant, id_event_text)
     const lockedStands = new Map<string, string | null>();
     let lockedOffset = 0;
     const lockedPageSize = 1000;
     while (true) {
       const { data: lockedPage, error: lockedError } = await supabaseClient
         .from('participation')
-        .select('urlexpo_event, stand_exposant')
+        .select('id_exposant, id_event_text, stand_exposant')
         .eq('stand_locked', true)
         .range(lockedOffset, lockedOffset + lockedPageSize - 1);
 
@@ -297,7 +298,9 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
       }
       if (!lockedPage || lockedPage.length === 0) break;
       lockedPage.forEach((p: any) => {
-        if (p.urlexpo_event) lockedStands.set(p.urlexpo_event, p.stand_exposant ?? null);
+        if (p.id_exposant && p.id_event_text) {
+          lockedStands.set(`${p.id_exposant}__${p.id_event_text}`, p.stand_exposant ?? null);
+        }
       });
       if (lockedPage.length < lockedPageSize) break;
       lockedOffset += lockedPageSize;
@@ -306,8 +309,9 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
     let preservedStands = 0;
     if (lockedStands.size > 0) {
       for (const item of deduplicatedInsert) {
-        if (lockedStands.has(item.urlexpo_event)) {
-          item.stand_exposant = lockedStands.get(item.urlexpo_event) ?? null;
+        const lockKey = `${item.id_exposant}__${item.id_event_text}`;
+        if (lockedStands.has(lockKey)) {
+          item.stand_exposant = lockedStands.get(lockKey) ?? null;
           preservedStands++;
         }
       }
