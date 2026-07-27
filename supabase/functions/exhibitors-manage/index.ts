@@ -701,6 +701,87 @@ Deno.serve(async (req) => {
     }
 
     // ────────────────────────────────────────────────────
+    // ACTION: set_stand
+    // L'owner (ou admin d'équipe, ou admin plateforme) définit le numéro de stand
+    // d'une participation existante. Le stand est alors VERROUILLÉ (stand_locked)
+    // afin qu'un ré-import Airtable ne l'écrase jamais.
+    // ────────────────────────────────────────────────────
+    if (action === 'set_stand') {
+      const { exhibitor_id, event_id, stand } = requestData
+
+      const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      if (typeof exhibitor_id !== 'string' || !uuidRe.test(exhibitor_id)) {
+        return jsonError('exhibitor_id must be a valid uuid', 400)
+      }
+      if (typeof event_id !== 'string' || !uuidRe.test(event_id)) {
+        return jsonError('event_id must be a valid uuid', 400)
+      }
+      if (stand !== undefined && stand !== null && typeof stand !== 'string') {
+        return jsonError('stand must be a string', 400)
+      }
+      const standValue = typeof stand === 'string' ? stand.trim() : ''
+      if (standValue.length > 50) {
+        return jsonError('stand must be 50 characters or less', 400)
+      }
+      const finalStand = standValue.length > 0 ? standValue : null
+
+      // ── Garde de sécurité : l'utilisateur administre-t-il cet exposant ? ──
+      let allowed = isAdmin
+      if (!allowed) {
+        const { data: exRow, error: exErr } = await serviceClient
+          .from('exhibitors')
+          .select('id, owner_user_id')
+          .eq('id', exhibitor_id)
+          .maybeSingle()
+        if (exErr) {
+          console.error('❌ set_stand: exhibitor lookup failed:', exErr)
+          return jsonError('Failed to load exhibitor', 500, exErr)
+        }
+        if (!exRow) {
+          return jsonError('Exhibitor not found', 404)
+        }
+        if (exRow.owner_user_id && exRow.owner_user_id === user.id) {
+          allowed = true
+        } else {
+          const { data: membership } = await serviceClient
+            .from('exhibitor_team_members')
+            .select('role, status')
+            .eq('exhibitor_id', exhibitor_id)
+            .eq('user_id', user.id)
+            .eq('status', 'active')
+            .in('role', ['owner', 'admin'])
+            .maybeSingle()
+          allowed = !!membership
+        }
+      }
+
+      if (!allowed) {
+        return jsonError("Vous n'administrez pas cet exposant", 403)
+      }
+
+      const { data: updated, error: updErr } = await serviceClient
+        .from('participation')
+        .update({ stand_exposant: finalStand, stand_locked: true })
+        .eq('exhibitor_id', exhibitor_id)
+        .eq('id_event', event_id)
+        .select('id_participation, stand_exposant, stand_locked')
+
+      if (updErr) {
+        console.error('❌ set_stand: update failed:', updErr)
+        return jsonError('Failed to update stand', 500, updErr)
+      }
+      if (!updated || updated.length === 0) {
+        return jsonError('Participation introuvable pour cet exposant et ce salon', 404)
+      }
+
+      return jsonOk({
+        updated: updated.length,
+        stand_exposant: finalStand,
+        stand_locked: true,
+      })
+    }
+
+    // ────────────────────────────────────────────────────
     // ACTION: approve_claim (admin only)
     // ────────────────────────────────────────────────────
     if (action === 'approve_claim') {
