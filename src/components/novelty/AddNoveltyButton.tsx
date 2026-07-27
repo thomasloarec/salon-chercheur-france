@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Lock } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
@@ -10,7 +10,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import AddNoveltyStepper from './AddNoveltyStepper';
 import type { Event } from '@/types/event';
 
 interface AddNoveltyButtonProps {
@@ -30,8 +29,6 @@ export default function AddNoveltyButton({
 }: AddNoveltyButtonProps) {
   const defaultLabel = 'Exposant ? Ajouter votre nouveauté';
   const navigate = useNavigate();
-  // Filet de sécurité : la modale reste montée mais n'est jamais ouverte.
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Vérifier si on est en période de pré-lancement (plus de 90 jours avant l'événement)
   const daysUntilEvent = differenceInDays(new Date(event.date_debut), new Date());
@@ -88,22 +85,14 @@ export default function AddNoveltyButton({
 
   // Bouton normal si période ouverte
   return (
-    <>
-      <Button
-        onClick={handleClick}
-        variant={variant}
-        size={size}
-        className={className}
-      >
-        <Plus className="h-4 w-4 mr-2" />
-        {label || defaultLabel}
-      </Button>
-
-      <AddNoveltyStepper
-        event={event}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
-    </>
+    <Button
+      onClick={handleClick}
+      variant={variant}
+      size={size}
+      className={className}
+    >
+      <Plus className="h-4 w-4 mr-2" />
+      {label || defaultLabel}
+    </Button>
   );
 }
