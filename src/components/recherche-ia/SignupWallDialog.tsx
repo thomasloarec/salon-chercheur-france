@@ -85,7 +85,7 @@ const SignupWallDialog = ({ open, onOpenChange, onUpgraded }: SignupWallDialogPr
 
       await supabase.rpc('log_funnel_event', { p_event_type: 'account_created' });
 
-      toast({ title: 'Compte créé ✓', description: '3 recherches supplémentaires débloquées.' });
+      toast({ title: 'Compte créé ✓', description: '5 recherches supplémentaires débloquées.' });
       onUpgraded();
       onOpenChange(false);
     } catch (err) {
@@ -130,7 +130,7 @@ const SignupWallDialog = ({ open, onOpenChange, onUpgraded }: SignupWallDialogPr
         return;
       }
 
-      toast({ title: 'Connecté ✓', description: '3 recherches supplémentaires débloquées.' });
+      toast({ title: 'Connecté ✓', description: '5 recherches supplémentaires débloquées.' });
       onUpgraded();
       onOpenChange(false);
     } catch (err) {
@@ -153,7 +153,7 @@ const SignupWallDialog = ({ open, onOpenChange, onUpgraded }: SignupWallDialogPr
             Créez votre compte Lotexpo
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Débloquez 3 recherches supplémentaires et reprenez exactement là où vous en étiez.
+            Débloquez 5 recherches supplémentaires et reprenez exactement là où vous en étiez.
           </DialogDescription>
         </DialogHeader>
 

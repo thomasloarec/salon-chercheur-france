@@ -512,10 +512,10 @@ const WallCallout = ({
     return (
       <div className="rounded-2xl border border-primary/40 bg-secondary/60 p-5">
         <p className="heading-display text-lg text-foreground mb-1">
-          {hard ? 'Vous avez utilisé vos 3 recherches gratuites' : 'Encore une envie de creuser ?'}
+          {hard ? 'Vous avez utilisé vos 5 recherches gratuites' : 'Encore une envie de creuser ?'}
         </p>
         <p className="text-sm text-muted-foreground mb-4">
-          Créez votre compte Lotexpo pour 3 recherches de plus. Vos échanges sont conservés.
+          Créez votre compte Lotexpo pour 5 recherches de plus. Vos échanges sont conservés.
         </p>
         <Button onClick={onSignup} className="bg-primary text-primary-foreground hover:bg-primary/90">
           Créer mon compte
