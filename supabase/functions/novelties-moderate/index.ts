@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { sendResendEmail } from "../_shared/resend.ts";
+import { renderEmailShell, heading, paragraph } from "../_shared/email-template.ts";
 
 const schema = z.object({
   novelty_id: z.string().uuid(),
@@ -99,7 +101,7 @@ serve(async (req) => {
     // Récupérer la nouveauté actuelle pour vérifier s'il y a un exposant en attente
     const { data: novelty, error: fetchError } = await supabaseAdmin
       .from('novelties')
-      .select('id, pending_exhibitor_id, exhibitor_id, created_by, event_id, stand_info')
+      .select('id, pending_exhibitor_id, exhibitor_id, created_by, event_id, stand_info, status, title, slug')
       .eq('id', novelty_id)
       .single();
 
@@ -110,6 +112,9 @@ serve(async (req) => {
         { status: 404, headers: corsHeaders() }
       );
     }
+
+    // Statut AVANT modification (sert à ne notifier que sur une vraie transition).
+    const previousStatus: string | null = (novelty as any).status ?? null;
 
     // Update novelty status using service role (bypasses RLS)
     const { error: updateError } = await supabaseAdmin
@@ -262,6 +267,112 @@ serve(async (req) => {
       }
     }
     
+    // ============================================
+    // NOTIFICATION AU CRÉATEUR (email transactionnel Resend)
+    // Additif et JAMAIS bloquant.
+    // ============================================
+    if (
+      previousStatus !== next_status &&
+      (next_status === 'published' || next_status === 'rejected')
+    ) {
+      try {
+        const PUBLIC_SITE_URL = 'https://lotexpo.com';
+        const ADMIN_CONTACT_EMAIL = 'admin@lotexpo.com';
+
+        let recipientUserId: string | null = novelty.created_by ?? null;
+        if (!recipientUserId && novelty.exhibitor_id) {
+          const { data: exOwner } = await supabaseAdmin
+            .from('exhibitors')
+            .select('owner_user_id')
+            .eq('id', novelty.exhibitor_id)
+            .maybeSingle();
+          recipientUserId = exOwner?.owner_user_id ?? null;
+        }
+
+        if (!recipientUserId) {
+          console.warn(`[novelties-moderate] Aucun destinataire pour la nouveauté ${novelty_id}, email ignoré`);
+        } else {
+          const { data: recipientAuth } = await supabaseAdmin.auth.admin.getUserById(recipientUserId);
+          const recipientEmail = recipientAuth?.user?.email ?? null;
+
+          if (!recipientEmail) {
+            console.warn(`[novelties-moderate] Aucun email pour l'utilisateur ${recipientUserId}, email ignoré`);
+          } else {
+            const noveltyTitle =
+              novelty.title && String(novelty.title).trim().length > 0
+                ? String(novelty.title).trim()
+                : 'votre nouveauté';
+
+            let eventName = '';
+            if (novelty.event_id) {
+              const { data: evRow } = await supabaseAdmin
+                .from('events')
+                .select('nom_event')
+                .eq('id', novelty.event_id)
+                .maybeSingle();
+              eventName = evRow?.nom_event ? String(evRow.nom_event) : '';
+            }
+
+            let subject: string;
+            let html: string;
+
+            if (next_status === 'published') {
+              const noveltyUrl = novelty.slug
+                ? `${PUBLIC_SITE_URL}/nouveautes/${novelty.slug}`
+                : `${PUBLIC_SITE_URL}/nouveautes`;
+
+              subject = `Votre nouveauté « ${noveltyTitle} » est en ligne sur Lotexpo`;
+              html = renderEmailShell({
+                title: subject,
+                preheader: `« ${noveltyTitle} » est désormais publiée sur Lotexpo.`,
+                bodyBlocks: [
+                  heading(`Votre nouveauté est publiée 🎉`),
+                  paragraph(
+                    `Bonne nouvelle : votre nouveauté <strong>${noveltyTitle}</strong> a été validée par notre équipe et est maintenant visible publiquement sur Lotexpo${eventName ? `, auprès des visiteurs du salon <strong>${eventName}</strong>` : ''}.`
+                  ),
+                  paragraph(
+                    `Les nouveautés publiées génèrent des contacts qualifiés auprès des visiteurs avant même le salon. Partagez la vôtre pour lui donner un maximum de visibilité.`
+                  ),
+                ],
+                cta: { label: `Voir ma nouveauté`, href: noveltyUrl },
+                footer: { extraHtml: `Ou copiez ce lien : ${noveltyUrl}` },
+              });
+            } else {
+              const mailtoHref = `mailto:${ADMIN_CONTACT_EMAIL}?subject=${encodeURIComponent(
+                `Nouveauté non retenue : ${noveltyTitle}`
+              )}`;
+
+              subject = `Votre nouveauté « ${noveltyTitle} » n'a pas été retenue`;
+              html = renderEmailShell({
+                title: subject,
+                preheader: `Votre nouveauté ${noveltyTitle} n'a pas été validée pour le moment.`,
+                bodyBlocks: [
+                  heading(`Votre nouveauté n'a pas été validée`),
+                  paragraph(
+                    `Après examen par notre équipe, votre nouveauté <strong>${noveltyTitle}</strong> n'a pas été retenue pour publication sur Lotexpo pour le moment.`
+                  ),
+                  paragraph(
+                    `Vous souhaitez comprendre cette décision, ou ajuster votre nouveauté pour la soumettre à nouveau ? Écrivez-nous à <strong>${ADMIN_CONTACT_EMAIL}</strong> : nous vous répondrons avec plaisir.`
+                  ),
+                ],
+                cta: { label: `Contacter Lotexpo`, href: mailtoHref },
+                footer: { extraHtml: `Vous pouvez nous joindre directement à ${ADMIN_CONTACT_EMAIL}` },
+              });
+            }
+
+            try {
+              const { id: emailId } = await sendResendEmail({ to: recipientEmail, subject, html });
+              console.log(`[novelties-moderate] Email "${next_status}" envoyé à ${recipientEmail} (${emailId})`);
+            } catch (sendErr) {
+              console.error('[novelties-moderate] Echec envoi Resend (non bloquant) :', sendErr);
+            }
+          }
+        }
+      } catch (emailBlockErr) {
+        console.error('[novelties-moderate] Bloc email en échec (non bloquant) :', emailBlockErr);
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         ok: true,
