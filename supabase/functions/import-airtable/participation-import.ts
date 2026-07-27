@@ -278,6 +278,42 @@ export async function importParticipation(supabaseClient: any, airtableConfig: A
   let participationsImported = 0;
   
   if (deduplicatedInsert.length > 0) {
+    // PROTECTION STAND : ne jamais écraser un stand verrouillé par l'exposant.
+    // On récupère les participations déjà en base avec stand_locked = true et on
+    // réinjecte leur stand_exposant ACTUEL dans le batch (au lieu de la valeur Airtable).
+    const lockedStands = new Map<string, string | null>();
+    let lockedOffset = 0;
+    const lockedPageSize = 1000;
+    while (true) {
+      const { data: lockedPage, error: lockedError } = await supabaseClient
+        .from('participation')
+        .select('urlexpo_event, stand_exposant')
+        .eq('stand_locked', true)
+        .range(lockedOffset, lockedOffset + lockedPageSize - 1);
+
+      if (lockedError) {
+        console.error('[STAND_LOCK] Lecture impossible:', lockedError.message);
+        break;
+      }
+      if (!lockedPage || lockedPage.length === 0) break;
+      lockedPage.forEach((p: any) => {
+        if (p.urlexpo_event) lockedStands.set(p.urlexpo_event, p.stand_exposant ?? null);
+      });
+      if (lockedPage.length < lockedPageSize) break;
+      lockedOffset += lockedPageSize;
+    }
+
+    let preservedStands = 0;
+    if (lockedStands.size > 0) {
+      for (const item of deduplicatedInsert) {
+        if (lockedStands.has(item.urlexpo_event)) {
+          item.stand_exposant = lockedStands.get(item.urlexpo_event) ?? null;
+          preservedStands++;
+        }
+      }
+    }
+    console.log(`[STAND_LOCK] ${lockedStands.size} stands verrouillés en base, ${preservedStands} préservés dans ce batch`);
+
     const { inserted, errors } = await batchUpsert(
       supabaseClient,
       'participation',

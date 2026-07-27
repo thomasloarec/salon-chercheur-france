@@ -1,0 +1,2 @@
+ALTER TABLE public.participation ADD COLUMN IF NOT EXISTS stand_locked boolean NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS idx_participation_stand_locked ON public.participation (stand_locked) WHERE stand_locked;

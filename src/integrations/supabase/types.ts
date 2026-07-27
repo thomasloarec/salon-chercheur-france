@@ -4647,6 +4647,7 @@ export type Database = {
           id_participation: string
           source: string
           stand_exposant: string | null
+          stand_locked: boolean
           urlexpo_event: string | null
           website_exposant: string | null
         }
@@ -4659,6 +4660,7 @@ export type Database = {
           id_participation?: string
           source?: string
           stand_exposant?: string | null
+          stand_locked?: boolean
           urlexpo_event?: string | null
           website_exposant?: string | null
         }
@@ -4671,6 +4673,7 @@ export type Database = {
           id_participation?: string
           source?: string
           stand_exposant?: string | null
+          stand_locked?: boolean
           urlexpo_event?: string | null
           website_exposant?: string | null
         }
