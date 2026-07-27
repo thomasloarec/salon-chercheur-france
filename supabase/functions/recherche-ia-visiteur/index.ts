@@ -2,7 +2,7 @@
 //
 // Agent conversationnel "Recherche IA Visiteur" pour Lotexpo.
 // Boucle de tool-calling (Claude Haiku) sur 4 primitives SQL déjà en base.
-// Gate crédits (anonyme = 3 / inscrit = 6, paywall mimé) + rate-limit IP.
+// Gate crédits (anonyme = 5 / inscrit = 10, paywall mimé) + rate-limit IP.
 //
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -426,8 +426,8 @@ Deno.serve(async (req) => {
     await admin.from("ai_funnel_events").insert({ user_id: userId, event_type: evt });
     return json({ wall: { type: credit.wall_type }, credits: credit });
   }
-  // Les admins ont une allocation illimitée (999999) ; anonyme = 3, inscrit = 6.
-  const isAdmin = (credit?.allowed ?? 0) > 6;
+  // Les admins ont une allocation illimitée (999999) ; anonyme = 5, inscrit = 10.
+  const isAdmin = (credit?.allowed ?? 0) > 10;
   const debugEnabled = isAdmin && debugRequested;
   const debugTrace: any[] = [];
 
@@ -521,7 +521,7 @@ Deno.serve(async (req) => {
   });
 
   const usedAfter = (credit?.used ?? 0) + 1;
-  const allowed = credit?.allowed ?? (isAnon ? 3 : 6);
+  const allowed = credit?.allowed ?? (isAnon ? 5 : 10);
   const remainingAfter = Math.max(allowed - usedAfter, 0);
 
   if (typeof EdgeRuntime !== "undefined" && (EdgeRuntime as any).waitUntil) {
