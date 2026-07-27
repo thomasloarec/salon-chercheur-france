@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Building2, Globe, Linkedin, Loader2, Upload } from 'lucide-react';
+import { Building2, CalendarDays, Globe, Linkedin, Loader2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 import {
   Sheet,
@@ -29,6 +31,190 @@ import {
 import { resolveDescriptionPrefill } from '@/lib/exhibitorOwnerEdit';
 
 const DESCRIPTION_MAX = 3000;
+
+interface ParticipationRow {
+  id_participation: string;
+  id_event: string;
+  stand_exposant: string | null;
+  events: {
+    nom_event: string | null;
+    date_debut: string | null;
+    ville: string | null;
+  } | null;
+}
+
+function formatEventDate(date: string | null) {
+  if (!date) return null;
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+/** Section « Vos salons et stands » — indépendante des champs de fiche. */
+function ExhibitorStandsSection({
+  exhibitorId,
+  open,
+}: {
+  exhibitorId: string;
+  open: boolean;
+}) {
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ['exhibitor-participations-stands', exhibitorId],
+    enabled: open && !!exhibitorId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('participation')
+        .select(
+          'id_participation, id_event, stand_exposant, events!inner(nom_event, date_debut, ville)',
+        )
+        .eq('exhibitor_id', exhibitorId);
+      if (error) throw error;
+      const rows = (data ?? []) as unknown as ParticipationRow[];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const ts = (r: ParticipationRow) => {
+        const d = r.events?.date_debut ? new Date(r.events.date_debut) : null;
+        return d && !Number.isNaN(d.getTime()) ? d.getTime() : 0;
+      };
+      const upcoming = (r: ParticipationRow) => ts(r) >= today.getTime();
+      return rows.sort((a, b) => {
+        const ua = upcoming(a) ? 0 : 1;
+        const ub = upcoming(b) ? 0 : 1;
+        if (ua !== ub) return ua - ub;
+        return ua === 0 ? ts(a) - ts(b) : ts(b) - ts(a);
+      });
+    },
+  });
+
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) setDrafts({});
+  }, [open]);
+
+  const handleSaveStand = async (row: ParticipationRow) => {
+    const current = row.stand_exposant ?? '';
+    const next = (drafts[row.id_participation] ?? current).trim();
+    if (next === current.trim()) return;
+    setSavingId(row.id_participation);
+    try {
+      const { data, error } = await supabase.functions.invoke('exhibitors-manage', {
+        body: {
+          action: 'set_stand',
+          exhibitor_id: exhibitorId,
+          event_id: row.id_event,
+          stand: next,
+        },
+      });
+      if (error) throw error;
+      if (data && (data as { error?: string }).error) {
+        throw new Error((data as { error: string }).error);
+      }
+      toast.success('Stand mis à jour');
+      await refetch();
+      setDrafts((prev) => {
+        const copy = { ...prev };
+        delete copy[row.id_participation];
+        return copy;
+      });
+    } catch (err) {
+      toast.error(
+        err instanceof Error && err.message
+          ? err.message
+          : "La mise à jour du stand a échoué.",
+      );
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  return (
+    <div className="space-y-3 border-t pt-6">
+      <div>
+        <Label className="text-base">Vos salons et stands</Label>
+        <p className="text-xs text-muted-foreground mt-1">
+          Renseignez votre numéro de stand pour chaque salon. Il sera affiché sur
+          la fiche du salon.
+        </p>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-16 w-full rounded-lg" />
+          <Skeleton className="h-16 w-full rounded-lg" />
+        </div>
+      ) : isError ? (
+        <p className="text-sm text-muted-foreground">
+          Impossible de charger vos salons. Réessayez plus tard.
+        </p>
+      ) : !data || data.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Vous n'êtes référencé sur aucun salon pour le moment.
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {data.map((row) => {
+            const current = row.stand_exposant ?? '';
+            const value = drafts[row.id_participation] ?? current;
+            const dirty = value.trim() !== current.trim();
+            const busy = savingId === row.id_participation;
+            const dateLabel = formatEventDate(row.events?.date_debut ?? null);
+            return (
+              <li
+                key={row.id_participation}
+                className="rounded-lg border bg-muted/20 p-3 space-y-2"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {row.events?.nom_event ?? 'Salon'}
+                  </p>
+                  {(dateLabel || row.events?.ville) && (
+                    <p className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      {[dateLabel, row.events?.ville].filter(Boolean).join(' · ')}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={value}
+                    onChange={(e) =>
+                      setDrafts((prev) => ({
+                        ...prev,
+                        [row.id_participation]: e.target.value,
+                      }))
+                    }
+                    placeholder="Numéro de stand (ex. B12)"
+                    maxLength={50}
+                    disabled={busy}
+                    className="h-9"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleSaveStand(row)}
+                    disabled={!dirty || busy}
+                  >
+                    {busy ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      'Enregistrer'
+                    )}
+                  </Button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 interface ExhibitorOwnerEditDrawerProps {
   open: boolean;
@@ -330,6 +516,9 @@ export default function ExhibitorOwnerEditDrawer({
                 )}
               </div>
             </div>
+
+            {/* Salons et stands (indépendant des champs de fiche) */}
+            <ExhibitorStandsSection exhibitorId={exhibitorId} open={open} />
           </div>
         )}
 
