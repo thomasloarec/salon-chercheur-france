@@ -9,6 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import AnswerMarkdown from '@/components/recherche-ia/AnswerMarkdown';
 import SignupWallDialog from '@/components/recherche-ia/SignupWallDialog';
 import ThinkingIndicator from '@/components/recherche-ia/ThinkingIndicator';
+import { usePublicStats } from '@/hooks/usePublicStats';
 // import RechercheIAShowcase from '@/components/recherche-ia/RechercheIAShowcase';
 
 type Role = 'user' | 'assistant';
@@ -297,6 +298,17 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
   // recherche directement dans le hero, la démo « L'IA en action » venant en dessous.
   const isLandingPage = !isSidebar && !hasStarted;
 
+  // Chiffres réels : salons arrondis à la dizaine inf., exposants au millier inf.
+  const { data: publicStats } = usePublicStats();
+  const salonsLabel =
+    publicStats && publicStats.salons >= 10
+      ? (Math.floor(publicStats.salons / 10) * 10).toLocaleString('fr-FR')
+      : null;
+  const exposantsLabel =
+    publicStats && publicStats.exposants >= 1000
+      ? (Math.floor(publicStats.exposants / 1000) * 1000).toLocaleString('fr-FR')
+      : null;
+
   // Accroche / hero réutilisable dans les deux mises en page.
   const heroBlock = showHero ? (
     <section
@@ -323,8 +335,10 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
             isSidebar ? 'text-sm' : 'text-base md:text-lg'
           }`}
         >
-          L'IA de Lotexpo a lu les 350 salons et leurs 22 000 exposants. Décrivez ce que
-          vous cherchez en une phrase : elle vous dit où aller et à qui parler.
+          {salonsLabel && exposantsLabel
+            ? `L'IA de Lotexpo a lu les ${salonsLabel} salons et leurs ${exposantsLabel} exposants. `
+            : "L'IA de Lotexpo a lu tous les salons référencés et leurs exposants. "}
+          Décrivez ce que vous cherchez en une phrase : elle vous dit où aller et à qui parler.
         </p>
       )}
     </section>

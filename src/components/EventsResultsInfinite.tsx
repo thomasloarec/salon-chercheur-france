@@ -214,7 +214,7 @@ export const EventsResultsInfinite = ({
         <EventCard
           key={event.id}
           event={event}
-          view="grid"
+          view="list"
           exhibitorCount={stat?.exhibitor_count}
           noveltyCount={stat?.novelty_count}
         />
