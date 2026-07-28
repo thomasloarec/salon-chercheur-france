@@ -640,6 +640,1034 @@ export type Database = {
         }
         Relationships: []
       }
+      content_assets: {
+        Row: {
+          asset_type: string
+          checksum: string | null
+          content_item_id: string
+          created_at: string
+          id: string
+          metadata: Json
+          provider: string | null
+          provider_job_id: string | null
+          public_url: string | null
+          qa_report: Json | null
+          qa_status: string
+          storage_path: string | null
+          version_number: number
+        }
+        Insert: {
+          asset_type: string
+          checksum?: string | null
+          content_item_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          provider?: string | null
+          provider_job_id?: string | null
+          public_url?: string | null
+          qa_report?: Json | null
+          qa_status?: string
+          storage_path?: string | null
+          version_number?: number
+        }
+        Update: {
+          asset_type?: string
+          checksum?: string | null
+          content_item_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          provider?: string | null
+          provider_job_id?: string | null
+          public_url?: string | null
+          qa_report?: Json | null
+          qa_status?: string
+          storage_path?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_assets_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_type: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          new_value: Json | null
+          previous_value: Json | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_type: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          new_value?: Json | null
+          previous_value?: Json | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_type?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          new_value?: Json | null
+          previous_value?: Json | null
+        }
+        Relationships: []
+      }
+      content_brand_versions: {
+        Row: {
+          activated_at: string | null
+          active: boolean
+          banned_phrases: Json
+          brand_json: Json
+          created_at: string
+          id: string
+          mandatory_phrases: Json
+          version_name: string
+        }
+        Insert: {
+          activated_at?: string | null
+          active?: boolean
+          banned_phrases?: Json
+          brand_json?: Json
+          created_at?: string
+          id?: string
+          mandatory_phrases?: Json
+          version_name: string
+        }
+        Update: {
+          activated_at?: string | null
+          active?: boolean
+          banned_phrases?: Json
+          brand_json?: Json
+          created_at?: string
+          id?: string
+          mandatory_phrases?: Json
+          version_name?: string
+        }
+        Relationships: []
+      }
+      content_business_snapshots: {
+        Row: {
+          allowed_ctas: Json
+          audience_weights: Json
+          budget_limit: number | null
+          business_stage: string | null
+          created_at: string
+          data_summary: Json
+          event_context: Json
+          funnel_weights: Json
+          id: string
+          marketing_summary: Json
+          month: string
+          primary_objective: string | null
+          product_state: Json
+          status: string
+        }
+        Insert: {
+          allowed_ctas?: Json
+          audience_weights?: Json
+          budget_limit?: number | null
+          business_stage?: string | null
+          created_at?: string
+          data_summary?: Json
+          event_context?: Json
+          funnel_weights?: Json
+          id?: string
+          marketing_summary?: Json
+          month: string
+          primary_objective?: string | null
+          product_state?: Json
+          status?: string
+        }
+        Update: {
+          allowed_ctas?: Json
+          audience_weights?: Json
+          budget_limit?: number | null
+          business_stage?: string | null
+          created_at?: string
+          data_summary?: Json
+          event_context?: Json
+          funnel_weights?: Json
+          id?: string
+          marketing_summary?: Json
+          month?: string
+          primary_objective?: string | null
+          product_state?: Json
+          status?: string
+        }
+        Relationships: []
+      }
+      content_ceo_interviews: {
+        Row: {
+          answered_at: string | null
+          answers: Json
+          created_at: string
+          id: string
+          kind: string
+          month: string | null
+          questions: Json
+          status: string
+        }
+        Insert: {
+          answered_at?: string | null
+          answers?: Json
+          created_at?: string
+          id?: string
+          kind: string
+          month?: string | null
+          questions?: Json
+          status?: string
+        }
+        Update: {
+          answered_at?: string | null
+          answers?: Json
+          created_at?: string
+          id?: string
+          kind?: string
+          month?: string | null
+          questions?: Json
+          status?: string
+        }
+        Relationships: []
+      }
+      content_claims: {
+        Row: {
+          claim_text: string
+          confidence_score: number | null
+          content_item_id: string
+          created_at: string
+          id: string
+          retrieved_at: string | null
+          source_record_id: string | null
+          source_record_type: string | null
+          source_type: string | null
+          source_url: string | null
+          valid_until: string | null
+          verification_status: string
+          verified_at: string | null
+        }
+        Insert: {
+          claim_text: string
+          confidence_score?: number | null
+          content_item_id: string
+          created_at?: string
+          id?: string
+          retrieved_at?: string | null
+          source_record_id?: string | null
+          source_record_type?: string | null
+          source_type?: string | null
+          source_url?: string | null
+          valid_until?: string | null
+          verification_status?: string
+          verified_at?: string | null
+        }
+        Update: {
+          claim_text?: string
+          confidence_score?: number | null
+          content_item_id?: string
+          created_at?: string
+          id?: string
+          retrieved_at?: string | null
+          source_record_id?: string | null
+          source_record_type?: string | null
+          source_type?: string | null
+          source_url?: string | null
+          valid_until?: string | null
+          verification_status?: string
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_claims_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_evergreen_backups: {
+        Row: {
+          active: boolean
+          asset_id: string | null
+          audience: string | null
+          caption: string | null
+          content_pillar: string | null
+          created_at: string
+          destination_url: string | null
+          editorial_line: string
+          format: string
+          funnel_stage: string | null
+          hook: string | null
+          id: string
+          platform: string
+          primary_cta: string | null
+          qa_status: string
+          script: string | null
+          title: string
+        }
+        Insert: {
+          active?: boolean
+          asset_id?: string | null
+          audience?: string | null
+          caption?: string | null
+          content_pillar?: string | null
+          created_at?: string
+          destination_url?: string | null
+          editorial_line?: string
+          format: string
+          funnel_stage?: string | null
+          hook?: string | null
+          id?: string
+          platform?: string
+          primary_cta?: string | null
+          qa_status?: string
+          script?: string | null
+          title: string
+        }
+        Update: {
+          active?: boolean
+          asset_id?: string | null
+          audience?: string | null
+          caption?: string | null
+          content_pillar?: string | null
+          created_at?: string
+          destination_url?: string | null
+          editorial_line?: string
+          format?: string
+          funnel_stage?: string | null
+          hook?: string | null
+          id?: string
+          platform?: string
+          primary_cta?: string | null
+          qa_status?: string
+          script?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_evergreen_backups_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "content_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_experiments: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          hypothesis: string | null
+          id: string
+          minimum_sample: number | null
+          name: string
+          result: Json | null
+          start_date: string | null
+          status: string
+          variable_tested: string | null
+          variant_a: Json | null
+          variant_b: Json | null
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          hypothesis?: string | null
+          id?: string
+          minimum_sample?: number | null
+          name: string
+          result?: Json | null
+          start_date?: string | null
+          status?: string
+          variable_tested?: string | null
+          variant_a?: Json | null
+          variant_b?: Json | null
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          hypothesis?: string | null
+          id?: string
+          minimum_sample?: number | null
+          name?: string
+          result?: Json | null
+          start_date?: string | null
+          status?: string
+          variable_tested?: string | null
+          variant_a?: Json | null
+          variant_b?: Json | null
+        }
+        Relationships: []
+      }
+      content_incidents: {
+        Row: {
+          content_item_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          incident_type: string | null
+          provider: string | null
+          publication_job_id: string | null
+          raw_error: Json | null
+          resolution: string | null
+          resolved_at: string | null
+          severity: string
+          status: string
+        }
+        Insert: {
+          content_item_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          incident_type?: string | null
+          provider?: string | null
+          publication_job_id?: string | null
+          raw_error?: Json | null
+          resolution?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+        }
+        Update: {
+          content_item_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          incident_type?: string | null
+          provider?: string | null
+          publication_job_id?: string | null
+          raw_error?: Json | null
+          resolution?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_incidents_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_incidents_publication_job_id_fkey"
+            columns: ["publication_job_id"]
+            isOneToOne: false
+            referencedRelation: "content_publication_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_items: {
+        Row: {
+          approval_scope_hash: string | null
+          audience: string | null
+          business_objective: string | null
+          caption: string | null
+          content_code: string | null
+          content_hash: string | null
+          content_pillar: string | null
+          created_at: string
+          derived_from_content_id: string | null
+          destination_url: string | null
+          editorial_line: string
+          format: string
+          funnel_stage: string | null
+          hook: string | null
+          id: string
+          master_ratio: string
+          monthly_plan_id: string | null
+          planned_date: string | null
+          planned_time: string | null
+          platform: string
+          primary_cta: string | null
+          production_tier: string | null
+          risk_level: string
+          script: string | null
+          semantic_fingerprint: string | null
+          status: string
+          story_seed_ids: Json
+          topic: string | null
+          updated_at: string
+          utm_campaign: string | null
+          utm_content: string | null
+          virtual_set_id: string | null
+          visual_template: string | null
+        }
+        Insert: {
+          approval_scope_hash?: string | null
+          audience?: string | null
+          business_objective?: string | null
+          caption?: string | null
+          content_code?: string | null
+          content_hash?: string | null
+          content_pillar?: string | null
+          created_at?: string
+          derived_from_content_id?: string | null
+          destination_url?: string | null
+          editorial_line?: string
+          format: string
+          funnel_stage?: string | null
+          hook?: string | null
+          id?: string
+          master_ratio?: string
+          monthly_plan_id?: string | null
+          planned_date?: string | null
+          planned_time?: string | null
+          platform?: string
+          primary_cta?: string | null
+          production_tier?: string | null
+          risk_level?: string
+          script?: string | null
+          semantic_fingerprint?: string | null
+          status?: string
+          story_seed_ids?: Json
+          topic?: string | null
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          virtual_set_id?: string | null
+          visual_template?: string | null
+        }
+        Update: {
+          approval_scope_hash?: string | null
+          audience?: string | null
+          business_objective?: string | null
+          caption?: string | null
+          content_code?: string | null
+          content_hash?: string | null
+          content_pillar?: string | null
+          created_at?: string
+          derived_from_content_id?: string | null
+          destination_url?: string | null
+          editorial_line?: string
+          format?: string
+          funnel_stage?: string | null
+          hook?: string | null
+          id?: string
+          master_ratio?: string
+          monthly_plan_id?: string | null
+          planned_date?: string | null
+          planned_time?: string | null
+          platform?: string
+          primary_cta?: string | null
+          production_tier?: string | null
+          risk_level?: string
+          script?: string | null
+          semantic_fingerprint?: string | null
+          status?: string
+          story_seed_ids?: Json
+          topic?: string | null
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          virtual_set_id?: string | null
+          visual_template?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_items_derived_from_content_id_fkey"
+            columns: ["derived_from_content_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_items_monthly_plan_id_fkey"
+            columns: ["monthly_plan_id"]
+            isOneToOne: false
+            referencedRelation: "content_monthly_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_items_virtual_set_id_fkey"
+            columns: ["virtual_set_id"]
+            isOneToOne: false
+            referencedRelation: "content_virtual_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_learnings: {
+        Row: {
+          active: boolean
+          audience: string | null
+          confidence_score: number | null
+          content_feature: string | null
+          created_at: string
+          evidence_content_ids: Json
+          expires_at: string | null
+          format: string | null
+          id: string
+          learning_text: string
+          min_thresholds_met: boolean
+          platform_scope: string
+          valid_from: string | null
+        }
+        Insert: {
+          active?: boolean
+          audience?: string | null
+          confidence_score?: number | null
+          content_feature?: string | null
+          created_at?: string
+          evidence_content_ids?: Json
+          expires_at?: string | null
+          format?: string | null
+          id?: string
+          learning_text: string
+          min_thresholds_met?: boolean
+          platform_scope?: string
+          valid_from?: string | null
+        }
+        Update: {
+          active?: boolean
+          audience?: string | null
+          confidence_score?: number | null
+          content_feature?: string | null
+          created_at?: string
+          evidence_content_ids?: Json
+          expires_at?: string | null
+          format?: string | null
+          id?: string
+          learning_text?: string
+          min_thresholds_met?: boolean
+          platform_scope?: string
+          valid_from?: string | null
+        }
+        Relationships: []
+      }
+      content_metrics_daily: {
+        Row: {
+          channel: string
+          claim_completions: number | null
+          claim_starts: number | null
+          comments: number | null
+          content_item_id: string
+          created_at: string
+          followers_gained: number | null
+          id: string
+          impressions: number | null
+          link_clicks: number | null
+          metric_date: string
+          novelty_completions: number | null
+          novelty_starts: number | null
+          organizer_contacts: number | null
+          raw_metrics: Json
+          reactions: number | null
+          shares: number | null
+          signups: number | null
+          site_sessions: number | null
+          unique_viewers: number | null
+          video_views: number | null
+          watch_time_seconds: number | null
+        }
+        Insert: {
+          channel: string
+          claim_completions?: number | null
+          claim_starts?: number | null
+          comments?: number | null
+          content_item_id: string
+          created_at?: string
+          followers_gained?: number | null
+          id?: string
+          impressions?: number | null
+          link_clicks?: number | null
+          metric_date: string
+          novelty_completions?: number | null
+          novelty_starts?: number | null
+          organizer_contacts?: number | null
+          raw_metrics?: Json
+          reactions?: number | null
+          shares?: number | null
+          signups?: number | null
+          site_sessions?: number | null
+          unique_viewers?: number | null
+          video_views?: number | null
+          watch_time_seconds?: number | null
+        }
+        Update: {
+          channel?: string
+          claim_completions?: number | null
+          claim_starts?: number | null
+          comments?: number | null
+          content_item_id?: string
+          created_at?: string
+          followers_gained?: number | null
+          id?: string
+          impressions?: number | null
+          link_clicks?: number | null
+          metric_date?: string
+          novelty_completions?: number | null
+          novelty_starts?: number | null
+          organizer_contacts?: number | null
+          raw_metrics?: Json
+          reactions?: number | null
+          shares?: number | null
+          signups?: number | null
+          site_sessions?: number | null
+          unique_viewers?: number | null
+          video_views?: number | null
+          watch_time_seconds?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_metrics_daily_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_monthly_plans: {
+        Row: {
+          approval_hash: string | null
+          approval_scope: Json | null
+          approved_at: string | null
+          approved_by: string | null
+          audience_weights: Json
+          brand_version_id: string | null
+          business_snapshot_id: string | null
+          campaign_theme: string | null
+          ceo_notes: string | null
+          created_at: string
+          executive_summary: string | null
+          funnel_weights: Json
+          id: string
+          month: string
+          persona_id: string | null
+          proposed_budget: number | null
+          status: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          approval_hash?: string | null
+          approval_scope?: Json | null
+          approved_at?: string | null
+          approved_by?: string | null
+          audience_weights?: Json
+          brand_version_id?: string | null
+          business_snapshot_id?: string | null
+          campaign_theme?: string | null
+          ceo_notes?: string | null
+          created_at?: string
+          executive_summary?: string | null
+          funnel_weights?: Json
+          id?: string
+          month: string
+          persona_id?: string | null
+          proposed_budget?: number | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approval_hash?: string | null
+          approval_scope?: Json | null
+          approved_at?: string | null
+          approved_by?: string | null
+          audience_weights?: Json
+          brand_version_id?: string | null
+          business_snapshot_id?: string | null
+          campaign_theme?: string | null
+          ceo_notes?: string | null
+          created_at?: string
+          executive_summary?: string | null
+          funnel_weights?: Json
+          id?: string
+          month?: string
+          persona_id?: string | null
+          proposed_budget?: number | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_monthly_plans_brand_version_id_fkey"
+            columns: ["brand_version_id"]
+            isOneToOne: false
+            referencedRelation: "content_brand_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_monthly_plans_business_snapshot_id_fkey"
+            columns: ["business_snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "content_business_snapshots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_monthly_plans_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "content_personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_personas: {
+        Row: {
+          active: boolean
+          created_at: string
+          disclosure_text: string
+          elevenlabs_seed: string | null
+          elevenlabs_voice_id: string | null
+          forbidden_claims: Json
+          heygen_avatar_group_id: string | null
+          heygen_look_ids: Json
+          id: string
+          name: string
+          persona_md: string | null
+          personality: Json
+          pronunciation_dict: Json
+          public_title: string
+          speaking_rules: Json
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          disclosure_text: string
+          elevenlabs_seed?: string | null
+          elevenlabs_voice_id?: string | null
+          forbidden_claims?: Json
+          heygen_avatar_group_id?: string | null
+          heygen_look_ids?: Json
+          id?: string
+          name: string
+          persona_md?: string | null
+          personality?: Json
+          pronunciation_dict?: Json
+          public_title: string
+          speaking_rules?: Json
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          disclosure_text?: string
+          elevenlabs_seed?: string | null
+          elevenlabs_voice_id?: string | null
+          forbidden_claims?: Json
+          heygen_avatar_group_id?: string | null
+          heygen_look_ids?: Json
+          id?: string
+          name?: string
+          persona_md?: string | null
+          personality?: Json
+          pronunciation_dict?: Json
+          public_title?: string
+          speaking_rules?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      content_publication_jobs: {
+        Row: {
+          aigc_label_confirmed: boolean
+          attempt_count: number
+          channel: string
+          content_item_id: string
+          created_at: string
+          external_post_id: string | null
+          external_url: string | null
+          id: string
+          idempotency_key: string | null
+          last_error: string | null
+          provider: string
+          provider_post_id: string | null
+          published_at: string | null
+          scheduled_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          aigc_label_confirmed?: boolean
+          attempt_count?: number
+          channel: string
+          content_item_id: string
+          created_at?: string
+          external_post_id?: string | null
+          external_url?: string | null
+          id?: string
+          idempotency_key?: string | null
+          last_error?: string | null
+          provider?: string
+          provider_post_id?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          aigc_label_confirmed?: boolean
+          attempt_count?: number
+          channel?: string
+          content_item_id?: string
+          created_at?: string
+          external_post_id?: string | null
+          external_url?: string | null
+          id?: string
+          idempotency_key?: string | null
+          last_error?: string | null
+          provider?: string
+          provider_post_id?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_publication_jobs_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
+      content_story_seeds: {
+        Row: {
+          category: string | null
+          ceo_validated_at: string | null
+          created_at: string
+          editorial_score: number | null
+          expires_at: string | null
+          id: string
+          interview_id: string | null
+          seed_text: string
+          share_safe_reasoning: string | null
+          share_safe_status: string
+          source_verbatim: string
+          used_in_content_ids: Json
+        }
+        Insert: {
+          category?: string | null
+          ceo_validated_at?: string | null
+          created_at?: string
+          editorial_score?: number | null
+          expires_at?: string | null
+          id?: string
+          interview_id?: string | null
+          seed_text: string
+          share_safe_reasoning?: string | null
+          share_safe_status?: string
+          source_verbatim: string
+          used_in_content_ids?: Json
+        }
+        Update: {
+          category?: string | null
+          ceo_validated_at?: string | null
+          created_at?: string
+          editorial_score?: number | null
+          expires_at?: string | null
+          id?: string
+          interview_id?: string | null
+          seed_text?: string
+          share_safe_reasoning?: string | null
+          share_safe_status?: string
+          source_verbatim?: string
+          used_in_content_ids?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_story_seeds_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: false
+            referencedRelation: "content_ceo_interviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_virtual_sets: {
+        Row: {
+          active: boolean
+          allowed_actions: Json
+          camera_rules: Json
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          lighting_rules: Json
+          name: string
+          prompt_template: string | null
+          reference_assets: Json
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          allowed_actions?: Json
+          camera_rules?: Json
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          lighting_rules?: Json
+          name: string
+          prompt_template?: string | null
+          reference_assets?: Json
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          allowed_actions?: Json
+          camera_rules?: Json
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          lighting_rules?: Json
+          name?: string
+          prompt_template?: string | null
+          reference_assets?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_companies: {
         Row: {
           company_name: string
