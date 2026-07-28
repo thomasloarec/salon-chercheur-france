@@ -100,6 +100,8 @@ export default function AtelierNouveaute() {
   const [extrasOpen, setExtrasOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
+  const [pdfNudgeOpen, setPdfNudgeOpen] = useState(false);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     return () => images.forEach((i) => URL.revokeObjectURL(i.previewUrl));
@@ -234,6 +236,15 @@ export default function AtelierNouveaute() {
       return;
     }
     setBrochure(file);
+  };
+
+  // Interception avant publication : incite à joindre un PDF si absent
+  const handlePublishClick = () => {
+    if (brochure) {
+      handlePublish();
+      return;
+    }
+    setPdfNudgeOpen(true);
   };
 
   const addTag = () => {
@@ -483,7 +494,7 @@ export default function AtelierNouveaute() {
         Votre nouveauté est prête.
       </p>
       <Button
-        onClick={handlePublish}
+        onClick={handlePublishClick}
         disabled={!canPublish}
         className="h-11 w-full bg-[#6b51ff] text-sm font-semibold text-white shadow-sm hover:bg-[#5b43e6]"
       >
@@ -692,6 +703,52 @@ export default function AtelierNouveaute() {
             >
               Compris
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Incitation à joindre un PDF avant publication */}
+      <input
+        type="file"
+        accept="application/pdf"
+        className="hidden"
+        ref={pdfInputRef}
+        onChange={(e) => {
+          const f = e.target.files?.[0] ?? null;
+          if (f) handlePdf(f);
+          e.target.value = '';
+        }}
+      />
+      <AlertDialog open={pdfNudgeOpen} onOpenChange={setPdfNudgeOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Publier sans document à télécharger ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vous êtes sur le point de publier sans document téléchargeable. Chaque visiteur qui
+              télécharge votre brochure devient un contact que vous pouvez recontacter avant le
+              salon. Sans document, vous vous privez de ce canal de prise de contact.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="sm:justify-between">
+            <Button
+              variant="ghost"
+              className="text-muted-foreground"
+              onClick={() => {
+                setPdfNudgeOpen(false);
+                handlePublish();
+              }}
+            >
+              Publier sans document
+            </Button>
+            <Button
+              className="bg-[#6b51ff] text-white hover:bg-[#5b43e6]"
+              onClick={() => {
+                setPdfNudgeOpen(false);
+                setTimeout(() => pdfInputRef.current?.click(), 0);
+              }}
+            >
+              Importer un PDF
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
