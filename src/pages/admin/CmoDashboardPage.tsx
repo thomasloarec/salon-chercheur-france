@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { AlertTriangle, PauseCircle, PlayCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface ContentItemRow {
   id: string;
@@ -97,6 +98,7 @@ const CmoDashboardPage: React.FC = () => {
   const updateSetting = useUpdateContentSetting();
   const monthItems = useMonthItems();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const { toast } = useToast();
 
   const incidents = useQuery<IncidentRow[]>({
     queryKey: ['cmo-open-incidents'],
@@ -138,8 +140,21 @@ const CmoDashboardPage: React.FC = () => {
   const monthLabel = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
   const confirmToggle = async () => {
-    await updateSetting.mutateAsync({ key: 'publication_paused', value: !paused });
-    setConfirmOpen(false);
+    const next = !paused;
+    try {
+      await updateSetting.mutateAsync({ key: 'publication_paused', value: next });
+      toast({
+        title: next ? 'Publication mise en pause' : 'Publication activée',
+      });
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Action refusée',
+        description: err instanceof Error ? err.message : 'Erreur inconnue.',
+      });
+    } finally {
+      setConfirmOpen(false);
+    }
   };
 
   return (
