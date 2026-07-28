@@ -100,6 +100,8 @@ export default function AtelierNouveaute() {
   const [extrasOpen, setExtrasOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
+  const [pdfNudgeOpen, setPdfNudgeOpen] = useState(false);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     return () => images.forEach((i) => URL.revokeObjectURL(i.previewUrl));
@@ -234,6 +236,15 @@ export default function AtelierNouveaute() {
       return;
     }
     setBrochure(file);
+  };
+
+  // Interception avant publication : incite à joindre un PDF si absent
+  const handlePublishClick = () => {
+    if (brochure) {
+      handlePublish();
+      return;
+    }
+    setPdfNudgeOpen(true);
   };
 
   const addTag = () => {
@@ -483,7 +494,7 @@ export default function AtelierNouveaute() {
         Votre nouveauté est prête.
       </p>
       <Button
-        onClick={handlePublish}
+        onClick={handlePublishClick}
         disabled={!canPublish}
         className="h-11 w-full bg-[#6b51ff] text-sm font-semibold text-white shadow-sm hover:bg-[#5b43e6]"
       >
