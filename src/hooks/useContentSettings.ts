@@ -31,15 +31,19 @@ export function useUpdateContentSetting() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ key, value }: { key: string; value: unknown }) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('content_settings')
         .update({
           value: value as never,
           updated_at: new Date().toISOString(),
           updated_by: 'control_room',
         })
-        .eq('key', key);
+        .eq('key', key)
+        .select('key');
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('Réglage non modifié : droits insuffisants ou session expirée.');
+      }
       return { key, value };
     },
     onSuccess: () => {
