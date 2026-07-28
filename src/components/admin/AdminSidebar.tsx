@@ -30,6 +30,7 @@ import {
   Mail,
   Radar,
   Inbox,
+  Megaphone,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAdminPendingCounts } from '@/hooks/useAdminPendingCounts';
@@ -72,6 +73,12 @@ const navSections = [
       { title: 'IA Visite', url: '/admin/ia-visite', icon: Sparkles },
       { title: 'Radar CRM', url: '/admin/radar-crm', icon: Radar },
       { title: 'Suivi des leads', url: '/admin/leads', icon: Inbox },
+    ],
+  },
+  {
+    label: 'CMO IA',
+    items: [
+      { title: 'Pilotage', url: '/admin/cmo', icon: Megaphone },
     ],
   },
   {

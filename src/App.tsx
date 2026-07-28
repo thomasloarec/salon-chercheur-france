@@ -41,6 +41,7 @@ import AdminImportDiagnostics from '@/pages/AdminImportDiagnostics';
 import AdminSeoAudit from '@/pages/AdminSeoAudit';
 import AdminIaVisite from '@/pages/AdminIaVisite';
 import AdminRadarCrm from '@/pages/admin/AdminRadarCrm';
+import CmoDashboardPage from '@/pages/admin/CmoDashboardPage';
 import RadarCrm from '@/pages/RadarCrm';
 import RadarCrmResults from '@/pages/RadarCrmResults';
 import RadarCrmTerrain from '@/pages/RadarCrmTerrain';
@@ -173,6 +174,7 @@ function App() {
               <Route path="seo-audit" element={<AdminSeoAudit />} />
               <Route path="ia-visite" element={<AdminIaVisite />} />
               <Route path="radar-crm" element={<AdminRadarCrm />} />
+              <Route path="cmo" element={<CmoDashboardPage />} />
               <Route path="system/ai" element={<AdminSystemAiPage />} />
               <Route path="system/test" element={<AdminSystemTestPage />} />
               <Route path="system/tools" element={<AdminSystemToolsPage />} />
