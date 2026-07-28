@@ -689,6 +689,9 @@ export default function AtelierNouveaute() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Votre nouveauté a bien été transmise</AlertDialogTitle>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Votre nouveauté a bien été transmise</AlertDialogTitle>
             <AlertDialogDescription>
               Elle va être examinée par l'équipe Lotexpo sous 24 h avant sa mise en ligne.
               Vous serez informé dès qu'elle sera publiée.
