@@ -387,7 +387,7 @@ serve(async (req) => {
       },
       errorsPersisted: allErrors.length,
       message: `Import completed: ${eventsImported} events, ${exposantsImported} exposants, ${participationsImported} participations imported`,
-      ...(DEBUG_ROOT_CAUSE && { debugMode: true, checkLogs: 'See function logs for detailed root cause analysis' }),
+      ...(DEBUG_ROOT_CAUSE ? { debugMode: true, checkLogs: 'See function logs for detailed root cause analysis' } : {}),
     };
 
     console.log('Import completed:', summary);
