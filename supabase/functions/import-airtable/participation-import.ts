@@ -311,7 +311,7 @@ export async function importParticipation(
   const allParticipations: AirtableParticipationRecord[] = [];
   let offset: string | undefined = undefined;
   while (true) {
-    const page = await fetchAirtablePageRange<AirtableParticipationRecord>('Participation', airtableConfig, {
+    const page: { records: AirtableParticipationRecord[]; nextOffset?: string; pagesFetched: number } = await fetchAirtablePageRange<AirtableParticipationRecord>("Participation", airtableConfig, {
       offset,
       maxPages: MAX_AIRTABLE_PAGES_PER_CHUNK,
       timeBudgetMs: Number.MAX_SAFE_INTEGER,

@@ -12,7 +12,7 @@ import {
 import type { AirtableConfig } from '../_shared/types.ts';
 
 // Mode simplifié pour éviter CPU timeout
-const DEBUG_ROOT_CAUSE = false;
+const DEBUG_ROOT_CAUSE: boolean = false;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
