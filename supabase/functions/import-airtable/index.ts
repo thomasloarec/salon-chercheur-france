@@ -245,7 +245,6 @@ serve(async (req) => {
       if (step === 'participations') {
         const chunk = await importParticipationChunk(supabaseClient, airtableConfig, {
           offset,
-          syncStaging: !offset,
           maxPages: MAX_AIRTABLE_PAGES_PER_CHUNK,
           timeBudgetMs: CHUNK_TIME_BUDGET_MS,
           startedAt,
