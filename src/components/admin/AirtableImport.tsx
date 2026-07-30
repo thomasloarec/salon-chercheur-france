@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,8 +6,51 @@ import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { Download, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 
+const SUPABASE_PUBLISHABLE_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4aXZkdnp6aGVib2J2ZWVkeGJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkyMTY5NTEsImV4cCI6MjA2NDc5Mjk1MX0.s1P0Hj1u1g1BtAczv_gkippD9wTwkUj2pwxKchkZ8Hw';
+const FUNCTIONS_URL = 'https://vxivdvzzhebobveedxbj.supabase.co/functions/v1/import-airtable';
+
+async function callImportStep(payload: Record<string, unknown>): Promise<{ status: number; body: any }> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const anonKey = (supabase as any).supabaseKey ?? SUPABASE_PUBLISHABLE_KEY;
+  const token = session?.access_token ?? anonKey;
+
+  const res = await fetch(FUNCTIONS_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'apikey': anonKey,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  let body: any = null;
+  try { body = await res.json(); } catch { body = null; }
+  return { status: res.status, body };
+}
+
+type Phase = 'idle' | 'starting' | 'events' | 'exposants' | 'participations' | 'done' | 'error';
+
+interface Progress {
+  phase: Phase;
+  exposantsProcessed: number;
+  participationsProcessed: number;
+  eventsImported: number;
+  chunks: number;
+}
+
+const INITIAL_PROGRESS: Progress = {
+  phase: 'idle',
+  exposantsProcessed: 0,
+  participationsProcessed: 0,
+  eventsImported: 0,
+  chunks: 0,
+};
+
 export function AirtableImport() {
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState<Progress>(INITIAL_PROGRESS);
   const [results, setResults] = useState<{
     eventsImported: number;
     exposantsImported: number;
@@ -24,40 +66,102 @@ export function AirtableImport() {
     setLoading(true);
     setError(null);
     setResults(null);
-    
+    setProgress({ ...INITIAL_PROGRESS, phase: 'starting' });
+
+    let eventsImported = 0;
+    let exposantsProcessed = 0;
+    let participationsProcessed = 0;
+    let chunks = 0;
+
+    const push = (phase: Phase) =>
+      setProgress({ phase, eventsImported, exposantsProcessed, participationsProcessed, chunks });
+
+    /** Déroule une étape paginée (exposants / participations), gère le 409 offset expiré. */
+    const runPaginatedStep = async (
+      step: 'exposants' | 'participations',
+      sessionId: string,
+      onProcessed: (n: number) => void,
+    ): Promise<any> => {
+      let offset: string | undefined = undefined;
+      let restarts = 0;
+
+      while (true) {
+        const payload: Record<string, unknown> = { step, session_id: sessionId };
+        if (offset) payload.offset = offset;
+
+        const { status, body } = await callImportStep(payload);
+
+        if (status === 409 && body?.error === 'airtable_offset_expired') {
+          restarts++;
+          if (restarts > 2) {
+            throw new Error(
+              `Étape « ${step} » : curseur Airtable expiré 3 fois de suite, abandon après 2 relances.`,
+            );
+          }
+          console.warn(`[AirtableImport] ⏪ Offset expiré sur ${step}, relance #${restarts} depuis le début`);
+          offset = undefined;
+          continue;
+        }
+
+        if (!body?.success) {
+          throw new Error(body?.error || body?.message || `Échec de l'étape « ${step} » (HTTP ${status})`);
+        }
+
+        chunks++;
+        onProcessed(Number(body.processed) || 0);
+        push(step);
+
+        if (body.done) return body;
+        offset = body.offset;
+        if (!offset) return body;
+      }
+    };
+
     try {
-      console.log('[AirtableImport] 🔄 Début de l\'import depuis Airtable...');
-      
-      const { data, error } = await supabase.functions.invoke('import-airtable', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: {}
-      });
+      console.log('[AirtableImport] 🔄 Démarrage de l\'orchestration par tranches...');
 
-      if (error) {
-        console.error('[AirtableImport] ❌ Erreur Supabase:', error);
-        throw error;
+      // 1. start
+      const startRes = await callImportStep({ action: 'start' });
+      if (!startRes.body?.success || !startRes.body?.session_id) {
+        throw new Error(
+          startRes.body?.error || startRes.body?.message || `Impossible de démarrer l'import (HTTP ${startRes.status})`,
+        );
       }
+      const sessionId: string = startRes.body.session_id;
 
-      if (!data.success) {
-        console.error('[AirtableImport] ❌ Erreur dans la réponse:', data);
-        throw new Error(data.error || data.message || 'Erreur inconnue');
+      // 2. events
+      push('events');
+      const eventsRes = await callImportStep({ step: 'events', session_id: sessionId });
+      if (!eventsRes.body?.success) {
+        throw new Error(
+          eventsRes.body?.error || eventsRes.body?.message || `Échec de l'étape « events » (HTTP ${eventsRes.status})`,
+        );
       }
+      eventsImported += Number(eventsRes.body.imported) || 0;
+      chunks++;
+      push('events');
+
+      // 3. exposants
+      push('exposants');
+      await runPaginatedStep('exposants', sessionId, (n) => { exposantsProcessed += n; });
+
+      // 4. participations
+      push('participations');
+      await runPaginatedStep('participations', sessionId, (n) => { participationsProcessed += n; });
+
+      push('done');
 
       const importResults = {
-        eventsImported: data.eventsImported || 0,
-        exposantsImported: data.exposantsImported || 0,
-        participationsImported: data.participationsImported || 0,
-        errorsPersisted: data.errorsPersisted || 0,
-        message: data.message || `Import terminé : ${data.eventsImported || 0} événements, ${data.exposantsImported || 0} exposants et ${data.participationsImported || 0} participations importés`
+        eventsImported,
+        exposantsImported: exposantsProcessed,
+        participationsImported: participationsProcessed,
+        errorsPersisted: 0,
+        message: `Import terminé : ${eventsImported} événements, ${exposantsProcessed} exposants et ${participationsProcessed} participations traités`,
       };
-      
+
       setResults(importResults);
-      
-      console.log(`[AirtableImport] ✅ Import terminé:`, importResults);
-      
+      console.log('[AirtableImport] ✅ Import terminé:', importResults, `(${chunks} tranches)`);
+
       toast({
         title: 'Import réussi',
         description: importResults.message,
@@ -76,7 +180,8 @@ export function AirtableImport() {
       console.error('[AirtableImport] ❌ Exception:', err);
       const errorMessage = err.message || 'Erreur lors de l\'import';
       setError(errorMessage);
-      
+      push('error');
+
       toast({
         title: 'Erreur d\'import',
         description: errorMessage,
@@ -88,7 +193,15 @@ export function AirtableImport() {
   };
 
   const getStatusMessage = () => {
-    if (loading) return 'Import en cours…';
+    if (loading) {
+      switch (progress.phase) {
+        case 'starting': return 'Initialisation…';
+        case 'events': return 'Import des événements…';
+        case 'exposants': return `Exposants traités : ${progress.exposantsProcessed}`;
+        case 'participations': return `Participations traitées : ${progress.participationsProcessed}`;
+        default: return 'Import en cours…';
+      }
+    }
     if (results) return `✅ ${results.message}`;
     return 'Cliquez pour démarrer l\'import';
   };
@@ -105,7 +218,13 @@ export function AirtableImport() {
         <p className="text-muted-foreground">
           {getStatusMessage()}
         </p>
-        
+
+        {loading && progress.chunks > 0 && (
+          <p className="text-xs text-muted-foreground">
+            {progress.chunks} tranche{progress.chunks > 1 ? 's' : ''} exécutée{progress.chunks > 1 ? 's' : ''}
+          </p>
+        )}
+
         {error && (
           <p className="text-destructive text-sm">
             Erreur : {error}
