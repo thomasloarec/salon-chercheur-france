@@ -235,10 +235,7 @@ function prepareRows(
   return { rows, errors: participationErrors };
 }
 
-export interface ParticipationChunkOptions extends ChunkOptions {
-  /** true uniquement au premier appel de l'étape (offset absent). */
-  syncStaging?: boolean;
-}
+export type ParticipationChunkOptions = ChunkOptions;
 
 /** Traite UNE tranche bornée de participations (80 pages max, budget 60 s). */
 export async function importParticipationChunk(
@@ -250,15 +247,6 @@ export async function importParticipationChunk(
   const errors: Array<{ record_id: string; reason: string }> = [];
 
   const { publishedEvents, stagingEvents, eventIdToUuidMap, allEventIds } = await loadEventReferentials(supabaseClient);
-
-  if (opts.syncStaging) {
-    const { error } = await syncStagingEvents(
-      supabaseClient, stagingEvents, publishedEvents, eventIdToUuidMap, allEventIds,
-    );
-    if (error) {
-      return { processed: 0, errors: [{ record_id: 'SYNC_ERROR', reason: error }], done: true };
-    }
-  }
 
   const [websiteToExposantMap, lockedStands] = await Promise.all([
     loadExposantMap(supabaseClient),
@@ -276,6 +264,21 @@ export async function importParticipationChunk(
     },
   );
   console.log(`[FETCH] Tranche participations: ${records.length} enregistrements sur ${pagesFetched} pages`);
+
+  // Sync staging -> events restreinte aux événements référencés par CETTE tranche
+  const usedEventIds = new Set<string>();
+  for (const r of records) {
+    const raw = (r.fields as any)['id_event_text'];
+    const rawEventId = Array.isArray(raw) ? raw[0]?.trim() : raw?.trim();
+    if (rawEventId) usedEventIds.add(rawEventId);
+  }
+
+  const { error: syncErr } = await syncStagingEvents(
+    supabaseClient, stagingEvents, publishedEvents, eventIdToUuidMap, allEventIds, usedEventIds,
+  );
+  if (syncErr) {
+    return { processed: 0, errors: [{ record_id: 'SYNC_ERROR', reason: syncErr }], done: true };
+  }
 
   const ref: Referentials = { eventIdToUuidMap, allEventIds, websiteToExposantMap, lockedStands };
   const { rows, errors: prepErrors } = prepareRows(records, ref);
