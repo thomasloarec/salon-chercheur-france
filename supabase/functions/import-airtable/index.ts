@@ -268,7 +268,7 @@ serve(async (req) => {
 
         fireAndForget();
 
-        return json({ success: true, done: true, completed: true, session_id: sessionId });
+        return json({ success: true, done: true, completed: true, session_id: sessionId, processed: chunk.processed });
       }
 
       return json({ success: false, error: 'unknown_step' }, 400);
