@@ -4070,6 +4070,9 @@ export type Database = {
         Row: {
           airtable_action: string
           airtable_current_value: string | null
+          airtable_done: boolean
+          airtable_done_at: string | null
+          airtable_done_by: string | null
           airtable_target_value: string | null
           applied: boolean
           applied_by: string | null
@@ -4099,6 +4102,9 @@ export type Database = {
         Insert: {
           airtable_action?: string
           airtable_current_value?: string | null
+          airtable_done?: boolean
+          airtable_done_at?: string | null
+          airtable_done_by?: string | null
           airtable_target_value?: string | null
           applied?: boolean
           applied_by?: string | null
@@ -4128,6 +4134,9 @@ export type Database = {
         Update: {
           airtable_action?: string
           airtable_current_value?: string | null
+          airtable_done?: boolean
+          airtable_done_at?: string | null
+          airtable_done_by?: string | null
           airtable_target_value?: string | null
           applied?: boolean
           applied_by?: string | null
@@ -8564,13 +8573,14 @@ export type Database = {
       v_exposant_cleanup_actions: {
         Row: {
           airtable_action: string | null
+          airtable_done: boolean | null
+          airtable_done_at: string | null
           confidence: string | null
           created_at: string | null
           id: string | null
           id_exposant_a_corriger: string | null
           id_exposant_canonique: string | null
           merge_reason: string | null
-          moved_participation_ids: string[] | null
           nom_actuel: string | null
           nom_canonique: string | null
           origin: string | null
@@ -8580,13 +8590,14 @@ export type Database = {
         }
         Insert: {
           airtable_action?: string | null
+          airtable_done?: boolean | null
+          airtable_done_at?: string | null
           confidence?: string | null
           created_at?: string | null
           id?: string | null
           id_exposant_a_corriger?: string | null
           id_exposant_canonique?: string | null
           merge_reason?: string | null
-          moved_participation_ids?: string[] | null
           nom_actuel?: string | null
           nom_canonique?: string | null
           origin?: string | null
@@ -8596,13 +8607,14 @@ export type Database = {
         }
         Update: {
           airtable_action?: string | null
+          airtable_done?: boolean | null
+          airtable_done_at?: string | null
           confidence?: string | null
           created_at?: string | null
           id?: string | null
           id_exposant_a_corriger?: string | null
           id_exposant_canonique?: string | null
           merge_reason?: string | null
-          moved_participation_ids?: string[] | null
           nom_actuel?: string | null
           nom_canonique?: string | null
           origin?: string | null
@@ -9823,6 +9835,10 @@ export type Database = {
         Returns: undefined
       }
       log_funnel_event: { Args: { p_event_type: string }; Returns: undefined }
+      mark_exposant_correction_done: {
+        Args: { p_done: boolean; p_id: string }
+        Returns: undefined
+      }
       match_events_semantic: {
         Args: {
           p_date_max?: string
