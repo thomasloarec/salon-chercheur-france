@@ -4021,38 +4021,185 @@ export type Database = {
         }
         Relationships: []
       }
+      exposant_duplicate_reviews: {
+        Row: {
+          confidence: string | null
+          created_at: string
+          id: string
+          kind: string
+          member_id_exposants: string[]
+          reasons: Json
+          resolution: Json | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          score: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          confidence?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          member_id_exposants?: string[]
+          reasons?: Json
+          resolution?: Json | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          score?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          confidence?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          member_id_exposants?: string[]
+          reasons?: Json
+          resolution?: Json | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          score?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      exposant_merge_log: {
+        Row: {
+          airtable_action: string
+          airtable_current_value: string | null
+          airtable_target_value: string | null
+          applied_by: string | null
+          canonical_id: number | null
+          canonical_id_exposant: string
+          canonical_nom: string | null
+          confidence: string
+          created_at: string
+          id: string
+          merge_reason: string
+          merged_domain: string | null
+          merged_id: number | null
+          merged_id_exposant: string
+          merged_nom: string | null
+          merged_website: string | null
+          moved_participation_ids: string[]
+          origin: string
+          participations_moved: number
+          reverted: boolean
+          reverted_at: string | null
+          reverted_by: string | null
+        }
+        Insert: {
+          airtable_action?: string
+          airtable_current_value?: string | null
+          airtable_target_value?: string | null
+          applied_by?: string | null
+          canonical_id?: number | null
+          canonical_id_exposant: string
+          canonical_nom?: string | null
+          confidence?: string
+          created_at?: string
+          id?: string
+          merge_reason: string
+          merged_domain?: string | null
+          merged_id?: number | null
+          merged_id_exposant: string
+          merged_nom?: string | null
+          merged_website?: string | null
+          moved_participation_ids?: string[]
+          origin: string
+          participations_moved?: number
+          reverted?: boolean
+          reverted_at?: string | null
+          reverted_by?: string | null
+        }
+        Update: {
+          airtable_action?: string
+          airtable_current_value?: string | null
+          airtable_target_value?: string | null
+          applied_by?: string | null
+          canonical_id?: number | null
+          canonical_id_exposant?: string
+          canonical_nom?: string | null
+          confidence?: string
+          created_at?: string
+          id?: string
+          merge_reason?: string
+          merged_domain?: string | null
+          merged_id?: number | null
+          merged_id_exposant?: string
+          merged_nom?: string | null
+          merged_website?: string | null
+          moved_participation_ids?: string[]
+          origin?: string
+          participations_moved?: number
+          reverted?: boolean
+          reverted_at?: string | null
+          reverted_by?: string | null
+        }
+        Relationships: []
+      }
       exposants: {
         Row: {
+          canonical_id: number | null
           created_at: string | null
+          dedup_status: string
           exposant_description: string | null
           id: number
           id_exposant: string | null
+          is_canonical: boolean
+          merged_at: string | null
           nom_exposant: string | null
           nom_normalized: string | null
           normalized_domain: string | null
           website_exposant: string | null
         }
         Insert: {
+          canonical_id?: number | null
           created_at?: string | null
+          dedup_status?: string
           exposant_description?: string | null
           id?: number
           id_exposant?: string | null
+          is_canonical?: boolean
+          merged_at?: string | null
           nom_exposant?: string | null
           nom_normalized?: string | null
           normalized_domain?: string | null
           website_exposant?: string | null
         }
         Update: {
+          canonical_id?: number | null
           created_at?: string | null
+          dedup_status?: string
           exposant_description?: string | null
           id?: number
           id_exposant?: string | null
+          is_canonical?: boolean
+          merged_at?: string | null
           nom_exposant?: string | null
           nom_normalized?: string | null
           normalized_domain?: string | null
           website_exposant?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "exposants_canonical_id_fkey"
+            columns: ["canonical_id"]
+            isOneToOne: false
+            referencedRelation: "exposants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exposants_canonical_id_fkey"
+            columns: ["canonical_id"]
+            isOneToOne: false
+            referencedRelation: "exposants_a_enrichir"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       exposants_backup_20250101: {
         Row: {
@@ -7154,6 +7301,72 @@ export type Database = {
         }
         Relationships: []
       }
+      staging_exposants_import: {
+        Row: {
+          airtable_id: string | null
+          checked_at: string | null
+          created_at: string
+          exposant_description: string | null
+          id: string
+          id_event_text: string | null
+          id_exposant: string | null
+          import_batch_id: string | null
+          match_reason: string | null
+          match_score: number | null
+          match_status: string
+          matched_canonical_id_exposant: string | null
+          nom_exposant: string | null
+          nom_normalized: string | null
+          normalized_domain: string | null
+          stand_exposant: string | null
+          updated_at: string
+          urlexpo_event: string | null
+          website_exposant: string | null
+        }
+        Insert: {
+          airtable_id?: string | null
+          checked_at?: string | null
+          created_at?: string
+          exposant_description?: string | null
+          id?: string
+          id_event_text?: string | null
+          id_exposant?: string | null
+          import_batch_id?: string | null
+          match_reason?: string | null
+          match_score?: number | null
+          match_status?: string
+          matched_canonical_id_exposant?: string | null
+          nom_exposant?: string | null
+          nom_normalized?: string | null
+          normalized_domain?: string | null
+          stand_exposant?: string | null
+          updated_at?: string
+          urlexpo_event?: string | null
+          website_exposant?: string | null
+        }
+        Update: {
+          airtable_id?: string | null
+          checked_at?: string | null
+          created_at?: string
+          exposant_description?: string | null
+          id?: string
+          id_event_text?: string | null
+          id_exposant?: string | null
+          import_batch_id?: string | null
+          match_reason?: string | null
+          match_score?: number | null
+          match_status?: string
+          matched_canonical_id_exposant?: string | null
+          nom_exposant?: string | null
+          nom_normalized?: string | null
+          normalized_domain?: string | null
+          stand_exposant?: string | null
+          updated_at?: string
+          urlexpo_event?: string | null
+          website_exposant?: string | null
+        }
+        Relationships: []
+      }
       sub_sectors: {
         Row: {
           created_at: string
@@ -8297,6 +8510,57 @@ export type Database = {
           participations_with_website: number | null
           slug: string | null
           ville: string | null
+        }
+        Relationships: []
+      }
+      v_exposant_cleanup_actions: {
+        Row: {
+          airtable_action: string | null
+          confidence: string | null
+          created_at: string | null
+          id: string | null
+          id_exposant_a_corriger: string | null
+          id_exposant_canonique: string | null
+          merge_reason: string | null
+          moved_participation_ids: string[] | null
+          nom_actuel: string | null
+          nom_canonique: string | null
+          origin: string | null
+          participations_moved: number | null
+          valeur_actuelle: string | null
+          valeur_cible: string | null
+        }
+        Insert: {
+          airtable_action?: string | null
+          confidence?: string | null
+          created_at?: string | null
+          id?: string | null
+          id_exposant_a_corriger?: string | null
+          id_exposant_canonique?: string | null
+          merge_reason?: string | null
+          moved_participation_ids?: string[] | null
+          nom_actuel?: string | null
+          nom_canonique?: string | null
+          origin?: string | null
+          participations_moved?: number | null
+          valeur_actuelle?: string | null
+          valeur_cible?: string | null
+        }
+        Update: {
+          airtable_action?: string | null
+          confidence?: string | null
+          created_at?: string | null
+          id?: string | null
+          id_exposant_a_corriger?: string | null
+          id_exposant_canonique?: string | null
+          merge_reason?: string | null
+          moved_participation_ids?: string[] | null
+          nom_actuel?: string | null
+          nom_canonique?: string | null
+          origin?: string | null
+          participations_moved?: number | null
+          valeur_actuelle?: string | null
+          valeur_cible?: string | null
         }
         Relationships: []
       }
