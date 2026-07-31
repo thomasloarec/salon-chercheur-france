@@ -9938,6 +9938,14 @@ export type Database = {
           similarity_max: number
         }[]
       }
+      merge_exposants_manual: {
+        Args: {
+          p_canonical_id_exposant: string
+          p_reason: string
+          p_variant_id_exposants: string[]
+        }
+        Returns: number
+      }
       my_radar_access: { Args: never; Returns: Json }
       my_radar_status: {
         Args: never
@@ -10050,6 +10058,19 @@ export type Database = {
           score: number
           website: string
         }[]
+      }
+      resolve_exposant_review_domain: {
+        Args: { p_review_id: string; p_verdict: string }
+        Returns: undefined
+      }
+      resolve_exposant_review_merge: {
+        Args: {
+          p_action: string
+          p_canonical_id_exposant?: string
+          p_review_id: string
+          p_variant_id_exposants?: string[]
+        }
+        Returns: undefined
       }
       resolve_radar_account_for_user: {
         Args: { p_user_id: string }
