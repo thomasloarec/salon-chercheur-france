@@ -4071,6 +4071,7 @@ export type Database = {
           airtable_action: string
           airtable_current_value: string | null
           airtable_target_value: string | null
+          applied: boolean
           applied_by: string | null
           canonical_id: number | null
           canonical_id_exposant: string
@@ -4085,16 +4086,20 @@ export type Database = {
           merged_nom: string | null
           merged_website: string | null
           moved_participation_ids: string[]
+          note: string | null
           origin: string
           participations_moved: number
+          plan_batch_id: string | null
           reverted: boolean
           reverted_at: string | null
           reverted_by: string | null
+          touches_exhibitor: boolean
         }
         Insert: {
           airtable_action?: string
           airtable_current_value?: string | null
           airtable_target_value?: string | null
+          applied?: boolean
           applied_by?: string | null
           canonical_id?: number | null
           canonical_id_exposant: string
@@ -4109,16 +4114,20 @@ export type Database = {
           merged_nom?: string | null
           merged_website?: string | null
           moved_participation_ids?: string[]
+          note?: string | null
           origin: string
           participations_moved?: number
+          plan_batch_id?: string | null
           reverted?: boolean
           reverted_at?: string | null
           reverted_by?: string | null
+          touches_exhibitor?: boolean
         }
         Update: {
           airtable_action?: string
           airtable_current_value?: string | null
           airtable_target_value?: string | null
+          applied?: boolean
           applied_by?: string | null
           canonical_id?: number | null
           canonical_id_exposant?: string
@@ -4133,11 +4142,14 @@ export type Database = {
           merged_nom?: string | null
           merged_website?: string | null
           moved_participation_ids?: string[]
+          note?: string | null
           origin?: string
           participations_moved?: number
+          plan_batch_id?: string | null
           reverted?: boolean
           reverted_at?: string | null
           reverted_by?: string | null
+          touches_exhibitor?: boolean
         }
         Relationships: []
       }
@@ -9188,6 +9200,13 @@ export type Database = {
         }
         Returns: string
       }
+      build_exposant_dedup_plan: {
+        Args: { p_fuzzy_threshold?: number }
+        Returns: {
+          poche: string
+          volume: number
+        }[]
+      }
       can_add_novelty: {
         Args: { p_event_id: string; p_exhibitor_id: string }
         Returns: Json
@@ -9423,6 +9442,7 @@ export type Database = {
       exhibitor_slug_normalize: { Args: { p_name: string }; Returns: string }
       expire_past_campaigns: { Args: never; Returns: number }
       export_user_data: { Args: never; Returns: Json }
+      exposant_reg_domain: { Args: { p_raw: string }; Returns: string }
       exposants_d_un_salon: {
         Args: { p_salon: string; p_sous_secteur?: string }
         Returns: Json
