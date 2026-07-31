@@ -5935,6 +5935,39 @@ export type Database = {
         }
         Relationships: []
       }
+      participation_dedup_log: {
+        Row: {
+          created_at: string
+          deleted_row: Json
+          id: string
+          id_event_text: string | null
+          id_exposant: string
+          kept_participation_id: string
+          reverted: boolean
+          reverted_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          deleted_row: Json
+          id?: string
+          id_event_text?: string | null
+          id_exposant: string
+          kept_participation_id: string
+          reverted?: boolean
+          reverted_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          deleted_row?: Json
+          id?: string
+          id_event_text?: string | null
+          id_exposant?: string
+          kept_participation_id?: string
+          reverted?: boolean
+          reverted_at?: string | null
+        }
+        Relationships: []
+      }
       participation_import_errors: {
         Row: {
           created_at: string | null
@@ -9354,6 +9387,13 @@ export type Database = {
         Args: { p_import_id: string; p_user_id: string }
         Returns: Json
       }
+      dedup_participations_same_event: {
+        Args: never
+        Returns: {
+          groupes: number
+          lignes_supprimees: number
+        }[]
+      }
       delete_my_radar_crm_data: { Args: never; Returns: Json }
       delete_user_account: { Args: never; Returns: Json }
       detect_exhibitor_duplicates: {
@@ -10010,6 +10050,10 @@ export type Database = {
         }[]
       }
       revert_exposant_merge: { Args: { p_log_id: string }; Returns: undefined }
+      revert_participation_dedup: {
+        Args: { p_log_id: string }
+        Returns: undefined
+      }
       review_exhibitor_duplicate: {
         Args: {
           p_a: string
