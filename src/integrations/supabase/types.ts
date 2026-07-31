@@ -4078,6 +4078,7 @@ export type Database = {
           canonical_nom: string | null
           confidence: string
           created_at: string
+          deleted_participations: Json
           id: string
           merge_reason: string
           merged_domain: string | null
@@ -4106,6 +4107,7 @@ export type Database = {
           canonical_nom?: string | null
           confidence?: string
           created_at?: string
+          deleted_participations?: Json
           id?: string
           merge_reason: string
           merged_domain?: string | null
@@ -4134,6 +4136,7 @@ export type Database = {
           canonical_nom?: string | null
           confidence?: string
           created_at?: string
+          deleted_participations?: Json
           id?: string
           merge_reason?: string
           merged_domain?: string | null
@@ -9186,6 +9189,14 @@ export type Database = {
         }
         Returns: Json
       }
+      apply_exposant_merge_plan: {
+        Args: { p_canonical?: string }
+        Returns: {
+          participations_dedupliquees: number
+          participations_repointees: number
+          variantes_appliquees: number
+        }[]
+      }
       apply_radar_mission_strategy: {
         Args: {
           p_ai_meta: Json
@@ -9998,6 +10009,7 @@ export type Database = {
           id_event_text: string
         }[]
       }
+      revert_exposant_merge: { Args: { p_log_id: string }; Returns: undefined }
       review_exhibitor_duplicate: {
         Args: {
           p_a: string
