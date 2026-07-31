@@ -1,6 +1,7 @@
 import React from 'react';
 import { AirtableImport } from '@/components/admin/AirtableImport';
 import { ImportErrorsPanel } from '@/components/admin/ImportErrorsPanel';
+import { ExposantAirtableCorrections } from '@/components/admin/ExposantAirtableCorrections';
 import { PendingEventsImport } from '@/components/admin/PendingEventsImport';
 import AirtableAntiDuplicateCheck from '@/components/admin/AirtableAntiDuplicateCheck';
 import AdminAllEvents from '@/components/admin/AdminAllEvents';
@@ -16,6 +17,8 @@ const AdminEventsPage = () => {
 
       <AirtableImport />
       <ImportErrorsPanel />
+
+      <ExposantAirtableCorrections />
 
       <Card>
         <CardContent className="pt-6">
