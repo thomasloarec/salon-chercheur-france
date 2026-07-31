@@ -34,6 +34,8 @@ const KIND_LABEL: Record<ReviewKind, string> = {
   salon_domain: 'Domaines suspects',
 };
 
+const linkHref = (u: string) => (/^https?:\/\//i.test(u) ? u : `https://${u}`);
+
 export function ExposantReviewQueue() {
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -125,6 +127,7 @@ export function ExposantReviewQueue() {
   }, [reviews]);
 
   const chosen = (r: Review) => canonical[r.id] ?? r.member_id_exposants[0];
+  const nameOf = (id: string) => members?.[id]?.nom_exposant ?? id;
   const busy = mergeMut.isPending || distinctMut.isPending || domainMut.isPending;
 
   return (
@@ -134,8 +137,8 @@ export function ExposantReviewQueue() {
           <div className="space-y-1">
             <h3 className="font-medium">Revue à trancher — cas ambigus</h3>
             <p className="text-sm text-muted-foreground max-w-3xl">
-              Ces cas ne pouvaient pas être fusionnés automatiquement. Choisis la fiche à conserver puis fusionne,
-              ou marque comme entreprises distinctes. Chaque fusion apparaît ensuite dans le panneau des corrections Airtable.
+              Ces cas ne pouvaient pas être fusionnés automatiquement. Coche la fiche à conserver : les
+              autres lui seront rattachées et devront être supprimées dans Airtable. Ou marque « entreprises distinctes ».
             </p>
           </div>
           <Select value={kind} onValueChange={(v) => setKind(v as ReviewKind)}>
@@ -174,7 +177,7 @@ export function ExposantReviewQueue() {
                     <div className="flex flex-wrap gap-2">
                       {r.member_id_exposants.map((id) => (
                         <Badge key={id} variant="secondary" className="font-normal">
-                          {members?.[id]?.nom_exposant ?? id}
+                          {nameOf(id)}
                         </Badge>
                       ))}
                     </div>
@@ -204,18 +207,19 @@ export function ExposantReviewQueue() {
                     <div className="space-y-2">
                       {r.member_id_exposants.map((id) => {
                         const m = members?.[id];
+                        const isKept = chosen(r) === id;
                         return (
                           <label key={id} className="flex flex-wrap items-center gap-2 text-sm cursor-pointer">
                             <input
                               type="radio"
                               name={`canon-${r.id}`}
-                              checked={chosen(r) === id}
+                              checked={isKept}
                               onChange={() => setCanonical((c) => ({ ...c, [r.id]: id }))}
                             />
                             <span className="font-medium">{m?.nom_exposant ?? id}</span>
                             {m?.website_exposant && (
                               <a
-                                href={m.website_exposant}
+                                href={linkHref(m.website_exposant)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:underline"
@@ -225,14 +229,24 @@ export function ExposantReviewQueue() {
                               </a>
                             )}
                             <span className="font-mono text-xs text-muted-foreground">{id}</span>
+                            {isKept ? (
+                              <Badge variant="default">Conservée</Badge>
+                            ) : (
+                              <Badge variant="outline">à supprimer dans Airtable</Badge>
+                            )}
                           </label>
                         );
                       })}
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      En fusionnant : <span className="font-medium">{nameOf(chosen(r))}</span> est conservée sur Lotexpo. Les{' '}
+                      {r.member_id_exposants.length - 1} autre(s) fiche(s) lui sont rattachées (leurs participations basculent
+                      dessus) et devront être supprimées dans Airtable.
+                    </p>
                     <div className="flex flex-wrap gap-2">
                       <Button size="sm" disabled={busy} onClick={() => mergeMut.mutate({ review: r, canon: chosen(r) })}>
                         <GitMerge className="h-4 w-4 mr-2" />
-                        Fusionner (garder la sélection)
+                        Fusionner vers la fiche cochée
                       </Button>
                       <Button size="sm" variant="outline" disabled={busy} onClick={() => distinctMut.mutate(r)}>
                         <Split className="h-4 w-4 mr-2" />
