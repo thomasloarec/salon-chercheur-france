@@ -2631,6 +2631,93 @@ export type Database = {
           },
         ]
       }
+      event_series: {
+        Row: {
+          cle_normalisee: string
+          created_at: string
+          id: string
+          nom_canonique: string
+        }
+        Insert: {
+          cle_normalisee: string
+          created_at?: string
+          id?: string
+          nom_canonique: string
+        }
+        Update: {
+          cle_normalisee?: string
+          created_at?: string
+          id?: string
+          nom_canonique?: string
+        }
+        Relationships: []
+      }
+      event_snapshots: {
+        Row: {
+          created_at: string
+          event_id: string
+          exposant_ids: Json
+          id: string
+          list_hash: string
+          nb_participations: number
+          snapshot_date: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          exposant_ids: Json
+          id?: string
+          list_hash: string
+          nb_participations: number
+          snapshot_date: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          exposant_ids?: Json
+          id?: string
+          list_hash?: string
+          nb_participations?: number
+          snapshot_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_snapshots_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_snapshots_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_snapshots_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_snapshots_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_snapshots_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           affluence: string | null
@@ -2679,6 +2766,7 @@ export type Database = {
           seo_quality_report: Json | null
           seo_quality_score: number | null
           seo_source_hash: string | null
+          series_id: string | null
           slug: string | null
           status_event: string | null
           suggested_keywords: Json | null
@@ -2741,6 +2829,7 @@ export type Database = {
           seo_quality_report?: Json | null
           seo_quality_score?: number | null
           seo_source_hash?: string | null
+          series_id?: string | null
           slug?: string | null
           status_event?: string | null
           suggested_keywords?: Json | null
@@ -2803,6 +2892,7 @@ export type Database = {
           seo_quality_report?: Json | null
           seo_quality_score?: number | null
           seo_source_hash?: string | null
+          series_id?: string | null
           slug?: string | null
           status_event?: string | null
           suggested_keywords?: Json | null
@@ -2818,7 +2908,15 @@ export type Database = {
           ville?: string | null
           visible?: boolean | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "events_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "event_series"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       events_import_old: {
         Row: {
@@ -5840,10 +5938,12 @@ export type Database = {
         Row: {
           created_at: string | null
           exhibitor_id: string | null
+          first_seen_at: string
           id_event: string | null
           id_event_text: string | null
           id_exposant: string
           id_participation: string
+          last_seen_at: string
           source: string
           stand_exposant: string | null
           stand_locked: boolean
@@ -5853,10 +5953,12 @@ export type Database = {
         Insert: {
           created_at?: string | null
           exhibitor_id?: string | null
+          first_seen_at?: string
           id_event?: string | null
           id_event_text?: string | null
           id_exposant: string
           id_participation?: string
+          last_seen_at?: string
           source?: string
           stand_exposant?: string | null
           stand_locked?: boolean
@@ -5866,10 +5968,12 @@ export type Database = {
         Update: {
           created_at?: string | null
           exhibitor_id?: string | null
+          first_seen_at?: string
           id_event?: string | null
           id_event_text?: string | null
           id_exposant?: string
           id_participation?: string
+          last_seen_at?: string
           source?: string
           stand_exposant?: string | null
           stand_locked?: boolean
@@ -9759,6 +9863,10 @@ export type Database = {
         Returns: boolean
       }
       is_team_member: { Args: { _exhibitor_id: string }; Returns: boolean }
+      leadmagnet_search: {
+        Args: { p_query: string; p_similar_limit?: number }
+        Returns: Json
+      }
       list_exhibitor_profile_change_logs: {
         Args: { p_exhibitor_id?: string; p_limit?: number }
         Returns: {
@@ -9849,6 +9957,22 @@ export type Database = {
           p_ville?: string
         }
         Returns: Json
+      }
+      match_exhibitors_by_exhibitor: {
+        Args: { p_id_exposant: string; p_k?: number; p_upcoming_only?: boolean }
+        Returns: {
+          exhibitor_id: string
+          mots_cles_metier: Json
+          nom_exposant: string
+          produits_services: Json
+          public_slug: string
+          resume_court: string
+          salons: Json
+          secteur_principal: string
+          similarity: number
+          sous_secteurs: Json
+          website: string
+        }[]
       }
       match_exhibitors_global: {
         Args: {
@@ -10265,6 +10389,7 @@ export type Database = {
         Returns: Json
       }
       slugify: { Args: { txt: string }; Returns: string }
+      snapshot_all_event_participations: { Args: never; Returns: number }
       start_seo_weekly_catchup: { Args: never; Returns: Json }
       submit_radar_access_request: {
         Args: {
