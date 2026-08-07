@@ -210,13 +210,13 @@ function prepareRows(
       id_exposant: exposantId,
       stand_exposant: standInfo || null,
       website_exposant: websiteExposant,
-      created_at: new Date().toISOString(),
+      last_seen_at: new Date().toISOString(),
     });
   }
 
-  // Dédoublonnage intra-tranche par urlexpo_event
+  // Dédoublonnage intra-tranche par clé métier stable (exposant, événement)
   const uniqueMap = new Map<string, any>();
-  for (const item of toInsert) uniqueMap.set(item.urlexpo_event, item);
+  for (const item of toInsert) uniqueMap.set(`${item.id_exposant}__${item.id_event_text}`, item);
   const rows = Array.from(uniqueMap.values());
 
   // PROTECTION STAND : ne jamais écraser un stand verrouillé par l'exposant
@@ -287,7 +287,7 @@ export async function importParticipationChunk(
   let processed = 0;
   if (rows.length > 0) {
     const { inserted, errors: batchErrors } = await batchUpsertCounted(
-      supabaseClient, 'participation', rows, 'urlexpo_event', SUPABASE_BATCH_SIZE,
+      supabaseClient, 'participation', rows, 'id_exposant,id_event_text', SUPABASE_BATCH_SIZE,
     );
     processed = inserted;
     batchErrors.forEach(err => errors.push({ record_id: 'BATCH', reason: err }));
@@ -352,7 +352,7 @@ export async function importParticipation(
   let participationsImported = 0;
   if (rows.length > 0) {
     const { inserted, errors } = await batchUpsertCounted(
-      supabaseClient, 'participation', rows, 'urlexpo_event', SUPABASE_BATCH_SIZE,
+      supabaseClient, 'participation', rows, 'id_exposant,id_event_text', SUPABASE_BATCH_SIZE,
     );
     participationsImported = inserted;
     errors.forEach(err => participationErrors.push({ record_id: 'BATCH', reason: err }));
