@@ -13,7 +13,7 @@ export interface NoveltyComment {
   updated_at: string;
   profiles: {
     first_name: string | null;
-    last_name: string | null;
+    last_initial: string | null;
     avatar_url: string | null;
   } | null;
 }
@@ -40,9 +40,11 @@ export function useNoveltyComments(noveltyId: string | undefined) {
 
       // Fetch profiles for all comment authors
       const userIds = data.map(comment => comment.user_id);
+      // Vue publique minimale : prenom + initiale du nom + avatar.
+      // La table profiles n'est plus lisible publiquement (securite / RGPD).
       const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('user_id, first_name, last_name, avatar_url')
+        .from('public_comment_authors')
+        .select('user_id, first_name, last_initial, avatar_url')
         .in('user_id', userIds);
 
       // Map profiles to comments

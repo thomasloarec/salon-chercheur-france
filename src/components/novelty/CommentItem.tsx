@@ -14,18 +14,18 @@ interface CommentItemProps {
 }
 
 export default function CommentItem({ comment, isOwner, onDelete, isDeleting }: CommentItemProps) {
-  const getInitials = (firstName: string | null, lastName: string | null) => {
+  const getInitials = (firstName: string | null, lastInitial: string | null) => {
     const first = firstName?.charAt(0) || '';
-    const last = lastName?.charAt(0) || '';
+    const last = lastInitial?.charAt(0) || '';
     return (first + last).toUpperCase() || '?';
   };
 
-  const getDisplayName = (firstName: string | null, lastName: string | null) => {
-    if (firstName && lastName) {
-      return `${firstName} ${lastName}`;
+  const getDisplayName = (firstName: string | null, lastInitial: string | null) => {
+    if (firstName && lastInitial) {
+      return `${firstName} ${lastInitial}`;
     }
     if (firstName) return firstName;
-    if (lastName) return lastName;
+    if (lastInitial) return lastInitial;
     return 'Utilisateur';
   };
 
@@ -36,13 +36,13 @@ export default function CommentItem({ comment, isOwner, onDelete, isDeleting }: 
           src={comment.profiles?.avatar_url || undefined} 
           alt={getDisplayName(
             comment.profiles?.first_name || null,
-            comment.profiles?.last_name || null
+            comment.profiles?.last_initial || null
           )}
         />
         <AvatarFallback className="text-xs">
           {getInitials(
             comment.profiles?.first_name || null,
-            comment.profiles?.last_name || null
+            comment.profiles?.last_initial || null
           )}
         </AvatarFallback>
       </Avatar>
@@ -53,7 +53,7 @@ export default function CommentItem({ comment, isOwner, onDelete, isDeleting }: 
             <span className="font-semibold text-sm">
               {getDisplayName(
                 comment.profiles?.first_name || null,
-                comment.profiles?.last_name || null
+                comment.profiles?.last_initial || null
               )}
             </span>
           </div>
