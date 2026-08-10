@@ -2,9 +2,11 @@
 //
 // Agent conversationnel "Recherche IA Visiteur" pour Lotexpo.
 // Boucle de tool-calling (Claude Haiku) sur les primitives SQL en base.
-// Gate crédits (anonyme = 5 / inscrit = 10, paywall mimé) + rate-limit IP.
+// Gate crédits (anonyme = 5 à vie / inscrit = 10 par 24h glissantes) + rate-limit IP.
 //
-// v68 — Chantiers A/B/C : outil salons unifié (match_salons_v2 : catégories +
+// v69 — Credits : fenetre glissante 24h pour les inscrits (10 requetes),
+// anonyme inchange (5 a vie). wall_type 'paywall' remplace par 'daily_limit',
+// reset_at propage au front, event funnel 'daily_wall_shown'.
 // zone géographique + bonus secteur + statut recommande/connexe), fiche_salon
 // (résolution d'un salon par son nom), salons_des_concurrents. Reste inchangé.
 //
@@ -393,9 +395,12 @@ Deno.serve(async (req) => {
   if (creditErr) return json({ error: "credit_check_failed", detail: creditErr.message }, 500);
   const credit = Array.isArray(creditRows) ? creditRows[0] : creditRows;
   if (credit?.wall_type) {
-    const evt = credit.wall_type === "signup" ? "anon_wall_shown" : "paid_wall_shown";
+    const evt = credit.wall_type === "signup" ? "anon_wall_shown" : "daily_wall_shown";
     await admin.from("ai_funnel_events").insert({ user_id: userId, event_type: evt });
-    return json({ wall: { type: credit.wall_type }, credits: credit });
+    return json({
+      wall: { type: credit.wall_type, hard: true, reset_at: credit.reset_at ?? null },
+      credits: credit,
+    });
   }
   // Les admins ont une allocation illimitée (999999) ; anonyme = 5, inscrit = 10.
   const isAdmin = (credit?.allowed ?? 0) > 10;
@@ -495,6 +500,20 @@ Deno.serve(async (req) => {
   const allowed = credit?.allowed ?? (isAnon ? 5 : 10);
   const remainingAfter = Math.max(allowed - usedAfter, 0);
 
+  // Fenetre glissante : quand le quota vient d'etre epuise, on relit la base
+  // pour connaitre l'instant exact ou un credit se liberera (plus ancienne
+  // requete de la fenetre + 24h). Un seul appel supplementaire, et seulement
+  // sur la requete qui epuise le quota.
+  let resetAt: string | null = null;
+  if (remainingAfter <= 0 && !isAnon) {
+    const { data: afterRows } = await admin.rpc("check_ai_credits", {
+      p_user_id: userId,
+      p_is_anonymous: isAnon,
+    });
+    const after = Array.isArray(afterRows) ? afterRows[0] : afterRows;
+    resetAt = after?.reset_at ?? null;
+  }
+
   if (typeof EdgeRuntime !== "undefined" && (EdgeRuntime as any).waitUntil) {
     (EdgeRuntime as any).waitUntil(logIntelligence(admin, question, questionRank, conversationKey, finalText, [...retrievedSlugs]));
   }
@@ -502,10 +521,10 @@ Deno.serve(async (req) => {
   return json({
     answer: finalText,
     conversation_key: conversationKey,
-    credits: { used: usedAfter, allowed, remaining: remainingAfter },
+    credits: { used: usedAfter, allowed, remaining: remainingAfter, reset_at: resetAt },
     // Indice "mur imminent" pour que le front prépare le CTA (sans logguer d'event ici :
     // l'event sera loggé au prochain appel effectivement bloqué).
-    wall: remainingAfter <= 0 ? { type: isAnon ? "signup" : "paywall", soft: true } : null,
+    wall: remainingAfter <= 0 ? { type: isAnon ? "signup" : "daily_limit", soft: true, reset_at: resetAt } : null,
     ...(debugEnabled ? { debug: { trace: debugTrace } } : {}),
   });
 });
