@@ -23,7 +23,7 @@ interface Credits {
   allowed: number;
   remaining: number;
 }
-type WallType = 'signup' | 'paywall';
+type WallType = 'signup' | 'daily_limit' | 'paywall';
 
 const EXAMPLES = [
   'Je cherche un salon pour la restauration',
@@ -121,7 +121,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
   const [conversationKey, setConversationKey] = useState<string | null>(null);
 
   // Mur affiché sous la conversation (mou = après réponse, dur = bloquant).
-  const [wall, setWall] = useState<{ type: WallType; hard: boolean } | null>(null);
+  const [wall, setWall] = useState<{ type: WallType; hard: boolean; resetAt: string | null } | null>(null);
   const [signupOpen, setSignupOpen] = useState(false);
   const [paidIntentSent, setPaidIntentSent] = useState(false);
 
@@ -222,7 +222,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
       if (data?.conversation_key) setConversationKey(data.conversation_key as string);
 
       if (data?.wall && !data?.answer) {
-        setWall({ type: data.wall.type as WallType, hard: true });
+        setWall({ type: data.wall.type as WallType, hard: true, resetAt: data.wall.reset_at ?? null });
         return;
       }
 
@@ -234,7 +234,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
       }
 
       if (data?.wall?.soft) {
-        setWall({ type: data.wall.type as WallType, hard: false });
+        setWall({ type: data.wall.type as WallType, hard: false, resetAt: data.wall.reset_at ?? null });
       }
     } catch (err) {
       toast({
@@ -483,6 +483,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
               <WallCallout
                 type={wall.type}
                 hard={wall.hard}
+                resetAt={wall.resetAt}
                 paidIntentSent={paidIntentSent}
                 onSignup={() => setSignupOpen(true)}
                 onPaidIntent={handlePaidIntent}
