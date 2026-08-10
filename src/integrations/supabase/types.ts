@@ -206,6 +206,66 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_eval_runs: {
+        Row: {
+          attempt: number
+          case_id: string
+          cited_event_slugs: string[]
+          cited_exhibitor_count: number
+          created_at: string
+          error: string | null
+          final_text: string | null
+          id: string
+          input_tokens: number | null
+          latency_ms: number | null
+          model: string
+          n_iters: number | null
+          output_tokens: number | null
+          question: string
+          retrieved_event_slugs: string[]
+          run_label: string
+          tool_calls: Json
+        }
+        Insert: {
+          attempt?: number
+          case_id: string
+          cited_event_slugs?: string[]
+          cited_exhibitor_count?: number
+          created_at?: string
+          error?: string | null
+          final_text?: string | null
+          id?: string
+          input_tokens?: number | null
+          latency_ms?: number | null
+          model: string
+          n_iters?: number | null
+          output_tokens?: number | null
+          question: string
+          retrieved_event_slugs?: string[]
+          run_label: string
+          tool_calls?: Json
+        }
+        Update: {
+          attempt?: number
+          case_id?: string
+          cited_event_slugs?: string[]
+          cited_exhibitor_count?: number
+          created_at?: string
+          error?: string | null
+          final_text?: string | null
+          id?: string
+          input_tokens?: number | null
+          latency_ms?: number | null
+          model?: string
+          n_iters?: number | null
+          output_tokens?: number | null
+          question?: string
+          retrieved_event_slugs?: string[]
+          run_label?: string
+          tool_calls?: Json
+        }
+        Relationships: []
+      }
       ai_event_visibility_daily: {
         Row: {
           appearances: number
@@ -2584,6 +2644,150 @@ export type Database = {
           },
         ]
       }
+      event_profiles: {
+        Row: {
+          category_distribution: Json
+          centroid: string
+          computed_at: string
+          confidence: string
+          event_id: string
+          nb_categorises: number
+          nb_embeddes: number
+          nb_exposants: number
+        }
+        Insert: {
+          category_distribution: Json
+          centroid: string
+          computed_at?: string
+          confidence: string
+          event_id: string
+          nb_categorises: number
+          nb_embeddes: number
+          nb_exposants: number
+        }
+        Update: {
+          category_distribution?: Json
+          centroid?: string
+          computed_at?: string
+          confidence?: string
+          event_id?: string
+          nb_categorises?: number
+          nb_embeddes?: number
+          nb_exposants?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_profiles_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_profiles_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_profiles_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_profiles_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_profiles_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_recommendations: {
+        Row: {
+          categorie_sous_representee: boolean
+          category_id: string | null
+          computed_at: string
+          dist_semantique: number
+          event_id: string
+          exhibitor_id: string
+          expose_sur_comparable: boolean
+          nb_salons_candidat: number
+          rang: number
+          score: number
+        }
+        Insert: {
+          categorie_sous_representee?: boolean
+          category_id?: string | null
+          computed_at?: string
+          dist_semantique: number
+          event_id: string
+          exhibitor_id: string
+          expose_sur_comparable?: boolean
+          nb_salons_candidat: number
+          rang: number
+          score: number
+        }
+        Update: {
+          categorie_sous_representee?: boolean
+          category_id?: string | null
+          computed_at?: string
+          dist_semantique?: number
+          event_id?: string
+          exhibitor_id?: string
+          expose_sur_comparable?: boolean
+          nb_salons_candidat?: number
+          rang?: number
+          score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_recommendations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_recommendations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_recommendations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_recommendations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_recommendations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_sectors: {
         Row: {
           created_at: string
@@ -2651,6 +2855,113 @@ export type Database = {
           nom_canonique?: string
         }
         Relationships: []
+      }
+      event_similarity: {
+        Row: {
+          computed_at: string
+          event_id: string
+          exposants_partages: number
+          neighbor_event_id: string
+          overlap_directionnel: number
+          rang: number
+          retenu: boolean
+          score_categoriel: number | null
+          score_semantique: number
+        }
+        Insert: {
+          computed_at?: string
+          event_id: string
+          exposants_partages: number
+          neighbor_event_id: string
+          overlap_directionnel: number
+          rang: number
+          retenu?: boolean
+          score_categoriel?: number | null
+          score_semantique: number
+        }
+        Update: {
+          computed_at?: string
+          event_id?: string
+          exposants_partages?: number
+          neighbor_event_id?: string
+          overlap_directionnel?: number
+          rang?: number
+          retenu?: boolean
+          score_categoriel?: number | null
+          score_semantique?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_similarity_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_similarity_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_similarity_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_similarity_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_similarity_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_similarity_neighbor_event_id_fkey"
+            columns: ["neighbor_event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_similarity_neighbor_event_id_fkey"
+            columns: ["neighbor_event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_similarity_neighbor_event_id_fkey"
+            columns: ["neighbor_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_similarity_neighbor_event_id_fkey"
+            columns: ["neighbor_event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_similarity_neighbor_event_id_fkey"
+            columns: ["neighbor_event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       event_snapshots: {
         Row: {
@@ -3363,6 +3674,38 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "public_exhibitor_profiles"
             referencedColumns: ["public_identity_id"]
+          },
+        ]
+      }
+      exhibitor_categories: {
+        Row: {
+          assigned_at: string
+          category_id: string
+          distance: number | null
+          exhibitor_id: string
+          version: number
+        }
+        Insert: {
+          assigned_at?: string
+          category_id: string
+          distance?: number | null
+          exhibitor_id: string
+          version: number
+        }
+        Update: {
+          assigned_at?: string
+          category_id?: string
+          distance?: number | null
+          exhibitor_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibitor_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "taxonomy_categories"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -4474,6 +4817,217 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      growth_leads: {
+        Row: {
+          a_importe_liste: boolean | null
+          created_at: string
+          domaine_correspond: boolean | null
+          donnees_confirmees: boolean | null
+          double_optin_confirme_at: string | null
+          double_optin_token: string | null
+          email: string
+          email_domain: string | null
+          event_id: string | null
+          event_name_saisi: string | null
+          id: string
+          nb_exposants_connu: number | null
+          rapport_genere_at: string | null
+          rapport_url: string | null
+          statut: string
+          updated_at: string
+          valide_at: string | null
+          valide_par: string | null
+        }
+        Insert: {
+          a_importe_liste?: boolean | null
+          created_at?: string
+          domaine_correspond?: boolean | null
+          donnees_confirmees?: boolean | null
+          double_optin_confirme_at?: string | null
+          double_optin_token?: string | null
+          email: string
+          email_domain?: string | null
+          event_id?: string | null
+          event_name_saisi?: string | null
+          id?: string
+          nb_exposants_connu?: number | null
+          rapport_genere_at?: string | null
+          rapport_url?: string | null
+          statut?: string
+          updated_at?: string
+          valide_at?: string | null
+          valide_par?: string | null
+        }
+        Update: {
+          a_importe_liste?: boolean | null
+          created_at?: string
+          domaine_correspond?: boolean | null
+          donnees_confirmees?: boolean | null
+          double_optin_confirme_at?: string | null
+          double_optin_token?: string | null
+          email?: string
+          email_domain?: string | null
+          event_id?: string | null
+          event_name_saisi?: string | null
+          id?: string
+          nb_exposants_connu?: number | null
+          rapport_genere_at?: string | null
+          rapport_url?: string | null
+          statut?: string
+          updated_at?: string
+          valide_at?: string | null
+          valide_par?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "growth_leads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "growth_leads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "growth_leads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "growth_leads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "growth_leads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      growth_offer_config: {
+        Row: {
+          id: number
+          paliers: Json
+          places_vendues: number
+          prix_reference_annuel: number
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          paliers?: Json
+          places_vendues?: number
+          prix_reference_annuel?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          paliers?: Json
+          places_vendues?: number
+          prix_reference_annuel?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      growth_subscriptions: {
+        Row: {
+          created_at: string
+          email: string
+          event_id: string | null
+          id: string
+          lead_id: string | null
+          palier: number | null
+          prix_premiere_annee: number
+          prix_reference: number
+          rang: number
+          remise_pct: number
+          salon_nom: string | null
+          statut: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          event_id?: string | null
+          id?: string
+          lead_id?: string | null
+          palier?: number | null
+          prix_premiere_annee: number
+          prix_reference: number
+          rang: number
+          remise_pct?: number
+          salon_nom?: string | null
+          statut?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          event_id?: string | null
+          id?: string
+          lead_id?: string | null
+          palier?: number | null
+          prix_premiere_annee?: number
+          prix_reference?: number
+          rang?: number
+          remise_pct?: number
+          salon_nom?: string | null
+          statut?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "growth_subscriptions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "growth_subscriptions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "growth_subscriptions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "growth_subscriptions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "growth_subscriptions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "growth_subscriptions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "growth_leads"
             referencedColumns: ["id"]
           },
         ]
@@ -6906,6 +7460,21 @@ export type Database = {
         }
         Relationships: []
       }
+      recommendable_embeddings: {
+        Row: {
+          embedding: string
+          exhibitor_id: string
+        }
+        Insert: {
+          embedding: string
+          exhibitor_id: string
+        }
+        Update: {
+          embedding?: string
+          exhibitor_id?: string
+        }
+        Relationships: []
+      }
       regions: {
         Row: {
           code: string
@@ -7528,6 +8097,85 @@ export type Database = {
         }
         Relationships: []
       }
+      staging_organizer_exhibitors: {
+        Row: {
+          created_at: string
+          event_id: string | null
+          id: string
+          lead_id: string | null
+          match_type: string | null
+          matched_exhibitor_id: string | null
+          normalized_domain: string | null
+          raw_nom: string | null
+          raw_website: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          lead_id?: string | null
+          match_type?: string | null
+          matched_exhibitor_id?: string | null
+          normalized_domain?: string | null
+          raw_nom?: string | null
+          raw_website?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          lead_id?: string | null
+          match_type?: string | null
+          matched_exhibitor_id?: string | null
+          normalized_domain?: string | null
+          raw_nom?: string | null
+          raw_website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staging_organizer_exhibitors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "staging_organizer_exhibitors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "staging_organizer_exhibitors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staging_organizer_exhibitors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staging_organizer_exhibitors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staging_organizer_exhibitors_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "growth_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sub_sectors: {
         Row: {
           created_at: string
@@ -7577,6 +8225,50 @@ export type Database = {
           reason?: string | null
         }
         Relationships: []
+      }
+      taxonomy_categories: {
+        Row: {
+          centroid: string
+          cluster_index: number
+          created_at: string
+          id: string
+          label: string | null
+          secteur_id: string
+          size: number
+          slug: string | null
+          version: number
+        }
+        Insert: {
+          centroid: string
+          cluster_index: number
+          created_at?: string
+          id?: string
+          label?: string | null
+          secteur_id: string
+          size: number
+          slug?: string | null
+          version: number
+        }
+        Update: {
+          centroid?: string
+          cluster_index?: number
+          created_at?: string
+          id?: string
+          label?: string | null
+          secteur_id?: string
+          size?: number
+          slug?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "taxonomy_categories_secteur_id_fkey"
+            columns: ["secteur_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_companies: {
         Row: {
@@ -9360,12 +10052,44 @@ export type Database = {
         }
         Returns: string
       }
+      assign_pending_categories: {
+        Args: { p_version?: number }
+        Returns: number
+      }
+      build_all_event_profiles: {
+        Args: never
+        Returns: {
+          profils_construits: number
+          salons_ignores: number
+        }[]
+      }
+      build_all_event_similarity: {
+        Args: { p_top_n?: number }
+        Returns: number
+      }
+      build_event_profile: { Args: { p_event_id: string }; Returns: number }
+      build_event_recommendations: {
+        Args: {
+          p_candidate_pool?: number
+          p_event_id: string
+          p_top_k?: number
+        }
+        Returns: number
+      }
+      build_event_similarity: {
+        Args: { p_event_id: string; p_top_n?: number }
+        Returns: number
+      }
       build_exposant_dedup_plan: {
         Args: { p_fuzzy_threshold?: number }
         Returns: {
           poche: string
           volume: number
         }[]
+      }
+      build_upcoming_event_recommendations: {
+        Args: { p_top_k?: number }
+        Returns: number
       }
       can_add_novelty: {
         Args: { p_event_id: string; p_exhibitor_id: string }
@@ -9395,11 +10119,13 @@ export type Database = {
         Returns: number
       }
       compute_seo_source_hash: { Args: { p_event_id: string }; Returns: string }
+      confirm_growth_optin: { Args: { p_token: string }; Returns: Json }
       count_active_leads: { Args: { exhibitor_uuid: string }; Returns: number }
       count_novelty_distinct_visitors: {
         Args: { p_novelty_id: string }
         Returns: number
       }
+      count_pending_growth_leads: { Args: never; Returns: number }
       count_seo_enrichment_eligible: { Args: never; Returns: Json }
       create_exhibitor_with_lock: {
         Args: {
@@ -9456,6 +10182,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      create_growth_lead: {
+        Args: { p_email: string; p_event_id: string }
+        Returns: Json
       }
       create_missing_outreach_campaigns: { Args: never; Returns: Json }
       create_novelty_atomic: {
@@ -9587,6 +10317,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      events_dans_zone: {
+        Args: { p_ville: string }
+        Returns: {
+          event_id: string
+          proximite: string
+          ville_reelle: string
+        }[]
+      }
       exhibitor_identity_insert_safe: {
         Args: {
           p_base: string
@@ -9620,6 +10358,12 @@ export type Database = {
         Returns: string
       }
       extract_root_domain: { Args: { input: string }; Returns: string }
+      fiche_salon: { Args: { p_salon: string }; Returns: Json }
+      flag_all_retained_comparables: { Args: never; Returns: number }
+      flag_retained_comparables: {
+        Args: { p_event_id: string }
+        Returns: number
+      }
       generate_event_slug: {
         Args: { event_city: string; event_name: string; event_year: number }
         Returns: string
@@ -9686,6 +10430,11 @@ export type Database = {
         }[]
       }
       get_exhibitor_uuid: { Args: { old_id: string }; Returns: string }
+      get_founder_pricing: { Args: never; Returns: Json }
+      get_growth_report_data: {
+        Args: { p_event_id: string; p_top_recos?: number }
+        Returns: Json
+      }
       get_location_suggestions: {
         Args: { q: string }
         Returns: {
@@ -9929,6 +10678,20 @@ export type Database = {
           role: string
         }[]
       }
+      list_pending_growth_leads: {
+        Args: never
+        Returns: {
+          a_importe_liste: boolean
+          created_at: string
+          domaine_correspond: boolean
+          email: string
+          lead_id: string
+          nb_exposants_connu: number
+          optin_confirme: boolean
+          salon: string
+          statut: string
+        }[]
+      }
       log_application_event: {
         Args: {
           p_details?: Json
@@ -10062,6 +10825,28 @@ export type Database = {
           similarity_max: number
         }[]
       }
+      match_salons_v2: {
+        Args: {
+          p_date_max?: string
+          p_k?: number
+          p_query?: string
+          p_upcoming_only?: boolean
+          p_ville?: string
+        }
+        Returns: {
+          categories_matchees: string[]
+          date_debut: string
+          date_fin: string
+          nb_exposants_domaine: number
+          nom_event: string
+          proximite: string
+          score: number
+          sim_max: number
+          slug: string
+          statut: string
+          ville: string
+        }[]
+      }
       merge_exposants_manual: {
         Args: {
           p_canonical_id_exposant: string
@@ -10149,7 +10934,19 @@ export type Database = {
         Args: { p_only_future?: boolean }
         Returns: Json
       }
+      record_founder_subscription: {
+        Args: { p_email: string; p_event_id: string; p_lead_id?: string }
+        Returns: Json
+      }
+      refresh_event_similarity_if_needed: { Args: never; Returns: number }
       refresh_event_suggested_keywords: { Args: never; Returns: number }
+      refresh_recommendable_embeddings: { Args: never; Returns: number }
+      refresh_recommendations_if_needed: { Args: never; Returns: number }
+      refresh_stale_event_profiles: { Args: never; Returns: number }
+      refuse_growth_lead: {
+        Args: { p_lead_id: string; p_raison?: string }
+        Returns: Json
+      }
       related_events: {
         Args: { p_event_id: string; p_limit?: number }
         Returns: {
@@ -10233,6 +11030,14 @@ export type Database = {
       rollup_ai_search_daily: { Args: { p_day?: string }; Returns: undefined }
       rollup_ai_visibility: { Args: { p_day?: string }; Returns: undefined }
       run_exhibitor_ai_remap: { Args: never; Returns: Json }
+      salons_des_concurrents: {
+        Args: {
+          p_k_entreprises?: number
+          p_k_salons?: number
+          p_nom_ou_site: string
+        }
+        Returns: Json
+      }
       scan_event_duplicates: {
         Args: { p_id: string; p_kind: string; p_persist?: boolean }
         Returns: {
@@ -10298,6 +11103,17 @@ export type Database = {
           url_site_officiel: string
           ville: string
           visible: boolean
+        }[]
+      }
+      search_events_by_name: {
+        Args: { p_query: string }
+        Returns: {
+          date_debut: string
+          domaine_officiel: string
+          event_id: string
+          nb_exposants: number
+          nom_event: string
+          ville: string
         }[]
       }
       search_events_test: {
@@ -10410,6 +11226,28 @@ export type Database = {
           skipped_ambiguous: number
         }[]
       }
+      taxo_build_all: {
+        Args: { p_max_n?: number; p_version?: number }
+        Returns: {
+          exposants_assignes: number
+          k_utilise: number
+          secteur: string
+        }[]
+      }
+      taxo_build_sector: {
+        Args: {
+          p_iterations?: number
+          p_secteur_id: string
+          p_seed?: number
+          p_version?: number
+        }
+        Returns: {
+          exposants_assignes: number
+          k_utilise: number
+        }[]
+      }
+      taxo_current_version: { Args: never; Returns: number }
+      taxo_similarity_threshold: { Args: never; Returns: number }
       toggle_favorite: { Args: { p_event: string }; Returns: undefined }
       track_exhibitor_event: {
         Args: { p_event_type: string; p_metadata?: Json; p_public_slug: string }
@@ -10480,6 +11318,7 @@ export type Database = {
         }
         Returns: string
       }
+      validate_growth_lead: { Args: { p_lead_id: string }; Returns: Json }
       validate_radar_voice_note: {
         Args: {
           p_checked_tasks?: Json
