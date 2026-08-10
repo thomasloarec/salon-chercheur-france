@@ -509,16 +509,18 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
   );
 };
 
-/** Encart CTA affiché sous la conversation pour les murs signup / paywall. */
+/** Encart CTA affiché sous la conversation pour les murs signup / recharge quotidienne. */
 const WallCallout = ({
   type,
   hard,
+  resetAt,
   paidIntentSent,
   onSignup,
   onPaidIntent,
 }: {
   type: WallType;
   hard: boolean;
+  resetAt: string | null;
   paidIntentSent: boolean;
   onSignup: () => void;
   onPaidIntent: () => void;
@@ -530,7 +532,7 @@ const WallCallout = ({
           {hard ? 'Vous avez utilisé vos 5 recherches gratuites' : 'Encore une envie de creuser ?'}
         </p>
         <p className="text-sm text-muted-foreground mb-4">
-          Créez votre compte Lotexpo pour 5 recherches de plus. Vos échanges sont conservés.
+          Créez votre compte Lotexpo pour 10 recherches par jour. Vos échanges sont conservés.
         </p>
         <Button onClick={onSignup} className="bg-primary text-primary-foreground hover:bg-primary/90">
           Créer mon compte
@@ -540,29 +542,43 @@ const WallCallout = ({
     );
   }
 
+  // type === 'daily_limit' (et fallback historique 'paywall') : mur de recharge.
+  // reset_at = instant ou UNE recherche se libere (fenetre glissante 24h).
+  const resetLabel = (() => {
+    if (!resetAt) return null;
+    const d = new Date(resetAt);
+    if (Number.isNaN(d.getTime())) return null;
+    const heure = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    const memeJour = d.toDateString() === new Date().toDateString();
+    return memeJour
+      ? `Une nouvelle recherche sera disponible à ${heure}.`
+      : `Une nouvelle recherche sera disponible demain à ${heure}.`;
+  })();
+
   return (
     <div className="rounded-2xl border border-primary/30 bg-secondary/60 p-5">
-      <p className="heading-display text-lg text-foreground mb-1 flex items-center gap-2">
-        <Lock className="h-4 w-4 text-foreground" />
-        Vous avez exploré à fond
+      <p className="heading-display text-lg text-foreground mb-1">
+        Vous avez utilisé vos 10 recherches du moment
       </p>
-      {paidIntentSent ? (
-        <p className="text-sm text-muted-foreground">
-          Bientôt disponible — on te tient au courant. Merci de ton intérêt !
-        </p>
-      ) : (
-        <>
-          <p className="text-sm text-muted-foreground mb-4">
-            Un forfait arrive pour continuer sans limite.
-          </p>
-          <Button
-            onClick={onPaidIntent}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            Débloquer / Rejoindre la liste
-          </Button>
-        </>
-      )}
+      <p className="text-sm text-muted-foreground mb-1">
+        {resetLabel ?? 'Vos recherches se rechargent au fil des prochaines 24 heures.'}
+      </p>
+      <p className="text-xs text-muted-foreground/80">
+        {paidIntentSent ? (
+          'Un forfait sans limite arrive — merci de votre intérêt, on vous tient au courant.'
+        ) : (
+          <>
+            Besoin de chercher sans attendre ?{' '}
+            <button
+              type="button"
+              onClick={onPaidIntent}
+              className="underline underline-offset-2 hover:text-foreground transition-colors"
+            >
+              Rejoindre la liste du forfait illimité
+            </button>
+          </>
+        )}
+      </p>
     </div>
   );
 };
