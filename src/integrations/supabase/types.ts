@@ -9004,6 +9004,27 @@ export type Database = {
           },
         ]
       }
+      public_comment_authors: {
+        Row: {
+          avatar_url: string | null
+          first_name: string | null
+          last_initial: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          first_name?: never
+          last_initial?: never
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          first_name?: never
+          last_initial?: never
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       public_exhibitor_profiles: {
         Row: {
           ai_summary: string | null
