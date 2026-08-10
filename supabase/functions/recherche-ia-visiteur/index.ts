@@ -2,7 +2,7 @@
 //
 // Agent conversationnel "Recherche IA Visiteur" pour Lotexpo.
 // Boucle de tool-calling (Claude Haiku) sur les primitives SQL en base.
-// Gate crédits (anonyme = 5 / inscrit = 10, paywall mimé) + rate-limit IP.
+// Gate crédits (anonyme = 5 à vie / inscrit = 10 par 24h glissantes) + rate-limit IP.
 //
 // v69 — Credits : fenetre glissante 24h pour les inscrits (10 requetes),
 // anonyme inchange (5 a vie). wall_type 'paywall' remplace par 'daily_limit',
