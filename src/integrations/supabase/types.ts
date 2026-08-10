@@ -10105,6 +10105,7 @@ export type Database = {
         Returns: {
           allowed: number
           remaining: number
+          reset_at: string
           used: number
           wall_type: string
         }[]
