@@ -23,6 +23,24 @@ interface ExhibitorDashboardProps {
   novelties: MyNovelty[];
 }
 
+function NoveltyLeadCapture({ novelty }: { novelty: MyNovelty }) {
+  const { data: entitlement } = usePremiumEntitlement(
+    novelty.exhibitors.id,
+    novelty.events.id
+  );
+
+  return (
+    <LeadCaptureCard
+      isPremium={entitlement?.isPremium ?? false}
+      exhibitorId={novelty.exhibitors.id}
+      eventId={novelty.events.id}
+      eventName={novelty.events.nom_event}
+      eventDate={novelty.events.date_debut}
+      eventSlug={novelty.events.slug}
+    />
+  );
+}
+
 export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboardProps) {
   const [editingNovelty, setEditingNovelty] = useState<MyNovelty | null>(null);
 
@@ -169,21 +187,7 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
                       </div>
 
                       {/* Lead Capture Beta Card */}
-                      {LEAD_CAPTURE_BETA && (() => {
-                        const { data: entitlement } = usePremiumEntitlement(novelty.exhibitors.id, novelty.events.id);
-                        const isPremium = entitlement?.isPremium ?? false;
-                        
-                        return (
-                          <LeadCaptureCard
-                            isPremium={isPremium}
-                            exhibitorId={novelty.exhibitors.id}
-                            eventId={novelty.events.id}
-                            eventName={novelty.events.nom_event}
-                            eventDate={novelty.events.date_debut}
-                            eventSlug={novelty.events.slug}
-                          />
-                        );
-                      })()}
+                      {LEAD_CAPTURE_BETA && <NoveltyLeadCapture novelty={novelty} />}
 
                       {/* Statistiques compactes */}
                       <div className="flex items-center gap-4 flex-wrap">
