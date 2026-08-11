@@ -118,3 +118,37 @@ export function useDeleteComment(noveltyId: string) {
     }
   });
 }
+
+/**
+ * Comptage groupe des commentaires pour une liste de nouveautes.
+ * Une seule requete pour toute la page salon (pas de N+1).
+ * Retourne un Record<novelty_id, nombre de commentaires>.
+ */
+export function useNoveltyCommentCounts(noveltyIds: string[]) {
+  const key = [...noveltyIds].sort().join(',');
+
+  return useQuery({
+    queryKey: ['novelty-comment-counts', key],
+    queryFn: async (): Promise<Record<string, number>> => {
+      if (noveltyIds.length === 0) return {};
+
+      const { data, error } = await supabase
+        .from('novelty_comments')
+        .select('novelty_id')
+        .in('novelty_id', noveltyIds);
+
+      if (error) {
+        console.error('Error fetching comment counts:', error);
+        return {};
+      }
+
+      const counts: Record<string, number> = {};
+      for (const row of data ?? []) {
+        counts[row.novelty_id] = (counts[row.novelty_id] ?? 0) + 1;
+      }
+      return counts;
+    },
+    enabled: noveltyIds.length > 0,
+    staleTime: 60_000,
+  });
+}
