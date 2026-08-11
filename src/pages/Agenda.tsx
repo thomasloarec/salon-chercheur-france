@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavoriteEvents } from '@/hooks/useFavoriteEvents';
-import { useUserExhibitors } from '@/hooks/useExhibitorAdmin';
+import { useUserExhibitors, useExhibitorMeetingRequests } from '@/hooks/useExhibitorAdmin';
 import { useMyNovelties } from '@/hooks/useMyNovelties';
 import { useLikedNovelties } from '@/hooks/useNoveltyLike';
 import { Button } from '@/components/ui/button';
@@ -21,18 +21,31 @@ const Agenda = () => {
   const { data: userExhibitors = [] } = useUserExhibitors();
   const { data: myNovelties = [], isLoading: noveltiesLoading } = useMyNovelties();
   const { data: likedNovelties = [] } = useLikedNovelties();
+  const { data: meetingRequests = [] } = useExhibitorMeetingRequests();
   
   // Initialize role from URL param ?tab=exposant
-  const initialRole = searchParams.get('tab') === 'exposant' ? 'exhibitor' : 'visitor';
+  const initialRole =
+    searchParams.get('tab') === 'exposant' || searchParams.get('section') === 'rendezvous'
+      ? 'exhibitor'
+      : 'visitor';
   const [activeRole, setActiveRole] = useState<'visitor' | 'exhibitor'>(initialRole);
   
   // Sync role when URL changes
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab === 'exposant') {
+    if (tab === 'exposant' || searchParams.get('section') === 'rendezvous') {
       setActiveRole('exhibitor');
     }
   }, [searchParams]);
+
+  // Scroll vers la section rendez-vous une fois les données arrivées
+  useEffect(() => {
+    if (searchParams.get('section') !== 'rendezvous' || activeRole !== 'exhibitor') return;
+    const timer = setTimeout(() => {
+      document.getElementById('rendezvous')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchParams, activeRole, meetingRequests.length, noveltiesLoading]);
 
   // Filter events: only upcoming or ongoing for visitor mode
   const today = new Date();
@@ -62,7 +75,9 @@ const Agenda = () => {
 
   // Next event is now the first one in the sorted list
   const nextEvent = upcomingOrOngoingEvents[0];
-  const hasExhibitorAccess = userExhibitors.length > 0 || myNovelties.length > 0;
+  const newMeetingRequests = (meetingRequests as any[]).filter((r) => (r.status ?? 'new') === 'new').length;
+  const hasExhibitorAccess =
+    userExhibitors.length > 0 || myNovelties.length > 0 || meetingRequests.length > 0;
 
   if (!user) {
     return (
@@ -139,6 +154,9 @@ const Agenda = () => {
                   <Badge variant="secondary" className="ml-1">
                     {myNovelties.length}
                   </Badge>
+                  {newMeetingRequests > 0 && (
+                    <span className="h-2 w-2 rounded-full bg-destructive" aria-label="Nouvelles demandes de rendez-vous" />
+                  )}
                 </button>
               </div>
             ) : (

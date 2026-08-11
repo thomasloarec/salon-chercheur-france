@@ -8,14 +8,18 @@ import { fr } from 'date-fns/locale';
 import {
   useExhibitorMeetingRequests,
   useUpdateMeetingRequestStatus,
+  useUserExhibitors,
 } from '@/hooks/useExhibitorAdmin';
 
 export function ExhibitorMeetingRequests() {
   const { data: requests = [], isLoading, error } = useExhibitorMeetingRequests();
+  const { data: myExhibitors = [] } = useUserExhibitors();
   const updateStatus = useUpdateMeetingRequestStatus();
 
   const newCount = requests.filter((r) => (r.status ?? 'new') === 'new').length;
-  const multipleExhibitors = new Set(requests.map((r) => r.exhibitor_id)).size > 1;
+  const multipleExhibitors = myExhibitors.length > 1;
+  const exhibitorName = (id: string) =>
+    myExhibitors.find((e: any) => e.id === id)?.name ?? null;
 
   return (
     <Card id="rendezvous" className="scroll-mt-24">
@@ -89,7 +93,9 @@ export function ExhibitorMeetingRequests() {
                         <span>
                           Demande du {format(new Date(r.created_at), 'dd MMM yyyy', { locale: fr })}
                         </span>
-                        {multipleExhibitors && <span>Fiche : {r.exhibitor_id}</span>}
+                        {multipleExhibitors && exhibitorName(r.exhibitor_id) && (
+                          <span>Fiche : {exhibitorName(r.exhibitor_id)}</span>
+                        )}
                       </div>
                     </div>
 
