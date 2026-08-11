@@ -11,6 +11,7 @@ import {
   CalendarCheck,
   Link2,
   MoreHorizontal,
+  MessageCircle,
 } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -58,13 +59,15 @@ interface NoveltyEventCardProps {
   eventVille?: string | null;
   /** Event complet (pour ouvrir la fiche exposant depuis le détail). */
   event?: Event;
+  /** Nombre de commentaires. L'indicateur n'est affiche que si > 0. */
+  commentCount?: number;
   className?: string;
 }
 
 /**
  * Card compacte pour l'affichage des nouveautés sur la page événement.
  * - Format horizontal, image secondaire (jamais dominante).
- * - Pas de commentaires dans le flux principal.
+ * - Pas de fil de commentaires dans le flux : seulement un compteur qui renvoie vers la page nouveauté.
  * - Bouton "M'intéresse" (étoile/signet) — réutilise la même logique
  *   que le like d'origine (useNoveltyLike) pour ne pas casser le mécanisme
  *   lead exposant + agenda utilisateur.
@@ -76,6 +79,7 @@ export default function NoveltyEventCard({
   eventName,
   eventVille,
   event,
+  commentCount = 0,
   className,
 }: NoveltyEventCardProps) {
   const { user } = useAuth();
@@ -407,33 +411,47 @@ export default function NoveltyEventCard({
               </Button>
               )}
 
-              {/* Menu "···" — actions secondaires (copier le lien) */}
-              {novelty.slug && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="ml-auto h-8 w-8 text-muted-foreground"
-                      aria-label="Plus d'actions"
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={(e) => handleCopyLink(e as unknown as React.MouseEvent)}
-                    >
-                      {copied ? (
-                        <Check className="mr-2 h-4 w-4" />
-                      ) : (
-                        <Link2 className="mr-2 h-4 w-4" />
-                      )}
-                      {copied ? 'Lien copié' : 'Copier le lien'}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+              <div className="ml-auto flex items-center gap-1">
+                {commentCount > 0 && (
+                  <Link
+                    to={`${detailHref}#commentaires`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-primary"
+                    aria-label={`${commentCount} commentaire${commentCount > 1 ? 's' : ''} — voir la nouveauté`}
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    <span className="tabular-nums">{commentCount}</span>
+                  </Link>
+                )}
+
+                {/* Menu "···" — actions secondaires (copier le lien) */}
+                {novelty.slug && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground"
+                        aria-label="Plus d'actions"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={(e) => handleCopyLink(e as unknown as React.MouseEvent)}
+                      >
+                        {copied ? (
+                          <Check className="mr-2 h-4 w-4" />
+                        ) : (
+                          <Link2 className="mr-2 h-4 w-4" />
+                        )}
+                        {copied ? 'Lien copié' : 'Copier le lien'}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             </div>
           </div>
         </div>
