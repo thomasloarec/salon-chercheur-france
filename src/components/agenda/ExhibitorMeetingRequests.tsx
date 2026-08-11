@@ -11,6 +11,14 @@ import {
   useUserExhibitors,
 } from '@/hooks/useExhibitorAdmin';
 
+const STATUS_LABELS: Record<string, string> = {
+  new: 'Nouveau',
+  contacted: 'Traité',
+  qualified: 'Qualifié',
+  converted: 'Converti',
+  lost: 'Perdu',
+};
+
 export function ExhibitorMeetingRequests() {
   const { data: requests = [], isLoading, error } = useExhibitorMeetingRequests();
   const { data: myExhibitors = [] } = useUserExhibitors();
