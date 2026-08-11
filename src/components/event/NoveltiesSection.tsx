@@ -8,6 +8,7 @@ import NoveltyExampleEmptyState from '@/components/novelty/NoveltyExampleEmptySt
 import { NoveltiesPreLaunchBanner } from './NoveltiesPreLaunchBanner';
 import { NoveltyNotificationDialog } from './NoveltyNotificationDialog';
 import { useInfiniteNovelties } from '@/hooks/useInfiniteNovelties';
+import { useNoveltyCommentCounts } from '@/hooks/useNoveltyComments';
 import type { Event } from '@/types/event';
 import { Button } from '@/components/ui/button';
 
@@ -76,6 +77,9 @@ export default function NoveltiesSection({ event, exhibitorCount, isEventPast = 
   const isPreLaunch = daysUntilEvent > 90;
 
   const allNovelties = data?.pages.flatMap((page) => page.data) ?? [];
+  const { data: commentCounts = {} } = useNoveltyCommentCounts(
+    allNovelties.map((n) => n.id),
+  );
   const total = data?.pages[0]?.total ?? 0;
 
   // Deep-link : si ?novelty=<id> est présent, charger les pages suivantes
@@ -273,6 +277,7 @@ export default function NoveltiesSection({ event, exhibitorCount, isEventPast = 
             eventName={event.nom_event}
             eventVille={event.ville}
             event={event}
+            commentCount={commentCounts[novelty.id] ?? 0}
           />
         ))}
       </div>

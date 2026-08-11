@@ -16,9 +16,11 @@ import {
 import NotFoundSEO from '@/components/seo/NotFoundSEO';
 import LeadForm from '@/components/novelty/LeadForm';
 import NoveltyDetailView from '@/components/novelty/NoveltyDetailView';
+import NoveltyComments from '@/components/novelty/NoveltyComments';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNoveltyLike, useNoveltyLikesCount } from '@/hooks/useNoveltyLike';
+import { useNoveltyComments } from '@/hooks/useNoveltyComments';
 import {
   useNoveltyPublic,
   useNoveltyAround,
@@ -43,6 +45,7 @@ export default function NoveltyDetail() {
     novelty?.event_id,
   );
   const { data: likesCount = 0 } = useNoveltyLikesCount(novelty?.id ?? '');
+  const { data: comments = [] } = useNoveltyComments(novelty?.id ?? '');
 
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [leadType, setLeadType] =
@@ -225,6 +228,18 @@ export default function NoveltyDetail() {
             </DropdownMenu>
           }
         />
+
+        {/* COMMENTAIRES */}
+        <section id="commentaires" className="mt-12 scroll-mt-24">
+          <h2 className="heading-display section-rule mb-4 text-xl font-bold tracking-tight">
+            {comments.length > 0
+              ? `Commentaires (${comments.length})`
+              : 'Commentaires'}
+          </h2>
+          <div className="max-w-3xl">
+            <NoveltyComments noveltyId={novelty.id} showAll />
+          </div>
+        </section>
 
         {/* AROUND — crawlable internal linking */}
         {around && (around.sameEvent.length > 0 || around.sameExhibitor.length > 0) && (
