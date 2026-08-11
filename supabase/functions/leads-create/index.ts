@@ -315,6 +315,26 @@ serve(async (req) => {
     const data = parsed.data as any;
     const admin = createClient(supabaseUrl, serviceKey);
 
+    // Optional visitor identity. Never required: the brochure form is open to
+    // anonymous visitors by design. We enrich leads.user_id only when a valid
+    // token is present.
+    let authUserId: string | null = null;
+    try {
+      const authHeader = req.headers.get('Authorization');
+      if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.slice('Bearer '.length);
+        // Reuse the admin client just to decode the token; do not create an
+        // anon-scoped client that would fail on missing env.
+        const { data: userData, error: userErr } = await admin.auth.getUser(token);
+        if (!userErr && userData?.user?.id) {
+          authUserId = userData.user.id;
+        }
+      }
+    } catch (_e) {
+      // Anonymous or invalid token → stay anonymous, never block the lead.
+      authUserId = null;
+    }
+
     // ======================================================================
     // FORM B — meeting request anchored on (exhibitor, event)
     // ======================================================================
@@ -376,6 +396,7 @@ serve(async (req) => {
           role: data.role || null,
           phone: data.phone || null,
           notes: data.notes || null,
+          user_id: authUserId,
         }])
         .select()
         .single();
@@ -518,6 +539,7 @@ serve(async (req) => {
         role: data.role || null,
         phone: data.phone || null,
         notes: data.notes || null,
+        user_id: authUserId,
       }])
       .select()
       .single();
