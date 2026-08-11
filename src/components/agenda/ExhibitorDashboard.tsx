@@ -14,6 +14,7 @@ import NoveltyCard from '@/components/novelty/NoveltyCard';
 import LeadCaptureCard from '@/components/novelty/LeadCaptureCard';
 import { EditNoveltyDialog } from '@/components/novelty/EditNoveltyDialog';
 import { EventPremiumStatus } from './EventPremiumStatus';
+import { ExhibitorMeetingRequests } from './ExhibitorMeetingRequests';
 import { usePremiumEntitlement } from '@/hooks/usePremiumEntitlement';
 import type { MyNovelty } from '@/hooks/useMyNovelties';
 
@@ -48,6 +49,9 @@ export function ExhibitorDashboard({ exhibitors, novelties }: ExhibitorDashboard
           </div>
         </div>
       </div>
+
+      {/* Demandes de rendez-vous (toujours affichées) */}
+      <ExhibitorMeetingRequests />
 
       {/* Contenu direct : Nouveautés */}
       {novelties.length > 0 ? (

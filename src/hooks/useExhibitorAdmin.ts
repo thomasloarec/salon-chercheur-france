@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -108,16 +108,73 @@ export function useUserExhibitors() {
     queryFn: async () => {
       if (!user) return [];
 
+      const { data: memberships, error: mErr } = await supabase
+        .from('exhibitor_team_members')
+        .select('exhibitor_id, role')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .in('role', ['owner', 'admin']);
+      if (mErr) throw mErr;
+
+      const ids = (memberships ?? []).map((m) => m.exhibitor_id);
+      if (ids.length === 0) return [];
+
       const { data, error } = await supabase
         .from('exhibitors')
         .select('id, name, logo_url')
-        .eq('owner_user_id', user.id)
-        .eq('approved', true);
-
+        .in('id', ids);
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
     enabled: !!user,
+  });
+}
+
+export interface ExhibitorMeetingRequest {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string | null;
+  company: string | null;
+  role: string | null;
+  notes: string | null;
+  status: string | null;
+  created_at: string;
+  exhibitor_id: string;
+  event_id: string | null;
+  events: { nom_event: string; slug: string | null; date_debut: string | null } | null;
+}
+
+export function useExhibitorMeetingRequests() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['exhibitor-meeting-requests', user?.id],
+    queryFn: async (): Promise<ExhibitorMeetingRequest[]> => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('leads')
+        .select('id, first_name, last_name, email, phone, company, role, notes, status, created_at, exhibitor_id, event_id, events(nom_event, slug, date_debut)')
+        .is('novelty_id', null)
+        .eq('lead_type', 'meeting_request')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as ExhibitorMeetingRequest[];
+    },
+    enabled: !!user,
+  });
+}
+
+export function useUpdateMeetingRequestStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase.from('leads').update({ status }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exhibitor-meeting-requests'] });
+    },
   });
 }
 
