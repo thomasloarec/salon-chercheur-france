@@ -107,17 +107,24 @@ export function ExhibitorMeetingRequests() {
                       </div>
                     </div>
 
-                    {isNew && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={updateStatus.isPending}
-                        onClick={() => updateStatus.mutate({ id: r.id, status: 'contacted' })}
-                      >
-                        <Check className="h-4 w-4 mr-2" />
-                        Marquer comme traité
-                      </Button>
-                    )}
+                    {isNew && (() => {
+                      const isRowPending = updateStatus.isPending && updateStatus.variables?.id === r.id;
+                      return (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={isRowPending}
+                          onClick={() => updateStatus.mutate({ id: r.id, status: 'contacted' })}
+                        >
+                          {isRowPending ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Check className="h-4 w-4 mr-2" />
+                          )}
+                          Marquer comme traité
+                        </Button>
+                      );
+                    })()}
                   </div>
 
                   {r.notes && (
