@@ -178,6 +178,28 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [loadingComplete, setLoadingComplete] = useState(false);
 
+  // Batched resolution of public exhibitor identities for the recommendations.
+  const recoExhibitorIds = useMemo(() => {
+    if (!results) return [];
+    return Array.from(new Set(
+      [...(results.prioritaires || []), ...(results.optionnels || [])]
+        .map(r => r.exhibitor_id)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0)
+    ));
+  }, [results]);
+
+  const { data: slugMaps } = useQuery({
+    queryKey: ['reco-exhibitor-slugs', recoExhibitorIds],
+    enabled: recoExhibitorIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<PublicSlugMaps> => {
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const uuids = recoExhibitorIds.filter(id => UUID_RE.test(id));
+      const legacy = recoExhibitorIds.filter(id => !UUID_RE.test(id));
+      return fetchExhibitorPublicSlugs(uuids, legacy);
+    },
+  });
+
   // Inline auth state
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
