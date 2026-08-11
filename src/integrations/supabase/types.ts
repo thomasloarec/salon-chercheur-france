@@ -5134,7 +5134,7 @@ export type Database = {
           lead_type: string
           message: string | null
           notes: string | null
-          novelty_id: string
+          novelty_id: string | null
           phone: string | null
           rdv_date: string | null
           role: string | null
@@ -5161,7 +5161,7 @@ export type Database = {
           lead_type: string
           message?: string | null
           notes?: string | null
-          novelty_id: string
+          novelty_id?: string | null
           phone?: string | null
           rdv_date?: string | null
           role?: string | null
@@ -5188,7 +5188,7 @@ export type Database = {
           lead_type?: string
           message?: string | null
           notes?: string | null
-          novelty_id?: string
+          novelty_id?: string | null
           phone?: string | null
           rdv_date?: string | null
           role?: string | null
@@ -9034,6 +9034,7 @@ export type Database = {
           display_name: string | null
           exhibitor_id: string | null
           future_participations_count: number | null
+          has_active_manager: boolean | null
           has_description: boolean | null
           has_future_events: boolean | null
           has_logo: boolean | null
@@ -11014,6 +11015,16 @@ export type Database = {
           p_variant_id_exposants?: string[]
         }
         Returns: undefined
+      }
+      resolve_meeting_target: {
+        Args: { p_event_id: string; p_exhibitor_ref: string }
+        Returns: {
+          display_name: string
+          eligible: boolean
+          exhibitor_id: string
+          legacy_exposant_id: string
+          reason: string
+        }[]
       }
       resolve_radar_account_for_user: {
         Args: { p_user_id: string }
