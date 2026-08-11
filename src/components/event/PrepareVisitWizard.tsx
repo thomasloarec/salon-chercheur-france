@@ -1,5 +1,6 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
@@ -22,6 +23,8 @@ import { useExhibitorsByEvent } from '@/hooks/useExhibitorsByEvent';
 import { toggleFavorite } from '@/utils/toggleFavorite';
 import { useFavoriteEvents } from '@/hooks/useFavoriteEvents';
 import { toast } from '@/hooks/use-toast';
+import { fetchExhibitorPublicSlugs, resolvePublicSlug, type PublicSlugMaps } from '@/lib/exhibitorPublicSlug';
+import { RequestMeetingButton } from '@/components/exhibitor/RequestMeetingButton';
 import { triggerOnboarding } from '@/hooks/useOnboarding';
 import type { Event } from '@/types/event';
 import { cn } from '@/lib/utils';
