@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Lock, Users, Download, AlertCircle } from 'lucide-react';
+import { Lock, Download, AlertCircle } from 'lucide-react';
 import LeadCard from './LeadCard';
 import PremiumUpgradeDialog from './PremiumUpgradeDialog';
 import { usePremiumEntitlement } from '@/hooks/usePremiumEntitlement';
@@ -20,6 +19,7 @@ interface Lead {
   notes?: string;
   lead_type: 'resource_download' | 'meeting_request';
   created_at: string;
+  masked?: boolean;
 }
 
 interface NoveltyLeadsDisplayProps {
@@ -30,43 +30,40 @@ interface NoveltyLeadsDisplayProps {
 
 export default function NoveltyLeadsDisplay({ noveltyId, exhibitorId, eventId }: NoveltyLeadsDisplayProps) {
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
-  
+
   // Check Premium status
   const { data: entitlement } = usePremiumEntitlement(exhibitorId, eventId);
   const isPremium = entitlement?.isPremium ?? false;
   const canExportCSV = entitlement?.csvExport ?? false;
-  
+
   const { data: leadsData, isLoading, isError } = useQuery({
     queryKey: ['novelty-leads', noveltyId],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('novelty-leads', {
         body: { novelty_id: noveltyId }
       });
-      
+
       if (error) throw error;
-      
+
       console.log('[NoveltyLeadsDisplay] API response:', {
         total: data.total,
         leadsCount: data.leads?.length,
-        blurredCount: data.blurredCount,
-        hiddenCount: data.hiddenCount,
+        maskedCount: data.maskedCount,
         isPremium: data.is_premium
       });
-      
+
       return {
         leads: data.leads as Lead[],
         total: data.total as number,
-        blurredCount: data.blurredCount as number,
-        hiddenCount: data.hiddenCount as number,
+        maskedCount: (data.maskedCount ?? 0) as number,
+        isPremium: (data.is_premium ?? false) as boolean,
       };
     }
   });
 
   const leads = leadsData?.leads;
   const totalLeads = leadsData?.total ?? 0;
-  // Use server-provided counts directly (server already handles premium logic)
-  const blurredCount = leadsData?.blurredCount ?? 0;
-  const hiddenCount = leadsData?.hiddenCount ?? 0;
+  const maskedCount = leadsData?.maskedCount ?? 0;
 
   const handleExportCSV = () => {
     if (!leads) return;
@@ -114,14 +111,6 @@ export default function NoveltyLeadsDisplay({ noveltyId, exhibitorId, eventId }:
     );
   }
 
-  // Server-side masking: leads are already masked/filtered by the API
-  // No client-side logic needed for non-premium users
-  const visibleLeads = leads || [];
-  
-  // For display: separate first 3 (full) from next 3 (blurred)
-  const fullyVisibleLeads = visibleLeads.slice(0, 3);
-  const previewLeads = visibleLeads.slice(3, 6);
-
   if (!leads || leads.length === 0) {
     return (
       <div className="text-sm text-muted-foreground text-center py-4">
@@ -141,36 +130,31 @@ export default function NoveltyLeadsDisplay({ noveltyId, exhibitorId, eventId }:
           </Button>
         </div>
       )}
-      
-      {/* Leads 1-3: Full visibility (always shown with full data) */}
-      {fullyVisibleLeads.map((lead) => (
-        <LeadCard key={lead.id} lead={lead} isPremium={true} />
+
+      {/* Leads: clear/blurred display driven by the server-side masked flag */}
+      {leads.map((lead) => (
+        <LeadCard key={lead.id} lead={lead} isPremium={!lead.masked} />
       ))}
-      
-      {/* Leads 4-6: Blurred preview (already masked by server) */}
-      {previewLeads.map((lead) => (
-        <LeadCard key={lead.id} lead={lead} isPremium={false} />
-      ))}
-      
-      {/* Premium upsell - shown when there are blurred or hidden leads */}
-      {(blurredCount > 0 || hiddenCount > 0) && (
+
+      {/* Premium upsell - shown when there are masked leads */}
+      {maskedCount > 0 && (
         <Card className="p-4 bg-muted/50 border-dashed">
           <div className="text-center">
             <Lock className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
             <p className="font-medium mb-1">
-              {blurredCount + hiddenCount} lead{(blurredCount + hiddenCount) > 1 ? 's' : ''} {blurredCount > 0 ? 'flouté' : 'supplémentaire'}{(blurredCount + hiddenCount) > 1 ? 's' : ''}
+              {maskedCount} lead{maskedCount > 1 ? 's' : ''} flouté{maskedCount > 1 ? 's' : ''}
             </p>
             <p className="text-sm text-muted-foreground mb-3">
-              Passez en Premium pour débloquer tous vos leads
+              Passez en Premium pour cet événement afin de débloquer tous vos leads.
             </p>
             <Button size="sm" variant="default" onClick={() => setShowPremiumDialog(true)}>
-              Débloquer les leads cachés - 99€ HT
+              Débloquer les leads floutés
             </Button>
           </div>
         </Card>
       )}
-      
-      <PremiumUpgradeDialog 
+
+      <PremiumUpgradeDialog
         open={showPremiumDialog}
         onOpenChange={setShowPremiumDialog}
         noveltyId={noveltyId}
