@@ -68,9 +68,9 @@ export function ExhibitorMeetingRequests() {
                         <p className="font-semibold text-foreground">
                           {r.first_name} {r.last_name}
                         </p>
-                        {!isNew && (
+                        {r.status !== 'new' && (
                           <Badge variant="secondary" className="text-xs">
-                            {r.status === 'contacted' ? 'Traité' : r.status}
+                            {STATUS_LABELS[r.status ?? ''] ?? r.status}
                           </Badge>
                         )}
                       </div>
