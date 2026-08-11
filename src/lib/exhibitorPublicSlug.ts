@@ -14,6 +14,7 @@ export interface PublicSlugInfo {
   public_slug: string;
   seo_indexable: boolean;
   is_test: boolean;
+  has_active_manager: boolean;
 }
 
 export interface PublicSlugMaps {
@@ -62,7 +63,7 @@ export async function fetchExhibitorPublicSlugs(
   try {
     const { data, error } = await supabase
       .from('public_exhibitor_profiles')
-      .select('public_slug, seo_indexable, is_test, exhibitor_id, legacy_exposant_id')
+      .select('public_slug, seo_indexable, is_test, has_active_manager, exhibitor_id, legacy_exposant_id')
       .or(orParts.join(','));
 
     if (error || !data) return maps;
@@ -72,6 +73,7 @@ export async function fetchExhibitorPublicSlugs(
         public_slug: row.public_slug as string,
         seo_indexable: !!row.seo_indexable,
         is_test: !!row.is_test,
+        has_active_manager: !!(row as { has_active_manager?: boolean | null }).has_active_manager,
       };
       if (row.exhibitor_id) maps.byExhibitorId.set(row.exhibitor_id as string, info);
       if (row.legacy_exposant_id) maps.byLegacyId.set(row.legacy_exposant_id as string, info);

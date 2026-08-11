@@ -1,5 +1,6 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
@@ -22,6 +23,8 @@ import { useExhibitorsByEvent } from '@/hooks/useExhibitorsByEvent';
 import { toggleFavorite } from '@/utils/toggleFavorite';
 import { useFavoriteEvents } from '@/hooks/useFavoriteEvents';
 import { toast } from '@/hooks/use-toast';
+import { fetchExhibitorPublicSlugs, resolvePublicSlug, type PublicSlugMaps } from '@/lib/exhibitorPublicSlug';
+import { RequestMeetingButton } from '@/components/exhibitor/RequestMeetingButton';
 import { triggerOnboarding } from '@/hooks/useOnboarding';
 import type { Event } from '@/types/event';
 import { cn } from '@/lib/utils';
@@ -174,6 +177,28 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [loadingComplete, setLoadingComplete] = useState(false);
+
+  // Batched resolution of public exhibitor identities for the recommendations.
+  const recoExhibitorIds = useMemo(() => {
+    if (!results) return [];
+    return Array.from(new Set(
+      [...(results.prioritaires || []), ...(results.optionnels || [])]
+        .map(r => r.exhibitor_id)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0)
+    ));
+  }, [results]);
+
+  const { data: slugMaps } = useQuery({
+    queryKey: ['reco-exhibitor-slugs', recoExhibitorIds],
+    enabled: recoExhibitorIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<PublicSlugMaps> => {
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const uuids = recoExhibitorIds.filter(id => UUID_RE.test(id));
+      const legacy = recoExhibitorIds.filter(id => !UUID_RE.test(id));
+      return fetchExhibitorPublicSlugs(uuids, legacy);
+    },
+  });
 
   // Inline auth state
   const [authEmail, setAuthEmail] = useState('');
@@ -898,6 +923,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                               rec={rec}
                               variant="primary"
                               eventId={event.id}
+                              slugMaps={slugMaps}
                               checked={checkedIds.has(rec.exhibitor_id)}
                               onCheckedChange={(checked) => {
                                 setCheckedIds(prev => {
@@ -930,6 +956,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                               rec={rec}
                               variant="secondary"
                               eventId={event.id}
+                              slugMaps={slugMaps}
                               checked={checkedIds.has(rec.exhibitor_id)}
                               onCheckedChange={(checked) => {
                                 setCheckedIds(prev => {
@@ -1247,12 +1274,14 @@ function RecommendationCard({
   rec,
   variant,
   eventId,
+  slugMaps,
   checked,
   onCheckedChange,
 }: {
   rec: Recommendation;
   variant: 'primary' | 'secondary';
   eventId: string;
+  slugMaps?: PublicSlugMaps | null;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
 }) {
@@ -1265,6 +1294,11 @@ function RecommendationCard({
     .map((w) => w[0])
     .join('')
     .toUpperCase();
+  const slugInfo = resolvePublicSlug(slugMaps, {
+    exhibitorId: rec.exhibitor_id,
+    legacyId: rec.exhibitor_id,
+  });
+  const canRequestMeeting = !!slugInfo && slugInfo.has_active_manager && !slugInfo.is_test;
 
   return (
     <div
@@ -1305,6 +1339,16 @@ function RecommendationCard({
       <p className="max-w-full min-w-0 text-[13.5px] leading-[1.6] text-muted-foreground break-words overflow-hidden">
         {rec.raison}
       </p>
+
+      {canRequestMeeting && (
+        <div>
+          <RequestMeetingButton
+            exhibitorRef={rec.exhibitor_id}
+            eventId={eventId}
+            exhibitorName={rec.name}
+          />
+        </div>
+      )}
     </div>
   );
 }

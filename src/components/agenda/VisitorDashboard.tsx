@@ -16,6 +16,7 @@ import {
   type PublicSlugMaps,
 } from '@/lib/exhibitorPublicSlug';
 import { ExhibitorFullProfileCTA } from '@/components/exhibitor/ExhibitorFullProfileCTA';
+import { RequestMeetingButton } from '@/components/exhibitor/RequestMeetingButton';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { cn } from '@/lib/utils';
@@ -445,6 +446,16 @@ function ExhibitorRow({
               surface="event_exhibitor_list"
               eventSlug={eventSlug}
               variant="link"
+            />
+          </div>
+        )}
+        {slugInfo && slugInfo.has_active_manager && !slugInfo.is_test && (
+          <div className="mt-2">
+            <RequestMeetingButton
+              exhibitorRef={rec.exhibitor_id}
+              eventId={eventId}
+              exhibitorName={rec.name}
+              variant="compact"
             />
           </div>
         )}
