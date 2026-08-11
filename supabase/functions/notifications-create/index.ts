@@ -163,19 +163,41 @@ serve(async (req) => {
       }
 
       case 'new_lead_rdv': {
-        const { data: noveltyRdv } = await supabase
-          .from('novelties')
-          .select('title')
-          .eq('id', payload.novelty_id)
-          .maybeSingle()
-        
-        notificationData = {
-          ...notificationData,
-          category: 'lead',
-          title: 'Nouveau Lead 🎯',
-          message: `${payload.actor_name} souhaite prendre rendez-vous - ${noveltyRdv?.title || 'votre nouveauté'}`,
-          icon: '📅',
-          link_url: `/agenda?tab=exposant&section=novelties&id=${payload.novelty_id}#leads`
+        if (payload.novelty_id) {
+          const { data: noveltyRdv } = await supabase
+            .from('novelties')
+            .select('title')
+            .eq('id', payload.novelty_id)
+            .maybeSingle()
+
+          notificationData = {
+            ...notificationData,
+            category: 'lead',
+            title: 'Nouveau Lead 🎯',
+            message: `${payload.actor_name} souhaite prendre rendez-vous - ${noveltyRdv?.title || 'votre nouveauté'}`,
+            icon: '📅',
+            link_url: `/agenda?tab=exposant&section=novelties&id=${payload.novelty_id}#leads`
+          }
+        } else {
+          // Exhibitor/event anchored meeting request (no novelty)
+          let eventName = ''
+          if (payload.event_id) {
+            const { data: eventRdv } = await supabase
+              .from('events')
+              .select('nom_event')
+              .eq('id', payload.event_id)
+              .maybeSingle()
+            eventName = eventRdv?.nom_event || ''
+          }
+
+          notificationData = {
+            ...notificationData,
+            category: 'lead',
+            title: 'Nouveau Lead 🎯',
+            message: `${payload.actor_name} souhaite prendre rendez-vous avec vous${eventName ? ` sur ${eventName}` : ''}`,
+            icon: '📅',
+            link_url: `/agenda?tab=exposant&section=rendezvous`
+          }
         }
         break
       }
