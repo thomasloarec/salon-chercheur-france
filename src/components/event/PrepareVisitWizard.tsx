@@ -923,6 +923,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                               rec={rec}
                               variant="primary"
                               eventId={event.id}
+                              slugMaps={slugMaps}
                               checked={checkedIds.has(rec.exhibitor_id)}
                               onCheckedChange={(checked) => {
                                 setCheckedIds(prev => {
@@ -955,6 +956,7 @@ export default function PrepareVisitWizard({ open, onOpenChange, event, exhibito
                               rec={rec}
                               variant="secondary"
                               eventId={event.id}
+                              slugMaps={slugMaps}
                               checked={checkedIds.has(rec.exhibitor_id)}
                               onCheckedChange={(checked) => {
                                 setCheckedIds(prev => {
@@ -1272,12 +1274,14 @@ function RecommendationCard({
   rec,
   variant,
   eventId,
+  slugMaps,
   checked,
   onCheckedChange,
 }: {
   rec: Recommendation;
   variant: 'primary' | 'secondary';
   eventId: string;
+  slugMaps?: PublicSlugMaps | null;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
 }) {
@@ -1290,6 +1294,11 @@ function RecommendationCard({
     .map((w) => w[0])
     .join('')
     .toUpperCase();
+  const slugInfo = resolvePublicSlug(slugMaps, {
+    exhibitorId: rec.exhibitor_id,
+    legacyId: rec.exhibitor_id,
+  });
+  const canRequestMeeting = !!slugInfo && slugInfo.has_active_manager && !slugInfo.is_test;
 
   return (
     <div
@@ -1330,6 +1339,16 @@ function RecommendationCard({
       <p className="max-w-full min-w-0 text-[13.5px] leading-[1.6] text-muted-foreground break-words overflow-hidden">
         {rec.raison}
       </p>
+
+      {canRequestMeeting && (
+        <div>
+          <RequestMeetingButton
+            exhibitorRef={rec.exhibitor_id}
+            eventId={eventId}
+            exhibitorName={rec.name}
+          />
+        </div>
+      )}
     </div>
   );
 }
