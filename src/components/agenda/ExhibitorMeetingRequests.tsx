@@ -11,6 +11,14 @@ import {
   useUserExhibitors,
 } from '@/hooks/useExhibitorAdmin';
 
+const STATUS_LABELS: Record<string, string> = {
+  new: 'Nouveau',
+  contacted: 'Traité',
+  qualified: 'Qualifié',
+  converted: 'Converti',
+  lost: 'Perdu',
+};
+
 export function ExhibitorMeetingRequests() {
   const { data: requests = [], isLoading, error } = useExhibitorMeetingRequests();
   const { data: myExhibitors = [] } = useUserExhibitors();
@@ -60,9 +68,9 @@ export function ExhibitorMeetingRequests() {
                         <p className="font-semibold text-foreground">
                           {r.first_name} {r.last_name}
                         </p>
-                        {!isNew && (
+                        {r.status !== 'new' && (
                           <Badge variant="secondary" className="text-xs">
-                            {r.status === 'contacted' ? 'Traité' : r.status}
+                            {STATUS_LABELS[r.status ?? ''] ?? r.status}
                           </Badge>
                         )}
                       </div>
@@ -99,17 +107,24 @@ export function ExhibitorMeetingRequests() {
                       </div>
                     </div>
 
-                    {isNew && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={updateStatus.isPending}
-                        onClick={() => updateStatus.mutate({ id: r.id, status: 'contacted' })}
-                      >
-                        <Check className="h-4 w-4 mr-2" />
-                        Marquer comme traité
-                      </Button>
-                    )}
+                    {isNew && (() => {
+                      const isRowPending = updateStatus.isPending && updateStatus.variables?.id === r.id;
+                      return (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={isRowPending}
+                          onClick={() => updateStatus.mutate({ id: r.id, status: 'contacted' })}
+                        >
+                          {isRowPending ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Check className="h-4 w-4 mr-2" />
+                          )}
+                          Marquer comme traité
+                        </Button>
+                      );
+                    })()}
                   </div>
 
                   {r.notes && (
