@@ -7136,6 +7136,51 @@ export type Database = {
           },
         ]
       }
+      radar_leads: {
+        Row: {
+          client_type: string | null
+          contact_email: string | null
+          contact_name: string | null
+          created_at: string
+          crm: string | null
+          id: string
+          message: string | null
+          product_type: string | null
+          salons_per_year: string | null
+          searched_query: string | null
+          source: string
+          team_size: string | null
+        }
+        Insert: {
+          client_type?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          crm?: string | null
+          id?: string
+          message?: string | null
+          product_type?: string | null
+          salons_per_year?: string | null
+          searched_query?: string | null
+          source?: string
+          team_size?: string | null
+        }
+        Update: {
+          client_type?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          crm?: string | null
+          id?: string
+          message?: string | null
+          product_type?: string | null
+          salons_per_year?: string | null
+          searched_query?: string | null
+          source?: string
+          team_size?: string | null
+        }
+        Relationships: []
+      }
       radar_members: {
         Row: {
           created_at: string
@@ -11247,6 +11292,20 @@ export type Database = {
           p_job_title: string
           p_last_name: string
           p_phone: string
+        }
+        Returns: string
+      }
+      submit_radar_lead: {
+        Args: {
+          p_client_type?: string
+          p_contact_email?: string
+          p_contact_name?: string
+          p_crm?: string
+          p_message?: string
+          p_product_type?: string
+          p_salons_per_year?: string
+          p_searched_query?: string
+          p_team_size?: string
         }
         Returns: string
       }
