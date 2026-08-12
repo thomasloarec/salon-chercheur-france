@@ -62,6 +62,7 @@ import PublierNouveaute from '@/pages/PublierNouveaute';
 import AtelierNouveaute from '@/pages/AtelierNouveaute';
 import SelectionExposant from '@/pages/SelectionExposant';
 import TrouverSalon from '@/pages/TrouverSalon';
+import DirecteurCommercial from '@/pages/DirecteurCommercial';
 import RechercheIA from '@/pages/RechercheIA';
 import CGU from '@/pages/CGU';
 import MentionsLegales from '@/pages/MentionsLegales';
@@ -147,6 +148,7 @@ function App() {
             <Route path="/publier-nouveaute/exposant" element={<SelectionExposant />} />
             <Route path="/publier-nouveaute/atelier" element={<AtelierNouveaute />} />
             <Route path="/trouver-un-salon" element={<TrouverSalon />} />
+            <Route path="/directeur-commercial" element={<DirecteurCommercial />} />
             <Route path="/recherche-ia" element={<RechercheIA />} />
             <Route path="/radar-crm" element={<RadarCrm />} />
             <Route path="/radar-crm/results" element={<RadarCrmResults />} />
