@@ -44,6 +44,10 @@ await loadEnvFile();
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+// Bulk reads of the exhibitor profiles use the materialized view
+// public_exhibitor_profiles_mv, which is granted to service_role ONLY.
+const SUPABASE_SERVICE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY || null;
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   console.error('[prerender] Missing SUPABASE_URL / SUPABASE_ANON_KEY. Aborting.');
