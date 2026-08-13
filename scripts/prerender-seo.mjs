@@ -880,6 +880,7 @@ async function writeRoute(routePath, html) {
 
 // ---------- main ----------
 async function main() {
+  const t0 = Date.now();
   // 1. read base shell ONCE
   let baseTemplate;
   try {
@@ -913,11 +914,25 @@ async function main() {
   // builder AND the event→exhibitor maillage). Done up-front so the SAFETY guard
   // runs before any write.
   const profileFields = 'public_slug,display_name,canonical_name,description,ai_summary,website,logo_url,linkedin_url,exhibitor_id,legacy_exposant_id,seo_indexable,is_test';
-  // pageSize 1000 (PostgREST max_rows): halves the number of sorted scans on
-  // this heavy view, which is what was hitting the statement timeout.
-  const profiles = (await sbPaged(`public_exhibitor_profiles?is_test=eq.false&public_slug=not.is.null&select=${profileFields}&order=public_slug.asc`, 1000))
+  // Bulk read goes through the materialized view (indexed on public_slug,
+  // ~119ms/page vs ~9.4s on the live view, which caused statement timeouts).
+  // The MV is service_role-only; the plain view stays the source of truth for
+  // the app's unit reads. Refresh it once so the build ships fresh data.
+  let profilesSource = 'public_exhibitor_profiles_mv';
+  let profilesKey = SUPABASE_SERVICE_KEY;
+  if (!SUPABASE_SERVICE_KEY) {
+    console.warn('[prerender] SUPABASE_SERVICE_ROLE_KEY missing → falling back to the slow live view');
+    profilesSource = 'public_exhibitor_profiles';
+    profilesKey = SUPABASE_ANON_KEY;
+  } else {
+    const tRefresh = Date.now();
+    const refreshed = await sbRpc('refresh_public_exhibitor_profiles_mv', {}, SUPABASE_SERVICE_KEY);
+    console.log(`[prerender] MV refreshed in ${Date.now() - tRefresh}ms:`, JSON.stringify(refreshed));
+  }
+  const tProfiles = Date.now();
+  const profiles = (await sbPaged(`${profilesSource}?is_test=eq.false&public_slug=not.is.null&select=${profileFields}&order=public_slug.asc`, 1000, profilesKey))
     .filter((p) => p.public_slug && String(p.public_slug).trim());
-  console.log(`[prerender] exhibitor profiles fetched: ${profiles.length}`);
+  console.log(`[prerender] exhibitor profiles fetched: ${profiles.length} from ${profilesSource} in ${Date.now() - tProfiles}ms`);
   const MIN_PROFILES = 1000;
   if (profiles.length < MIN_PROFILES) {
     console.error(`[prerender] FATAL: exhibitor profiles volume implausibly low (${profiles.length} < ${MIN_PROFILES}). Aborting to preserve last good build.`);
