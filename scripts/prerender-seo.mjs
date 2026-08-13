@@ -894,7 +894,9 @@ async function main() {
   // builder AND the event→exhibitor maillage). Done up-front so the SAFETY guard
   // runs before any write.
   const profileFields = 'public_slug,display_name,canonical_name,description,ai_summary,website,logo_url,linkedin_url,exhibitor_id,legacy_exposant_id,seo_indexable,is_test';
-  const profiles = (await sbPaged(`public_exhibitor_profiles?is_test=eq.false&public_slug=not.is.null&select=${profileFields}&order=public_slug.asc`))
+  // pageSize 1000 (PostgREST max_rows): halves the number of sorted scans on
+  // this heavy view, which is what was hitting the statement timeout.
+  const profiles = (await sbPaged(`public_exhibitor_profiles?is_test=eq.false&public_slug=not.is.null&select=${profileFields}&order=public_slug.asc`, 1000))
     .filter((p) => p.public_slug && String(p.public_slug).trim());
   console.log(`[prerender] exhibitor profiles fetched: ${profiles.length}`);
   const MIN_PROFILES = 1000;
