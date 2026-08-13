@@ -10902,9 +10902,11 @@ export type Database = {
           p_ville?: string
         }
         Returns: {
+          affluence_visiteurs: number
           categories_matchees: string[]
           date_debut: string
           date_fin: string
+          envergure: string
           nb_exposants_domaine: number
           nom_event: string
           proximite: string
@@ -10912,6 +10914,8 @@ export type Database = {
           sim_max: number
           slug: string
           statut: string
+          tarif_categorie: string
+          type_event: string
           ville: string
         }[]
       }
@@ -10960,6 +10964,7 @@ export type Database = {
         }
         Returns: Json
       }
+      parse_affluence: { Args: { p_txt: string }; Returns: number }
       parse_affluence_int: { Args: { p: string }; Returns: number }
       preview_exhibitor_identity_merge: {
         Args: { p_loser_identity_id: string; p_winner_identity_id: string }
