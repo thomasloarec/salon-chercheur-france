@@ -133,7 +133,22 @@ async function sb(pathQ) {
 // the build abort later with a misleading "volume implausibly low" message.
 const PAGE_ATTEMPTS = 6;
 
-async function sbPaged(pathQ, pageSize = 500) {
+async function sbRpc(fn, body = {}, key = SUPABASE_ANON_KEY) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`[prerender] rpc ${fn} failed: HTTP ${res.status} ${await res.text()}`);
+  return await res.json();
+}
+
+async function sbPaged(pathQ, pageSize = 500, key = SUPABASE_ANON_KEY) {
   const all = [];
   let from = 0;
   for (;;) {
@@ -144,8 +159,8 @@ async function sbPaged(pathQ, pageSize = 500) {
       try {
         const res = await fetch(`${SUPABASE_URL}/rest/v1/${pathQ}`, {
           headers: {
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            apikey: key,
+            Authorization: `Bearer ${key}`,
             Accept: 'application/json',
             Range: `${from}-${to}`,
             'Range-Unit': 'items',
