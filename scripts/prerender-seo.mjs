@@ -880,7 +880,6 @@ async function writeRoute(routePath, html) {
 
 // ---------- main ----------
 async function main() {
-  const t0 = Date.now();
   // 1. read base shell ONCE
   let baseTemplate;
   try {
