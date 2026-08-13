@@ -2,13 +2,17 @@
 //
 // Agent conversationnel "Recherche IA Visiteur" pour Lotexpo.
 // Boucle de tool-calling (Claude Haiku) sur les primitives SQL en base.
-// Gate crédits (anonyme = 5 à vie / inscrit = 10 par 24h glissantes) + rate-limit IP.
+// Gate crédits (anonyme = 5 / inscrit = 10, paywall mimé) + rate-limit IP.
 //
-// v69 — Credits : fenetre glissante 24h pour les inscrits (10 requetes),
-// anonyme inchange (5 a vie). wall_type 'paywall' remplace par 'daily_limit',
-// reset_at propage au front, event funnel 'daily_wall_shown'.
+// v68 — Chantiers A/B/C : outil salons unifié (match_salons_v2 : catégories +
 // zone géographique + bonus secteur + statut recommande/connexe), fiche_salon
-// (résolution d'un salon par son nom), salons_des_concurrents. Reste inchangé.
+// (résolution d'un salon par son nom), salons_des_concurrents.
+//
+// v69 — Données qualifiantes des salons exposées à l'agent : description,
+// affluence visiteurs (normalisée, format français "10.000" = 10000), envergure,
+// tarif catégorisé, adresse, type. Discipline stricte sur la donnée manquante :
+// 32% des salons n'ont pas d'affluence et 48 portent un tarif "voir site" qui ne
+// doit jamais devenir un renvoi hors Lotexpo.
 //
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -49,7 +53,9 @@ const TOOLS = [
       "`ville` = contrainte de lieu (ex: 'Toulouse'). L'outil elargit automatiquement aux communes voisines (parcs d'expositions peripheriques). " +
       "`avant_le` = date ISO AAAA-MM-JJ pour une echeance ('cet automne' -> calcule la date depuis aujourd'hui). " +
       "`pour_visiter` = true pour visiter (editions a venir seulement), false pour exposer. " +
-      "Chaque salon renvoie : statut ('recommande' ou 'connexe'), proximite ('exacte' ou 'proche'), nb_exposants_domaine, slug, categories_matchees.",
+      "Chaque salon renvoie : statut ('recommande' ou 'connexe'), proximite ('exacte' ou 'proche'), nb_exposants_domaine, slug, categories_matchees, " +
+      "affluence_visiteurs (nombre de visiteurs attendus, ou null si non renseigne), envergure ('confidentiel' / 'regional' / 'national' / 'international', ou null), " +
+      "tarif_categorie ('gratuit' / 'payant' / 'non_communique') et type_event ('salon' / 'congres' / 'conference' / 'convention').",
     input_schema: {
       type: "object",
       properties: {
@@ -64,8 +70,11 @@ const TOOLS = [
   {
     name: "fiche_salon",
     description:
-      "Verifie l'existence d'un salon nomme et renvoie son lieu exact, sa ville, son adresse, ses dates et sa couverture exposants. " +
-      "A appeler pour toute question sur un salon precis : 'ou se trouve X', 'quand a lieu X', 'le salon X existe-t-il', 'X est a quelle adresse'. " +
+      "FICHE COMPLETE d'un salon nomme : lieu exact, ville, adresse postale, dates, type, secteurs, description, " +
+      "affluence_visiteurs (nombre de visiteurs attendus, null si non renseigne), envergure, tarif_categorie et tarif_detail (libelle exact quand il existe), " +
+      "nb_exposants_referencees et couverture_exposants. " +
+      "A appeler pour TOUTE question sur un salon precis : 'ou se trouve X', 'quand a lieu X', 'X est a quelle adresse', " +
+      "'combien de visiteurs a X', 'quelle affluence a X', 'combien coute l'entree de X', 'c'est quoi X', 'le salon X existe-t-il'. " +
       "Tolerant aux variantes de nom. Renvoie statut : 'ok', 'resolution_incertaine' ou 'salon_introuvable' (avec suggestions).",
     input_schema: {
       type: "object",
@@ -151,12 +160,23 @@ TROUVER DES SALONS — un seul outil, rechercher_salons :
 - Pour un besoin métier : remplis intention. Pour une contrainte de lieu : remplis ville. Pour une échéance comme « cet automne » ou « avant décembre » : calcule la date depuis aujourd'hui et remplis avant_le. Pour une question purement géographique (« salons à Lyon »), laisse intention vide et remplis ville.
 - Chaque salon renvoie un statut. 'recommande' : présente-le normalement. 'connexe' : proche du sujet mais pas central, ne le présente jamais comme une recommandation principale ; tu peux le citer en complément en le qualifiant honnêtement (« ce salon touche votre domaine sans y être centré »).
 - Chaque salon renvoie une proximite. 'exacte' : dans la ville demandée. 'proche' : dans une commune voisine (souvent le parc d'expositions). Pour 'proche', dis-le clairement : « à Aussonne, près de Toulouse ».
+- Chaque salon renvoie aussi affluence_visiteurs, envergure, tarif_categorie et type_event. Sers-t'en pour qualifier tes recommandations (« salon international, ~80 000 visiteurs, entrée gratuite ») et pour hiérarchiser quand plusieurs salons se valent sur le fond. Applique la même discipline que ci-dessous : jamais de chiffre inventé quand la valeur est null.
+- type_event distingue 'salon', 'congres', 'conference' et 'convention'. Emploie le mot juste : un congrès n'est pas un salon, et si l'utilisateur cherche explicitement un type précis, privilégie-le.
 - Si rien ne revient, dis honnêtement que Lotexpo ne référence pas de salon pertinent pour cette demande. Ne renvoie pas ailleurs.
 
 UN SALON NOMMÉ — fiche_salon :
-- Pour toute question sur un salon précis (« où se trouve X », « quand a lieu X », « à quelle adresse », « X existe-t-il »), appelle fiche_salon avec le nom.
-- Réponds directement avec la ville, le lieu et les dates renvoyés. Ne dis JAMAIS qu'un salon n'existe pas : si le statut est 'salon_introuvable', dis que tu ne le trouves pas dans l'index Lotexpo et propose les suggestions si elles sont plausibles.
+- Pour toute question sur un salon précis, appelle fiche_salon avec le nom. Cela couvre : « où se trouve X », « quand a lieu X », « à quelle adresse », « X existe-t-il », mais AUSSI « combien de visiteurs à X », « quelle affluence », « combien coûte l'entrée », « c'est quoi X », « quel type d'événement ».
+- Réponds directement avec les champs renvoyés. Ne dis JAMAIS qu'un salon n'existe pas : si le statut est 'salon_introuvable', dis que tu ne le trouves pas dans l'index Lotexpo et propose les suggestions si elles sont plausibles.
 - Si couverture_exposants vaut 'aucune', ne dis pas que le salon n'a pas d'exposants : dis que leur liste n'est pas encore disponible sur Lotexpo.
+
+AFFLUENCE, TARIF ET DESCRIPTION — la discipline de la donnée manquante :
+- affluence_visiteurs est le nombre de visiteurs attendus. Quand il est présent, donne-le tel quel (« environ 80 000 visiteurs attendus »). Quand il vaut null, dis simplement que Lotexpo ne dispose pas de ce chiffre pour ce salon.
+- N'ESTIME JAMAIS une affluence absente. Ne la déduis pas du nombre d'exposants, de la taille du lieu, de la notoriété du salon ni d'une édition précédente. Un chiffre inventé sur un sujet aussi vérifiable détruit la confiance. « Je ne sais pas » est la bonne réponse.
+- envergure ('confidentiel', 'regional', 'national', 'international') est déduite de l'affluence. Utilise-la pour qualifier l'importance d'un salon et pour hiérarchiser tes recommandations quand elle est disponible. Ne l'invente pas quand elle est null : beaucoup de salons n'ont simplement pas la donnée, ce qui ne veut pas dire qu'ils sont petits.
+- tarif_categorie vaut 'gratuit', 'payant' ou 'non_communique'. Si 'gratuit', dis que l'entrée est gratuite. Si 'payant', donne tarif_detail tel quel (ex. « à partir de 650 € »), sans le reformuler ni le convertir. Si 'non_communique', dis que le tarif n'est pas renseigné sur Lotexpo, et n'invente aucun montant.
+- Pour un tarif inconnu, ne renvoie JAMAIS vers le site de l'organisateur, un site officiel ou une recherche externe. C'est une violation de la règle absolue, même si cela paraît serviable.
+- description : sert à expliquer ce qu'est le salon et à qui il s'adresse. Résume-la, ne la recopie pas en bloc.
+- Le champ note du résultat contient des consignes de conduite propres au salon. Respecte-les.
 
 CONCURRENTS — salons_des_concurrents :
 - Pour « à quels salons exposent mes concurrents » ou « les concurrents de X », appelle salons_des_concurrents avec le nom ou le domaine de l'entreprise de référence.
@@ -395,12 +415,9 @@ Deno.serve(async (req) => {
   if (creditErr) return json({ error: "credit_check_failed", detail: creditErr.message }, 500);
   const credit = Array.isArray(creditRows) ? creditRows[0] : creditRows;
   if (credit?.wall_type) {
-    const evt = credit.wall_type === "signup" ? "anon_wall_shown" : "daily_wall_shown";
+    const evt = credit.wall_type === "signup" ? "anon_wall_shown" : "paid_wall_shown";
     await admin.from("ai_funnel_events").insert({ user_id: userId, event_type: evt });
-    return json({
-      wall: { type: credit.wall_type, hard: true, reset_at: credit.reset_at ?? null },
-      credits: credit,
-    });
+    return json({ wall: { type: credit.wall_type }, credits: credit });
   }
   // Les admins ont une allocation illimitée (999999) ; anonyme = 5, inscrit = 10.
   const isAdmin = (credit?.allowed ?? 0) > 10;
@@ -500,20 +517,6 @@ Deno.serve(async (req) => {
   const allowed = credit?.allowed ?? (isAnon ? 5 : 10);
   const remainingAfter = Math.max(allowed - usedAfter, 0);
 
-  // Fenetre glissante : quand le quota vient d'etre epuise, on relit la base
-  // pour connaitre l'instant exact ou un credit se liberera (plus ancienne
-  // requete de la fenetre + 24h). Un seul appel supplementaire, et seulement
-  // sur la requete qui epuise le quota.
-  let resetAt: string | null = null;
-  if (remainingAfter <= 0 && !isAnon) {
-    const { data: afterRows } = await admin.rpc("check_ai_credits", {
-      p_user_id: userId,
-      p_is_anonymous: isAnon,
-    });
-    const after = Array.isArray(afterRows) ? afterRows[0] : afterRows;
-    resetAt = after?.reset_at ?? null;
-  }
-
   if (typeof EdgeRuntime !== "undefined" && (EdgeRuntime as any).waitUntil) {
     (EdgeRuntime as any).waitUntil(logIntelligence(admin, question, questionRank, conversationKey, finalText, [...retrievedSlugs]));
   }
@@ -521,10 +524,10 @@ Deno.serve(async (req) => {
   return json({
     answer: finalText,
     conversation_key: conversationKey,
-    credits: { used: usedAfter, allowed, remaining: remainingAfter, reset_at: resetAt },
+    credits: { used: usedAfter, allowed, remaining: remainingAfter },
     // Indice "mur imminent" pour que le front prépare le CTA (sans logguer d'event ici :
     // l'event sera loggé au prochain appel effectivement bloqué).
-    wall: remainingAfter <= 0 ? { type: isAnon ? "signup" : "daily_limit", soft: true, reset_at: resetAt } : null,
+    wall: remainingAfter <= 0 ? { type: isAnon ? "signup" : "paywall", soft: true } : null,
     ...(debugEnabled ? { debug: { trace: debugTrace } } : {}),
   });
 });
