@@ -123,14 +123,20 @@ async function sb(pathQ) {
 // public_exhibitor_profiles a server-side exact COUNT triggers a statement
 // timeout (Postgres 57014) → HTTP 500. We never read the count header anyway:
 // pagination stops when a page returns fewer rows than `pageSize`.
-// Each page is retried up to 3x with exponential backoff on transient 5xx.
+// Each page is retried with exponential backoff on transient 5xx (notably
+// Postgres 57014 "statement timeout" on cold, heavy views). If a page still
+// fails after all attempts we THROW: returning a partial list silently made
+// the build abort later with a misleading "volume implausibly low" message.
+const PAGE_ATTEMPTS = 6;
+
 async function sbPaged(pathQ, pageSize = 500) {
   const all = [];
   let from = 0;
   for (;;) {
     const to = from + pageSize - 1;
     let chunk = null;
-    for (let attempt = 1; attempt <= 3; attempt += 1) {
+    let lastError = 'unknown';
+    for (let attempt = 1; attempt <= PAGE_ATTEMPTS; attempt += 1) {
       try {
         const res = await fetch(`${SUPABASE_URL}/rest/v1/${pathQ}`, {
           headers: {
@@ -142,19 +148,21 @@ async function sbPaged(pathQ, pageSize = 500) {
           },
         });
         if (res.ok) { chunk = await res.json(); break; }
+        lastError = `HTTP ${res.status}`;
         // Retry only transient server errors (5xx); client errors are terminal.
-        if (res.status >= 500 && attempt < 3) {
-          const backoff = 500 * 2 ** (attempt - 1);
-          console.warn(`[prerender] paged ${res.status} (attempt ${attempt}/3), retrying in ${backoff}ms`);
+        if (res.status >= 500 && attempt < PAGE_ATTEMPTS) {
+          const backoff = Math.min(500 * 2 ** (attempt - 1), 8000);
+          console.warn(`[prerender] paged ${res.status} (attempt ${attempt}/${PAGE_ATTEMPTS}), retrying in ${backoff}ms`);
           await new Promise((r) => setTimeout(r, backoff));
           continue;
         }
         console.warn('[prerender] paged non-200', res.status);
         break;
       } catch (e) {
-        if (attempt < 3) {
-          const backoff = 500 * 2 ** (attempt - 1);
-          console.warn(`[prerender] paged threw "${e.message}" (attempt ${attempt}/3), retrying in ${backoff}ms`);
+        lastError = e.message;
+        if (attempt < PAGE_ATTEMPTS) {
+          const backoff = Math.min(500 * 2 ** (attempt - 1), 8000);
+          console.warn(`[prerender] paged threw "${e.message}" (attempt ${attempt}/${PAGE_ATTEMPTS}), retrying in ${backoff}ms`);
           await new Promise((r) => setTimeout(r, backoff));
           continue;
         }
@@ -162,7 +170,11 @@ async function sbPaged(pathQ, pageSize = 500) {
         break;
       }
     }
-    if (chunk === null) break; // page failed after retries → stop (guard will catch low volume)
+    if (chunk === null) {
+      throw new Error(
+        `[prerender] paged fetch failed after ${PAGE_ATTEMPTS} attempts (${lastError}) at offset ${from} for ${pathQ.slice(0, 120)}`,
+      );
+    }
     all.push(...chunk);
     if (chunk.length < pageSize) break;
     from += pageSize;
