@@ -3675,6 +3675,13 @@ export type Database = {
             referencedRelation: "public_exhibitor_profiles"
             referencedColumns: ["public_identity_id"]
           },
+          {
+            foreignKeyName: "exhibitor_alerts_public_identity_id_fkey"
+            columns: ["public_identity_id"]
+            isOneToOne: false
+            referencedRelation: "public_exhibitor_profiles_mv"
+            referencedColumns: ["public_identity_id"]
+          },
         ]
       }
       exhibitor_categories: {
@@ -3924,6 +3931,13 @@ export type Database = {
             referencedColumns: ["public_identity_id"]
           },
           {
+            foreignKeyName: "exhibitor_duplicate_reviews_identity_a_id_fkey"
+            columns: ["identity_a_id"]
+            isOneToOne: false
+            referencedRelation: "public_exhibitor_profiles_mv"
+            referencedColumns: ["public_identity_id"]
+          },
+          {
             foreignKeyName: "exhibitor_duplicate_reviews_identity_b_id_fkey"
             columns: ["identity_b_id"]
             isOneToOne: false
@@ -3935,6 +3949,13 @@ export type Database = {
             columns: ["identity_b_id"]
             isOneToOne: false
             referencedRelation: "public_exhibitor_profiles"
+            referencedColumns: ["public_identity_id"]
+          },
+          {
+            foreignKeyName: "exhibitor_duplicate_reviews_identity_b_id_fkey"
+            columns: ["identity_b_id"]
+            isOneToOne: false
+            referencedRelation: "public_exhibitor_profiles_mv"
             referencedColumns: ["public_identity_id"]
           },
         ]
@@ -3998,6 +4019,13 @@ export type Database = {
             columns: ["public_identity_id"]
             isOneToOne: false
             referencedRelation: "public_exhibitor_profiles"
+            referencedColumns: ["public_identity_id"]
+          },
+          {
+            foreignKeyName: "exhibitor_events_public_identity_id_fkey"
+            columns: ["public_identity_id"]
+            isOneToOne: false
+            referencedRelation: "public_exhibitor_profiles_mv"
             referencedColumns: ["public_identity_id"]
           },
         ]
@@ -9136,6 +9164,72 @@ export type Database = {
           },
         ]
       }
+      public_exhibitor_profiles_mv: {
+        Row: {
+          ai_summary: string | null
+          canonical_name: string | null
+          created_at: string | null
+          description: string | null
+          display_name: string | null
+          exhibitor_id: string | null
+          future_participations_count: number | null
+          has_active_manager: boolean | null
+          has_description: boolean | null
+          has_future_events: boolean | null
+          has_logo: boolean | null
+          has_published_novelties: boolean | null
+          has_website: boolean | null
+          is_active: boolean | null
+          is_claimed: boolean | null
+          is_test: boolean | null
+          is_verified: boolean | null
+          last_activity_at: string | null
+          legacy_exposant_id: string | null
+          linkedin_url: string | null
+          logo_url: string | null
+          next_event_at: string | null
+          past_participations_count: number | null
+          public_identity_id: string | null
+          public_slug: string | null
+          published_novelties_count: number | null
+          seo_indexable: boolean | null
+          seo_reason: string | null
+          source_type: string | null
+          total_participations: number | null
+          updated_at: string | null
+          website: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibitor_public_identities_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "exhibitor_public_identities_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_public_identities_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_public_identities_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
+        ]
+      }
       public_novelties: {
         Row: {
           audience_tags: string[] | null
@@ -11013,6 +11107,7 @@ export type Database = {
       }
       refresh_event_similarity_if_needed: { Args: never; Returns: number }
       refresh_event_suggested_keywords: { Args: never; Returns: number }
+      refresh_public_exhibitor_profiles_mv: { Args: never; Returns: Json }
       refresh_recommendable_embeddings: { Args: never; Returns: number }
       refresh_recommendations_if_needed: { Args: never; Returns: number }
       refresh_stale_event_profiles: { Args: never; Returns: number }
