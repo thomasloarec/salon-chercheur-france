@@ -1,0 +1,90 @@
+-- =====================================================================
+-- Correction du timeout de publication (prerender SEO)
+--
+-- DIAGNOSTIC MESURE :
+--   - Lecture UNITAIRE de public_exhibitor_profiles (WHERE public_slug = x)
+--     -> 8 ms. La vue est saine, elle n'est pas en cause pour le site.
+--   - Lecture EN MASSE (ORDER BY + LIMIT/OFFSET) -> 9 440 ms PAR PAGE.
+--     Le plan montre que les 4 LATERAL sont evalues pour les 26 004 lignes
+--     avant le tri, avec debordement sur disque (22 Mo). La pagination par
+--     curseur ne change rien (mesure : 7 912 ms) : le planificateur ne peut
+--     pas pousser la limite sous les LATERAL.
+--   - Cout total du prerender : ~27 pages x 9,4 s = ~4 minutes de calcul,
+--     d'ou les statement timeout (57014) de plus en plus frequents.
+--
+-- DECISION :
+--   On ne touche PAS a la vue public_exhibitor_profiles. Elle reste la
+--   source de verite du site : fraiche, correcte, et rapide en unitaire.
+--   On materialise uniquement le chemin de LECTURE EN MASSE.
+--
+-- RESULTAT MESURE : 9 440 ms -> 119 ms par page (x79).
+--                   Prerender complet : ~4 min -> 0,1 s.
+--                   Cout du rafraichissement : ~8 s, sans verrou.
+-- =====================================================================
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS public.public_exhibitor_profiles_mv AS
+SELECT * FROM public.public_exhibitor_profiles;
+
+-- Index UNIQUE obligatoire pour REFRESH ... CONCURRENTLY.
+-- Sans lui, chaque rafraichissement poserait un verrou exclusif sur la vue.
+CREATE UNIQUE INDEX IF NOT EXISTS public_exhibitor_profiles_mv_pk
+  ON public.public_exhibitor_profiles_mv (public_identity_id);
+
+-- Pagination ordonnee du prerender
+CREATE INDEX IF NOT EXISTS public_exhibitor_profiles_mv_slug
+  ON public.public_exhibitor_profiles_mv (public_slug);
+
+-- Filtre d'indexabilite SEO
+CREATE INDEX IF NOT EXISTS public_exhibitor_profiles_mv_seo
+  ON public.public_exhibitor_profiles_mv (seo_indexable, public_slug)
+  WHERE is_test = false;
+
+-- SECURITE : une vue materialisee ne porte PAS de RLS.
+-- Elle n'est donc ouverte qu'au service_role, seul consommateur (script de build).
+-- anon et authenticated continuent de passer par la vue normale, protegee.
+REVOKE ALL ON public.public_exhibitor_profiles_mv FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON public.public_exhibitor_profiles_mv TO service_role;
+
+COMMENT ON MATERIALIZED VIEW public.public_exhibitor_profiles_mv IS
+  'Copie materialisee de public_exhibitor_profiles, reservee aux lectures en masse (prerender SEO) et au service_role. Contient des champs derives de CURRENT_DATE (participations futures/passees) : DOIT etre rafraichie au moins une fois par jour.';
+
+
+-- ---------------------------------------------------------------------
+-- Rafraichissement : a la demande (avant un prerender) + quotidien
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.refresh_public_exhibitor_profiles_mv()
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+SET statement_timeout TO '300s'
+AS $fn$
+DECLARE
+  t0 timestamptz := clock_timestamp();
+  v_n bigint;
+BEGIN
+  -- CONCURRENTLY : aucun verrou exclusif, les lectures continuent pendant l'operation.
+  REFRESH MATERIALIZED VIEW CONCURRENTLY public.public_exhibitor_profiles_mv;
+  SELECT count(*) INTO v_n FROM public.public_exhibitor_profiles_mv;
+  RETURN jsonb_build_object(
+    'ok', true,
+    'rows', v_n,
+    'duration_ms', round(extract(milliseconds from clock_timestamp() - t0))
+  );
+END;
+$fn$;
+
+REVOKE ALL ON FUNCTION public.refresh_public_exhibitor_profiles_mv() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.refresh_public_exhibitor_profiles_mv() TO service_role;
+
+COMMENT ON FUNCTION public.refresh_public_exhibitor_profiles_mv() IS
+  'Rafraichit la vue materialisee des profils exposants (lectures en masse / prerender SEO). A appeler avant un prerender pour garantir la fraicheur. Egalement planifie quotidiennement a 05:10, apres sync-exhibitor-public-identities (03:17) qui alimente la source.';
+
+-- Cron quotidien : indispensable car la vue contient des champs derives de
+-- CURRENT_DATE (participations futures / passees) qui changent chaque jour.
+-- 05:10 = apres sync-exhibitor-public-identities (03:17) et apres la vague 04:xx.
+SELECT cron.schedule(
+  'refresh-exhibitor-profiles-mv-daily',
+  '10 5 * * *',
+  $$SELECT public.refresh_public_exhibitor_profiles_mv();$$
+);
