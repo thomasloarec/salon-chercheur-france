@@ -70,6 +70,7 @@
     "dompurify": "^3.4.0",
     "embla-carousel-react": "^8.3.0",
     "emoji-picker-react": "^4.14.2",
+    "framer-motion": "^13.1.0",
     "gapi-script": "^1.2.0",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.462.0",
