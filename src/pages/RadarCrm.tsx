@@ -277,6 +277,39 @@ const RadarCrmPage: React.FC = () => {
     }
   };
 
+  const handleSyncHubSpot = async () => {
+    if (!hubspotConnection) return;
+    setSyncingHubSpot(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-hubspot');
+      if (error) throw error;
+      if (data?.success) {
+        toast({
+          title: 'Synchronisation terminée',
+          description: `${data.companies} entreprise(s) importée(s), ${data.matched} présente(s) sur des salons à venir.`,
+        });
+        void queryClient.invalidateQueries({ queryKey: ['crm-matches'] });
+        void queryClient.invalidateQueries({ queryKey: ['crm-event-matches'] });
+        void queryClient.invalidateQueries({ queryKey: ['crm-latest-import-companies'] });
+      } else {
+        toast({
+          title: 'Échec de la synchronisation',
+          description: `${data?.stage ?? ''} — ${data?.message ?? 'Erreur inconnue'}`,
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Échec de la synchronisation',
+        description: err instanceof Error ? err.message : 'Erreur inconnue',
+        variant: 'destructive',
+      });
+    } finally {
+      setSyncingHubSpot(false);
+    }
+  };
+
+
   const handleSubmit = async () => {
     if (!parsed || !user) return;
     if (missingRequired.length > 0) {
