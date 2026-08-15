@@ -1361,7 +1361,6 @@ const EventCard: React.FC<{
   onModeSalon?: () => void;
   onDebrief?: () => void;
   similarCount?: number;
-  onSimilarKept?: () => void;
   onCompanyClick: (
     c: Company,
     id_exposant: string,
@@ -1369,7 +1368,7 @@ const EventCard: React.FC<{
     nom_exposant: string | null,
     needs_review: boolean,
   ) => void;
-}> = ({ group, importId, getPref, getRel, onSetRel, onView, onModeSalon, onDebrief, similarCount = 0, onSimilarKept, onCompanyClick }) => {
+}> = ({ group, importId, getPref, getRel, onSetRel, onView, onModeSalon, onDebrief, similarCount = 0, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
   // Phase du salon (avant / pendant / après) → pilote la visibilité et la
