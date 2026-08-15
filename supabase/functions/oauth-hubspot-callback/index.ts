@@ -1,359 +1,156 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'npm:@supabase/supabase-js@2';
-import { encryptJson } from "../_shared/crypto.ts";
-import { verifySignedState } from "../_shared/oauth-state.ts";
-import { corsHeaders, handleOptions } from "../_shared/cors.ts";
+// oauth-hubspot-callback (reconstruit, autonome)
+// Recoit { code, state } du front, verifie le state signe (HMAC), echange le code
+// contre les tokens HubSpot, recupere le portal_id, chiffre les tokens (AES-256-GCM,
+// cle CRM_ENCRYPTION_KEY) et ecrit dans crm_connections. Zero dependance _shared.
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-// Generate secure random claim token
-function generateClaimToken(): string {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return btoa(String.fromCharCode(...array))
-    .replace(/[+/]/g, c => c === '+' ? '-' : '_')
-    .replace(/=/g, '');
-}
-
-const FUNCTION_VERSION = "2025-09-03-v2";
-
-function log(req: Request, stage: string, data: Record<string,unknown> = {}) {
-  const entry = {
-    ts: new Date().toISOString(),
-    stage, method: req.method, url: req.url,
-    origin: req.headers.get("Origin") || "no-origin",
-    ua: (req.headers.get("User-Agent") || "").slice(0,120),
-    ...data
+const ALLOWED = [
+  'https://lotexpo.com', 'https://www.lotexpo.com', 'https://lotexpo.fr',
+  'https://lotexpo.lovable.app', 'http://localhost:5173', 'http://localhost:3000'
+];
+function cors(req: Request) {
+  const origin = req.headers.get('Origin') || '';
+  const allow = ALLOWED.includes(origin) ? origin : 'https://lotexpo.com';
+  return {
+    'Access-Control-Allow-Origin': allow,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin'
   };
-  console.log(JSON.stringify(entry));
+}
+function json(req: Request, body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: { ...cors(req), 'Content-Type': 'application/json' } });
 }
 
-serve(async (req: Request) => {
-  // Preflight CORS
-  if (req.method === "OPTIONS") {
-    log(req,"preflight",{
-      acrh: req.headers.get("Access-Control-Request-Headers"),
-      acrm: req.headers.get("Access-Control-Request-Method")
-    });
-    return handleOptions(req);
-  }
+async function hmac(payload: string, keyStr: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(keyStr), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(payload));
+  return btoa(String.fromCharCode(...new Uint8Array(sig)));
+}
+async function verifySignedState(state: string): Promise<{ userId: string; nonce: string; exp: number }> {
+  const key = Deno.env.get('OAUTH_STATE_SIGNING_KEY') || '';
+  if (!key) throw new Error('STATE_KEY_MISSING');
+  const parts = state.split('.');
+  if (parts.length !== 2 || !parts[0] || !parts[1]) throw new Error('STATE_FORMAT');
+  const payload = atob(parts[0]);
+  const expected = await hmac(payload, key);
+  if (parts[1] !== expected) throw new Error('STATE_SIGNATURE');
+  const data = JSON.parse(payload);
+  if (!data?.userId || Date.now() > data.exp) throw new Error('STATE_EXPIRED');
+  return data;
+}
 
-  // Diag
-  if (req.method === "GET") {
-    const url = new URL(req.url);
-    if (url.searchParams.get("diag") === "1") {
-      const cid = Deno.env.get("HUBSPOT_CLIENT_ID") ?? "";
-      return new Response(JSON.stringify({
-        ok:true, version:FUNCTION_VERSION, now:new Date().toISOString(),
-        env:{
-          client_id_masked: cid ? cid.replace(/(.{4}).*(.{4})/, "$1...$2") : "",
-          redirect_uri: Deno.env.get("HUBSPOT_REDIRECT_URI") ?? "",
-          has_client_secret: !!Deno.env.get("HUBSPOT_CLIENT_SECRET"),
-          has_encryption_key: !!Deno.env.get("OAUTH_ENC_KEY"),
-          has_state_signing_key: !!Deno.env.get("OAUTH_STATE_SIGNING_KEY"),
-          has_service_role_key: !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
-        }
-      }), {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
-      });
-    }
-    return new Response(JSON.stringify({ error:"Method not allowed" }), {
-      status: 405,
-      headers: { "Content-Type": "application/json", ...corsHeaders(req) }
-    });
-  }
+async function aesKey(): Promise<CryptoKey> {
+  const b64 = Deno.env.get('CRM_ENCRYPTION_KEY') || '';
+  const raw = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  if (raw.length !== 32) throw new Error('CRM_ENCRYPTION_KEY_INVALID');
+  return await crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['encrypt']);
+}
+async function encryptToken(plain: string): Promise<string> {
+  const key = await aesKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ctBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(plain));
+  const ct = new Uint8Array(ctBuf);
+  const combined = new Uint8Array(iv.length + ct.length);
+  combined.set(iv, 0);
+  combined.set(ct, iv.length);
+  return btoa(String.fromCharCode(...combined));
+}
 
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error:"Method not allowed", stage:"method_validation" }), {
-      status: 405,
-      headers: { "Content-Type": "application/json", ...corsHeaders(req) }
-    });
-  }
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors(req) });
+  if (req.method !== 'POST') return json(req, { error: 'method_not_allowed' }, 405);
 
+  let body: any;
+  try { body = await req.json(); } catch { return json(req, { success: false, stage: 'bad_body', message: 'Corps invalide' }, 400); }
+  const code = String(body?.code || '').trim();
+  const state = String(body?.state || '').trim();
+  if (!code) return json(req, { success: false, stage: 'missing_code', message: 'Code manquant' }, 400);
+  if (!state) return json(req, { success: false, stage: 'missing_state', message: 'State manquant' }, 400);
+
+  // 1. Verifier le state signe
+  let userId: string;
   try {
-    // Parse
-    let body: any;
-    try { body = await req.json(); }
-    catch { 
-      return new Response(JSON.stringify({ success:false, stage:"body_parsing", message:"invalid_json" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
-      });
-    }
-    const { code, state } = body || {};
-    const headerState = req.headers.get("X-OAuth-State") || "";
-    if (!code || !state || !headerState) {
-      return new Response(JSON.stringify({ success:false, stage:"validation", message:"missing_params", details:{ hasCode:!!code, hasState:!!state, hasHeader:!!headerState }}), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
-      });
-    }
-    if (state !== headerState) {
-      return new Response(JSON.stringify({ success:false, stage:"csrf_state", message:"state_header_mismatch" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
-      });
-    }
-
-    // Configuration obligatoire - supprimer tous fallbacks pour fail-closed
-    const client_id = Deno.env.get("HUBSPOT_CLIENT_ID");
-    const client_secret = Deno.env.get("HUBSPOT_CLIENT_SECRET");
-    const redirect_uri = Deno.env.get("HUBSPOT_REDIRECT_URI");
-    const encryptionKey = Deno.env.get("CRM_ENCRYPTION_KEY");
-    const svcRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    
-    const missing = [];
-    if (!client_id) missing.push("HUBSPOT_CLIENT_ID");
-    if (!client_secret) missing.push("HUBSPOT_CLIENT_SECRET");
-    if (!redirect_uri) missing.push("HUBSPOT_REDIRECT_URI");
-    if (!encryptionKey) missing.push("CRM_ENCRYPTION_KEY");
-    if (!svcRole) missing.push("SUPABASE_SERVICE_ROLE_KEY");
-    if (!supabaseUrl) missing.push("SUPABASE_URL");
-    
-    if (missing.length > 0) {
-      log(req, "config_missing", { missing });
-      return new Response(JSON.stringify({ 
-        code: "CONFIG_MISSING", 
-        missing, 
-        message: "Configuration OAuth incomplète" 
-      }), {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
-      });
-    }
-    if (redirect_uri && redirect_uri.includes("/api/oauth/")) {
-      return new Response(JSON.stringify({ success:false, stage:"config_validation", message:"redirect_uri_contains_api_path", expected:"https://lotexpo.com/oauth/hubspot/callback", got:redirect_uri }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
-      });
-    }
-
-    // Validation state anti-CSRF obligatoire
-    let stateData: any;
-    try {
-      stateData = await verifySignedState(state);
-      log(req, "state_verified", { 
-        userId: stateData.userId?.slice(0,8) + "..." || "anonymous" 
-      });
-    } catch (e) {
-      const errorMsg = String((e as any)?.message || e);
-      log(req, "state_verification_failed", { error: errorMsg });
-      
-      if (errorMsg.includes("MISMATCH") || errorMsg.includes("EXPIRED")) {
-        return new Response(JSON.stringify({ 
-          code: "STATE_MISMATCH", 
-          message: "Session expirée ou état invalide" 
-        }), {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders(req) }
-        });
-      }
-      return new Response(JSON.stringify({ 
-        code: "STATE_VALIDATION_ERROR", 
-        message: errorMsg 
-      }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
-      });
-    }
-
-    // Échange code → tokens avec logging détaillé
-    const scopes = "oauth crm.objects.companies.read crm.objects.contacts.read";
-    if (!client_id || !client_secret || !redirect_uri || !code) {
-      return new Response(JSON.stringify({
-        success: false,
-        stage: "param_validation", 
-        message: "Missing required OAuth parameters"
-      }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
-      });
-    }
-    
-    const params = new URLSearchParams({
-      grant_type: "authorization_code",
-      client_id, client_secret, redirect_uri, code
-    });
-    
-    log(req, "hubspot_token_exchange_start", { 
-      usedRedirectUri: redirect_uri,
-      scopesUsed: scopes,
-      codeLength: code.length
-    });
-    
-    const r = await fetch("https://api.hubapi.com/oauth/v1/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: params
-    });
-    
-    if (!r.ok) {
-      const errorBody = await r.text();
-      log(req, "hubspot_token_exchange_failed", { 
-        status: r.status, 
-        error: errorBody.slice(0, 500),
-        usedRedirectUri: redirect_uri,
-        scopesUsed: scopes
-      });
-      
-      return new Response(JSON.stringify({ 
-        code: "HUBSPOT_TOKEN_EXCHANGE_FAILED",
-        hubspotError: errorBody,
-        usedRedirectUri: redirect_uri,
-        scopesUsed: scopes,
-        message: `Échec d'échange de tokens HubSpot (${r.status})`
-      }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
-      });
-    }
-    
-    const tokens = await r.json() as { access_token:string; refresh_token?:string; expires_in:number; token_type:string; };
-
-    // Portal id et email (best effort)
-    let portal_id: number | null = null;
-    let email_from_crm: string | null = null;
-    try {
-      const info = await fetch("https://api.hubapi.com/oauth/v1/access-tokens/"+tokens.access_token);
-      if (info.ok) { 
-        const j = await info.json(); 
-        if (j?.hub_id) portal_id = Number(j.hub_id); 
-        if (j?.user) email_from_crm = j.user;
-      }
-    } catch {}
-
-    // Chiffrement AES-GCM 256 avec validation de clé
-    let access_token_enc = "", refresh_token_enc: string | undefined;
-    try {
-      // Validation clé de chiffrement (32 bytes après décodage base64)
-      const keyBuffer = new Uint8Array(atob(encryptionKey!).split('').map(c => c.charCodeAt(0)));
-      if (keyBuffer.length !== 32) {
-        log(req, "encryption_key_invalid", { keyLength: keyBuffer.length });
-        return new Response(JSON.stringify({ 
-          code: "ENCRYPTION_KEY_INVALID", 
-          message: "Clé de chiffrement invalide (doit faire 32 bytes)" 
-        }), {
-          status: 500,
-          headers: { "Content-Type": "application/json", ...corsHeaders(req) }
-        });
-      }
-      
-      access_token_enc = await encryptJson(tokens.access_token);
-      if (tokens.refresh_token) refresh_token_enc = await encryptJson(tokens.refresh_token);
-      
-      log(req, "tokens_encrypted", { hasRefreshToken: !!tokens.refresh_token });
-    } catch (encError) {
-      log(req, "encryption_failed", { error: String(encError) });
-      return new Response(JSON.stringify({ 
-        code: "ENCRYPTION_FAILED", 
-        message: "Échec du chiffrement des tokens" 
-      }), {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
-      });
-    }
-    const expires_at = new Date(Date.now() + (tokens.expires_in*1000)).toISOString();
-
-    // DB upsert (service role → bypass RLS)
-    if (!supabaseUrl || !svcRole) {
-      return new Response(JSON.stringify({
-        success: false,
-        stage: "db_config_validation",
-        message: "Missing database configuration"
-      }), {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
-      });
-    }
-    
-    const sb = createClient(supabaseUrl, svcRole, { auth: { persistSession:false }});
-    
-    // Déterminer le mode en fonction de l'utilisateur
-    const isAuthenticated = stateData.userId && stateData.userId !== "anonymous";
-    let payload: any;
-    let responseData: any;
-
-    if (isAuthenticated) {
-      // Utilisateur connecté - attacher directement
-      payload = {
-        user_id: stateData.userId,
-        provider: "hubspot",
-        provider_user_id: portal_id?.toString() || null,
-        access_token_enc,
-        refresh_token_enc,
-        expires_at,
-        scope: "oauth crm.objects.companies.read crm.objects.contacts.read",
-        portal_id,
-        email_from_crm,
-        status: 'active'
-      };
-      
-      responseData = {
-        ok: true,
-        success: true,
-        mode: "attached",
-        provider: "hubspot",
-        portal_id,
-        version: FUNCTION_VERSION
-      };
-    } else {
-      // Utilisateur anonyme - créer connexion unclaimed
-      const claim_token = generateClaimToken();
-      const claim_expires_at = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(); // 48h
-      
-      payload = {
-        user_id: null,
-        provider: "hubspot",
-        provider_user_id: portal_id?.toString() || null,
-        access_token_enc,
-        refresh_token_enc,
-        expires_at,
-        scope: "oauth crm.objects.companies.read crm.objects.contacts.read",
-        portal_id,
-        email_from_crm,
-        status: 'unclaimed',
-        claim_token,
-        claim_token_expires_at: claim_expires_at
-      };
-      
-      responseData = {
-        ok: true,
-        success: true,
-        mode: "unclaimed",
-        provider: "hubspot",
-        claim_token,
-        expires_at: claim_expires_at,
-        email_from_crm,
-        version: FUNCTION_VERSION
-      };
-    }
-
-    const { data, error } = await sb.from("crm_connections")
-      .insert(payload)
-      .select();
-      
-    if (error) {
-      log(req,"store_tokens_failed",{ code:error.code, details:error.details, hint:error.hint });
-      return new Response(JSON.stringify({ success:false, stage:"store_tokens", db_error:{ code:error.code, details:error.details, hint:error.hint } }), {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders(req) }
-      });
-    }
-
-    log(req, "oauth_success", { 
-      mode: responseData.mode, 
-      hasClaimToken: !!responseData.claim_token,
-      portal_id 
-    });
-
-    return new Response(JSON.stringify(responseData), {
-      status: 200,
-      headers: { "Content-Type": "application/json", ...corsHeaders(req) }
-    });
+    const data = await verifySignedState(state);
+    userId = data.userId;
   } catch (e) {
-    return new Response(JSON.stringify({ success:false, stage:"general", message:String((e as any)?.message || e) }), {
-      status: 500,
-      headers: { "Content-Type": "application/json", ...corsHeaders(req) }
-    });
+    return json(req, { success: false, stage: 'csrf_state', message: 'State invalide: ' + (e instanceof Error ? e.message : String(e)) }, 400);
   }
+
+  const clientId = Deno.env.get('HUBSPOT_CLIENT_ID');
+  const clientSecret = Deno.env.get('HUBSPOT_CLIENT_SECRET');
+  const redirectUri = Deno.env.get('HUBSPOT_REDIRECT_URI');
+  if (!clientId || !clientSecret || !redirectUri) {
+    const missing = [];
+    if (!clientId) missing.push('HUBSPOT_CLIENT_ID');
+    if (!clientSecret) missing.push('HUBSPOT_CLIENT_SECRET');
+    if (!redirectUri) missing.push('HUBSPOT_REDIRECT_URI');
+    return json(req, { success: false, stage: 'config_missing', missing }, 500);
+  }
+
+  // 2. Echanger le code contre les tokens
+  let tokens: any;
+  try {
+    const resp = await fetch('https://api.hubapi.com/oauth/v1/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+        code
+      })
+    });
+    const txt = await resp.text();
+    if (!resp.ok) return json(req, { success: false, stage: 'token_exchange', status: resp.status, message: txt.slice(0, 300) }, 502);
+    tokens = JSON.parse(txt);
+  } catch (e) {
+    return json(req, { success: false, stage: 'token_exchange', message: String(e) }, 502);
+  }
+
+  // 3. Recuperer le portal_id (hub_id) et l email via introspection
+  let portalId: number | null = null;
+  let emailFromCrm: string | null = null;
+  let providerUserId: string | null = null;
+  let scopeStr: string | null = null;
+  try {
+    const info = await fetch('https://api.hubapi.com/oauth/v1/access-tokens/' + encodeURIComponent(tokens.access_token));
+    if (info.ok) {
+      const meta = await info.json();
+      portalId = typeof meta?.hub_id === 'number' ? meta.hub_id : (meta?.hub_id ? Number(meta.hub_id) : null);
+      emailFromCrm = meta?.user || null;
+      providerUserId = meta?.user_id ? String(meta.user_id) : null;
+      scopeStr = Array.isArray(meta?.scopes) ? meta.scopes.join(' ') : null;
+    }
+  } catch (_e) { /* introspection non bloquante */ }
+
+  // 4. Chiffrer et stocker dans crm_connections
+  try {
+    const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const uid = userId === 'anonymous' ? null : userId;
+    const expiresAt = new Date(Date.now() + (Number(tokens.expires_in) || 1800) * 1000).toISOString();
+
+    if (uid) {
+      await admin.from('crm_connections').delete().eq('user_id', uid).eq('provider', 'hubspot');
+    }
+    const { error } = await admin.from('crm_connections').insert({
+      user_id: uid,
+      provider: 'hubspot',
+      access_token_enc: await encryptToken(tokens.access_token),
+      refresh_token_enc: tokens.refresh_token ? await encryptToken(tokens.refresh_token) : null,
+      expires_at: expiresAt,
+      scope: scopeStr,
+      portal_id: portalId,
+      status: 'active',
+      provider_user_id: providerUserId,
+      email_from_crm: emailFromCrm
+    });
+    if (error) return json(req, { success: false, stage: 'store', message: error.message }, 500);
+  } catch (e) {
+    return json(req, { success: false, stage: 'store', message: String(e) }, 500);
+  }
+
+  return json(req, { success: true, provider: 'hubspot', portal_id: portalId });
 });
