@@ -1,6 +1,6 @@
-import React, { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Search, MapPin, CalendarDays, Sparkles } from 'lucide-react';
+import { Loader2, Search, MapPin, CalendarDays, Sparkles, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -42,7 +42,7 @@ type Bubble =
   | { id: string; role: 'user'; text: string }
   | { id: string; role: 'assistant'; result?: LeadMagnetResult; error?: string };
 
-const EXAMPLES = ['Un gros client', 'Un concurrent', 'Adoria'];
+type ExampleRow = { nom: string; secteur: string; nb_upcoming: number };
 
 function formatDateRangeFr(start?: string, end?: string) {
   if (!start) return '';
@@ -210,6 +210,7 @@ const LeadMagnetChat = ({ onSearched }: Props) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
+  const [examples, setExamples] = useState<string[]>([]);
   const counter = useRef(0);
 
   const run = async (raw: string) => {
