@@ -917,7 +917,6 @@ const RadarCrmResults: React.FC = () => {
                             onModeSalon={() => enterTerrain(g.event_id)}
                             onDebrief={() => navigate(`/radar-crm/debrief/${g.event_id}`)}
                             similarCount={similarCounts?.[g.event_id] ?? 0}
-                            onSimilarKept={() => { void refreshCockpit(); }}
                             onCompanyClick={(c, id_exposant, stand, nom_exposant, needs_review) =>
                               onOpenMission(c, stand, g, nom_exposant)}
                           />
@@ -1362,7 +1361,6 @@ const EventCard: React.FC<{
   onModeSalon?: () => void;
   onDebrief?: () => void;
   similarCount?: number;
-  onSimilarKept?: () => void;
   onCompanyClick: (
     c: Company,
     id_exposant: string,
@@ -1370,7 +1368,7 @@ const EventCard: React.FC<{
     nom_exposant: string | null,
     needs_review: boolean,
   ) => void;
-}> = ({ group, importId, getPref, getRel, onSetRel, onView, onModeSalon, onDebrief, similarCount = 0, onSimilarKept, onCompanyClick }) => {
+}> = ({ group, importId, getPref, getRel, onSetRel, onView, onModeSalon, onDebrief, similarCount = 0, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const prio = priorityFor(group.companies.length);
   // Phase du salon (avant / pendant / après) → pilote la visibilité et la
@@ -1453,7 +1451,7 @@ const EventCard: React.FC<{
           </div>
 
           {/* Suggestions d'exposants similaires (lazy) */}
-          <SimilarExhibitorsSection eventId={group.event_id} initialCount={similarCount} onKept={onSimilarKept} />
+          <SimilarExhibitorsSection eventId={group.event_id} initialCount={similarCount} />
 
           <div className="flex flex-wrap gap-2 mt-auto">
             <Button size="sm" onClick={onView} disabled={!group.slug}>

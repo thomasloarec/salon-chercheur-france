@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { ChevronDown, MapPin, ExternalLink, Sparkles, Plus, X, Loader2 } from 'lucide-react';
+import { ChevronDown, MapPin, ExternalLink, Sparkles, X, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import ExpandableText from '@/components/exhibitor/ExpandableText';
@@ -25,20 +25,18 @@ const PAGE_SIZE = 5;
 
 /**
  * « Découvrir d'autres exposants à potentiel » — section repliée par défaut,
- * chargement paresseux (RPC appelée seulement à l'ouverture). Façon Spotify :
- * petit lot, on garde/écarte, on en redemande.
+ * chargement paresseux (RPC appelée seulement à l'ouverture). Lecture seule :
+ * l'ajout manuel d'entreprise au Radar CRM est désactivé ; seul l'écarterment
+ * reste possible pour ne plus proposer une suggestion.
  *
- * Front only : réutilise les 3 RPC existantes
+ * Front only : réutilise 2 RPC existantes
  *  - get_radar_salon_similar (lecture)
- *  - add_radar_company_from_exposant (garder)
  *  - set_radar_exposant_ignored (écarter)
  */
 const SimilarExhibitorsSection: React.FC<{
   eventId: string;
   initialCount?: number;
-  /** Appelé après un « Garder » réussi pour rafraîchir le cockpit (get_my_radar_view). */
-  onKept?: () => void;
-}> = ({ eventId, initialCount = 0, onKept }) => {
+}> = ({ eventId, initialCount = 0 }) => {
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -89,31 +87,6 @@ const SimilarExhibitorsSection: React.FC<{
 
   const removeCard = (id: string) =>
     setItems((prev) => prev.filter((s) => s.id_exposant !== id));
-
-  const handleKeep = async (s: Suggestion) => {
-    if (busy[s.id_exposant]) return;
-    setBusy((b) => ({ ...b, [s.id_exposant]: true }));
-    removeCard(s.id_exposant); // optimiste
-    setRemaining((n) => Math.max(0, n - 1)); // décrément optimiste
-    try {
-      const { error } = await supabase.rpc('add_radar_company_from_exposant', {
-        p_id_exposant: s.id_exposant,
-        p_event_id: eventId,
-      });
-      if (error) throw error;
-      toast({
-        title: 'Ajouté à vos comptes en prospect froid',
-        description: 'Visible dans « À suivre » et sur ce salon.',
-      });
-      onKept?.();
-    } catch {
-      toast({ title: "Échec de l'ajout", variant: 'destructive' });
-      setItems((prev) => [s, ...prev]); // rollback
-      setRemaining((n) => n + 1); // rollback
-    } finally {
-      setBusy((b) => ({ ...b, [s.id_exposant]: false }));
-    }
-  };
 
   const handleIgnore = async (s: Suggestion) => {
     if (busy[s.id_exposant]) return;
@@ -211,15 +184,6 @@ const SimilarExhibitorsSection: React.FC<{
                 </div>
 
                 <div className="mt-3 flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-9 border-primary/60 bg-primary/[0.06] text-foreground hover:bg-primary/10"
-                    disabled={busy[s.id_exposant]}
-                    onClick={() => handleKeep(s)}
-                  >
-                    <Plus className="h-4 w-4 mr-1" /> Garder
-                  </Button>
                   <Button
                     size="sm"
                     variant="ghost"

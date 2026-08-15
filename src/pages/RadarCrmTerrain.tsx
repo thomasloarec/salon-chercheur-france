@@ -8,13 +8,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   ArrowLeft, MapPin, Star, ChevronRight, Calendar, StickyNote, CheckSquare,
-  Check, Plus, Loader2, X, Building2, ClipboardList, Mic,
+  Check, Plus, Loader2, X, ClipboardList, Mic,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import RadarMissionSheet, { type MissionTarget } from '@/components/radar-crm/RadarMissionSheet';
 import RadarCrmSettingsDialog from '@/components/radar-crm/RadarCrmSettingsDialog';
-import RadarTerrainAddCompanySheet from '@/components/radar-crm/RadarTerrainAddCompanySheet';
 import TerrainVoiceCapture from '@/components/radar-crm/TerrainVoiceCapture';
 import {
   type RelationshipStatus, RELATIONSHIP_META, normalizeRelationship, DEFAULT_RELATIONSHIP,
@@ -298,7 +297,7 @@ const RadarCrmTerrainInner: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mission, setMission] = useState<{ target: MissionTarget; companyId: string } | null>(null);
-  const [addOpen, setAddOpen] = useState(false);
+
 
   // Surcouche optimiste du statut relationnel (indexée par crm_company_id).
   const [relOverrides, setRelOverrides] = useState<Record<string, RelationshipStatus>>({});
@@ -785,37 +784,6 @@ const RadarCrmTerrainInner: React.FC = () => {
           </>
         )}
       </main>
-
-      {/* FAB compact — ajouter une entreprise rencontrée (atteignable au pouce) */}
-      {!loading && !error && eventId && (
-        <Button
-          type="button"
-          size="icon"
-          onClick={() => setAddOpen(true)}
-          aria-label="Ajouter une entreprise"
-          className="fixed bottom-5 right-5 z-40 h-14 w-14 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
-        >
-          <span className="relative inline-flex items-center justify-center">
-            <Building2 className="h-6 w-6" />
-            <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary-foreground text-primary">
-              <Plus className="h-3 w-3" strokeWidth={3} />
-            </span>
-          </span>
-        </Button>
-      )}
-
-      {eventId && (
-        <RadarTerrainAddCompanySheet
-          open={addOpen}
-          onOpenChange={setAddOpen}
-          eventId={eventId}
-          onAddedCompany={(id, name) => {
-            void load();
-            openMissionById(id, name);
-          }}
-          onOpenExisting={(id, name) => openMissionById(id, name)}
-        />
-      )}
 
       <RadarMissionSheet
         target={mission?.target ?? null}
