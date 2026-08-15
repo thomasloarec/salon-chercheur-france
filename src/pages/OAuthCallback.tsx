@@ -102,15 +102,19 @@ export const OAuthCallback = () => {
 
         {status === 'success' && (
           <>
-            <CheckCircle2 className="mx-auto mb-4 h-12 w-12 text-green-600" />
+            {syncing ? (
+              <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-primary" />
+            ) : (
+              <CheckCircle2 className="mx-auto mb-4 h-12 w-12 text-green-600" />
+            )}
             <h1 className="heading-display text-2xl mb-2">{message}</h1>
-            {portalId && (
+            {portalId && !syncing && (
               <p className="text-sm text-muted-foreground mb-4">
                 Portail HubSpot n° {portalId}
               </p>
             )}
             <p className="text-sm text-muted-foreground">
-              Redirection vers Radar CRM…
+              {syncing ? 'Import de vos comptes HubSpot en cours…' : 'Redirection vers Radar CRM…'}
             </p>
           </>
         )}
