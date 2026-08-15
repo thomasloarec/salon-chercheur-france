@@ -88,31 +88,6 @@ const SimilarExhibitorsSection: React.FC<{
   const removeCard = (id: string) =>
     setItems((prev) => prev.filter((s) => s.id_exposant !== id));
 
-  const handleKeep = async (s: Suggestion) => {
-    if (busy[s.id_exposant]) return;
-    setBusy((b) => ({ ...b, [s.id_exposant]: true }));
-    removeCard(s.id_exposant); // optimiste
-    setRemaining((n) => Math.max(0, n - 1)); // décrément optimiste
-    try {
-      const { error } = await supabase.rpc('add_radar_company_from_exposant', {
-        p_id_exposant: s.id_exposant,
-        p_event_id: eventId,
-      });
-      if (error) throw error;
-      toast({
-        title: 'Ajouté à vos comptes en prospect froid',
-        description: 'Visible dans « À suivre » et sur ce salon.',
-      });
-      onKept?.();
-    } catch {
-      toast({ title: "Échec de l'ajout", variant: 'destructive' });
-      setItems((prev) => [s, ...prev]); // rollback
-      setRemaining((n) => n + 1); // rollback
-    } finally {
-      setBusy((b) => ({ ...b, [s.id_exposant]: false }));
-    }
-  };
-
   const handleIgnore = async (s: Suggestion) => {
     if (busy[s.id_exposant]) return;
     setBusy((b) => ({ ...b, [s.id_exposant]: true }));
