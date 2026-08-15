@@ -115,6 +115,8 @@ const RadarCrmPage: React.FC = () => {
   const resumedFromPendingRef = useRef(false);
 
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
+  const [connectOpen, setConnectOpen] = useState(false);
+  const [connectSource, setConnectSource] = useState<CrmSource | null>(null);
   // Après un import réussi : si l'espace de l'owner n'a pas encore de nom, on l'invite à le nommer.
   const [nameSpace, setNameSpace] = useState<{ accountId: string; importId: string } | null>(null);
   const [radarStatus, setRadarStatus] = useState<{
@@ -173,6 +175,16 @@ const RadarCrmPage: React.FC = () => {
     void trackRadarEvent('radar_page_viewed');
     void trackRadarEvent('radar_landing_viewed');
   }, []);
+
+  // Reprise après authentification : /radar-crm?connect=hubspot|csv
+  useEffect(() => {
+    if (authLoading || !user) return;
+    const source = new URLSearchParams(window.location.search).get('connect');
+    if (source === 'hubspot' || source === 'csv') {
+      setConnectSource(source);
+      setConnectOpen(true);
+    }
+  }, [authLoading, user]);
 
   const scrollToUpload = (source: string) => {
     void trackRadarEvent('radar_landing_cta_clicked', { source });
