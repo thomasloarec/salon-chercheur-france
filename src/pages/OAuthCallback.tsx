@@ -10,6 +10,7 @@ export const OAuthCallback = () => {
   const [message, setMessage] = useState('Finalisation de la connexion HubSpot...');
   const [stage, setStage] = useState<string | null>(null);
   const [portalId, setPortalId] = useState<number | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     const handleCallback = async () => {
