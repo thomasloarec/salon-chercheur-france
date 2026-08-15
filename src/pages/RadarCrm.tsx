@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/accordion';
 import AccessRequestDialog from '@/components/radar-crm/AccessRequestDialog';
 import {
-  Radar, ArrowRight, Upload, FileCheck2, Lock, CheckCircle2, Mail,
+  Radar, ArrowRight, Upload, FileCheck2, Lock, CheckCircle2, Mail, Loader2,
   Compass, AlertTriangle, Briefcase, Check, X, Target, Plug,
   Sparkles, Eye, Globe, ClipboardList, Users, MessageCircle, HelpCircle, ListChecks,
 } from 'lucide-react';
