@@ -804,24 +804,6 @@ const RadarCrmTerrainInner: React.FC = () => {
         onChangeRelationship={(next) => (mission ? setRel(mission.companyId, next) : undefined)}
         onOpenSettings={() => setSettingsOpen(true)}
       />
-        target={mission?.target ?? null}
-        open={!!mission}
-        mode="terrain"
-        visited={activeCompany ? getVisited(activeCompany) : false}
-        onToggleVisited={() => { if (activeCompany) void toggleVisited(activeCompany); }}
-        onOpenChange={(o) => {
-          if (!o) {
-            setMission(null);
-            // Rafraîchit les compteurs notes/tâches capturés dans le Sheet.
-            void load();
-            // Rafraîchit le badge « à valider » (une note peut avoir été validée dans le Sheet).
-            void refreshPending();
-          }
-        }}
-        relationship={activeCompany ? getRel(activeCompany) : DEFAULT_RELATIONSHIP}
-        onChangeRelationship={(next) => (mission ? setRel(mission.companyId, next) : undefined)}
-        onOpenSettings={() => setSettingsOpen(true)}
-      />
 
       <RadarCrmSettingsDialog
         open={settingsOpen}
