@@ -10774,6 +10774,14 @@ export type Database = {
         Returns: boolean
       }
       is_team_member: { Args: { _exhibitor_id: string }; Returns: boolean }
+      leadmagnet_example_companies: {
+        Args: { p_n?: number }
+        Returns: {
+          nb_upcoming: number
+          nom: string
+          secteur: string
+        }[]
+      }
       leadmagnet_search: {
         Args: { p_query: string; p_similar_limit?: number }
         Returns: Json

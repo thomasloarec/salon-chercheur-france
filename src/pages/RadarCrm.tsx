@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
@@ -713,6 +713,29 @@ const RadarCrmPage: React.FC = () => {
               <Upload className="h-4 w-4 mr-2 shrink-0" /> Analyser mon fichier CRM
             </Button>
           </div>
+        </div>
+      </section>
+
+      {/* Bannière de rattrapage vers le test sans import */}
+      <section className="max-w-4xl mx-auto px-4 pt-10">
+        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-foreground">
+              Pas encore prêt à importer vos données ?
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Testez gratuitement, sans rien connecter.
+            </p>
+          </div>
+          <Link to="/directeur-commercial">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-full border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+            >
+              Tester sans importer
+            </Button>
+          </Link>
         </div>
       </section>
 
