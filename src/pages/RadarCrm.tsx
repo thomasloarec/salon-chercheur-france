@@ -854,23 +854,53 @@ const RadarCrmPage: React.FC = () => {
               )}
               {crmConnectionsLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden="true" />
+              ) : hubspotConnection ? (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                  <Button
+                    type="button"
+                    onClick={handleSyncHubSpot}
+                    disabled={syncingHubSpot}
+                    className="w-full sm:w-auto rounded-full"
+                  >
+                    {syncingHubSpot ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden="true" />
+                        Synchronisation en cours…
+                      </>
+                    ) : (
+                      <>
+                        <Plug className="h-4 w-4 mr-2" />
+                        Synchroniser mes comptes HubSpot
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleConnectHubSpot}
+                    disabled={hubspotLoading}
+                    variant="outline"
+                    className="w-full sm:w-auto rounded-full"
+                  >
+                    {hubspotLoading ? (
+                      <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" aria-hidden="true" />
+                    ) : (
+                      <Plug className="h-4 w-4 mr-2" />
+                    )}
+                    Reconnecter
+                  </Button>
+                </div>
               ) : (
                 <Button
                   type="button"
                   onClick={handleConnectHubSpot}
                   disabled={hubspotLoading}
-                  variant={hubspotConnection ? 'outline' : 'default'}
+                  variant="default"
                   className="w-full sm:w-auto rounded-full"
                 >
                   {hubspotLoading ? (
                     <>
                       <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" aria-hidden="true" />
                       Connexion à HubSpot…
-                    </>
-                  ) : hubspotConnection ? (
-                    <>
-                      <Plug className="h-4 w-4 mr-2" />
-                      Reconnecter
                     </>
                   ) : (
                     <>
