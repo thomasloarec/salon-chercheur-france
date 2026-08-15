@@ -127,6 +127,7 @@ const RadarCrmPage: React.FC = () => {
 
   // HubSpot OAuth (flux sécurisé via l'Edge Function oauth-hubspot)
   const [hubspotLoading, setHubspotLoading] = useState(false);
+  const [syncingHubSpot, setSyncingHubSpot] = useState(false);
   const [hubspotError, setHubspotError] = useState<string | null>(null);
   const { connectionsData, loading: crmConnectionsLoading } = useCrmConnections();
   const hubspotConnection = useMemo(
@@ -275,6 +276,39 @@ const RadarCrmPage: React.FC = () => {
       setHubspotLoading(false);
     }
   };
+
+  const handleSyncHubSpot = async () => {
+    if (!hubspotConnection) return;
+    setSyncingHubSpot(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-hubspot');
+      if (error) throw error;
+      if (data?.success) {
+        toast({
+          title: 'Synchronisation terminée',
+          description: `${data.companies} entreprise(s) importée(s), ${data.matched} présente(s) sur des salons à venir.`,
+        });
+        void queryClient.invalidateQueries({ queryKey: ['crm-matches'] });
+        void queryClient.invalidateQueries({ queryKey: ['crm-event-matches'] });
+        void queryClient.invalidateQueries({ queryKey: ['crm-latest-import-companies'] });
+      } else {
+        toast({
+          title: 'Échec de la synchronisation',
+          description: `${data?.stage ?? ''} — ${data?.message ?? 'Erreur inconnue'}`,
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Échec de la synchronisation',
+        description: err instanceof Error ? err.message : 'Erreur inconnue',
+        variant: 'destructive',
+      });
+    } finally {
+      setSyncingHubSpot(false);
+    }
+  };
+
 
   const handleSubmit = async () => {
     if (!parsed || !user) return;
@@ -820,23 +854,53 @@ const RadarCrmPage: React.FC = () => {
               )}
               {crmConnectionsLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden="true" />
+              ) : hubspotConnection ? (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                  <Button
+                    type="button"
+                    onClick={handleSyncHubSpot}
+                    disabled={syncingHubSpot}
+                    className="w-full sm:w-auto rounded-full"
+                  >
+                    {syncingHubSpot ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden="true" />
+                        Synchronisation en cours…
+                      </>
+                    ) : (
+                      <>
+                        <Plug className="h-4 w-4 mr-2" />
+                        Synchroniser mes comptes HubSpot
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleConnectHubSpot}
+                    disabled={hubspotLoading}
+                    variant="outline"
+                    className="w-full sm:w-auto rounded-full"
+                  >
+                    {hubspotLoading ? (
+                      <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" aria-hidden="true" />
+                    ) : (
+                      <Plug className="h-4 w-4 mr-2" />
+                    )}
+                    Reconnecter
+                  </Button>
+                </div>
               ) : (
                 <Button
                   type="button"
                   onClick={handleConnectHubSpot}
                   disabled={hubspotLoading}
-                  variant={hubspotConnection ? 'outline' : 'default'}
+                  variant="default"
                   className="w-full sm:w-auto rounded-full"
                 >
                   {hubspotLoading ? (
                     <>
                       <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" aria-hidden="true" />
                       Connexion à HubSpot…
-                    </>
-                  ) : hubspotConnection ? (
-                    <>
-                      <Plug className="h-4 w-4 mr-2" />
-                      Reconnecter
                     </>
                   ) : (
                     <>
