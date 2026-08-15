@@ -854,6 +854,16 @@ const RadarCrmPage: React.FC = () => {
 
       {/* Zone d'import réelle (upload + mapping + auth-gate) — logique inchangée */}
       <section id="radar-upload" className="max-w-4xl mx-auto px-4 py-10 scroll-mt-24">
+        <ConnectCrmDialog
+          open={connectOpen}
+          onOpenChange={(v) => {
+            setConnectOpen(v);
+            if (!v) setConnectSource(null);
+          }}
+          onCsvParsed={onParsed}
+          initialSource={connectSource}
+          redirectPath="/radar-crm"
+        />
         <div className="mb-5 flex justify-center">
           <CrmSecurityBadge size="sm" />
         </div>
