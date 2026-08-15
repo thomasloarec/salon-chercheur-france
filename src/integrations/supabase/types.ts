@@ -10606,6 +10606,17 @@ export type Database = {
           value: string
         }[]
       }
+      get_my_crm_connections: {
+        Args: never
+        Returns: {
+          connected_at: string
+          email_from_crm: string
+          expires_at: string
+          portal_id: number
+          provider: string
+          status: string
+        }[]
+      }
       get_my_exhibitor_alert_status: {
         Args: { p_public_slug: string }
         Returns: Json

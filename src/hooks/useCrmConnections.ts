@@ -8,6 +8,15 @@ type CrmConnectionStatus = {
   [K in CrmProvider]?: boolean;
 };
 
+interface CrmConnectionData {
+  provider: string;
+  portal_id: number | null;
+  status: string;
+  email_from_crm: string;
+  connected_at: string;
+  expires_at: string;
+}
+
 interface ClaimData {
   claim_token: string;
   expires_at: string;
@@ -16,78 +25,67 @@ interface ClaimData {
 
 export const useCrmConnections = () => {
   const [connections, setConnections] = useState<CrmConnectionStatus>({});
+  const [connectionsData, setConnectionsData] = useState<CrmConnectionData[]>([]);
   const [loading, setLoading] = useState(false);
   const [claimData, setClaimData] = useState<ClaimData | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Récupérer les connexions existantes via le proxy
+  // Récupérer les connexions existantes via la RPC
   const fetchConnections = async () => {
-    // Si l'utilisateur n'est pas connecté, ne pas faire d'appel
     if (!user) {
       setConnections({});
+      setConnectionsData([]);
       return;
     }
 
+    setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('crm-connections-proxy', {
-        body: { action: 'list_connections' }
-      });
-      
+      const { data, error } = await supabase.rpc('get_my_crm_connections');
+
       if (error) {
-        console.error('❌ useCrmConnections: Erreur proxy:', error);
-        
-        // Gestion des erreurs avec codes spécifiques
-        if (error.message?.includes('401') || 
-            (error.context && error.context.code === 'SESSION_INVALID')) {
-          toast({
-            title: "Session expirée",
-            description: "Ta session a expiré. Reconnecte-toi.",
-            variant: "destructive"
-          });
-        } else if (error.context && error.context.code === 'AWS_PROXY_ERROR') {
-          toast({
-            title: "Erreur backend", 
-            description: "Lecture des connexions refusée (403). Vérifier CORS/API key/Authorization sur l'API Gateway.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Erreur de lecture",
-            description: "Impossible de récupérer tes connexions CRM.",
-            variant: "destructive"
-          });
-        }
-        
+        console.error('❌ useCrmConnections: Erreur RPC:', error);
+        toast({
+          title: "Erreur de lecture",
+          description: "Impossible de récupérer tes connexions CRM.",
+          variant: "destructive"
+        });
         setConnections({});
+        setConnectionsData([]);
         return;
       }
-      
+
       const status: CrmConnectionStatus = {};
+      const rows: CrmConnectionData[] = [];
+
       if (data && Array.isArray(data)) {
         data.forEach((conn: any) => {
-          status[conn.provider as CrmProvider] = true;
+          const provider = conn.provider as CrmProvider;
+          status[provider] = conn.status === 'active';
+          rows.push({
+            provider: conn.provider,
+            portal_id: conn.portal_id ?? null,
+            status: conn.status,
+            email_from_crm: conn.email_from_crm ?? '',
+            connected_at: conn.connected_at ?? '',
+            expires_at: conn.expires_at ?? '',
+          });
         });
       }
+
       setConnections(status);
+      setConnectionsData(rows);
     } catch (error) {
       console.error('❌ useCrmConnections: Erreur inattendue:', error);
-      
-      if (String(error).includes('403')) {
-        toast({
-          title: "Erreur d'accès",
-          description: "Lecture des connexions refusée (403). Vérifier CORS/API key/Authorization sur l'API Gateway.",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Erreur réseau",
-          description: "Impossible de contacter le serveur.",
-          variant: "destructive"
-        });
-      }
-      
+      toast({
+        title: "Erreur réseau",
+        description: "Impossible de contacter le serveur.",
+        variant: "destructive"
+      });
       setConnections({});
+      setConnectionsData([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -306,26 +304,6 @@ export const useCrmConnections = () => {
     setClaimData(null);
   };
 
-  // Ajouter une méthode pour tester le proxy ping
-  const testProxyPing = async () => {
-    try {
-      console.log('🏓 Test ping proxy...');
-      const { data, error } = await supabase.functions.invoke('crm-connections-proxy', {
-        body: { ping: 'ok' }
-      });
-      
-      if (error) {
-        console.error('❌ Ping proxy failed:', error);
-        return { success: false, error: error.message };
-      }
-      
-      console.log('✅ Ping proxy success:', data);
-      return { success: true, data };
-    } catch (error) {
-      console.error('❌ Ping proxy unexpected error:', error);
-      return { success: false, error: String(error) };
-    }
-  };
   // Déconnecter un CRM
   const disconnectCrm = async (provider: CrmProvider) => {
     if (!user) return;
@@ -338,6 +316,11 @@ export const useCrmConnections = () => {
 
     if (!error) {
       setConnections(prev => ({ ...prev, [provider]: false }));
+      setConnectionsData(prev =>
+        prev.map(c =>
+          c.provider === provider ? { ...c, status: 'revoked' } : c
+        )
+      );
       toast({
         title: "Déconnexion réussie",
         description: `${provider} a été déconnecté.`,
@@ -351,13 +334,13 @@ export const useCrmConnections = () => {
 
   return {
     connections,
+    connectionsData,
     loading,
     claimData,
     connectCrm,
     disconnectCrm,
     claimConnection,
     clearClaimData,
-    testProxyPing,
     refreshConnections: fetchConnections
   };
 };
