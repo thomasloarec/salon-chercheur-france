@@ -90,7 +90,7 @@ const FAQ_ITEMS: { q: string; a: string }[] = [
   },
   {
     q: 'Puis-je connecter HubSpot ou Salesforce ?',
-    a: 'Bientôt. Les connexions natives (HubSpot, Salesforce, Pipedrive, Zoho) arriveront pour automatiser l\u2019analyse. Le CSV/Excel fonctionne déjà aujourd\u2019hui.',
+    a: 'HubSpot est disponible dès maintenant. Salesforce, Pipedrive et Zoho arrivent bientôt. Le CSV/Excel fonctionne également aujourd\u2019hui.',
   },
 ];
 
@@ -722,7 +722,7 @@ const RadarCrmPage: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <ConnectorBadge name="CSV / Excel" status="Disponible" available />
-            <ConnectorBadge name="HubSpot" status="Bientôt" />
+            <ConnectorBadge name="HubSpot" status="Disponible" available />
             <ConnectorBadge name="Salesforce" status="Bientôt" />
             <ConnectorBadge name="Pipedrive" status="Bientôt" />
             <ConnectorBadge name="Zoho CRM" status="Bientôt" />
