@@ -302,6 +302,13 @@ const AdminOverview = () => {
               subtitle="Voir le suivi des leads →"
             />
           </Link>
+          <Link to="/admin/radar-leads" className="block transition-opacity hover:opacity-80">
+            <MetricCard
+              title="Leads commerciaux"
+              value={radarLeadsLoading ? '…' : fmt(radarLeadsCount)}
+              subtitle="Voir les demandes Directeur Commercial →"
+            />
+          </Link>
         </div>
       </section>
 
