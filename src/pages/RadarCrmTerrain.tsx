@@ -785,38 +785,25 @@ const RadarCrmTerrainInner: React.FC = () => {
         )}
       </main>
 
-      {/* FAB compact — ajouter une entreprise rencontrée (atteignable au pouce) */}
-      {!loading && !error && eventId && (
-        <Button
-          type="button"
-          size="icon"
-          onClick={() => setAddOpen(true)}
-          aria-label="Ajouter une entreprise"
-          className="fixed bottom-5 right-5 z-40 h-14 w-14 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
-        >
-          <span className="relative inline-flex items-center justify-center">
-            <Building2 className="h-6 w-6" />
-            <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary-foreground text-primary">
-              <Plus className="h-3 w-3" strokeWidth={3} />
-            </span>
-          </span>
-        </Button>
-      )}
-
-      {eventId && (
-        <RadarTerrainAddCompanySheet
-          open={addOpen}
-          onOpenChange={setAddOpen}
-          eventId={eventId}
-          onAddedCompany={(id, name) => {
-            void load();
-            openMissionById(id, name);
-          }}
-          onOpenExisting={(id, name) => openMissionById(id, name)}
-        />
-      )}
-
       <RadarMissionSheet
+        target={mission?.target ?? null}
+        open={!!mission}
+        mode="terrain"
+        visited={activeCompany ? getVisited(activeCompany) : false}
+        onToggleVisited={() => { if (activeCompany) void toggleVisited(activeCompany); }}
+        onOpenChange={(o) => {
+          if (!o) {
+            setMission(null);
+            // Rafraîchit les compteurs notes/tâches capturés dans le Sheet.
+            void load();
+            // Rafraîchit le badge « à valider » (une note peut avoir été validée dans le Sheet).
+            void refreshPending();
+          }
+        }}
+        relationship={activeCompany ? getRel(activeCompany) : DEFAULT_RELATIONSHIP}
+        onChangeRelationship={(next) => (mission ? setRel(mission.companyId, next) : undefined)}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
         target={mission?.target ?? null}
         open={!!mission}
         mode="terrain"
