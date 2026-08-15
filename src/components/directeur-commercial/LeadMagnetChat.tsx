@@ -213,6 +213,21 @@ const LeadMagnetChat = ({ onSearched }: Props) => {
   const [examples, setExamples] = useState<string[]>([]);
   const counter = useRef(0);
 
+  const loadExamples = async () => {
+    try {
+      const { data } = await supabase.rpc('leadmagnet_example_companies', { p_n: 3 });
+      if (data && data.length) {
+        setExamples((data as ExampleRow[]).map((d) => d.nom));
+      }
+    } catch {
+      // Silencieux : la rangée de puces disparaît simplement en cas d'erreur.
+    }
+  };
+
+  useEffect(() => {
+    loadExamples();
+  }, []);
+
   const run = async (raw: string) => {
     const query = raw.trim();
     if (!query || loading) return;
@@ -283,8 +298,8 @@ const LeadMagnetChat = ({ onSearched }: Props) => {
         </Button>
       </form>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        {EXAMPLES.map((ex) => (
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {examples.map((ex) => (
           <button
             key={ex}
             type="button"
@@ -295,6 +310,17 @@ const LeadMagnetChat = ({ onSearched }: Props) => {
             {ex}
           </button>
         ))}
+        {examples.length > 0 && (
+          <button
+            type="button"
+            onClick={loadExamples}
+            disabled={loading}
+            className="inline-flex items-center gap-1 rounded-full border border-transparent px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:text-primary disabled:opacity-50"
+            aria-label="Autres exemples"
+          >
+            <RefreshCcw className="h-3 w-3" /> Autres exemples
+          </button>
+        )}
       </div>
 
       {(bubbles.length > 0 || loading) && (

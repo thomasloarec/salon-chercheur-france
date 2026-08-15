@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Menu, X, Calendar, Search, Users, Settings, LogOut, Radar, Sparkles, Lightbulb } from 'lucide-react';
+import { Menu, X, Calendar, Search, Users, Settings, LogOut, Radar, Sparkles, Lightbulb, Target } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useAdminPendingCounts } from '@/hooks/useAdminPendingCounts';
@@ -20,6 +20,7 @@ import { LotexpoWordmark } from '@/components/LotexpoWordmark';
 const FEATURE_ITEMS = [
   { to: '/recherche-ia', label: 'Recherche IA', icon: Sparkles, description: 'Trouvez le bon salon avec l’IA' },
   { to: '/radar-crm', label: 'Radar CRM', icon: Radar, description: 'Suivez vos comptes sur les salons' },
+  { to: '/directeur-commercial', label: 'Directeurs commerciaux', icon: Target, description: 'Testez la prospection salon sans importer vos données' },
   { to: '/nouveautes', label: 'Nouveautés', icon: Calendar, description: 'Les dernières innovations exposées' },
 ];
 
