@@ -917,7 +917,6 @@ const RadarCrmResults: React.FC = () => {
                             onModeSalon={() => enterTerrain(g.event_id)}
                             onDebrief={() => navigate(`/radar-crm/debrief/${g.event_id}`)}
                             similarCount={similarCounts?.[g.event_id] ?? 0}
-                            onSimilarKept={() => { void refreshCockpit(); }}
                             onCompanyClick={(c, id_exposant, stand, nom_exposant, needs_review) =>
                               onOpenMission(c, stand, g, nom_exposant)}
                           />
