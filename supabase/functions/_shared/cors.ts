@@ -49,3 +49,15 @@ export function handleCors(req: Request) {
   }
   return { headers };
 }
+
+/**
+ * Alias utilisés par certaines fonctions (oauth-hubspot, oauth-hubspot-callback).
+ * corsHeaders(req) renvoie l'objet d'en-têtes CORS ; handleOptions(req) renvoie une réponse 204 de preflight.
+ */
+export function corsHeaders(req: Request) {
+  return buildCorsHeaders(req.headers.get("Origin"));
+}
+
+export function handleOptions(req: Request) {
+  return new Response(null, { status: 204, headers: buildCorsHeaders(req.headers.get("Origin")) });
+}
