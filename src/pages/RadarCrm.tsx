@@ -245,9 +245,10 @@ const RadarCrmPage: React.FC = () => {
         window.location.href = data.installUrl;
         return;
       }
-      // La fonction a refusé ou un secret est manquant : on affiche le stage
-      const stage = data?.stage || 'unknown';
-      const message = data?.error || data?.message || 'Réponse inattendue du serveur';
+      // La fonction peut renvoyer soit { code, message } soit { stage, error, message }.
+      // On affiche l'identifiant d'étape (stage/code) pour diagnostiquer le secret manquant.
+      const stage = data?.stage || data?.code || 'unknown';
+      const message = data?.message || data?.error || 'Réponse inattendue du serveur';
       setHubspotError(`Échec : ${stage} — ${message}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erreur inconnue';
