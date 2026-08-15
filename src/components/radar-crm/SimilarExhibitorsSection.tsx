@@ -25,20 +25,18 @@ const PAGE_SIZE = 5;
 
 /**
  * « Découvrir d'autres exposants à potentiel » — section repliée par défaut,
- * chargement paresseux (RPC appelée seulement à l'ouverture). Façon Spotify :
- * petit lot, on garde/écarte, on en redemande.
+ * chargement paresseux (RPC appelée seulement à l'ouverture). Lecture seule :
+ * l'ajout manuel d'entreprise au Radar CRM est désactivé ; seul l'écarterment
+ * reste possible pour ne plus proposer une suggestion.
  *
- * Front only : réutilise les 3 RPC existantes
+ * Front only : réutilise 2 RPC existantes
  *  - get_radar_salon_similar (lecture)
- *  - add_radar_company_from_exposant (garder)
  *  - set_radar_exposant_ignored (écarter)
  */
 const SimilarExhibitorsSection: React.FC<{
   eventId: string;
   initialCount?: number;
-  /** Appelé après un « Garder » réussi pour rafraîchir le cockpit (get_my_radar_view). */
-  onKept?: () => void;
-}> = ({ eventId, initialCount = 0, onKept }) => {
+}> = ({ eventId, initialCount = 0 }) => {
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
