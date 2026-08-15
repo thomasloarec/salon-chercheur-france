@@ -186,15 +186,6 @@ const SimilarExhibitorsSection: React.FC<{
                 <div className="mt-3 flex items-center gap-2">
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="h-9 border-primary/60 bg-primary/[0.06] text-foreground hover:bg-primary/10"
-                    disabled={busy[s.id_exposant]}
-                    onClick={() => handleKeep(s)}
-                  >
-                    <Plus className="h-4 w-4 mr-1" /> Garder
-                  </Button>
-                  <Button
-                    size="sm"
                     variant="ghost"
                     className="h-9 text-muted-foreground hover:text-foreground"
                     disabled={busy[s.id_exposant]}
