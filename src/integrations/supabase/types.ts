@@ -1734,7 +1734,7 @@ export type Database = {
           created_at: string | null
           crm_status: string | null
           id: string
-          import_id: string | null
+          import_id: string
           is_monitored: boolean | null
           normalized_domain: string | null
           notes: string | null
@@ -1750,7 +1750,7 @@ export type Database = {
           created_at?: string | null
           crm_status?: string | null
           id?: string
-          import_id?: string | null
+          import_id: string
           is_monitored?: boolean | null
           normalized_domain?: string | null
           notes?: string | null
@@ -1766,7 +1766,7 @@ export type Database = {
           created_at?: string | null
           crm_status?: string | null
           id?: string
-          import_id?: string | null
+          import_id?: string
           is_monitored?: boolean | null
           normalized_domain?: string | null
           notes?: string | null
