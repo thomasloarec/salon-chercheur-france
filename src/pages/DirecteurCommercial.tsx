@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Lock,
   PlugZap,
   Radar,
   Sparkles,
@@ -15,6 +14,7 @@ import { MotionConfig, motion } from 'framer-motion';
 import MainLayout from '@/components/layout/MainLayout';
 import LeadMagnetChat from '@/components/directeur-commercial/LeadMagnetChat';
 import QualificationDialog from '@/components/directeur-commercial/QualificationDialog';
+import CrmSecurityBadge from '@/components/CrmSecurityBadge';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -214,10 +214,7 @@ const DirecteurCommercial = () => {
         </p>
         <div className="mt-6 flex flex-wrap items-center gap-4">
           <QualificationDialog lastSearchedCompany={lastSearchedCompany} />
-          {/* PLACEHOLDER — à remplacer par le badge officiel « CRM sécurisé » (Lot 3) */}
-          <span className="inline-flex items-center gap-2 text-xs text-white/70">
-            <Lock className="h-4 w-4" /> Vos données CRM sont protégées.
-          </span>
+          <CrmSecurityBadge variant="dark" />
         </div>
       </motion.section>
     </MainLayout>
