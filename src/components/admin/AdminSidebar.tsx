@@ -31,6 +31,7 @@ import {
   Radar,
   Inbox,
   Megaphone,
+  Users,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAdminPendingCounts } from '@/hooks/useAdminPendingCounts';
