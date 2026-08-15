@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 const FIELDS: { key: string; label: string; options: string[] }[] = [
-  { key: 'crm', label: 'CRM utilisé', options: ['HubSpot', 'Salesforce', 'Pipedrive', 'Autre', 'Aucun'] },
+  { key: 'crm', label: 'CRM utilisé', options: ['HubSpot', 'Salesforce', 'Pipedrive', 'Zoho', 'Autre', 'Aucun'] },
   { key: 'team_size', label: 'Nombre de commerciaux', options: ['1 à 3', '4 à 10', '11 à 30', 'Plus de 30'] },
   { key: 'client_type', label: 'Type de clientèle', options: ['Mono-produit', 'Gamme variée'] },
   { key: 'product_type', label: "Ce que vend l'équipe", options: ['Produits', 'Services', 'Les deux'] },
@@ -32,16 +32,38 @@ const FIELDS: { key: string; label: string; options: string[] }[] = [
 
 interface Props {
   lastSearchedCompany: string | null;
+  defaultCrm?: string;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
+  hideTrigger?: boolean;
 }
 
-const QualificationDialog = ({ lastSearchedCompany }: Props) => {
-  const [open, setOpen] = useState(false);
+const QualificationDialog = ({
+  lastSearchedCompany,
+  defaultCrm,
+  open: openProp,
+  onOpenChange,
+  hideTrigger,
+}: Props) => {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp : internalOpen;
+  const setOpen = (v: boolean) => {
+    if (!isControlled) setInternalOpen(v);
+    onOpenChange?.(v);
+  };
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
   const [values, setValues] = useState<Record<string, string>>({});
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (open && defaultCrm) {
+      setValues((prev) => ({ ...prev, crm: defaultCrm }));
+    }
+  }, [open, defaultCrm]);
 
   const submit = async () => {
     setSending(true);
@@ -70,11 +92,13 @@ const QualificationDialog = ({ lastSearchedCompany }: Props) => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="lg" className="rounded-full px-7">
-          Équiper mon équipe
-        </Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button size="lg" className="rounded-full px-7">
+            Équiper mon équipe
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         {done ? (
           <div className="py-8 text-center">

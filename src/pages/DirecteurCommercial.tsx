@@ -13,7 +13,8 @@ import {
 import { MotionConfig, motion } from 'framer-motion';
 import MainLayout from '@/components/layout/MainLayout';
 import LeadMagnetChat from '@/components/directeur-commercial/LeadMagnetChat';
-import QualificationDialog from '@/components/directeur-commercial/QualificationDialog';
+import ConnectCrmDialog from '@/components/crm/ConnectCrmDialog';
+import { Button } from '@/components/ui/button';
 import CrmSecurityBadge from '@/components/CrmSecurityBadge';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -72,6 +73,7 @@ const BENEFITS = [
 
 const DirecteurCommercial = () => {
   const [lastSearchedCompany, setLastSearchedCompany] = useState<string | null>(null);
+  const [connectOpen, setConnectOpen] = useState(false);
 
   return (
     <MotionConfig reducedMotion="user">
@@ -213,9 +215,16 @@ const DirecteurCommercial = () => {
           d'import Excel.
         </p>
         <div className="mt-6 flex flex-wrap items-center gap-4">
-          <QualificationDialog lastSearchedCompany={lastSearchedCompany} />
+          <Button size="lg" className="rounded-full px-7" onClick={() => setConnectOpen(true)}>
+            Équiper mon équipe
+          </Button>
           <CrmSecurityBadge variant="dark" />
         </div>
+        <ConnectCrmDialog
+          open={connectOpen}
+          onOpenChange={setConnectOpen}
+          redirectPath="/directeur-commercial"
+        />
       </motion.section>
     </MainLayout>
     </MotionConfig>

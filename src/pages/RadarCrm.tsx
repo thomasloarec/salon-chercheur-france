@@ -24,7 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { queryClient } from '@/lib/queryClient';
 import { toast } from '@/hooks/use-toast';
 import { useCrmConnections } from '@/hooks/useCrmConnections';
-import RadarCsvUploader from '@/components/radar-crm/RadarCsvUploader';
+import ConnectCrmDialog, { type CrmSource } from '@/components/crm/ConnectCrmDialog';
 import CrmSecurityBadge from '@/components/CrmSecurityBadge';
 import RadarSpaceNameDialog from '@/components/radar-crm/RadarSpaceNameDialog';
 import type { CrmSourceType } from '@/lib/radarCrm/parseFile';
@@ -90,7 +90,7 @@ const FAQ_ITEMS: { q: string; a: string }[] = [
   },
   {
     q: 'Puis-je connecter HubSpot ou Salesforce ?',
-    a: 'Bientôt. Les connexions natives (HubSpot, Salesforce, Pipedrive, Zoho) arriveront pour automatiser l\u2019analyse. Le CSV/Excel fonctionne déjà aujourd\u2019hui.',
+    a: 'HubSpot est disponible dès maintenant. Salesforce, Pipedrive et Zoho arrivent bientôt. Le CSV/Excel fonctionne également aujourd\u2019hui.',
   },
 ];
 
@@ -115,6 +115,8 @@ const RadarCrmPage: React.FC = () => {
   const resumedFromPendingRef = useRef(false);
 
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
+  const [connectOpen, setConnectOpen] = useState(false);
+  const [connectSource, setConnectSource] = useState<CrmSource | null>(null);
   // Après un import réussi : si l'espace de l'owner n'a pas encore de nom, on l'invite à le nommer.
   const [nameSpace, setNameSpace] = useState<{ accountId: string; importId: string } | null>(null);
   const [radarStatus, setRadarStatus] = useState<{
@@ -173,6 +175,16 @@ const RadarCrmPage: React.FC = () => {
     void trackRadarEvent('radar_page_viewed');
     void trackRadarEvent('radar_landing_viewed');
   }, []);
+
+  // Reprise après authentification : /radar-crm?connect=hubspot|csv
+  useEffect(() => {
+    if (authLoading || !user) return;
+    const source = new URLSearchParams(window.location.search).get('connect');
+    if (source === 'hubspot' || source === 'csv') {
+      setConnectSource(source);
+      setConnectOpen(true);
+    }
+  }, [authLoading, user]);
 
   const scrollToUpload = (source: string) => {
     void trackRadarEvent('radar_landing_cta_clicked', { source });
@@ -719,10 +731,18 @@ const RadarCrmPage: React.FC = () => {
               Le CSV/Excel fonctionne dès maintenant. Les connexions natives arrivent pour automatiser
               l’analyse.
             </p>
+            <Button
+              size="lg"
+              className="mt-5 h-auto whitespace-normal rounded-full py-3 text-center"
+              onClick={() => setConnectOpen(true)}
+            >
+              <Plug className="mr-2 h-4 w-4 shrink-0" />
+              Connecter votre CRM ou importer vos comptes
+            </Button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <ConnectorBadge name="CSV / Excel" status="Disponible" available />
-            <ConnectorBadge name="HubSpot" status="Bientôt" />
+            <ConnectorBadge name="HubSpot" status="Disponible" available />
             <ConnectorBadge name="Salesforce" status="Bientôt" />
             <ConnectorBadge name="Pipedrive" status="Bientôt" />
             <ConnectorBadge name="Zoho CRM" status="Bientôt" />
@@ -833,6 +853,16 @@ const RadarCrmPage: React.FC = () => {
 
       {/* Zone d'import réelle (upload + mapping + auth-gate) — logique inchangée */}
       <section id="radar-upload" className="max-w-4xl mx-auto px-4 py-10 scroll-mt-24">
+        <ConnectCrmDialog
+          open={connectOpen}
+          onOpenChange={(v) => {
+            setConnectOpen(v);
+            if (!v) setConnectSource(null);
+          }}
+          onCsvParsed={onParsed}
+          initialSource={connectSource}
+          redirectPath="/radar-crm"
+        />
         <div className="mb-5 flex justify-center">
           <CrmSecurityBadge size="sm" />
         </div>
@@ -859,7 +889,14 @@ const RadarCrmPage: React.FC = () => {
                   et sert uniquement à détecter les correspondances avec les exposants référencés sur Lotexpo.
                 </p>
               </div>
-              <RadarCsvUploader onParsed={onParsed} />
+              <Button
+                size="lg"
+                className="mx-auto flex h-auto whitespace-normal rounded-full py-3 text-center"
+                onClick={() => setConnectOpen(true)}
+              >
+                <Plug className="mr-2 h-4 w-4 shrink-0" />
+                Connecter votre CRM ou importer vos comptes
+              </Button>
             </CardContent>
           </Card>
         )}
