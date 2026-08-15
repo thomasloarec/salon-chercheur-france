@@ -231,6 +231,38 @@ const RadarCrmPage: React.FC = () => {
     navigate(`/auth?redirect=${encodeURIComponent('/radar-crm')}${mode === 'signup' ? '&mode=signup' : ''}`);
   };
 
+  const handleConnectHubSpot = async () => {
+    if (!user) {
+      void trackRadarEvent('hubspot_connect_auth_required');
+      navigate(`/auth?redirect=${encodeURIComponent('/radar-crm')}`);
+      return;
+    }
+    setHubspotLoading(true);
+    setHubspotError(null);
+    void trackRadarEvent('hubspot_connect_started');
+    try {
+      const { data, error } = await supabase.functions.invoke('oauth-hubspot');
+      if (error) throw error;
+      if (data?.installUrl && typeof data.installUrl === 'string') {
+        void trackRadarEvent('hubspot_connect_redirect', { stage: data?.stage });
+        window.location.href = data.installUrl;
+        return;
+      }
+      // La fonction a refusé ou un secret est manquant : on affiche le stage
+      const stage = data?.stage || 'unknown';
+      const message = data?.error || data?.message || 'Réponse inattendue du serveur';
+      const fullError = `Échec : ${stage} — ${message}`;
+      setHubspotError(fullError);
+      void trackRadarEvent('hubspot_connect_error', { stage, message });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erreur inconnue';
+      setHubspotError(`Échec : ${msg}`);
+      void trackRadarEvent('hubspot_connect_error', { stage: 'exception', message: msg });
+    } finally {
+      setHubspotLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!parsed || !user) return;
     if (missingRequired.length > 0) {
