@@ -16,7 +16,7 @@ import {
 import AccessRequestDialog from '@/components/radar-crm/AccessRequestDialog';
 import {
   Radar, ArrowRight, Upload, FileCheck2, Lock, CheckCircle2, Mail,
-  Compass, AlertTriangle, Briefcase, Check, X, Target,
+  Compass, AlertTriangle, Briefcase, Check, X, Target, Plug,
   Sparkles, Eye, Globe, ClipboardList, Users, MessageCircle, HelpCircle, ListChecks,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -122,6 +122,10 @@ const RadarCrmPage: React.FC = () => {
     loaded: boolean;
   }>({ status: 'none', has_access: false, loaded: false });
 
+  // HubSpot OAuth (flux sécurisé via l'Edge Function oauth-hubspot)
+  const [hubspotLoading, setHubspotLoading] = useState(false);
+  const [hubspotError, setHubspotError] = useState<string | null>(null);
+
   const isRadarLocked = useMemo(() => {
     const lockedStatuses = ['trial_expired', 'free'];
     return radarStatus.loaded && lockedStatuses.includes(radarStatus.status);
@@ -225,6 +229,33 @@ const RadarCrmPage: React.FC = () => {
     void trackRadarEvent(mode === 'login' ? 'login_started_from_radar' : 'signup_started_from_radar');
     void trackRadarEvent('auth_required_shown');
     navigate(`/auth?redirect=${encodeURIComponent('/radar-crm')}${mode === 'signup' ? '&mode=signup' : ''}`);
+  };
+
+  const handleConnectHubSpot = async () => {
+    if (!user) {
+      navigate(`/auth?redirect=${encodeURIComponent('/radar-crm')}`);
+      return;
+    }
+    setHubspotLoading(true);
+    setHubspotError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('oauth-hubspot');
+      if (error) throw error;
+      if (data?.installUrl && typeof data.installUrl === 'string') {
+        window.location.href = data.installUrl;
+        return;
+      }
+      // La fonction peut renvoyer soit { code, message } soit { stage, error, message }.
+      // On affiche l'identifiant d'étape (stage/code) pour diagnostiquer le secret manquant.
+      const stage = data?.stage || data?.code || 'unknown';
+      const message = data?.message || data?.error || 'Réponse inattendue du serveur';
+      setHubspotError(`Échec : ${stage} — ${message}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erreur inconnue';
+      setHubspotError(`Échec : ${msg}`);
+    } finally {
+      setHubspotLoading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -739,6 +770,48 @@ const RadarCrmPage: React.FC = () => {
           </Link>
         </div>
       </section>
+
+      {/* Connecteur HubSpot (flux sécurisé via oauth-hubspot) — utilisateur authentifié uniquement */}
+      {user && (
+        <section className="max-w-4xl mx-auto px-4 pt-6">
+          <div className="rounded-2xl border border-border bg-card p-4 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1 min-w-0">
+              <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Plug className="h-4 w-4 text-primary" />
+                Connecter HubSpot
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Importez automatiquement vos comptes depuis HubSpot. Les tokens restent chiffrés et vous pouvez les révoquer à tout moment.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+              {hubspotError && (
+                <p className="text-sm text-destructive max-w-[300px]" aria-live="assertive">
+                  {hubspotError}
+                </p>
+              )}
+              <Button
+                type="button"
+                onClick={handleConnectHubSpot}
+                disabled={hubspotLoading}
+                className="w-full sm:w-auto rounded-full"
+              >
+                {hubspotLoading ? (
+                  <>
+                    <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" aria-hidden="true" />
+                    Connexion à HubSpot…
+                  </>
+                ) : (
+                  <>
+                    <Plug className="h-4 w-4 mr-2" />
+                    Connecter HubSpot
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Zone d'import réelle (upload + mapping + auth-gate) — logique inchangée */}
       <section id="radar-upload" className="max-w-4xl mx-auto px-4 py-10 scroll-mt-24">
