@@ -43,14 +43,37 @@ export const OAuthCallback = () => {
         if (data?.success === true) {
           setStatus('success');
           setPortalId(data.portal_id ?? null);
-          setMessage(
-            data.portal_id
-              ? `HubSpot connecté au portail ${data.portal_id}`
-              : 'HubSpot connecté'
-          );
-          setTimeout(() => {
-            window.location.href = '/radar-crm';
-          }, 1500);
+          setMessage('Connexion réussie, import de vos comptes en cours…');
+          setSyncing(true);
+          void (async () => {
+            try {
+              const { data: syncData } = await supabase.functions.invoke('sync-hubspot');
+              if (syncData?.success) {
+                setMessage(
+                  data.portal_id
+                    ? `HubSpot connecté au portail ${data.portal_id} — ${syncData.companies ?? 0} compte(s) importé(s)`
+                    : `HubSpot connecté — ${syncData.companies ?? 0} compte(s) importé(s)`
+                );
+              } else {
+                setMessage(
+                  data.portal_id
+                    ? `HubSpot connecté au portail ${data.portal_id} — import des comptes en échec`
+                    : 'HubSpot connecté — import des comptes en échec'
+                );
+              }
+            } catch (syncErr) {
+              setMessage(
+                data.portal_id
+                  ? `HubSpot connecté au portail ${data.portal_id} — import des comptes en échec`
+                  : 'HubSpot connecté — import des comptes en échec'
+              );
+            } finally {
+              setSyncing(false);
+              setTimeout(() => {
+                window.location.href = '/radar-crm';
+              }, 1500);
+            }
+          })();
           return;
         }
 
