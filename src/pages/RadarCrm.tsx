@@ -24,7 +24,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { queryClient } from '@/lib/queryClient';
 import { toast } from '@/hooks/use-toast';
 import { useCrmConnections } from '@/hooks/useCrmConnections';
-import RadarCsvUploader from '@/components/radar-crm/RadarCsvUploader';
 import ConnectCrmDialog, { type CrmSource } from '@/components/crm/ConnectCrmDialog';
 import CrmSecurityBadge from '@/components/CrmSecurityBadge';
 import RadarSpaceNameDialog from '@/components/radar-crm/RadarSpaceNameDialog';
