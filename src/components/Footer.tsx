@@ -93,6 +93,9 @@ const Footer = () => {
               <Link to="/politique-confidentialite" className="text-inverse-muted hover:text-inverse-primary text-sm transition-colors">
                 Politique de confidentialité
               </Link>
+              <Link to="/securite-crm" className="text-inverse-muted hover:text-inverse-primary text-sm transition-colors">
+                Sécurité des données
+              </Link>
               <Link to="/cgu" className="text-inverse-muted hover:text-inverse-primary text-sm transition-colors">
                 CGU
               </Link>

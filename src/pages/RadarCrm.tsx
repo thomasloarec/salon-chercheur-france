@@ -24,6 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { queryClient } from '@/lib/queryClient';
 import { toast } from '@/hooks/use-toast';
 import RadarCsvUploader from '@/components/radar-crm/RadarCsvUploader';
+import CrmSecurityBadge from '@/components/CrmSecurityBadge';
 import RadarSpaceNameDialog from '@/components/radar-crm/RadarSpaceNameDialog';
 import type { CrmSourceType } from '@/lib/radarCrm/parseFile';
 import RadarPreviewTable from '@/components/radar-crm/RadarPreviewTable';
@@ -741,6 +742,9 @@ const RadarCrmPage: React.FC = () => {
 
       {/* Zone d'import réelle (upload + mapping + auth-gate) — logique inchangée */}
       <section id="radar-upload" className="max-w-4xl mx-auto px-4 py-10 scroll-mt-24">
+        <div className="mb-5 flex justify-center">
+          <CrmSecurityBadge size="sm" />
+        </div>
         {!radarStatus.loaded && user && (
           <Card className="border border-border bg-muted/20">
             <CardContent className="pt-6 text-center">
