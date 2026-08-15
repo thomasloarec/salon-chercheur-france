@@ -32,6 +32,7 @@ import AdminSystemTestPage from '@/pages/admin/AdminSystemTestPage';
 import AdminSystemToolsPage from '@/pages/admin/AdminSystemToolsPage';
 import AdminCampaignsPage from '@/pages/admin/AdminCampaignsPage';
 import AdminLeadsPage from '@/pages/admin/AdminLeadsPage';
+import AdminRadarLeadsPage from '@/pages/admin/AdminRadarLeadsPage';
 import AdminEventDetail from '@/pages/AdminEventDetail';
 import AdminExhibitorClaims from '@/pages/AdminExhibitorClaims';
 import AdminOrganisateurs from '@/pages/AdminOrganisateurs';
@@ -182,6 +183,7 @@ function App() {
               <Route path="system/tools" element={<AdminSystemToolsPage />} />
               <Route path="campaigns" element={<AdminCampaignsPage />} />
               <Route path="leads" element={<AdminLeadsPage />} />
+              <Route path="radar-leads" element={<AdminRadarLeadsPage />} />
             </Route>
 
               <Route path="/auth" element={<Auth />} />

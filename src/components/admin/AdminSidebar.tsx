@@ -31,6 +31,7 @@ import {
   Radar,
   Inbox,
   Megaphone,
+  Users,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAdminPendingCounts } from '@/hooks/useAdminPendingCounts';
@@ -67,12 +68,13 @@ const navSections = [
     ],
   },
   {
-    label: 'ANALYTICS',
+      label: 'ANALYTICS',
     items: [
       { title: 'Audit SEO', url: '/admin/seo-audit', icon: BarChart3 },
       { title: 'IA Visite', url: '/admin/ia-visite', icon: Sparkles },
       { title: 'Radar CRM', url: '/admin/radar-crm', icon: Radar },
       { title: 'Suivi des leads', url: '/admin/leads', icon: Inbox },
+      { title: 'Leads commerciaux', url: '/admin/radar-leads', icon: Users },
     ],
   },
   {

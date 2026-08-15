@@ -172,6 +172,18 @@ const AdminOverview = () => {
   // ── Leads générés (RPC admin) ──
   const { data: leadsStats } = useAdminLeadsStats();
 
+  // ── Leads commerciaux (Directeur Commercial) ──
+  const { data: radarLeadsCount, isLoading: radarLeadsLoading } = useQuery({
+    queryKey: ['overview-radar-leads-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('radar_leads')
+        .select('*', { count: 'exact', head: true });
+      if (error) return null;
+      return count ?? 0;
+    },
+  });
+
   // ── Radar CRM admin stats ──
   const { data: radarStats } = useQuery({
     queryKey: ['overview-radar-crm-stats'],
@@ -271,7 +283,7 @@ const AdminOverview = () => {
       {/* Bloc 2 — Activité plateforme */}
       <section>
         <h2 className="text-lg font-semibold mb-3">Activité plateforme – 7 jours</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             title="Nouveautés publiées"
             value={fmt(novelties7d?.current)}
@@ -288,6 +300,13 @@ const AdminOverview = () => {
               title="Leads générés"
               value={fmt(leadsStats?.totals?.total_leads)}
               subtitle="Voir le suivi des leads →"
+            />
+          </Link>
+          <Link to="/admin/radar-leads" className="block transition-opacity hover:opacity-80">
+            <MetricCard
+              title="Leads commerciaux"
+              value={radarLeadsLoading ? '…' : fmt(radarLeadsCount)}
+              subtitle="Voir les demandes Directeur Commercial →"
             />
           </Link>
         </div>
