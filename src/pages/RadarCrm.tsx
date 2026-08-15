@@ -126,6 +126,11 @@ const RadarCrmPage: React.FC = () => {
   // HubSpot OAuth (flux sécurisé via l'Edge Function oauth-hubspot)
   const [hubspotLoading, setHubspotLoading] = useState(false);
   const [hubspotError, setHubspotError] = useState<string | null>(null);
+  const { connectionsData, loading: crmConnectionsLoading } = useCrmConnections();
+  const hubspotConnection = useMemo(
+    () => connectionsData.find((c) => c.provider === 'hubspot' && c.status === 'active'),
+    [connectionsData]
+  );
 
   const isRadarLocked = useMemo(() => {
     const lockedStatuses = ['trial_expired', 'free'];
