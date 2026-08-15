@@ -172,6 +172,18 @@ const AdminOverview = () => {
   // ── Leads générés (RPC admin) ──
   const { data: leadsStats } = useAdminLeadsStats();
 
+  // ── Leads commerciaux (Directeur Commercial) ──
+  const { data: radarLeadsCount, isLoading: radarLeadsLoading } = useQuery({
+    queryKey: ['overview-radar-leads-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('radar_leads')
+        .select('*', { count: 'exact', head: true });
+      if (error) return null;
+      return count ?? 0;
+    },
+  });
+
   // ── Radar CRM admin stats ──
   const { data: radarStats } = useQuery({
     queryKey: ['overview-radar-crm-stats'],
