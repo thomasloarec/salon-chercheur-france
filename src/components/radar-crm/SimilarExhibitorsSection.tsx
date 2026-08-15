@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { ChevronDown, MapPin, ExternalLink, Sparkles, Plus, X, Loader2 } from 'lucide-react';
+import { ChevronDown, MapPin, ExternalLink, Sparkles, X, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import ExpandableText from '@/components/exhibitor/ExpandableText';
