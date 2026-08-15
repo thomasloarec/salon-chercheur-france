@@ -197,3 +197,10 @@ verify_jwt = false
 [functions.organizer-exhibitor-import]
 # Authentification gérée manuellement (getUser sur le header Authorization).
 verify_jwt = false
+
+[functions.notify-radar-lead]
+# Invoked by a Supabase Database Webhook (INSERT on radar_leads).
+# The webhook does not send a user JWT, so JWT verification must stay disabled.
+# It only emails admin@lotexpo.com; no data is read or returned.
+verify_jwt = false
+
