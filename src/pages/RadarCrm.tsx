@@ -770,6 +770,48 @@ const RadarCrmPage: React.FC = () => {
         </div>
       </section>
 
+      {/* Connecteur HubSpot (flux sécurisé via oauth-hubspot) — utilisateur authentifié uniquement */}
+      {user && (
+        <section className="max-w-4xl mx-auto px-4 pt-6">
+          <div className="rounded-2xl border border-border bg-card p-4 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1 min-w-0">
+              <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Plug className="h-4 w-4 text-primary" />
+                Connecter HubSpot
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Importez automatiquement vos comptes depuis HubSpot. Les tokens restent chiffrés et vous pouvez les révoquer à tout moment.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+              {hubspotError && (
+                <p className="text-sm text-destructive max-w-[300px]" aria-live="assertive">
+                  {hubspotError}
+                </p>
+              )}
+              <Button
+                type="button"
+                onClick={handleConnectHubSpot}
+                disabled={hubspotLoading}
+                className="w-full sm:w-auto rounded-full"
+              >
+                {hubspotLoading ? (
+                  <>
+                    <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" aria-hidden="true" />
+                    Connexion à HubSpot…
+                  </>
+                ) : (
+                  <>
+                    <Plug className="h-4 w-4 mr-2" />
+                    Connecter HubSpot
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Zone d'import réelle (upload + mapping + auth-gate) — logique inchangée */}
       <section id="radar-upload" className="max-w-4xl mx-auto px-4 py-10 scroll-mt-24">
         <div className="mb-5 flex justify-center">
