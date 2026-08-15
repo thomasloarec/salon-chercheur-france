@@ -127,6 +127,7 @@ const RadarCrmPage: React.FC = () => {
 
   // HubSpot OAuth (flux sécurisé via l'Edge Function oauth-hubspot)
   const [hubspotLoading, setHubspotLoading] = useState(false);
+  const [syncingHubSpot, setSyncingHubSpot] = useState(false);
   const [hubspotError, setHubspotError] = useState<string | null>(null);
   const { connectionsData, loading: crmConnectionsLoading } = useCrmConnections();
   const hubspotConnection = useMemo(
