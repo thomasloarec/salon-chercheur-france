@@ -719,6 +719,14 @@ const RadarCrmPage: React.FC = () => {
               Le CSV/Excel fonctionne dès maintenant. Les connexions natives arrivent pour automatiser
               l’analyse.
             </p>
+            <Button
+              size="lg"
+              className="mt-5 h-auto whitespace-normal rounded-full py-3 text-center"
+              onClick={() => setConnectOpen(true)}
+            >
+              <Plug className="mr-2 h-4 w-4 shrink-0" />
+              Connecter votre CRM ou importer vos comptes
+            </Button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <ConnectorBadge name="CSV / Excel" status="Disponible" available />
@@ -859,7 +867,14 @@ const RadarCrmPage: React.FC = () => {
                   et sert uniquement à détecter les correspondances avec les exposants référencés sur Lotexpo.
                 </p>
               </div>
-              <RadarCsvUploader onParsed={onParsed} />
+              <Button
+                size="lg"
+                className="mx-auto flex h-auto whitespace-normal rounded-full py-3 text-center"
+                onClick={() => setConnectOpen(true)}
+              >
+                <Plug className="mr-2 h-4 w-4 shrink-0" />
+                Connecter votre CRM ou importer vos comptes
+              </Button>
             </CardContent>
           </Card>
         )}
