@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -198,7 +197,7 @@ const mapEventToGroup = (e: RadarViewEvent): EventGroup => ({
 const RadarCrmResults: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [imports, setImports] = useState<Import[] | null>(null);
   const [activeImportId, setActiveImportId] = useState<string | null>(searchParams.get('importId'));
   const highlightedEventId = searchParams.get('eventId');
@@ -218,7 +217,11 @@ const RadarCrmResults: React.FC = () => {
   const [mission, setMission] = useState<{ target: MissionTarget; company: Company } | null>(null);
   // Vue par compte = vue par défaut (cadrage « veille »).
   // Si un événement est mis en avant (deep-link), on ouvre la vue par salon pour préserver le scroll auto.
-  const [activeTab, setActiveTab] = useState<string>(searchParams.get('eventId') ? 'future' : 'companies');
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    const fromQuery = searchParams.get('tab');
+    if (fromQuery === 'companies' || fromQuery === 'future' || fromQuery === 'past') return fromQuery;
+    return searchParams.get('eventId') ? 'future' : 'companies';
+  });
   // Comptage des similaires par salon (à venir, > 0). Chargé une fois à l'ouverture
   // de l'onglet « Par salon » ; sert à n'afficher la section que s'il y a du contenu.
   const [similarCounts, setSimilarCounts] = useState<Record<string, number> | null>(null);
@@ -229,6 +232,19 @@ const RadarCrmResults: React.FC = () => {
   // bandeau d'essai et le blocage propre quand l'accès a expiré/est suspendu.
   const [access, setAccess] = useState<RadarAccess | null>(null);
   const [accessLoading, setAccessLoading] = useState(true);
+
+  // Resynchronise l'onglet quand le menu latéral change le paramètre `tab`.
+  useEffect(() => {
+    const fromQuery = searchParams.get('tab');
+    if (fromQuery === 'companies' || fromQuery === 'future' || fromQuery === 'past') {
+      setActiveTab(fromQuery);
+    }
+  }, [searchParams]);
+
+  // Ouvre le dialogue de réglages depuis le menu latéral (?panel=settings).
+  useEffect(() => {
+    if (searchParams.get('panel') === 'settings') setSettingsOpen(true);
+  }, [searchParams]);
 
   const reloadAll = async () => {
     setActiveImportId(null);
@@ -704,23 +720,23 @@ const RadarCrmResults: React.FC = () => {
   // Empty state
   if (!authLoading && imports !== null && imports.length === 0) {
     return (
-      <MainLayout title="Mon Radar CRM | Lotexpo">
+      <>
         <RadarEmptyState />
-      </MainLayout>
+      </>
     );
   }
 
   // Blocage propre par siège — priorité sur les données CRM (jamais affichées ici).
   if (!authLoading && seatBlockKind) {
     return (
-      <MainLayout title="Mon Radar CRM | Lotexpo">
+      <>
         <RadarAccessBlocked kind={seatBlockKind} />
-      </MainLayout>
+      </>
     );
   }
 
   return (
-    <MainLayout title="Mon Radar CRM | Lotexpo">
+    <>
       <div className="font-body bg-muted/10 min-h-[calc(100vh-200px)]">
         <div className="max-w-6xl mx-auto px-4 py-10 md:py-14 space-y-10 md:space-y-12">
           {/* Header */}
@@ -975,7 +991,17 @@ const RadarCrmResults: React.FC = () => {
       )}
       <RadarCrmSettingsDialog
         open={settingsOpen}
-        onOpenChange={(o) => { setSettingsOpen(o); if (!o) void loadSpaceMeta(); }}
+        onOpenChange={(o) => {
+          setSettingsOpen(o);
+          if (!o) {
+            void loadSpaceMeta();
+            if (searchParams.get('panel')) {
+              const next = new URLSearchParams(searchParams);
+              next.delete('panel');
+              setSearchParams(next, { replace: true });
+            }
+          }
+        }}
         onDataDeleted={() => { void reloadAll(); }}
         onOfferProfileSaved={() => { void checkOfferProfile(); }}
       />
@@ -988,7 +1014,7 @@ const RadarCrmResults: React.FC = () => {
         onChangeRelationship={(next) => (mission ? setRel(mission.company, next) : undefined)}
         onOpenSettings={() => setSettingsOpen(true)}
       />
-    </MainLayout>
+    </>
   );
 };
 
