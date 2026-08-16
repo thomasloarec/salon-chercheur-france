@@ -45,6 +45,7 @@ import AdminRadarCrm from '@/pages/admin/AdminRadarCrm';
 import CmoDashboardPage from '@/pages/admin/CmoDashboardPage';
 import RadarCrm from '@/pages/RadarCrm';
 import RadarCrmResults from '@/pages/RadarCrmResults';
+import RadarCrmLayout from '@/components/radar-crm/RadarCrmLayout';
 import RadarCrmTerrain from '@/pages/RadarCrmTerrain';
 import RadarCrmDebrief from '@/pages/RadarCrmDebrief';
 import RadarInvitation from '@/pages/RadarInvitation';
@@ -154,7 +155,9 @@ function App() {
             <Route path="/securite-crm" element={<SecuriteCrm />} />
             <Route path="/recherche-ia" element={<RechercheIA />} />
             <Route path="/radar-crm" element={<RadarCrm />} />
-            <Route path="/radar-crm/results" element={<RadarCrmResults />} />
+            <Route element={<RadarCrmLayout />}>
+              <Route path="/radar-crm/results" element={<RadarCrmResults />} />
+            </Route>
             <Route path="/radar-crm/terrain/:eventId" element={<RadarCrmTerrain />} />
             <Route path="/radar-crm/debrief/:eventId" element={<RadarCrmDebrief />} />
             <Route path="/radar/invitation" element={<RadarInvitation />} />
