@@ -69,11 +69,16 @@ const RadarOverviewPage: React.FC = () => {
   const onboardingCaptureEventId =
     onboarding?.prepare_next?.event_id ?? nextEvent?.event_id ?? null;
 
-  const kpiAnalyzed = summary?.companies_analyzed ?? 0;
-  const kpiDetected = summary?.companies_detected ?? matchedCompanies.length;
-  const kpiFutureSalons = summary?.future_salons ?? futureGroups.length;
-  const kpiFutureParticipations = summary?.future_participations ?? 0;
-  void kpiAnalyzed;
+  const analyzedCount = summary?.companies_analyzed ?? 0;
+  const detectedCount = summary?.companies_detected ?? 0;
+  const futureSalonsCount = summary?.future_salons ?? futureGroups.length;
+
+  const goalIsSet = actionStats?.chosen_events.goal_is_set ?? false;
+  const submitGoal = () => {
+    const n = parseInt(goalInput, 10);
+    if (!Number.isFinite(n) || n <= 0) return;
+    setGoal.mutate(n, { onSuccess: () => setGoalEditing(false) });
+  };
 
   return (
     <div className="font-body bg-muted/10 min-h-[calc(100vh-200px)]">
@@ -170,16 +175,118 @@ const RadarOverviewPage: React.FC = () => {
 
         {/* Ancien bandeau d'essai (statut get_my_radar_view) — fallback */}
         {isTrial && !loading && !access && (
-          <TrialBanner daysLeft={daysLeft} detected={kpiDetected} />
+          <TrialBanner daysLeft={daysLeft} detected={detectedCount} />
         )}
 
-        {/* Hero stats — masquées en état verrouillé */}
-        {!isLocked && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
-            <StatCard label="Entreprises analysées" value={kpiAnalyzed} />
-            <StatCard label="Entreprises détectées" value={kpiDetected} accent="accent" />
-            <StatCard label="Salons à venir" value={kpiFutureSalons} accent="primary" icon={<Sparkles className="h-4 w-4" />} />
-            <StatCard label="Participations futures" value={kpiFutureParticipations} />
+        {/* Compteurs d'action — masqués en état verrouillé */}
+        {!isLocked && actionStats && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
+              {actionStats.chosen_events.value === 0 ? (
+                <Card className="shadow-none bg-secondary/40 border-primary/30">
+                  <CardContent className="px-5 pt-6 pb-5">
+                    <p className="font-display text-base font-semibold text-foreground">Aucun salon prévu</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {actionStats.chosen_events.available} salons où vos comptes exposent vous attendent
+                    </p>
+                    <Button size="sm" className="mt-3" onClick={() => navigate('/radar-crm/salons')}>
+                      Choisir mes salons
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <RadarActionCard
+                  value={actionStats.chosen_events.value}
+                  target={actionStats.chosen_events.target}
+                  label="Salons prévus, 90 prochains jours"
+                  hint={goalIsSet ? (
+                    <span className="text-muted-foreground">
+                      objectif {actionStats.goal} · {actionStats.chosen_events.available} salons possibles
+                    </span>
+                  ) : undefined}
+                  onClick={() => navigate('/radar-crm/salons')}
+                />
+              )}
+              <RadarActionCard
+                value={actionStats.prepared_accounts.value}
+                target={actionStats.prepared_accounts.target}
+                label="Comptes préparés"
+                onClick={() => navigate('/radar-crm/salons')}
+              />
+              <RadarActionCard
+                value={actionStats.met_accounts.value}
+                target={actionStats.met_accounts.target}
+                label="Comptes rencontrés, 90 derniers jours"
+                onClick={() => navigate('/radar-crm/passes')}
+              />
+              <RadarActionCard
+                value={actionStats.pending_followups.open}
+                label="Suivis à traiter"
+                showBar={false}
+                hint={actionStats.pending_followups.overdue > 0 ? (
+                  <span className="text-destructive">dont {actionStats.pending_followups.overdue} en retard</span>
+                ) : undefined}
+                onClick={() => navigate('/radar-crm/passes')}
+              />
+              {actionStats.active_member_count > 1 && (
+                <RadarActionCard
+                  value={actionStats.members_engaged.value}
+                  target={actionStats.members_engaged.target}
+                  label="Membres engagés"
+                  onClick={() => navigate('/radar-crm/equipe')}
+                />
+              )}
+            </div>
+
+            {/* Objectif de salons par trimestre — owner uniquement */}
+            {actionStats.is_owner && (
+              <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-2">
+                {goalEditing ? (
+                  <>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={goalInput}
+                      onChange={(e) => setGoalInput(e.target.value)}
+                      className="h-8 w-24"
+                      placeholder="4"
+                    />
+                    <Button size="sm" onClick={submitGoal} disabled={setGoal.isPending}>Enregistrer</Button>
+                    <button type="button" className="underline underline-offset-2" onClick={() => setGoalEditing(false)}>
+                      Annuler
+                    </button>
+                  </>
+                ) : goalIsSet ? (
+                  <>
+                    <span>Objectif : {actionStats.goal} salons par trimestre</span>
+                    <span aria-hidden>·</span>
+                    <button
+                      type="button"
+                      className="text-primary underline underline-offset-2"
+                      onClick={() => { setGoalInput(String(actionStats.goal ?? '')); setGoalEditing(true); }}
+                    >
+                      Modifier
+                    </button>
+                    <span aria-hidden>·</span>
+                    <button
+                      type="button"
+                      className="underline underline-offset-2"
+                      onClick={() => setGoal.mutate(null)}
+                    >
+                      Retirer
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="text-primary underline underline-offset-2"
+                    onClick={() => { setGoalInput(''); setGoalEditing(true); }}
+                  >
+                    Fixer un objectif de salons par trimestre
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -187,7 +294,7 @@ const RadarOverviewPage: React.FC = () => {
           <>
             {/* Bandeau « radar actif » — cadrage veille/surveillance */}
             <RadarActiveBanner
-              analyzed={kpiAnalyzed}
+              analyzed={analyzedCount}
               futureCompanies={summary?.future_companies ?? 0}
               futureSalons={kpiFutureSalons}
               featured={featured}
