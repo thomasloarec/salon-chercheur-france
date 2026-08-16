@@ -7,20 +7,24 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
+import { useSetParticipation } from '@/hooks/useRadarParticipation';
+import { ParticipantsRow, participationSentence } from '@/components/radar-crm/RadarParticipants';
 import SimilarExhibitorsSection from '@/components/radar-crm/SimilarExhibitorsSection';
 import { eventPhase, showModeSalon, modeSalonIsHot, showDebrief } from '@/lib/radarCrm/eventPhase';
 import { type RelationshipStatus } from '@/lib/radarCrm/relationship';
-import { type Company, type EventGroup, type Pref } from '@/types/radar';
+import { type Company, type EventGroup, type Pref, type RadarParticipant } from '@/types/radar';
 import { formatDate, CompanyAvatar, CompanyChip } from './RadarShared';
 
 /** Carte salon — variante compacte (repliable) et détaillée, sans visuel. */
-const AgendaLotexpoButton: React.FC<{ eventId: string; importId?: string | null }> = ({ eventId, importId }) => {
+const ParticipationButton: React.FC<{
+  eventId: string;
+  participating: boolean;
+  onOptimistic: (next: boolean | null) => void;
+}> = ({ eventId, participating, onOptimistic }) => {
   const { user } = useAuth();
-  const { data: isFavorite = false } = useIsFavorite(eventId);
-  const toggleFavorite = useToggleFavorite();
+  const setParticipation = useSetParticipation();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   const handleClick = async (e: React.MouseEvent) => {
@@ -30,16 +34,13 @@ const AgendaLotexpoButton: React.FC<{ eventId: string; importId?: string | null 
       setShowAuthModal(true);
       return;
     }
+    const next = !participating;
+    onOptimistic(next); // mise à jour optimiste immédiate
     try {
-      void trackRadarEvent('crm_favorite_clicked', {
-        source: 'radar_crm',
-        favoriteType: 'event_agenda',
-        eventId,
-        importId: importId ?? null,
-      });
-      await toggleFavorite.mutateAsync(eventId);
+      await setParticipation.mutateAsync({ eventId, participating: next });
     } catch (err) {
-      console.error('Error toggling favorite:', err);
+      console.error('Error toggling participation:', err);
+      onOptimistic(null);
     }
   };
 
@@ -47,15 +48,15 @@ const AgendaLotexpoButton: React.FC<{ eventId: string; importId?: string | null 
     <>
       <Button
         size="sm"
-        variant="outline"
+        variant={participating ? 'default' : 'outline'}
         onClick={handleClick}
-        disabled={toggleFavorite.isPending}
+        disabled={setParticipation.isPending}
         className={cn(
           'transition-all duration-200',
-          isFavorite && 'bg-primary text-primary-foreground hover:bg-primary/90 border-primary',
+          participating && 'bg-primary text-primary-foreground hover:bg-primary/90 border-primary',
         )}
       >
-        {isFavorite ? (
+        {participating ? (
           <Check className="h-3.5 w-3.5 mr-1" />
         ) : (
           <CalendarPlus className="h-3.5 w-3.5 mr-1" />
@@ -89,6 +90,22 @@ const EventCard: React.FC<{
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const [expanded, setExpanded] = useState(false);
   const [showAllCompanies, setShowAllCompanies] = useState(false);
+  const [optimistic, setOptimistic] = useState<boolean | null>(null);
+
+  // Participation : état serveur + surcouche optimiste locale.
+  const serverParticipants = group.participants ?? [];
+  const serverIsMe = serverParticipants.some((p) => p.is_me);
+  const isParticipating = optimistic ?? serverIsMe;
+  useEffect(() => { setOptimistic(null); }, [serverIsMe]);
+  const participants: RadarParticipant[] = React.useMemo(() => {
+    if (optimistic === null || optimistic === serverIsMe) return serverParticipants;
+    if (optimistic) {
+      return [{ user_id: 'me', display_name: null, avatar_url: null, is_me: true }, ...serverParticipants];
+    }
+    return serverParticipants.filter((p) => !p.is_me);
+  }, [optimistic, serverIsMe, serverParticipants]);
+  const hasParticipants = participants.length > 0;
+  const participationLabel = participationSentence(participants);
 
   // Comptes prioritaires d'abord, puis ordre existant.
   const ordered = [...group.companies].sort((a, b) => {
@@ -129,14 +146,22 @@ const EventCard: React.FC<{
               {place && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{place}</span>}
             </div>
           </div>
-          {deadline && (
-            <Badge className={cn(
-              'shrink-0 border-none',
-              imminent ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
-            )}>
-              {deadline}
-            </Badge>
-          )}
+          <div className="flex shrink-0 items-start gap-3">
+            {deadline && (
+              <Badge className={cn(
+                'shrink-0 border-none',
+                imminent ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
+              )}>
+                {deadline}
+              </Badge>
+            )}
+            {hasParticipants && (
+              <div className="flex flex-col items-end gap-1">
+                <ParticipantsRow participants={participants} />
+                <span className="text-[12px] text-muted-foreground whitespace-nowrap">{participationLabel}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Les comptes du CRM — sujet principal */}
@@ -195,14 +220,21 @@ const EventCard: React.FC<{
           >
             <Target className="h-3.5 w-3.5 mr-1" /> Préparer mes visites
           </Button>
-          <AgendaLotexpoButton eventId={group.event_id} importId={importId} />
+          <ParticipationButton
+            eventId={group.event_id}
+            participating={isParticipating}
+            onOptimistic={setOptimistic}
+          />
         </div>
     </div>
   );
 
   if (variant === 'compact') {
     return (
-      <Card className="overflow-hidden border-border/60 shadow-none hover:border-border hover:shadow-sm transition-all bg-card">
+      <Card className={cn(
+        'overflow-hidden shadow-none hover:shadow-sm transition-all',
+        hasParticipants ? 'border-[#6b51ff]/30 bg-[#eeedfe]' : 'border-border/60 hover:border-border bg-card',
+      )}>
         {expanded ? (
           body
         ) : (
@@ -249,7 +281,10 @@ const EventCard: React.FC<{
   }
 
   return (
-    <Card className="overflow-hidden border-border/60 shadow-none hover:shadow-sm hover:border-border transition-all bg-card">
+    <Card className={cn(
+      'overflow-hidden shadow-none hover:shadow-sm transition-all',
+      hasParticipants ? 'border-[#6b51ff]/30 bg-[#eeedfe]' : 'border-border/60 hover:border-border bg-card',
+    )}>
       {body}
     </Card>
   );
