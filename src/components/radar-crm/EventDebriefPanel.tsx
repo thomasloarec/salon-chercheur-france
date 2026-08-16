@@ -404,10 +404,29 @@ const EventDebriefPanel: React.FC<EventDebriefPanelProps> = ({
 
       {/* Actions export */}
       <div className="flex flex-col sm:flex-row gap-2 mt-4 mb-6">
-        <Button onClick={() => void copyDebrief()} disabled={worked.length === 0} className="gap-2 min-h-[44px]">
+        <Button
+          onClick={() => void copyDebrief()}
+          disabled={worked.length === 0}
+          className={cn(
+            'gap-2 min-h-[44px]',
+            worked.length === 0
+              ? 'bg-[#eeedfe] text-[#6b51ff]/50 shadow-none cursor-not-allowed hover:bg-[#eeedfe]'
+              : ''
+          )}
+        >
           <Copy className="h-4 w-4" /> Copier le débrief
         </Button>
-        <Button variant="outline" onClick={exportCsv} disabled={newCompanies.length === 0} className="gap-2 min-h-[44px]">
+        <Button
+          variant="outline"
+          onClick={exportCsv}
+          disabled={newCompanies.length === 0}
+          className={cn(
+            'gap-2 min-h-[44px]',
+            newCompanies.length === 0
+              ? 'bg-[#eeedfe] text-[#6b51ff]/50 border-[#6b51ff]/30 shadow-none cursor-not-allowed hover:bg-[#eeedfe]'
+              : ''
+          )}
+        >
           <Download className="h-4 w-4" />
           {newCompanies.length === 0 ? 'Aucune nouvelle entreprise' : 'Exporter les nouvelles entreprises (CSV)'}
         </Button>
@@ -416,7 +435,7 @@ const EventDebriefPanel: React.FC<EventDebriefPanelProps> = ({
       {/* Toggle affichage */}
       <div className="flex items-center justify-between mb-4">
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {showAll ? `Toutes les entreprises (${allCompanies.filter((c) => !isNew(c)).length})` : `Entreprises travaillées (${worked.filter((c) => !isNew(c)).length})`}
+          {showAll ? `Toutes les entreprises (${allCompanies.filter((c) => !isNew(c)).length})` : `Entreprises suivies (${worked.filter((c) => !isNew(c)).length})`}
         </span>
         <Button
           variant="ghost"
@@ -424,13 +443,13 @@ const EventDebriefPanel: React.FC<EventDebriefPanelProps> = ({
           onClick={() => setShowAll((v) => !v)}
           className="text-muted-foreground hover:text-foreground"
         >
-          {showAll ? 'Voir les travaillées' : 'Tout afficher'}
+          {showAll ? 'Voir les suivies' : 'Tout afficher'}
         </Button>
       </div>
 
       {displayed.length === 0 ? (
         <div className="text-center py-12 text-sm text-muted-foreground">
-          Aucune entreprise travaillée sur ce salon.
+          Aucune note prise sur ce salon pour l'instant. Les notes et tâches créées pendant le salon, depuis le Mode Salon, apparaîtront ici.
         </div>
       ) : (
         <ul className="space-y-3">
