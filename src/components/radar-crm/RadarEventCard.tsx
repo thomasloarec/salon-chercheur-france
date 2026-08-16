@@ -90,6 +90,8 @@ const EventCard: React.FC<{
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const [expanded, setExpanded] = useState(false);
   const [showAllCompanies, setShowAllCompanies] = useState(false);
+  const [prepareMode, setPrepareMode] = useState(false);
+  const chipsRef = useRef<HTMLDivElement>(null);
   const [optimistic, setOptimistic] = useState<boolean | null>(null);
 
   // Participation : état serveur + surcouche optimiste locale.
