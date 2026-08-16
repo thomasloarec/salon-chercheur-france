@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Target } from 'lucide-react';
+import { List, CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import RadarPageGate from '@/components/radar-crm/RadarPageGate';
