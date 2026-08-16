@@ -73,7 +73,7 @@ const RadarCrmResults: React.FC = () => {
     orgName, isSpaceOwner, loadSpaceMeta,
     getPref, setPref, getRel, setRel,
     offerEmpty, checkOfferProfile,
-    similarCounts, highlightedEventId,
+    similarCounts, setSimilarCounts, highlightedEventId,
     eventGroups, matchedCompanies, futureGroups, pastGroups,
     nextEvent, featured, starredCount, ongoingEvents, seatBlockKind,
     reloadAll, refreshCockpit, enterTerrain,
@@ -148,6 +148,22 @@ const RadarCrmResults: React.FC = () => {
     }
   }, [highlightedEventId, loading, eventGroups, activeTab]);
 
+
+  // Comptage des similaires : appelé une seule fois quand l'onglet « Par salon » s'ouvre.
+  useEffect(() => {
+    if (activeTab !== 'future' || similarCounts !== null) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.rpc('get_radar_similar_counts');
+      if (cancelled) return;
+      if (error || !data || typeof data !== 'object') {
+        setSimilarCounts({});
+        return;
+      }
+      setSimilarCounts(data as Record<string, number>);
+    })();
+    return () => { cancelled = true; };
+  }, [activeTab, similarCounts]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // KPI values come straight from the server-aggregated summary.
   const kpiAnalyzed = summary?.companies_analyzed ?? 0;
