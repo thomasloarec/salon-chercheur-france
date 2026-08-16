@@ -197,7 +197,7 @@ const RadarCalendarView: React.FC<{
   };
 
   return (
-    <div className="rounded-lg border bg-card p-3 sm:p-4" style={{ ['--wk-label' as string]: '56px' }}>
+    <div className="rounded-lg border bg-muted/30 p-3 sm:p-4" style={{ ['--wk-label' as string]: '56px' }}>
       <style>{`@media (min-width: 640px){ .radar-cal { --wk-label: 76px; } }`}</style>
       <div className="radar-cal">
         <div
