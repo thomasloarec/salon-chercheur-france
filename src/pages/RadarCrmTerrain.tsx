@@ -886,6 +886,88 @@ const RadarCrmTerrainInner: React.FC = () => {
                 )}
               </div>
             )}
+
+            {/* Entreprise rencontrée hors CRM — geste terrain, Mode Salon uniquement */}
+            <div className="mt-6">
+              {!encounterOpen ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => { setEncounterOpen(true); setEncounterError(null); }}
+                  className="w-full min-h-[48px] gap-2 border-dashed text-muted-foreground hover:text-foreground"
+                >
+                  <UserPlus className="h-4 w-4" /> Ajouter une entreprise rencontrée
+                </Button>
+              ) : (
+                <div className="rounded-xl border border-border/60 bg-card p-3 space-y-2">
+                  <Input
+                    autoFocus
+                    value={encounterName}
+                    onChange={(e) => { setEncounterName(e.target.value); if (encounterError) setEncounterError(null); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void submitEncounter(); } }}
+                    placeholder="Nom de l’entreprise rencontrée"
+                    className="min-h-[44px] text-base"
+                  />
+                  {encounterError && (
+                    <p className="text-xs font-medium text-destructive">{encounterError}</p>
+                  )}
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => { setEncounterOpen(false); setEncounterName(''); setEncounterError(null); }}
+                      className="gap-1"
+                    >
+                      <X className="h-4 w-4" /> Annuler
+                    </Button>
+                    <Button type="button" size="sm" onClick={() => void submitEncounter()} disabled={encounterSaving} className="gap-1">
+                      {encounterSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                      Ajouter
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {encounterFollowUp && (
+                <div className="mt-3 rounded-xl border border-primary/40 bg-card p-3 space-y-2">
+                  <p className="text-sm font-medium text-foreground">
+                    Une première note sur {encounterFollowUp.name} ?
+                  </p>
+                  <Textarea
+                    autoFocus
+                    value={encounterNote}
+                    onChange={(e) => setEncounterNote(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void submitEncounterNote(); }
+                    }}
+                    placeholder="Note éclair… (Entrée pour ajouter)"
+                    className="min-h-[64px] text-base"
+                  />
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => { setEncounterFollowUp(null); setEncounterNote(''); }}
+                      className="gap-1"
+                    >
+                      Plus tard
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => void submitEncounterNote()}
+                      disabled={encounterNoteSaving || !encounterNote.trim()}
+                      className="gap-1"
+                    >
+                      {encounterNoteSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                      Ajouter
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </>
         )}
       </main>
