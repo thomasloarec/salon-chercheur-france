@@ -29,6 +29,8 @@ import CrmSecurityBadge from '@/components/CrmSecurityBadge';
 import RadarSpaceNameDialog from '@/components/radar-crm/RadarSpaceNameDialog';
 import type { CrmSourceType } from '@/lib/radarCrm/parseFile';
 import RadarPreviewTable from '@/components/radar-crm/RadarPreviewTable';
+import RadarPricingSection from '@/components/radar-crm/RadarPricingSection';
+
 import MissionCardPreview from '@/components/radar-crm/previews/MissionCardPreview';
 import ResultDashboardPreview from '@/components/radar-crm/previews/ResultDashboardPreview';
 import {
