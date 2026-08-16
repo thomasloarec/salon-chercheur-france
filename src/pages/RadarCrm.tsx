@@ -1128,7 +1128,11 @@ const RadarCrmPage: React.FC = () => {
         )}
       </section>
 
+      {/* 10. Tarif dynamique */}
+      <RadarPricingSection />
+
       {/* 11. FAQ */}
+
       <section className="max-w-3xl mx-auto px-4 py-14 md:py-20">
         <div className="mb-8">
           <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">Questions fréquentes</p>
