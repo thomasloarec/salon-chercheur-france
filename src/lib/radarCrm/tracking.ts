@@ -42,7 +42,8 @@ export type RadarEventType =
   | 'radar_debrief_copied'
   | 'radar_debrief_csv_exported'
   | 'radar_onboarding_viewed'
-  | 'radar_onboarding_cta_clicked';
+  | 'radar_onboarding_cta_clicked'
+  | 'radar_participation_toggled';
 
 export async function trackRadarEvent(event_type: RadarEventType, metadata: Record<string, unknown> = {}) {
   try {

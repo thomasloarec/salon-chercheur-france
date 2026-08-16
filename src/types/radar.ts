@@ -30,6 +30,14 @@ export type RadarStatus = 'paid' | 'beta' | 'trial_active' | 'trial_expired' | '
 /** Per-account watch preference (P1-c triage). */
 export type Pref = 'starred' | 'ignored' | 'normal';
 
+/** Membre de l'espace déclaré participant à un salon. */
+export interface RadarParticipant {
+  user_id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  is_me: boolean;
+}
+
 export interface RadarViewCompany {
   crm_company_id: string;
   company_name: string | null;
@@ -57,6 +65,8 @@ export interface RadarViewEvent {
   is_future_event: boolean | null;
   company_count: number;
   companies: RadarViewCompany[];
+  participants?: RadarParticipant[] | null;
+  participant_count?: number | null;
 }
 
 export interface RadarView {
@@ -103,6 +113,8 @@ export interface EventGroup {
   days_until: number | null;
   is_future: boolean;
   company_count: number;
+  participants: RadarParticipant[];
+  participant_count: number;
   companies: Array<{
     company: Company;
     id_exposant: string;
@@ -127,6 +139,8 @@ export const mapEventToGroup = (e: RadarViewEvent): EventGroup => ({
   days_until: e.days_until_event,
   is_future: e.is_future_event ?? false,
   company_count: e.company_count,
+  participants: e.participants ?? [],
+  participant_count: e.participant_count ?? (e.participants?.length ?? 0),
   companies: (e.companies ?? []).map((c) => ({
     company: {
       id: c.crm_company_id,
