@@ -420,6 +420,38 @@ const RadarCrmSpacesPanel: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog
+        open={!!removeTarget}
+        onOpenChange={(open) => !open && setRemoveTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Retirer ce membre de l'espace ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              «{' '}
+              {removeTarget?.member.display_name?.trim() ||
+                removeTarget?.member.email ||
+                'Ce membre'}{' '}
+              » perdra immédiatement l'accès au Radar CRM de l'espace «{' '}
+              {removeTarget?.space.org_name?.trim() ||
+                removeTarget?.space.name ||
+                'Espace sans nom'}{' '}
+              ». Le siège payant occupé est libéré. Les données de l'espace sont conservées.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                removeTarget && removeMember(removeTarget.space, removeTarget.member)
+              }
+            >
+              Retirer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
