@@ -43,92 +43,12 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
-
-type Import = {
-  id: string;
-  file_name: string | null;
-  status: string;
-  total_rows: number | null;
-  matched_companies_count: number | null;
-  unmatched_companies_count: number | null;
-  created_at: string;
-};
-
-type Company = {
-  id: string;
-  company_name: string;
-  website_raw: string | null;
-  normalized_domain: string | null;
-};
-
-/**
- * Shape returned by the server-side RPC `get_my_radar_view`.
- * Defined locally because the RPC is typed as `Json` in the generated Supabase types.
- */
-type RadarStatus = 'paid' | 'beta' | 'trial_active' | 'trial_expired' | 'free' | 'none';
-
-/** Per-account watch preference (P1-c triage). */
-type Pref = 'starred' | 'ignored' | 'normal';
-
-interface RadarViewCompany {
-  crm_company_id: string;
-  company_name: string | null;
-  website_raw: string | null;
-  normalized_domain: string | null;
-  id_exposant: string | null;
-  nom_exposant: string | null;
-  stand_exposants_list: string | null;
-  needs_review: boolean | null;
-  name_similarity: number | null;
-  pref_status: Pref | null;
-}
-
-interface RadarViewEvent {
-  event_id: string;
-  nom_event: string | null;
-  slug: string | null;
-  url_image: string | null;
-  type_event: string | null;
-  date_debut: string | null;
-  date_fin: string | null;
-  ville: string | null;
-  nom_lieu: string | null;
-  days_until_event: number | null;
-  is_future_event: boolean | null;
-  company_count: number;
-  companies: RadarViewCompany[];
-}
-
-interface RadarView {
-  has_access: boolean;
-  status: RadarStatus;
-  days_left: number | null;
-  import_id: string | null;
-  summary: {
-    companies_analyzed: number;
-    companies_detected: number;
-    future_companies: number;
-    future_salons: number;
-    future_participations: number;
-    starred?: number;
-    ignored?: number;
-  };
-  events: RadarViewEvent[];
-}
-
-/**
- * Per-member seat access (RPC `my_radar_access`, already in prod).
- * access_kind pilote l'affichage : bandeau d'essai, blocage propre ou accès normal.
- */
-type RadarAccessKind = 'paid' | 'trial' | 'beta' | 'locked' | 'none';
-interface RadarAccess {
-  account_id: string | null;
-  access_kind: RadarAccessKind;
-  has_access: boolean;
-  trial_ends_at: string | null;
-  trial_days_left: number | null;
-  paid_seats: number | null;
-}
+import { useRadarWorkspace } from '@/contexts/RadarWorkspaceContext';
+import {
+  type Import, type Company, type Pref, type RadarStatus,
+  type RadarViewCompany, type RadarViewEvent, type RadarView,
+  type RadarAccessKind, type RadarAccess, type EventGroup, mapEventToGroup,
+} from '@/types/radar';
 
 const formatDate = (d: string | null | undefined) =>
   d ? new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -141,78 +61,29 @@ const eventInitials = (name: string | null | undefined) => {
 const companyInitials = (name: string) =>
   name.split(/[\s\-_]+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
-/** Aggregated event with all CRM matches */
-interface EventGroup {
-  event_id: string;
-  slug: string | null;
-  nom_event: string;
-  date_debut: string | null;
-  date_fin: string | null;
-  ville: string | null;
-  nom_lieu: string | null;
-  url_image: string | null;
-  days_until: number | null;
-  is_future: boolean;
-  company_count: number;
-  companies: Array<{
-    company: Company;
-    id_exposant: string;
-    nom_exposant: string | null;
-    stand: string | null;
-    needs_review: boolean;
-    name_similarity: number | null;
-    pref_status: Pref | null;
-  }>;
-}
-
-/** Map a RPC event payload to the existing EventGroup shape used by all cards. */
-const mapEventToGroup = (e: RadarViewEvent): EventGroup => ({
-  event_id: e.event_id,
-  slug: e.slug,
-  nom_event: e.nom_event ?? 'Événement',
-  date_debut: e.date_debut,
-  date_fin: e.date_fin,
-  ville: e.ville,
-  nom_lieu: e.nom_lieu,
-  url_image: e.url_image,
-  days_until: e.days_until_event,
-  is_future: e.is_future_event ?? false,
-  company_count: e.company_count,
-  companies: (e.companies ?? []).map((c) => ({
-    company: {
-      id: c.crm_company_id,
-      company_name: c.company_name ?? '',
-      website_raw: c.website_raw,
-      normalized_domain: c.normalized_domain,
-    },
-    id_exposant: c.id_exposant ?? '',
-    nom_exposant: c.nom_exposant,
-    stand: c.stand_exposants_list,
-    needs_review: c.needs_review === true,
-    name_similarity: c.name_similarity ?? null,
-    pref_status: c.pref_status ?? null,
-  })),
-});
-
 const RadarCrmResults: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [imports, setImports] = useState<Import[] | null>(null);
-  const [activeImportId, setActiveImportId] = useState<string | null>(searchParams.get('importId'));
-  const highlightedEventId = searchParams.get('eventId');
-  const [radarView, setRadarView] = useState<RadarView | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    imports, activeImportId, setActiveImportId,
+    radarView, loading, error,
+    onboarding, onboardingLoading,
+    access, accessLoading,
+    orgName, isSpaceOwner, loadSpaceMeta,
+    getPref, setPref, getRel, setRel,
+    offerEmpty, checkOfferProfile,
+    similarCounts, setSimilarCounts, highlightedEventId,
+    eventGroups, matchedCompanies, futureGroups, pastGroups,
+    nextEvent, featured, starredCount, ongoingEvents, seatBlockKind,
+    reloadAll, refreshCockpit, enterTerrain,
+  } = useRadarWorkspace();
   const [openExhibitor, setOpenExhibitor] = useState<{
     exhibitor: any;
     event: any;
   } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
-  // Métadonnées d'espace (multi-membres) : nom d'entreprise + rôle pour l'invite "Nommez cet espace".
-  const [orgName, setOrgName] = useState<string | null>(null);
-  const [isSpaceOwner, setIsSpaceOwner] = useState(false);
   // Panneau mission (vue « Par salon ») — couple compte + salon.
   const [mission, setMission] = useState<{ target: MissionTarget; company: Company } | null>(null);
   // Vue par compte = vue par défaut (cadrage « veille »).
@@ -222,16 +93,6 @@ const RadarCrmResults: React.FC = () => {
     if (fromQuery === 'companies' || fromQuery === 'future' || fromQuery === 'past') return fromQuery;
     return searchParams.get('eventId') ? 'future' : 'companies';
   });
-  // Comptage des similaires par salon (à venir, > 0). Chargé une fois à l'ouverture
-  // de l'onglet « Par salon » ; sert à n'afficher la section que s'il y a du contenu.
-  const [similarCounts, setSimilarCounts] = useState<Record<string, number> | null>(null);
-  // ── Onboarding gamifié (RUN O1) — progression 4 missions ─────────────
-  const [onboarding, setOnboarding] = useState<RadarOnboardingProgress | null>(null);
-  const [onboardingLoading, setOnboardingLoading] = useState(true);
-  // Accès par membre (siège payant OU essai 7 j) — source de vérité pour le
-  // bandeau d'essai et le blocage propre quand l'accès a expiré/est suspendu.
-  const [access, setAccess] = useState<RadarAccess | null>(null);
-  const [accessLoading, setAccessLoading] = useState(true);
 
   // Resynchronise l'onglet quand le menu latéral change le paramètre `tab`.
   useEffect(() => {
@@ -246,110 +107,12 @@ const RadarCrmResults: React.FC = () => {
     if (searchParams.get('panel') === 'settings') setSettingsOpen(true);
   }, [searchParams]);
 
-  const reloadAll = async () => {
-    setActiveImportId(null);
-    setRadarView(null);
-    const { data } = await supabase
-      .from('crm_imports')
-      .select('id, file_name, status, total_rows, matched_companies_count, unmatched_companies_count, created_at')
-      .order('created_at', { ascending: false });
-    setImports((data ?? []) as Import[]);
-    if (data && data.length > 0) setActiveImportId(data[0].id);
-  };
-
   // Auth gate
   useEffect(() => {
     if (!authLoading && !user) {
       navigate(`/auth?redirect=${encodeURIComponent('/radar-crm/results')}`);
     }
   }, [user, authLoading, navigate]);
-
-  // Load imports
-  useEffect(() => {
-    if (!user) return;
-    void trackRadarEvent('crm_results_viewed');
-    (async () => {
-      const { data } = await supabase
-        .from('crm_imports')
-        .select('id, file_name, status, total_rows, matched_companies_count, unmatched_companies_count, created_at')
-        .order('created_at', { ascending: false });
-      setImports((data ?? []) as Import[]);
-      if (!activeImportId && data && data.length > 0) {
-        setActiveImportId(data[0].id);
-      }
-    })();
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Métadonnées d'espace : nom d'entreprise (org_name) + rôle courant.
-  const loadSpaceMeta = React.useCallback(async () => {
-    const { data } = await supabase.rpc('get_my_radar_team');
-    const t = data as unknown as { org_name?: string | null; my_role?: string } | null;
-    setOrgName((t?.org_name ?? '').trim() || null);
-    setIsSpaceOwner(t?.my_role === 'owner');
-  }, []);
-
-  useEffect(() => {
-    if (!user) return;
-    void loadSpaceMeta();
-  }, [user, loadSpaceMeta]);
-
-  // Accès par membre : appelé au chargement. Pilote bandeau d'essai + blocage.
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    (async () => {
-      setAccessLoading(true);
-      const { data, error: rpcError } = await supabase.rpc('my_radar_access');
-      if (cancelled) return;
-      if (rpcError) {
-        console.error('[RadarCRM] my_radar_access failed:', rpcError);
-      } else {
-        setAccess((data as unknown as RadarAccess) ?? null);
-      }
-      setAccessLoading(false);
-    })();
-    return () => { cancelled = true; };
-  }, [user]);
-
-  // Load the full radar view for the active import via the server-side RPC.
-  // The RPC enforces entitlement/gating: in a locked state it returns
-  // `companies: []` while keeping `company_count` and `summary` populated.
-  useEffect(() => {
-    if (!activeImportId || !user) return;
-    setLoading(true);
-    setError(null);
-    (async () => {
-      const { data, error: rpcError } = await supabase.rpc('get_my_radar_view', {
-        p_import_id: activeImportId ?? null,
-      });
-      if (rpcError) {
-        console.error('[RadarCRM] get_my_radar_view failed:', rpcError);
-        setError(rpcError.message);
-        setRadarView(null);
-        toast({
-          title: 'Erreur de chargement',
-          description: "Impossible de charger votre Radar CRM. Réessayez dans un instant.",
-          variant: 'destructive',
-        });
-        setLoading(false);
-        return;
-      }
-      setRadarView((data as unknown as RadarView) ?? null);
-      setLoading(false);
-    })();
-  }, [activeImportId, user]);
-
-  // Rafraîchissement léger du cockpit après un « Garder » (sans écran de chargement).
-  // Re-fetch get_my_radar_view + relations pour faire apparaître le compte gardé
-  // (prospect froid) dans « À suivre » et sur le salon, sans rechargement manuel.
-  const refreshCockpit = async () => {
-    if (!activeImportId || !user) return;
-    const { data, error: rpcError } = await supabase.rpc('get_my_radar_view', {
-      p_import_id: activeImportId ?? null,
-    });
-    if (!rpcError) setRadarView((data as unknown as RadarView) ?? null);
-    void loadRelationships();
-  };
 
   const status: RadarStatus = radarView?.status ?? 'none';
   const isLocked = status === 'trial_expired' || status === 'free';
@@ -359,234 +122,7 @@ const RadarCrmResults: React.FC = () => {
 
   // ── Gating par siège (modèle par-membre) ────────────────────────────
   const accessKind = access?.access_kind ?? null;
-  // Blocage dur : accès refusé (essai expiré sans siège, ou accès suspendu),
-  // OU la RPC de données signale explicitement no_access.
-  const seatBlockKind: 'none' | 'locked' | null =
-    access && access.has_access === false && (accessKind === 'none' || accessKind === 'locked')
-      ? accessKind
-      : radarView && radarView.has_access === false && radarView.status === 'none'
-        ? 'none'
-        : null;
   const isSeatTrial = accessKind === 'trial' && (access?.has_access ?? false);
-
-  const eventGroups: EventGroup[] = useMemo(
-    () => (radarView?.events ?? []).map(mapEventToGroup),
-    [radarView],
-  );
-
-  // ── Triage « étoile / ignorer » (P1-c) ──────────────────────────────
-  // pref_status de base (lu depuis la RPC), indexé par crm_company_id.
-  const prefByCompany = useMemo(() => {
-    const m: Record<string, Pref> = {};
-    for (const g of eventGroups) {
-      for (const c of g.companies) {
-        if (c.pref_status) m[c.company.id] = c.pref_status;
-      }
-    }
-    return m;
-  }, [eventGroups]);
-
-  // Surcouche optimiste : appliquée immédiatement, réconciliée à chaque rechargement.
-  const [prefOverrides, setPrefOverrides] = useState<Record<string, Pref>>({});
-  // On efface les overrides quand une nouvelle vue arrive (les statuts viennent alors de la base).
-  useEffect(() => { setPrefOverrides({}); }, [radarView]);
-
-  const getPref = (companyId: string): Pref =>
-    prefOverrides[companyId] ?? prefByCompany[companyId] ?? 'normal';
-
-  const setPref = async (companyId: string, next: Pref) => {
-    const prev = getPref(companyId);
-    if (prev === next) return;
-    setPrefOverrides((o) => ({ ...o, [companyId]: next }));
-    const { error: rpcErr } = await supabase.rpc('set_radar_company_pref', {
-      p_crm_company_id: companyId,
-      p_status: next,
-    });
-    if (rpcErr) {
-      console.error('[RadarCRM] set_radar_company_pref failed:', rpcErr);
-      setPrefOverrides((o) => ({ ...o, [companyId]: prev }));
-      toast({
-        title: 'Action impossible',
-        description: "Impossible de mettre à jour ce compte. Réessayez dans un instant.",
-        variant: 'destructive',
-      });
-    }
-  };
-
-  // ── Statut relationnel par compte (RUN 3) ───────────────────────────
-  // Base lue directement depuis radar_company_relationship (RLS = workspace courant),
-  // indexée par company_key. Surcouche optimiste réconciliée à chaque rechargement.
-  const [relByKey, setRelByKey] = useState<Record<string, RelationshipStatus>>({});
-  const [relOverrides, setRelOverrides] = useState<Record<string, RelationshipStatus>>({});
-
-  const loadRelationships = async () => {
-    const { data, error: relErr } = await supabase
-      .from('radar_company_relationship')
-      .select('company_key, relationship_status');
-    if (relErr) {
-      console.error('[RadarCRM] lecture radar_company_relationship échouée:', relErr);
-      return;
-    }
-    const seen = new Set<string>();
-    const m: Record<string, RelationshipStatus> = {};
-    for (const r of (data ?? []) as Array<{ company_key: string | null; relationship_status: string | null }>) {
-      const key = (r.company_key ?? '').trim().toLowerCase();
-      if (!key) continue;
-      if (seen.has(key)) {
-        // Doublon de company_key = signal d'un utilisateur multi-workspace : on log sans deviner.
-        console.warn('[RadarCRM] company_key en doublon (multi-workspace ?):', key);
-      }
-      seen.add(key);
-      m[key] = normalizeRelationship(r.relationship_status);
-    }
-    setRelByKey(m);
-    setRelOverrides({});
-  };
-
-  useEffect(() => {
-    if (!user) return;
-    void loadRelationships();
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const getRel = (company: Company): RelationshipStatus => {
-    const key = companyKeyFor(company.normalized_domain, company.company_name);
-    return relOverrides[key] ?? relByKey[key] ?? DEFAULT_RELATIONSHIP;
-  };
-
-  const setRel = async (company: Company, next: RelationshipStatus) => {
-    const key = companyKeyFor(company.normalized_domain, company.company_name);
-    const prev = getRel(company);
-    if (prev === next) return;
-    setRelOverrides((o) => ({ ...o, [key]: next }));
-    const { error: rpcErr } = await supabase.rpc('set_radar_company_relationship', {
-      p_crm_company_id: company.id,
-      p_status: next,
-    });
-    if (rpcErr) {
-      console.error('[RadarCRM] set_radar_company_relationship failed:', rpcErr);
-      setRelOverrides((o) => ({ ...o, [key]: prev }));
-      toast({
-        title: 'Action impossible',
-        description: "Impossible de mettre à jour le statut de ce compte. Réessayez dans un instant.",
-        variant: 'destructive',
-      });
-      return;
-    }
-    void trackRadarEvent('radar_company_relationship_updated', { status: next });
-  };
-
-  // ── Profil d'offre : détection « vide » pour le nudge cockpit ────────
-  const [offerEmpty, setOfferEmpty] = useState<boolean | null>(null);
-  const checkOfferProfile = async () => {
-    const { data, error: offErr } = await supabase
-      .from('radar_offer_profile')
-      .select('sells, target, problem, qualifies')
-      .maybeSingle();
-    if (offErr) {
-      // Multi-workspace / anomalie : ne pas deviner, on masque le nudge.
-      console.error('[RadarCRM] lecture radar_offer_profile échouée:', offErr);
-      setOfferEmpty(false);
-      return;
-    }
-    const row = data as { sells?: string | null; target?: string | null; problem?: string | null; qualifies?: string | null } | null;
-    const empty = !row || ![row.sells, row.target, row.problem, row.qualifies].some((v) => (v ?? '').trim().length > 0);
-    setOfferEmpty(empty);
-  };
-  useEffect(() => {
-    if (!user) return;
-    void checkOfferProfile();
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Unique detected companies derived from the event groups (full-access only;
-  // empty in a locked state since the RPC strips company identities).
-  const matchedCompanies = useMemo(() => {
-    const map = new Map<string, Company>();
-    for (const g of eventGroups) {
-      for (const c of g.companies) {
-        if (!map.has(c.company.id)) map.set(c.company.id, c.company);
-      }
-    }
-    return Array.from(map.values());
-  }, [eventGroups]);
-
-  const futureGroups = useMemo(
-    () => eventGroups.filter((g) => g.is_future)
-      .sort((a, b) => {
-        // Highlighted event always first
-        if (highlightedEventId) {
-          if (a.event_id === highlightedEventId && b.event_id !== highlightedEventId) return -1;
-          if (b.event_id === highlightedEventId && a.event_id !== highlightedEventId) return 1;
-        }
-        const da = a.days_until ?? 9999;
-        const db = b.days_until ?? 9999;
-        if (da !== db) return da - db;
-        return b.company_count - a.company_count;
-      }),
-    [eventGroups, highlightedEventId],
-  );
-  const pastGroups = useMemo(
-    () => eventGroups.filter((g) => !g.is_future)
-      .sort((a, b) => (b.date_debut ?? '').localeCompare(a.date_debut ?? '')),
-    [eventGroups],
-  );
-
-  // Salon le plus imminent (le plus petit days_until parmi les salons futurs),
-  // indépendamment de la mise en avant deep-link — pour le bandeau « radar actif ».
-  const nextEvent = useMemo(() => {
-    const fut = eventGroups.filter((g) => g.is_future && g.days_until != null);
-    if (fut.length === 0) return null;
-    return fut.reduce((min, g) => ((g.days_until ?? 9999) < (min.days_until ?? 9999) ? g : min));
-  }, [eventGroups]);
-
-  // Encart héros « ancré sur la priorité » :
-  //  - s'il existe un compte étoilé avec un salon à venir → le plus imminent d'entre eux ;
-  //  - sinon → le salon le plus imminent (libellé explicite).
-  const featured = useMemo(() => {
-    let best: { event: EventGroup; company: Company; days: number } | null = null;
-    for (const g of eventGroups) {
-      if (!g.is_future || g.days_until == null) continue;
-      for (const c of g.companies) {
-        const eff = prefOverrides[c.company.id] ?? prefByCompany[c.company.id] ?? 'normal';
-        if (eff !== 'starred') continue;
-        if (!best || (g.days_until ?? 9999) < best.days) {
-          best = { event: g, company: c.company, days: g.days_until ?? 9999 };
-        }
-      }
-    }
-    if (best) return { event: best.event, company: best.company, isPriority: true };
-    if (nextEvent) return { event: nextEvent, company: null as Company | null, isPriority: false };
-    return null;
-  }, [eventGroups, nextEvent, prefOverrides, prefByCompany]);
-
-  // Nombre de comptes étoilés (statut effectif) pour la ligne « Radar actif ».
-  const starredCount = useMemo(
-    () => matchedCompanies.filter(
-      (c) => (prefOverrides[c.id] ?? prefByCompany[c.id] ?? 'normal') === 'starred',
-    ).length,
-    [matchedCompanies, prefOverrides, prefByCompany],
-  );
-
-  // Salons EN COURS aujourd'hui : date du jour (locale) comprise entre
-  // date_debut et date_fin inclus (date_fin null → date_debut).
-  // Le plus « prioritaire » = celui avec le plus d'entreprises détectées.
-  const ongoingEvents = useMemo(() => {
-    const now = new Date();
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-    return eventGroups
-      .filter((g) => {
-        if (!g.date_debut) return false;
-        const start = g.date_debut.slice(0, 10);
-        const end = (g.date_fin ?? g.date_debut).slice(0, 10);
-        return start <= today && today <= end;
-      })
-      .sort((a, b) => b.company_count - a.company_count);
-  }, [eventGroups]);
-
-  const enterTerrain = (id: string) => {
-    void trackRadarEvent('radar_salon_mode_opened', { eventId: id });
-    navigate(`/radar-crm/terrain/${id}`);
-  };
 
   // CTA onboarding « Préparer » : bascule sur l'onglet « Par salon » et focalise
   // le salon ciblé (deep-link eventId) pour le scroll automatique vers sa carte.
@@ -612,6 +148,7 @@ const RadarCrmResults: React.FC = () => {
     }
   }, [highlightedEventId, loading, eventGroups, activeTab]);
 
+
   // Comptage des similaires : appelé une seule fois quand l'onglet « Par salon » s'ouvre.
   useEffect(() => {
     if (activeTab !== 'future' || similarCounts !== null) return;
@@ -626,31 +163,7 @@ const RadarCrmResults: React.FC = () => {
       setSimilarCounts(data as Record<string, number>);
     })();
     return () => { cancelled = true; };
-  }, [activeTab, similarCounts]);
-
-  // Onboarding gamifié : progression des 4 missions (qualifier, prioriser,
-  // préparer, capturer). Chargé une fois au montage quand l'utilisateur est
-  // connecté. Non bloquant : en cas d'erreur on masque silencieusement le panneau.
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    setOnboardingLoading(true);
-    (async () => {
-      const { data, error: obErr } = await supabase.rpc('get_radar_onboarding_progress');
-      if (cancelled) return;
-      if (obErr || !data || typeof data !== 'object') {
-        if (obErr) console.error('[RadarCRM] get_radar_onboarding_progress failed:', obErr);
-        setOnboarding(null);
-        setOnboardingLoading(false);
-        return;
-      }
-      setOnboarding(data as unknown as RadarOnboardingProgress);
-      setOnboardingLoading(false);
-    })();
-    return () => { cancelled = true; };
-  }, [user]);
-
-
+  }, [activeTab, similarCounts]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // KPI values come straight from the server-aggregated summary.
   const kpiAnalyzed = summary?.companies_analyzed ?? 0;

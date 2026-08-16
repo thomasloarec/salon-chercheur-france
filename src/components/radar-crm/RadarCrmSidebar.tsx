@@ -14,13 +14,14 @@ import {
 } from '@/components/ui/sidebar';
 import { LayoutDashboard, Building2, CalendarDays, Radar, History, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useRadarLiveEvent } from '@/hooks/useRadarLiveEvent';
+import { useRadarWorkspace } from '@/contexts/RadarWorkspaceContext';
 
 export function RadarCrmSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
-  const { data: live, isLoading: liveLoading } = useRadarLiveEvent();
+  const { ongoingEvents, loading } = useRadarWorkspace();
+  const live = ongoingEvents[0] ?? null;
 
   const params = new URLSearchParams(location.search);
   const tab = params.get('tab');
@@ -93,13 +94,13 @@ export function RadarCrmSidebar() {
               <SidebarMenuItem>
                 {live ? (
                   <SidebarMenuButton asChild isActive={terrainActive}>
-                    <Link to={'/radar-crm/terrain/' + live.eventId} className="flex items-center gap-2">
+                    <Link to={'/radar-crm/terrain/' + live.event_id} className="flex items-center gap-2">
                       <Radar className="h-4 w-4" />
                       {!collapsed && (
                         <span className="flex-1 min-w-0">
                           <span className="block truncate">Mode Salon</span>
-                          {live.nomEvent && (
-                            <span className="block text-[11px] text-muted-foreground truncate">{live.nomEvent}</span>
+                          {live.nom_event && (
+                            <span className="block text-[11px] text-muted-foreground truncate">{live.nom_event}</span>
                           )}
                         </span>
                       )}
@@ -109,7 +110,7 @@ export function RadarCrmSidebar() {
                   <SidebarMenuButton
                     disabled
                     className="opacity-50 cursor-not-allowed"
-                    title={liveLoading ? undefined : 'Aucun salon en cours aujourd\u2019hui'}
+                    title={loading ? undefined : 'Aucun salon en cours aujourd\u2019hui'}
                   >
                     <Radar className="h-4 w-4" />
                     {!collapsed && <span className="flex-1">Mode Salon</span>}
