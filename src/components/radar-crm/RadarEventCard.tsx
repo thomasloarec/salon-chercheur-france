@@ -53,7 +53,7 @@ const ParticipationButton: React.FC<{
         disabled={setParticipation.isPending}
         className={cn(
           'transition-all duration-200',
-          participating && 'bg-primary text-primary-foreground hover:bg-primary/90 border-primary',
+          participating && 'bg-[#eeedfe] text-[#6b51ff] hover:bg-[#e4e1fb] border-[#6b51ff]/40',
         )}
       >
         {participating ? (
