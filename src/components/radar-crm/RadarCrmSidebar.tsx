@@ -23,13 +23,11 @@ export function RadarCrmSidebar() {
   const { ongoingEvents, loading, matchedCompanies, futureGroups, pastGroups } = useRadarWorkspace();
   const live = ongoingEvents[0] ?? null;
 
-  const params = new URLSearchParams(location.search);
-  const panel = params.get('panel');
   const onResults = location.pathname === '/radar-crm/results';
 
   const overviewActive = onResults;
   const terrainActive = location.pathname.startsWith('/radar-crm/terrain/');
-  const settingsActive = onResults && panel === 'settings';
+  const settingsActive = location.pathname === '/radar-crm/equipe';
 
   const Count: React.FC<{ n: number }> = ({ n }) => (
     <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">{n}</span>
@@ -145,7 +143,7 @@ export function RadarCrmSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={settingsActive}>
-                  <Link to="/radar-crm/results?panel=settings" className="flex items-center gap-2">
+                  <Link to="/radar-crm/equipe" className="flex items-center gap-2">
                     <Users className="h-4 w-4" />
                     {!collapsed && <span className="flex-1">Espace et équipe</span>}
                   </Link>
