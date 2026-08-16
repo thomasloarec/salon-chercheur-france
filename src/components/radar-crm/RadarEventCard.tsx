@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -53,7 +53,7 @@ const ParticipationButton: React.FC<{
         disabled={setParticipation.isPending}
         className={cn(
           'transition-all duration-200',
-          participating && 'bg-primary text-primary-foreground hover:bg-primary/90 border-primary',
+          participating && 'bg-[#eeedfe] text-[#6b51ff] hover:bg-[#e4e1fb] border-[#6b51ff]/40',
         )}
       >
         {participating ? (
@@ -90,6 +90,8 @@ const EventCard: React.FC<{
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
   const [expanded, setExpanded] = useState(false);
   const [showAllCompanies, setShowAllCompanies] = useState(false);
+  const [prepareMode, setPrepareMode] = useState(false);
+  const chipsRef = useRef<HTMLDivElement>(null);
   const [optimistic, setOptimistic] = useState<boolean | null>(null);
 
   // Participation : état serveur + surcouche optimiste locale.
@@ -180,27 +182,32 @@ const EventCard: React.FC<{
             {ordered.length > 3 && (
               <button
                 type="button"
-                onClick={() => setShowAllCompanies((v) => !v)}
+                onClick={() => { setShowAllCompanies((v) => !v); setPrepareMode(false); }}
                 className="w-fit text-xs text-muted-foreground hover:text-foreground hover:underline"
               >
                 {showAllCompanies ? 'Masquer les comptes' : `Voir les ${ordered.length} comptes`}
               </button>
             )}
             {showAllCompanies && (
-              <div className="flex flex-wrap gap-2">
-                {ordered.map((x) => (
-                  <CompanyChip
-                    key={`${x.company.id}-${x.id_exposant}`}
-                    company={x.company}
-                    stand={x.stand}
-                    nomExposant={x.nom_exposant}
-                    needsReview={x.needs_review}
-                    starred={getPref?.(x.company.id) === 'starred'}
-                    relationship={getRel?.(x.company)}
-                    onSetRelationship={onSetRel ? (next) => onSetRel(x.company, next) : undefined}
-                    onClick={() => onCompanyClick(x.company, x.id_exposant, x.stand, x.nom_exposant, x.needs_review)}
-                  />
-                ))}
+              <div className="flex flex-col gap-2" ref={chipsRef}>
+                {prepareMode && (
+                  <p className="text-xs text-muted-foreground">Choisissez le compte à préparer</p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {ordered.map((x) => (
+                    <CompanyChip
+                      key={`${x.company.id}-${x.id_exposant}`}
+                      company={x.company}
+                      stand={x.stand}
+                      nomExposant={x.nom_exposant}
+                      needsReview={x.needs_review}
+                      starred={getPref?.(x.company.id) === 'starred'}
+                      relationship={getRel?.(x.company)}
+                      onSetRelationship={onSetRel ? (next) => onSetRel(x.company, next) : undefined}
+                      onClick={() => onCompanyClick(x.company, x.id_exposant, x.stand, x.nom_exposant, x.needs_review)}
+                    />
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -213,12 +220,18 @@ const EventCard: React.FC<{
           <Button
             size="sm"
             onClick={() => {
-              const first = ordered[0];
-              if (first) onCompanyClick(first.company, first.id_exposant, first.stand, first.nom_exposant, first.needs_review);
+              if (ordered.length === 1) {
+                const first = ordered[0];
+                onCompanyClick(first.company, first.id_exposant, first.stand, first.nom_exposant, first.needs_review);
+              } else if (ordered.length > 1) {
+                setShowAllCompanies(true);
+                setPrepareMode(true);
+                setTimeout(() => chipsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+              }
             }}
             disabled={ordered.length === 0}
           >
-            <Target className="h-3.5 w-3.5 mr-1" /> Préparer mes visites
+            <Target className="h-3.5 w-3.5 mr-1" /> {ordered.length > 1 ? 'Préparer une visite' : 'Préparer ma visite'}
           </Button>
           <ParticipationButton
             eventId={group.event_id}
