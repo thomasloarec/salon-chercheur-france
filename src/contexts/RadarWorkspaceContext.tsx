@@ -8,6 +8,7 @@ import {
   type RelationshipStatus, companyKeyFor, normalizeRelationship, DEFAULT_RELATIONSHIP,
 } from '@/lib/radarCrm/relationship';
 import { type RadarOnboardingProgress } from '@/components/radar-crm/RadarOnboardingPanel';
+import { type MissionTarget } from '@/components/radar-crm/RadarMissionSheet';
 import {
   type Import, type Company, type Pref, type RadarView, type RadarAccess,
   type EventGroup, mapEventToGroup,
@@ -50,6 +51,23 @@ interface RadarWorkspaceValue {
   starredCount: number;
   ongoingEvents: EventGroup[];
   seatBlockKind: 'none' | 'locked' | null;
+  // Dialogues montés une seule fois par RadarDialogsHost.
+  openExhibitor: { exhibitor: any; event: any } | null;
+  setOpenExhibitor: React.Dispatch<React.SetStateAction<{ exhibitor: any; event: any } | null>>;
+  mission: { target: MissionTarget; company: Company } | null;
+  setMission: React.Dispatch<React.SetStateAction<{ target: MissionTarget; company: Company } | null>>;
+  settingsOpen: boolean;
+  setSettingsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  accessOpen: boolean;
+  setAccessOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  onOpenExhibitor: (
+    company: Company, id_exposant: string, stand: string | null,
+    g: EventGroup, nom_exposant: string | null, needs_review: boolean,
+  ) => void;
+  onOpenMission: (
+    company: Company, stand: string | null, g: EventGroup, nom_exposant: string | null,
+  ) => void;
+  onClickEvent: (g: EventGroup) => void;
   reloadAll: () => Promise<void>;
   refreshCockpit: () => Promise<void>;
   enterTerrain: (id: string) => void;
