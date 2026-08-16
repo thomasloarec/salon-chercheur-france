@@ -6930,6 +6930,7 @@ export type Database = {
         Row: {
           created_at: string
           deleted_at: string | null
+          goal_events_per_quarter: number | null
           id: string
           name: string
           org_name: string | null
@@ -6946,6 +6947,7 @@ export type Database = {
         Insert: {
           created_at?: string
           deleted_at?: string | null
+          goal_events_per_quarter?: number | null
           id?: string
           name: string
           org_name?: string | null
@@ -6962,6 +6964,7 @@ export type Database = {
         Update: {
           created_at?: string
           deleted_at?: string | null
+          goal_events_per_quarter?: number | null
           id?: string
           name?: string
           org_name?: string | null
@@ -10750,6 +10753,7 @@ export type Database = {
       }
       get_or_create_my_radar_account: { Args: never; Returns: string }
       get_outreach_pipeline_stats: { Args: never; Returns: Json }
+      get_radar_action_stats: { Args: never; Returns: Json }
       get_radar_crm_admin_stats: { Args: never; Returns: Json }
       get_radar_crm_pricing: { Args: never; Returns: Json }
       get_radar_event_participants: {
@@ -11454,6 +11458,7 @@ export type Database = {
         Args: { p_event_id: string; p_participating: boolean }
         Returns: Json
       }
+      set_radar_events_goal: { Args: { p_goal: number }; Returns: Json }
       set_radar_exposant_ignored: {
         Args: { p_id_exposant: string }
         Returns: boolean
