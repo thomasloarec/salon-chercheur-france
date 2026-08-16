@@ -368,6 +368,23 @@ const RadarCrmSpacesPanel: React.FC = () => {
                                 <Badge variant={isRevoked ? 'destructive' : 'outline'}>
                                   {isRevoked ? 'revoked' : 'active'}
                                 </Badge>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  disabled={isRevoked || removingUserId === m.user_id}
+                                  aria-label="Retirer ce membre"
+                                  title={
+                                    isRevoked ? 'Membre déjà retiré' : "Retirer l'accès de ce membre"
+                                  }
+                                  onClick={() => setRemoveTarget({ space: s, member: m })}
+                                >
+                                  {removingUserId === m.user_id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <X className="h-4 w-4" />
+                                  )}
+                                </Button>
                               </div>
                             </li>
                           );
