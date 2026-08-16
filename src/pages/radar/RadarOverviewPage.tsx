@@ -1,0 +1,205 @@
+import React from 'react';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import { Plus, Radar, Sparkles, Settings } from 'lucide-react';
+import StatCard from '@/components/radar-crm/RadarStatCard';
+import RadarOnboardingPanel from '@/components/radar-crm/RadarOnboardingPanel';
+import RadarActiveBanner from '@/components/radar-crm/RadarActiveBanner';
+import RadarPageGate from '@/components/radar-crm/RadarPageGate';
+import { SeatTrialBanner, TrialBanner, OfferProfileNudge } from '@/components/radar-crm/RadarStates';
+import { formatDate } from '@/components/radar-crm/RadarShared';
+import { useRadarWorkspace } from '@/contexts/RadarWorkspaceContext';
+import { type RadarStatus } from '@/types/radar';
+
+const RadarOverviewPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const {
+    imports, activeImportId, setActiveImportId,
+    radarView, loading,
+    onboarding, onboardingLoading,
+    access, orgName, isSpaceOwner,
+    getPref, offerEmpty, setSettingsOpen,
+    matchedCompanies, futureGroups,
+    nextEvent, featured, starredCount, ongoingEvents,
+    enterTerrain, onClickEvent,
+  } = useRadarWorkspace();
+
+  // Compatibilité des anciens liens à paramètres.
+  const tab = searchParams.get('tab');
+  const eventId = searchParams.get('eventId');
+  const redirectTo = (path: string, drop: string[]) => {
+    const next = new URLSearchParams(searchParams);
+    drop.forEach((k) => next.delete(k));
+    const qs = next.toString();
+    return <Navigate to={`${path}${qs ? `?${qs}` : ''}`} replace />;
+  };
+  if (tab === 'companies') return redirectTo('/radar-crm/comptes', ['tab']);
+  if (tab === 'future') return redirectTo('/radar-crm/salons', ['tab']);
+  if (tab === 'past') return redirectTo('/radar-crm/passes', ['tab']);
+  if (eventId) return redirectTo('/radar-crm/salons', ['tab']);
+
+  const status: RadarStatus = radarView?.status ?? 'none';
+  const isLocked = status === 'trial_expired' || status === 'free';
+  const isTrial = status === 'trial_active';
+  const daysLeft = radarView?.days_left ?? null;
+  const summary = radarView?.summary;
+
+  const accessKind = access?.access_kind ?? null;
+  const isSeatTrial = accessKind === 'trial' && (access?.has_access ?? false);
+
+  // CTA onboarding « Préparer » : cible directement la page des salons à venir.
+  const onPrepareEvent = (id: string) => {
+    navigate(`/radar-crm/salons?eventId=${encodeURIComponent(id)}`);
+  };
+
+  const onboardingCaptureEventId =
+    onboarding?.prepare_next?.event_id ?? nextEvent?.event_id ?? null;
+
+  const kpiAnalyzed = summary?.companies_analyzed ?? 0;
+  const kpiDetected = summary?.companies_detected ?? matchedCompanies.length;
+  const kpiFutureSalons = summary?.future_salons ?? futureGroups.length;
+  const kpiFutureParticipations = summary?.future_participations ?? 0;
+
+  return (
+    <div className="font-body bg-muted/10 min-h-[calc(100vh-200px)]">
+      <div className="max-w-6xl mx-auto px-4 py-10 md:py-14 space-y-10 md:space-y-12">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-sm">
+                <Radar className="h-5 w-5" />
+              </div>
+              <h1 className="font-display text-3xl md:text-4xl font-semibold tracking-tight text-foreground">Votre Radar CRM</h1>
+            </div>
+            <p className="text-muted-foreground text-sm md:text-base max-w-xl">
+              {loading ? 'Analyse en cours…' : isLocked ? (
+                <>Votre Radar CRM est prêt — débloquez l'accès pour découvrir vos détections</>
+              ) : (
+                <>Pendant que vous travaillez, Radar surveille vos comptes CRM et vous alerte avant chaque salon.</>
+              )}
+            </p>
+            {!isLocked && !loading && (() => {
+              const activeImport = imports?.find((i) => i.id === activeImportId) ?? null;
+              const fileName = activeImport?.file_name ?? null;
+              if (!orgName && !fileName && !isSpaceOwner) return null;
+              return (
+                <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground">
+                  {orgName ? (
+                    <span>Espace : <span className="font-medium text-foreground">{orgName}</span></span>
+                  ) : isSpaceOwner ? (
+                    <button
+                      type="button"
+                      onClick={() => setSettingsOpen(true)}
+                      className="font-medium text-primary underline underline-offset-2 hover:opacity-80"
+                    >
+                      Nommez cet espace
+                    </button>
+                  ) : null}
+                  {fileName && (orgName || isSpaceOwner) && <span aria-hidden>·</span>}
+                  {fileName && <span>Fichier : <span className="font-medium text-foreground">{fileName}</span></span>}
+                </p>
+              );
+            })()}
+          </div>
+          {!isLocked && (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSettingsOpen(true)}
+                className="w-full sm:w-auto"
+              >
+                <Settings className="h-4 w-4 mr-2" /> Paramètres Radar CRM
+              </Button>
+              {imports && imports.length > 1 && (
+                <Select value={activeImportId ?? ''} onValueChange={setActiveImportId}>
+                  <SelectTrigger className="w-full sm:w-[240px] max-w-full bg-card">
+                    <SelectValue placeholder="Choisir un import" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {imports.map((imp) => (
+                      <SelectItem key={imp.id} value={imp.id}>
+                        {imp.file_name ?? 'Sans nom'} — {formatDate(imp.created_at)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <Button asChild className="w-full sm:w-auto">
+                <Link to="/radar-crm">
+                  <Plus className="h-4 w-4 mr-2" /> Nouveau fichier CSV
+                </Link>
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Panneau d'onboarding gamifié — 4 missions */}
+        {!isLocked && (
+          <RadarOnboardingPanel
+            progress={onboarding}
+            loading={onboardingLoading}
+            captureEventId={onboardingCaptureEventId}
+            onGoCompanies={() => navigate('/radar-crm/comptes')}
+            onPrepareEvent={onPrepareEvent}
+            onEnterTerrain={enterTerrain}
+            onOpenCollaboration={() => setSettingsOpen(true)}
+          />
+        )}
+
+        {/* Bandeau d'essai par siège (modèle par-membre) — source: my_radar_access */}
+        {isSeatTrial && !loading && (
+          <SeatTrialBanner daysLeft={access?.trial_days_left ?? null} />
+        )}
+
+        {/* Ancien bandeau d'essai (statut get_my_radar_view) — fallback */}
+        {isTrial && !loading && !access && (
+          <TrialBanner daysLeft={daysLeft} detected={kpiDetected} />
+        )}
+
+        {/* Hero stats — masquées en état verrouillé */}
+        {!isLocked && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
+            <StatCard label="Entreprises analysées" value={kpiAnalyzed} />
+            <StatCard label="Entreprises détectées" value={kpiDetected} accent="accent" />
+            <StatCard label="Salons à venir" value={kpiFutureSalons} accent="primary" icon={<Sparkles className="h-4 w-4" />} />
+            <StatCard label="Participations futures" value={kpiFutureParticipations} />
+          </div>
+        )}
+
+        <RadarPageGate>
+          <>
+            {/* Bandeau « radar actif » — cadrage veille/surveillance */}
+            <RadarActiveBanner
+              analyzed={kpiAnalyzed}
+              futureCompanies={summary?.future_companies ?? 0}
+              futureSalons={kpiFutureSalons}
+              featured={featured}
+              starredCount={starredCount}
+              ongoing={ongoingEvents}
+              getPref={getPref}
+              onEnterTerrain={enterTerrain}
+              onClickEvent={onClickEvent}
+              onOpenSettings={() => setSettingsOpen(true)}
+            />
+
+            {/* Nudge profil d'offre — discret, disparaît une fois le profil rempli */}
+            {offerEmpty === true && (
+              <div className="mt-6">
+                <OfferProfileNudge onOpenSettings={() => setSettingsOpen(true)} />
+              </div>
+            )}
+          </>
+        </RadarPageGate>
+      </div>
+    </div>
+  );
+};
+
+export default RadarOverviewPage;
