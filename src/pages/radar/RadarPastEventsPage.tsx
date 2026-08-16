@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
 import RadarPageGate from '@/components/radar-crm/RadarPageGate';
 import { EmptyText, formatDate } from '@/components/radar-crm/RadarShared';
 import EventDebriefPanel, { type DebriefSummary } from '@/components/radar-crm/EventDebriefPanel';
@@ -23,8 +22,8 @@ const PastEventRow: React.FC<{
   group: EventGroup;
   open: boolean;
   onToggle: () => void;
-}> = ({ group, open, onToggle }) => {
-  const navigate = useNavigate();
+  onOpenEvent: () => void;
+}> = ({ group, open, onToggle, onOpenEvent }) => {
   const [summary, setSummary] = useState<DebriefSummary | undefined>(undefined);
 
   return (
@@ -40,7 +39,7 @@ const PastEventRow: React.FC<{
         <div className="min-w-0 flex-1">
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); if (group.slug) navigate(`/events/${group.slug}`); }}
+            onClick={(e) => { e.stopPropagation(); onOpenEvent(); }}
             disabled={!group.slug}
             className="font-display text-base font-semibold text-foreground leading-tight hover:text-primary text-left"
           >
@@ -83,9 +82,16 @@ const PastEventRow: React.FC<{
 };
 
 const RadarPastEventsPage: React.FC = () => {
-  const { pastGroups } = useRadarWorkspace();
+  const { pastGroups, onClickEvent } = useRadarWorkspace();
   // Le salon le plus récent est déplié d'emblée : c'est celui qui vient de se terminer.
-  const [openId, setOpenId] = useState<string | null>(pastGroups[0]?.event_id ?? null);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [autoOpened, setAutoOpened] = useState(false);
+
+  useEffect(() => {
+    if (autoOpened || pastGroups.length === 0) return;
+    setOpenId(pastGroups[0].event_id);
+    setAutoOpened(true);
+  }, [autoOpened, pastGroups]);
 
   return (
     <div className="font-body bg-muted/10 min-h-[calc(100vh-200px)]">
@@ -101,12 +107,13 @@ const RadarPastEventsPage: React.FC = () => {
             <EmptyText label="Aucun salon passé détecté pour vos comptes surveillés." />
           ) : (
             <div className="space-y-4">
-              {pastGroups.map((g, i) => (
+              {pastGroups.map((g) => (
                 <PastEventRow
                   key={g.event_id}
                   group={g}
-                  open={openId === g.event_id || (openId === null && false) || (i === 0 && openId === undefined)}
+                  open={openId === g.event_id}
                   onToggle={() => setOpenId((cur) => (cur === g.event_id ? null : g.event_id))}
+                  onOpenEvent={() => onClickEvent(g)}
                 />
               ))}
             </div>
