@@ -46,8 +46,10 @@ export const OAuthCallback = () => {
           setMessage('Connexion réussie, import de vos comptes en cours…');
           setSyncing(true);
           void (async () => {
+            let syncImportId: string | null | undefined = null;
             try {
               const { data: syncData } = await supabase.functions.invoke('sync-hubspot');
+              syncImportId = syncData?.importId ?? null;
               if (syncData?.success) {
                 setMessage(
                   data.portal_id
@@ -70,7 +72,7 @@ export const OAuthCallback = () => {
             } finally {
               setSyncing(false);
               setTimeout(() => {
-                window.location.href = '/radar-crm';
+                window.location.href = '/radar-crm/results' + (syncImportId ? `?importId=${syncImportId}` : '');
               }, 1500);
             }
           })();
