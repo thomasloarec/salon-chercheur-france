@@ -182,27 +182,32 @@ const EventCard: React.FC<{
             {ordered.length > 3 && (
               <button
                 type="button"
-                onClick={() => setShowAllCompanies((v) => !v)}
+                onClick={() => { setShowAllCompanies((v) => !v); setPrepareMode(false); }}
                 className="w-fit text-xs text-muted-foreground hover:text-foreground hover:underline"
               >
                 {showAllCompanies ? 'Masquer les comptes' : `Voir les ${ordered.length} comptes`}
               </button>
             )}
             {showAllCompanies && (
-              <div className="flex flex-wrap gap-2">
-                {ordered.map((x) => (
-                  <CompanyChip
-                    key={`${x.company.id}-${x.id_exposant}`}
-                    company={x.company}
-                    stand={x.stand}
-                    nomExposant={x.nom_exposant}
-                    needsReview={x.needs_review}
-                    starred={getPref?.(x.company.id) === 'starred'}
-                    relationship={getRel?.(x.company)}
-                    onSetRelationship={onSetRel ? (next) => onSetRel(x.company, next) : undefined}
-                    onClick={() => onCompanyClick(x.company, x.id_exposant, x.stand, x.nom_exposant, x.needs_review)}
-                  />
-                ))}
+              <div className="flex flex-col gap-2" ref={chipsRef}>
+                {prepareMode && (
+                  <p className="text-xs text-muted-foreground">Choisissez le compte à préparer</p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {ordered.map((x) => (
+                    <CompanyChip
+                      key={`${x.company.id}-${x.id_exposant}`}
+                      company={x.company}
+                      stand={x.stand}
+                      nomExposant={x.nom_exposant}
+                      needsReview={x.needs_review}
+                      starred={getPref?.(x.company.id) === 'starred'}
+                      relationship={getRel?.(x.company)}
+                      onSetRelationship={onSetRel ? (next) => onSetRel(x.company, next) : undefined}
+                      onClick={() => onCompanyClick(x.company, x.id_exposant, x.stand, x.nom_exposant, x.needs_review)}
+                    />
+                  ))}
+                </div>
               </div>
             )}
           </div>
