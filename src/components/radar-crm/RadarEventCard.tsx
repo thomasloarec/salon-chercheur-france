@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Calendar, MapPin, Check, CalendarPlus, Target, ExternalLink,
+  Calendar, MapPin, Check, CalendarPlus, Target, ExternalLink, ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,9 +14,9 @@ import SimilarExhibitorsSection from '@/components/radar-crm/SimilarExhibitorsSe
 import { eventPhase, showModeSalon, modeSalonIsHot, showDebrief } from '@/lib/radarCrm/eventPhase';
 import { type RelationshipStatus } from '@/lib/radarCrm/relationship';
 import { type Company, type EventGroup, type Pref } from '@/types/radar';
-import { formatDate, eventInitials, CompanyAvatar } from './RadarShared';
+import { formatDate, CompanyAvatar, CompanyChip } from './RadarShared';
 
-/** Compact horizontal event card — image left, info center, actions right */
+/** Carte salon — variante compacte (repliable) et détaillée, sans visuel. */
 const AgendaLotexpoButton: React.FC<{ eventId: string; importId?: string | null }> = ({ eventId, importId }) => {
   const { user } = useAuth();
   const { data: isFavorite = false } = useIsFavorite(eventId);
