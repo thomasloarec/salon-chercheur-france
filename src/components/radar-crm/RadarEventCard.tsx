@@ -220,12 +220,18 @@ const EventCard: React.FC<{
           <Button
             size="sm"
             onClick={() => {
-              const first = ordered[0];
-              if (first) onCompanyClick(first.company, first.id_exposant, first.stand, first.nom_exposant, first.needs_review);
+              if (ordered.length === 1) {
+                const first = ordered[0];
+                onCompanyClick(first.company, first.id_exposant, first.stand, first.nom_exposant, first.needs_review);
+              } else if (ordered.length > 1) {
+                setShowAllCompanies(true);
+                setPrepareMode(true);
+                setTimeout(() => chipsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+              }
             }}
             disabled={ordered.length === 0}
           >
-            <Target className="h-3.5 w-3.5 mr-1" /> Préparer mes visites
+            <Target className="h-3.5 w-3.5 mr-1" /> {ordered.length > 1 ? 'Préparer une visite' : 'Préparer ma visite'}
           </Button>
           <ParticipationButton
             eventId={group.event_id}
