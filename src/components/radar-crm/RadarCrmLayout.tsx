@@ -4,6 +4,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { RadarCrmSidebar } from './RadarCrmSidebar';
 import { RadarWorkspaceProvider } from '@/contexts/RadarWorkspaceContext';
+import RadarDialogsHost from './RadarDialogsHost';
 
 const RadarCrmLayout: React.FC = () => (
   <MainLayout title="Mon Radar CRM | Lotexpo">
@@ -21,6 +22,7 @@ const RadarCrmLayout: React.FC = () => (
             </div>
           </div>
         </div>
+        <RadarDialogsHost />
       </SidebarProvider>
     </RadarWorkspaceProvider>
   </MainLayout>

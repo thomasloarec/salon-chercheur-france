@@ -20,18 +20,20 @@ export function RadarCrmSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
-  const { ongoingEvents, loading } = useRadarWorkspace();
+  const { ongoingEvents, loading, matchedCompanies, futureGroups, pastGroups } = useRadarWorkspace();
   const live = ongoingEvents[0] ?? null;
 
   const params = new URLSearchParams(location.search);
-  const tab = params.get('tab');
   const panel = params.get('panel');
   const onResults = location.pathname === '/radar-crm/results';
 
-  const overviewActive = onResults && !tab && !panel;
-  const tabActive = (t: string) => onResults && tab === t;
+  const overviewActive = onResults;
   const terrainActive = location.pathname.startsWith('/radar-crm/terrain/');
   const settingsActive = onResults && panel === 'settings';
+
+  const Count: React.FC<{ n: number }> = ({ n }) => (
+    <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">{n}</span>
+  );
 
   return (
     <Sidebar collapsible="icon">
@@ -68,18 +70,18 @@ export function RadarCrmSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={tabActive('companies')}>
-                  <Link to="/radar-crm/results?tab=companies" className="flex items-center gap-2">
+                <SidebarMenuButton asChild isActive={location.pathname === '/radar-crm/comptes'}>
+                  <Link to="/radar-crm/comptes" className="flex items-center gap-2">
                     <Building2 className="h-4 w-4" />
-                    {!collapsed && <span className="flex-1">Mes comptes</span>}
+                    {!collapsed && <><span className="flex-1">Mes comptes</span><Count n={matchedCompanies.length} /></>}
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={tabActive('future')}>
-                  <Link to="/radar-crm/results?tab=future" className="flex items-center gap-2">
+                <SidebarMenuButton asChild isActive={location.pathname === '/radar-crm/salons'}>
+                  <Link to="/radar-crm/salons" className="flex items-center gap-2">
                     <CalendarDays className="h-4 w-4" />
-                    {!collapsed && <span className="flex-1">Salons à venir</span>}
+                    {!collapsed && <><span className="flex-1">Salons à venir</span><Count n={futureGroups.length} /></>}
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -126,10 +128,10 @@ export function RadarCrmSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={tabActive('past')}>
-                  <Link to="/radar-crm/results?tab=past" className="flex items-center gap-2">
+                <SidebarMenuButton asChild isActive={location.pathname === '/radar-crm/passes'}>
+                  <Link to="/radar-crm/passes" className="flex items-center gap-2">
                     <History className="h-4 w-4" />
-                    {!collapsed && <span className="flex-1">Salons passés</span>}
+                    {!collapsed && <><span className="flex-1">Salons passés</span><Count n={pastGroups.length} /></>}
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

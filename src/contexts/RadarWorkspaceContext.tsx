@@ -8,6 +8,7 @@ import {
   type RelationshipStatus, companyKeyFor, normalizeRelationship, DEFAULT_RELATIONSHIP,
 } from '@/lib/radarCrm/relationship';
 import { type RadarOnboardingProgress } from '@/components/radar-crm/RadarOnboardingPanel';
+import { type MissionTarget } from '@/components/radar-crm/RadarMissionSheet';
 import {
   type Import, type Company, type Pref, type RadarView, type RadarAccess,
   type EventGroup, mapEventToGroup,
@@ -50,6 +51,23 @@ interface RadarWorkspaceValue {
   starredCount: number;
   ongoingEvents: EventGroup[];
   seatBlockKind: 'none' | 'locked' | null;
+  // Dialogues montés une seule fois par RadarDialogsHost.
+  openExhibitor: { exhibitor: any; event: any } | null;
+  setOpenExhibitor: React.Dispatch<React.SetStateAction<{ exhibitor: any; event: any } | null>>;
+  mission: { target: MissionTarget; company: Company } | null;
+  setMission: React.Dispatch<React.SetStateAction<{ target: MissionTarget; company: Company } | null>>;
+  settingsOpen: boolean;
+  setSettingsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  accessOpen: boolean;
+  setAccessOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  onOpenExhibitor: (
+    company: Company, id_exposant: string, stand: string | null,
+    g: EventGroup, nom_exposant: string | null, needs_review: boolean,
+  ) => void;
+  onOpenMission: (
+    company: Company, stand: string | null, g: EventGroup, nom_exposant: string | null,
+  ) => void;
+  onClickEvent: (g: EventGroup) => void;
   reloadAll: () => Promise<void>;
   refreshCockpit: () => Promise<void>;
   enterTerrain: (id: string) => void;
@@ -412,6 +430,72 @@ export const RadarWorkspaceProvider: React.FC<{ children: React.ReactNode }> = (
     navigate(`/radar-crm/terrain/${id}`);
   };
 
+  // ── Dialogues partagés (montés une seule fois dans le layout) ───────
+  const [openExhibitor, setOpenExhibitor] = useState<{ exhibitor: any; event: any } | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [accessOpen, setAccessOpen] = useState(false);
+  // Panneau mission (vue « Par salon ») — couple compte + salon.
+  const [mission, setMission] = useState<{ target: MissionTarget; company: Company } | null>(null);
+
+  const onClickEvent = (g: EventGroup) => {
+    void trackRadarEvent('crm_event_detail_clicked', { eventId: g.event_id });
+    void trackRadarEvent('crm_event_clicked', { eventId: g.event_id, source: 'radar_crm' });
+    if (g.slug) navigate(`/events/${g.slug}`);
+    else toast({ title: 'Page événement indisponible', description: 'Le slug est manquant.' });
+  };
+
+  const onOpenExhibitor = (
+    company: Company,
+    id_exposant: string,
+    stand: string | null,
+    g: EventGroup,
+    nom_exposant: string | null,
+    needs_review: boolean,
+  ) => {
+    void trackRadarEvent('crm_exhibitor_dialog_opened', { eventId: g.event_id, id_exposant });
+    setOpenExhibitor({
+      exhibitor: {
+        id_exposant,
+        exhibitor_name: nom_exposant ?? company.company_name,
+        crm_company_name: company.company_name,
+        needs_review,
+        stand_exposant: stand ?? undefined,
+        website_exposant: company.website_raw ?? undefined,
+      },
+      event: {
+        id: g.event_id,
+        slug: g.slug,
+        nom_event: g.nom_event,
+        date_debut: g.date_debut,
+        date_fin: g.date_fin,
+        ville: g.ville,
+        nom_lieu: g.nom_lieu,
+        url_image: g.url_image,
+      },
+    });
+  };
+
+  // Ouverture du panneau mission depuis la vue « Par salon ».
+  const onOpenMission = (
+    company: Company,
+    stand: string | null,
+    g: EventGroup,
+    nom_exposant: string | null,
+  ) => {
+    void trackRadarEvent('radar_mission_opened', { eventId: g.event_id });
+    setMission({
+      company,
+      target: {
+        companyId: company.id,
+        companyName: company.company_name,
+        nomExposant: nom_exposant,
+        stand,
+        eventId: g.event_id,
+        eventName: g.nom_event,
+      },
+    });
+  };
+
   // Onboarding gamifié : progression des 4 missions (qualifier, prioriser,
   // préparer, capturer). Chargé une fois au montage quand l'utilisateur est
   // connecté. Non bloquant : en cas d'erreur on masque silencieusement le panneau.
@@ -447,6 +531,9 @@ export const RadarWorkspaceProvider: React.FC<{ children: React.ReactNode }> = (
     highlightedEventId,
     eventGroups, matchedCompanies, futureGroups, pastGroups,
     nextEvent, featured, starredCount, ongoingEvents, seatBlockKind,
+    openExhibitor, setOpenExhibitor, mission, setMission,
+    settingsOpen, setSettingsOpen, accessOpen, setAccessOpen,
+    onOpenExhibitor, onOpenMission, onClickEvent,
     reloadAll, refreshCockpit, enterTerrain,
   };
 

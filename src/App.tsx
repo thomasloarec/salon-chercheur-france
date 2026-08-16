@@ -44,7 +44,10 @@ import AdminIaVisite from '@/pages/AdminIaVisite';
 import AdminRadarCrm from '@/pages/admin/AdminRadarCrm';
 import CmoDashboardPage from '@/pages/admin/CmoDashboardPage';
 import RadarCrm from '@/pages/RadarCrm';
-import RadarCrmResults from '@/pages/RadarCrmResults';
+import RadarOverviewPage from '@/pages/radar/RadarOverviewPage';
+import RadarAccountsPage from '@/pages/radar/RadarAccountsPage';
+import RadarUpcomingEventsPage from '@/pages/radar/RadarUpcomingEventsPage';
+import RadarPastEventsPage from '@/pages/radar/RadarPastEventsPage';
 import RadarCrmLayout from '@/components/radar-crm/RadarCrmLayout';
 import RadarCrmTerrain from '@/pages/RadarCrmTerrain';
 import RadarCrmDebrief from '@/pages/RadarCrmDebrief';
@@ -156,7 +159,10 @@ function App() {
             <Route path="/recherche-ia" element={<RechercheIA />} />
             <Route path="/radar-crm" element={<RadarCrm />} />
             <Route element={<RadarCrmLayout />}>
-              <Route path="/radar-crm/results" element={<RadarCrmResults />} />
+              <Route path="/radar-crm/results" element={<RadarOverviewPage />} />
+              <Route path="/radar-crm/comptes" element={<RadarAccountsPage />} />
+              <Route path="/radar-crm/salons" element={<RadarUpcomingEventsPage />} />
+              <Route path="/radar-crm/passes" element={<RadarPastEventsPage />} />
             </Route>
             <Route path="/radar-crm/terrain/:eventId" element={<RadarCrmTerrain />} />
             <Route path="/radar-crm/debrief/:eventId" element={<RadarCrmDebrief />} />
