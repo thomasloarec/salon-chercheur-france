@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ChevronRight, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { type EventGroup } from '@/types/radar';
+import { ParticipantAvatar } from '@/components/radar-crm/RadarParticipants';
 import {
   parseYmd, addDays, mondayOf, isoWeekNumber, weekKey, isoDayIndex, diffDays,
   weekRangeLabel, monthLabel, dayMonthLabel,
@@ -162,6 +163,8 @@ const RadarCalendarView: React.FC<{
 
           {w.segments.map((s, i) => {
             const imminent = s.group.days_until != null && s.group.days_until < 10;
+            const parts = s.group.participants ?? [];
+            const joined = parts.length > 0;
             const start = parseYmd(s.group.date_debut);
             const end = parseYmd(s.group.date_fin) ?? start;
             const label = start
@@ -176,9 +179,11 @@ const RadarCalendarView: React.FC<{
                 title={label}
                 className={cn(
                   'min-w-0 rounded-r-[6px] rounded-l-none border border-l-2 px-2 py-1 text-left text-xs transition-colors flex items-center gap-1',
-                  imminent
-                    ? 'bg-primary/10 border-l-primary border-border hover:bg-primary/15'
-                    : 'bg-background border-l-primary/40 border-border text-foreground hover:bg-muted/60',
+                  joined
+                    ? 'bg-[#eeedfe] border-l-[#6b51ff] border-border text-foreground hover:bg-[#e4e2fd]'
+                    : imminent
+                      ? 'bg-primary/10 border-l-primary border-border hover:bg-primary/15'
+                      : 'bg-background border-l-primary/40 border-border text-foreground hover:bg-muted/60',
                   highlightedEventId === s.group.event_id && 'border-primary ring-1 ring-primary',
                 )}
                 style={{ gridColumn: `${2 + s.start} / span ${s.span}`, gridRow: `${s.row + 1} / span 1` }}
@@ -188,6 +193,14 @@ const RadarCalendarView: React.FC<{
                   <Building2 className="h-3 w-3" />
                   {s.group.company_count}
                 </span>
+                {joined && (
+                  <span className="inline-flex shrink-0 items-center gap-0.5">
+                    <ParticipantAvatar participant={parts[0]} size={16} />
+                    {parts.length > 1 && (
+                      <span className="text-[10px] font-medium text-[#6b51ff]">+{parts.length - 1}</span>
+                    )}
+                  </span>
+                )}
               </button>
             );
           })}
