@@ -108,8 +108,14 @@ const SimilarExhibitorsSection: React.FC<{
     }
   };
 
-  // « Terminé » : soit le backend n'a plus rien renvoyé, soit le compteur est à 0.
+  // Pagination : plus rien à charger quand le backend a renvoyé une liste vide,
+  // ou que le compteur optimiste est épuisé.
   const finished = endReached || remaining <= 0;
+  // Libellé : « tout trié » uniquement si le backend est épuisé ET plus rien à l'écran.
+  const allSorted = endReached && items.length === 0;
+  const label = allSorted
+    ? 'Vous avez trié toutes les suggestions'
+    : `Entreprises similaires à vos comptes${remaining > 0 ? ` (${remaining})` : ''}`;
 
   // Gating : n'afficher la section que si le comptage backend est > 0.
   if (!(typeof initialCount === 'number' && initialCount > 0)) return null;
@@ -127,11 +133,7 @@ const SimilarExhibitorsSection: React.FC<{
         >
           <span className="flex items-center gap-2 min-w-0">
             <Sparkles className="h-4 w-4 shrink-0" />
-            <span className="truncate">
-              {remaining > 0
-                ? `Découvrir ${remaining} autre${remaining > 1 ? 's' : ''} exposant${remaining > 1 ? 's' : ''} à potentiel`
-                : 'Terminé pour ce salon'}
-            </span>
+            <span className="truncate">{label}</span>
           </span>
           <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
         </button>
@@ -144,7 +146,7 @@ const SimilarExhibitorsSection: React.FC<{
           </div>
         ) : items.length === 0 && finished ? (
           <p className="px-1 py-2 text-sm text-muted-foreground">
-            Terminé pour ce salon.
+            Vous avez trié toutes les suggestions pour ce salon.
           </p>
         ) : (
           <div className="space-y-2.5">
@@ -200,7 +202,7 @@ const SimilarExhibitorsSection: React.FC<{
             {finished ? (
               items.length > 0 && (
                 <p className="px-1 py-1 text-xs text-muted-foreground">
-                  Terminé pour ce salon.
+                  Vous avez trié toutes les suggestions pour ce salon.
                 </p>
               )
             ) : (
