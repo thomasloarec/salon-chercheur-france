@@ -7114,6 +7114,73 @@ export type Database = {
         }
         Relationships: []
       }
+      radar_event_participants: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          radar_account_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          radar_account_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          radar_account_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "radar_event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "radar_event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "radar_event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "radar_event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "radar_event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "radar_event_participants_radar_account_id_fkey"
+            columns: ["radar_account_id"]
+            isOneToOne: false
+            referencedRelation: "radar_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       radar_invitations: {
         Row: {
           accepted_at: string | null
@@ -10685,6 +10752,10 @@ export type Database = {
       get_outreach_pipeline_stats: { Args: never; Returns: Json }
       get_radar_crm_admin_stats: { Args: never; Returns: Json }
       get_radar_crm_pricing: { Args: never; Returns: Json }
+      get_radar_event_participants: {
+        Args: { p_event_id: string }
+        Returns: Json
+      }
       get_radar_mission_context: {
         Args: { p_crm_company_id: string; p_event_id: string }
         Returns: Json
@@ -11100,6 +11171,7 @@ export type Database = {
         Args: { p_user_id?: string }
         Returns: string
       }
+      radar_member_avatar_url: { Args: { p_user_id: string }; Returns: string }
       radar_member_display_name: {
         Args: { p_user_id: string }
         Returns: string
@@ -11377,6 +11449,10 @@ export type Database = {
       set_radar_company_relationship: {
         Args: { p_crm_company_id: string; p_status: string }
         Returns: string
+      }
+      set_radar_event_participation: {
+        Args: { p_event_id: string; p_participating: boolean }
+        Returns: Json
       }
       set_radar_exposant_ignored: {
         Args: { p_id_exposant: string }
