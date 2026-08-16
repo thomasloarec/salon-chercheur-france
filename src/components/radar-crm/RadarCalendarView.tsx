@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { type EventGroup } from '@/types/radar';
 import {
@@ -175,16 +175,19 @@ const RadarCalendarView: React.FC<{
                 aria-label={label}
                 title={label}
                 className={cn(
-                  'min-w-0 truncate rounded-[6px] border px-2 py-1 text-left text-xs transition-colors',
+                  'min-w-0 rounded-r-[6px] rounded-l-none border border-l-2 px-2 py-1 text-left text-xs transition-colors flex items-center gap-1',
                   imminent
-                    ? 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/15'
-                    : 'bg-card border-border text-foreground hover:bg-muted/60',
+                    ? 'bg-primary/10 border-l-primary border-border hover:bg-primary/15'
+                    : 'bg-background border-l-primary/40 border-border text-foreground hover:bg-muted/60',
                   highlightedEventId === s.group.event_id && 'border-primary ring-1 ring-primary',
                 )}
                 style={{ gridColumn: `${2 + s.start} / span ${s.span}`, gridRow: `${s.row + 1} / span 1` }}
               >
-                {s.group.nom_event}
-                <span className="text-muted-foreground"> · {s.group.company_count}</span>
+                <span className="truncate min-w-0">{s.group.nom_event}</span>
+                <span className="inline-flex items-center gap-0.5 shrink-0 text-[11px] opacity-70">
+                  <Building2 className="h-3 w-3" />
+                  {s.group.company_count}
+                </span>
               </button>
             );
           })}
@@ -194,7 +197,7 @@ const RadarCalendarView: React.FC<{
   };
 
   return (
-    <div className="rounded-lg border bg-card p-3 sm:p-4" style={{ ['--wk-label' as string]: '56px' }}>
+    <div className="rounded-lg border bg-muted/30 p-3 sm:p-4" style={{ ['--wk-label' as string]: '56px' }}>
       <style>{`@media (min-width: 640px){ .radar-cal { --wk-label: 76px; } }`}</style>
       <div className="radar-cal">
         <div

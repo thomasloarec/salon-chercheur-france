@@ -22,10 +22,11 @@ const RadarUpcomingEventsPage: React.FC = () => {
 
   // Vue portée par l'URL (?vue=calendrier). `liste` est la valeur par défaut et n'y figure pas.
   const [searchParams, setSearchParams] = useSearchParams();
-  const view = !highlightedEventId && searchParams.get('vue') === 'calendrier' ? 'calendrier' : 'liste';
+  const view = !highlightedEventId && searchParams.get('vue') !== 'liste' ? 'calendrier' : 'liste';
   const setView = (next: 'liste' | 'calendrier') => {
     const params = new URLSearchParams(searchParams);
-    if (next === 'calendrier') params.set('vue', 'calendrier');
+    params.delete('eventId');
+    if (next === 'liste') params.set('vue', 'liste');
     else params.delete('vue');
     setSearchParams(params, { replace: true });
   };
