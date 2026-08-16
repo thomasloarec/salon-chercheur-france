@@ -507,11 +507,11 @@ const RadarCrmTerrainInner: React.FC = () => {
   }, [ev?.date_debut, ev?.date_fin]);
 
   const getRel = (c: SalonMissionCompany): RelationshipStatus =>
-    relOverrides[c.crm_company_id] ?? normalizeRelationship(c.relationship_status);
+    relOverrides[rowKey(c)] ?? normalizeRelationship(c.relationship_status);
 
   const setRel = async (companyId: string, next: RelationshipStatus) => {
     const prev = getRel(
-      (payload?.companies ?? []).find((c) => c.crm_company_id === companyId) ?? ({} as SalonMissionCompany),
+      (payload?.companies ?? []).find((c) => !!c.crm_company_id && c.crm_company_id === companyId) ?? ({} as SalonMissionCompany),
     );
     if (prev === next) return;
     setRelOverrides((o) => ({ ...o, [companyId]: next }));
@@ -533,10 +533,10 @@ const RadarCrmTerrainInner: React.FC = () => {
   const allCompanies = payload?.companies ?? [];
 
   const getVisited = (c: SalonMissionCompany): boolean =>
-    visitedOverrides[c.crm_company_id] ?? !!c.visited;
+    visitedOverrides[rowKey(c)] ?? !!c.visited;
 
   const noteCountFor = (c: SalonMissionCompany): number =>
-    (Array.isArray(c.notes) ? c.notes.length : 0) + (noteAdds[c.crm_company_id] ?? 0);
+    (Array.isArray(c.notes) ? c.notes.length : 0) + (noteAdds[rowKey(c)] ?? 0);
 
   // Check-list de tournée : non visités (par stand) puis visités (par stand).
   const { toSee, seen } = useMemo(() => {
@@ -554,6 +554,7 @@ const RadarCrmTerrainInner: React.FC = () => {
   const toggleVisited = async (c: SalonMissionCompany) => {
     if (!eventId) return;
     const id = c.crm_company_id;
+    if (!id) return; // rencontre hors CRM : déjà visitée par construction
     const next = !getVisited(c);
     setVisitedOverrides((o) => ({ ...o, [id]: next }));
     const { error: rpcErr } = await supabase.rpc('set_radar_mission_visited', {
@@ -573,7 +574,7 @@ const RadarCrmTerrainInner: React.FC = () => {
   };
 
   const openNote = (c: SalonMissionCompany) => {
-    setNoteOpenFor(c.crm_company_id);
+    setNoteOpenFor(rowKey(c));
     setNoteText('');
   };
   const closeNote = () => {
@@ -585,16 +586,22 @@ const RadarCrmTerrainInner: React.FC = () => {
     if (!eventId) return;
     const body = noteText.trim();
     if (!body || savingNote) return;
-    const id = c.crm_company_id;
+    const id = rowKey(c);
     setSavingNote(true);
     // Optimiste : incrémente le compteur et ferme le champ.
     setNoteAdds((o) => ({ ...o, [id]: (o[id] ?? 0) + 1 }));
     closeNote();
-    const { error: rpcErr } = await supabase.rpc('add_radar_mission_note', {
-      p_crm_company_id: id,
-      p_event_id: eventId,
-      p_body: body,
-    });
+    // Aiguillage : compte CRM -> par company ; rencontre hors CRM -> par mission.
+    const { error: rpcErr } = c.crm_company_id
+      ? await supabase.rpc('add_radar_mission_note', {
+          p_crm_company_id: c.crm_company_id,
+          p_event_id: eventId,
+          p_body: body,
+        })
+      : await supabase.rpc('add_radar_mission_note_by_mission', {
+          p_mission_id: c.mission_id as string,
+          p_body: body,
+        });
     setSavingNote(false);
     if (rpcErr) {
       console.error('[RadarCRM] add_radar_mission_note failed:', rpcErr);
@@ -610,7 +617,7 @@ const RadarCrmTerrainInner: React.FC = () => {
   };
 
   const openMission = (c: SalonMissionCompany) => {
-    if (!eventId) return;
+    if (!eventId || !c.crm_company_id) return;
     void trackRadarEvent('radar_mission_opened', { eventId, source: 'salon_mode' });
     setMission({
       companyId: c.crm_company_id,
@@ -628,7 +635,7 @@ const RadarCrmTerrainInner: React.FC = () => {
   /** Ouvre le Sheet mission pour un compte identifié par son id (compte ajouté ou déjà présent). */
   const openMissionById = (companyId: string, name: string) => {
     if (!eventId) return;
-    const c = (payload?.companies ?? []).find((x) => x.crm_company_id === companyId);
+    const c = (payload?.companies ?? []).find((x) => !!x.crm_company_id && x.crm_company_id === companyId);
     if (c) {
       openMission(c);
       return;
@@ -648,7 +655,7 @@ const RadarCrmTerrainInner: React.FC = () => {
   };
 
   const activeCompany = mission
-    ? (payload?.companies ?? []).find((c) => c.crm_company_id === mission.companyId) ?? null
+    ? (payload?.companies ?? []).find((c) => !!c.crm_company_id && c.crm_company_id === mission.companyId) ?? null
     : null;
 
   return (
@@ -741,23 +748,24 @@ const RadarCrmTerrainInner: React.FC = () => {
                 <ul className="space-y-3">
                   {toSee.map((c) => (
                     <TerrainRow
-                      key={c.crm_company_id}
+                      key={rowKey(c)}
                       company={c}
-                      visited={false}
+                      visited={false}                      encounter={isEncounter(c)}
+
                       relationship={getRel(c)}
                       noteCount={noteCountFor(c)}
-                      noteOpen={noteOpenFor === c.crm_company_id}
+                      noteOpen={noteOpenFor === rowKey(c)}
                       noteText={noteText}
                       savingNote={savingNote}
-                      pendingVoiceCount={pendingVoiceMap[c.crm_company_id] ?? 0}
-                      voiceProcessing={!!voiceProcessing[c.crm_company_id]}
-                      voiceOpen={voiceOpenFor === c.crm_company_id}
-                      voiceSlot={voiceOpenFor === c.crm_company_id && eventId ? (
+                      pendingVoiceCount={pendingVoiceMap[rowKey(c)] ?? 0}
+                      voiceProcessing={!!voiceProcessing[rowKey(c)]}
+                      voiceOpen={voiceOpenFor === rowKey(c)}
+                      voiceSlot={voiceOpenFor === rowKey(c) && eventId && c.crm_company_id ? (
                         <TerrainVoiceCapture
                           companyId={c.crm_company_id}
                           eventId={eventId}
-                          onProcessing={() => handleVoiceProcessing(c.crm_company_id)}
-                          onReady={() => handleVoiceReady(c.crm_company_id)}
+                          onProcessing={() => handleVoiceProcessing(rowKey(c))}
+                          onReady={() => handleVoiceReady(rowKey(c))}
                           onClose={closeVoice}
                         />
                       ) : undefined}
@@ -767,7 +775,7 @@ const RadarCrmTerrainInner: React.FC = () => {
                       onCloseNote={closeNote}
                       onChangeNote={setNoteText}
                       onSubmitNote={() => void submitNote(c)}
-                      onToggleVoice={() => openVoice(c.crm_company_id)}
+                      onToggleVoice={() => openVoice(rowKey(c))}
                     />
                   ))}
                 </ul>
@@ -783,23 +791,24 @@ const RadarCrmTerrainInner: React.FC = () => {
                     <ul className="space-y-3">
                       {seen.map((c) => (
                         <TerrainRow
-                          key={c.crm_company_id}
+                          key={rowKey(c)}
                           company={c}
                           visited
+                          encounter={isEncounter(c)}
                           relationship={getRel(c)}
                           noteCount={noteCountFor(c)}
-                          noteOpen={noteOpenFor === c.crm_company_id}
+                          noteOpen={noteOpenFor === rowKey(c)}
                           noteText={noteText}
                           savingNote={savingNote}
-                          pendingVoiceCount={pendingVoiceMap[c.crm_company_id] ?? 0}
-                          voiceProcessing={!!voiceProcessing[c.crm_company_id]}
-                          voiceOpen={voiceOpenFor === c.crm_company_id}
-                          voiceSlot={voiceOpenFor === c.crm_company_id && eventId ? (
+                          pendingVoiceCount={pendingVoiceMap[rowKey(c)] ?? 0}
+                          voiceProcessing={!!voiceProcessing[rowKey(c)]}
+                          voiceOpen={voiceOpenFor === rowKey(c)}
+                          voiceSlot={voiceOpenFor === rowKey(c) && eventId && c.crm_company_id ? (
                             <TerrainVoiceCapture
                               companyId={c.crm_company_id}
                               eventId={eventId}
-                              onProcessing={() => handleVoiceProcessing(c.crm_company_id)}
-                              onReady={() => handleVoiceReady(c.crm_company_id)}
+                              onProcessing={() => handleVoiceProcessing(rowKey(c))}
+                              onReady={() => handleVoiceReady(rowKey(c))}
                               onClose={closeVoice}
                             />
                           ) : undefined}
@@ -809,7 +818,7 @@ const RadarCrmTerrainInner: React.FC = () => {
                           onCloseNote={closeNote}
                           onChangeNote={setNoteText}
                           onSubmitNote={() => void submitNote(c)}
-                          onToggleVoice={() => openVoice(c.crm_company_id)}
+                          onToggleVoice={() => openVoice(rowKey(c))}
                         />
                       ))}
                     </ul>
