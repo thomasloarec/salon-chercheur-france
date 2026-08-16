@@ -406,10 +406,10 @@ const EventDebriefPanel: React.FC<EventDebriefPanelProps> = ({
       <div className="flex flex-col sm:flex-row gap-2 mt-4 mb-6">
         <Button
           onClick={() => void copyDebrief()}
-          disabled={worked.length === 0}
+          disabled={stats.Nn === 0 && stats.Nt === 0}
           className={cn(
             'gap-2 min-h-[44px]',
-            worked.length === 0
+            (stats.Nn === 0 && stats.Nt === 0)
               ? 'bg-[#eeedfe] text-[#6b51ff]/50 shadow-none cursor-not-allowed hover:bg-[#eeedfe]'
               : ''
           )}
