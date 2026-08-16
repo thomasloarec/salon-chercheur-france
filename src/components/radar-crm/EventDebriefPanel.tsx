@@ -19,7 +19,9 @@ export interface MissionNote { body?: string | null; created_at?: string | null;
 export interface MissionTask { body?: string | null; due_at?: string | null; done?: boolean | null; source?: string | null; created_at?: string | null; created_by?: string | null; author_name?: string | null }
 
 export interface DebriefCompany {
-  crm_company_id: string;
+  /** null pour une rencontre hors CRM (identifiée par mission_id). */
+  crm_company_id: string | null;
+  mission_id?: string | null;
   company_name: string | null;
   website: string | null;
   normalized_domain: string | null;
@@ -71,6 +73,10 @@ export const standLabel = (stands: string[] | null): string => {
   const list = (stands ?? []).map((s) => (s ?? '').trim()).filter(Boolean);
   return list.length ? list.join(', ') : '';
 };
+
+/** Clé d'affichage unique : jamais crm_company_id seul (null pour les rencontres). */
+export const debriefRowKey = (c: DebriefCompany): string =>
+  c.crm_company_id ?? c.mission_id ?? '';
 
 export const companyLabel = (c: DebriefCompany): string =>
   c.nom_exposant ?? c.company_name ?? 'Entreprise';
@@ -454,7 +460,7 @@ const EventDebriefPanel: React.FC<EventDebriefPanelProps> = ({
       ) : (
         <ul className="space-y-3">
           {displayed.map((c) => (
-            <CompanyCard key={c.crm_company_id} c={c} activeMemberCount={activeMemberCount} />
+            <CompanyCard key={debriefRowKey(c)} c={c} activeMemberCount={activeMemberCount} />
           ))}
         </ul>
       )}
@@ -470,7 +476,7 @@ const EventDebriefPanel: React.FC<EventDebriefPanelProps> = ({
               .slice()
               .sort((a, b) => companyLabel(a).localeCompare(companyLabel(b), 'fr'))
               .map((c) => (
-                <CompanyCard key={c.crm_company_id} c={c} activeMemberCount={activeMemberCount} />
+                <CompanyCard key={debriefRowKey(c)} c={c} activeMemberCount={activeMemberCount} />
               ))}
           </ul>
         </div>

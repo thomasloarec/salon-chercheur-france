@@ -8,8 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   ArrowLeft, MapPin, Star, ChevronRight, Calendar, StickyNote, CheckSquare,
-  Check, Plus, Loader2, X, ClipboardList, Mic,
+  Check, Plus, Loader2, X, ClipboardList, Mic, UserPlus,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import RadarMissionSheet, { type MissionTarget } from '@/components/radar-crm/RadarMissionSheet';
@@ -28,7 +29,8 @@ const ORANGE = '#ff751f';
 
 /** Shape renvoyée par get_radar_salon_missions (typée Json côté RPC). */
 interface SalonMissionCompany {
-  crm_company_id: string;
+  /** null pour une rencontre hors CRM (identifiée par mission_id). */
+  crm_company_id: string | null;
   company_name: string | null;
   description: string | null;
   nom_exposant: string | null;
@@ -36,6 +38,7 @@ interface SalonMissionCompany {
   relationship_status: string | null;
   visited: boolean | null;
   mission_id: string | null;
+  origin?: string | null;
   objective: string | null;
   opening_line: string | null;
   top_q1: string | null;
@@ -45,6 +48,18 @@ interface SalonMissionCompany {
   notes: unknown[] | null;
   tasks: Array<{ done?: boolean | null }> | null;
 }
+
+/**
+ * Clé d'affichage unique, valable pour les comptes CRM comme pour les rencontres
+ * hors CRM (crm_company_id null). Ne jamais comparer sur crm_company_id seul :
+ * deux rencontres manuelles auraient toutes deux null et se confondraient.
+ */
+const rowKey = (c: SalonMissionCompany): string =>
+  c.crm_company_id ?? c.mission_id ?? '';
+
+/** Rencontre saisie sur le terrain, hors CRM. */
+const isEncounter = (c: SalonMissionCompany): boolean =>
+  !c.crm_company_id || c.origin === 'rencontre';
 
 interface SalonMissionEvent {
   event_id?: string | null;
@@ -112,6 +127,8 @@ const RadarCrmTerrain: React.FC = () => {
 interface TerrainRowProps {
   company: SalonMissionCompany;
   visited: boolean;
+  /** Rencontre hors CRM : pas de fiche mission, ni statut, ni vocal. */
+  encounter: boolean;
   relationship: RelationshipStatus;
   noteCount: number;
   noteOpen: boolean;
@@ -136,12 +153,12 @@ interface TerrainRowProps {
 
 /** Ligne de check-list terrain : grande, tactile, actions directes. */
 const TerrainRow: React.FC<TerrainRowProps> = ({
-  company: c, visited, relationship, noteCount, noteOpen, noteText, savingNote,
+  company: c, visited, encounter, relationship, noteCount, noteOpen, noteText, savingNote,
   pendingVoiceCount, voiceProcessing, voiceOpen, voiceSlot,
   onOpenMission, onToggleVisited, onOpenNote, onCloseNote, onChangeNote, onSubmitNote, onToggleVoice,
 }) => {
   const taskCount = Array.isArray(c.tasks) ? c.tasks.filter((t) => !t?.done).length : 0;
-  const starred = c.pref_status === 'starred';
+  const starred = !encounter && c.pref_status === 'starred';
   const name = c.nom_exposant ?? c.company_name ?? 'Entreprise';
 
   return (
@@ -152,17 +169,23 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
           visited ? 'border-border/50 opacity-60' : starred ? 'border-primary/50' : 'border-border/60',
         )}
       >
-        {/* Zone tap → Sheet mission (hors boutons) */}
-        <button
-          type="button"
-          onClick={onOpenMission}
-          className="group w-full text-left p-4 md:p-5 rounded-t-xl hover:bg-secondary/40 active:bg-secondary/60 transition-colors"
-        >
+        {/* Zone tap → Sheet mission (hors boutons). Statique pour une rencontre hors CRM. */}
+        {React.createElement(
+          encounter ? 'div' : 'button',
+          encounter
+            ? { className: 'group w-full text-left p-4 md:p-5 rounded-t-xl' }
+            : {
+                type: 'button',
+                onClick: onOpenMission,
+                className: 'group w-full text-left p-4 md:p-5 rounded-t-xl hover:bg-secondary/40 active:bg-secondary/60 transition-colors',
+              },
+          <>
           <div className="flex items-start gap-3">
             {starred && (
               <Star className="h-5 w-5 fill-primary shrink-0 mt-0.5" aria-label="Compte prioritaire" />
             )}
             <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
               <p
                 className={cn(
                   'font-display text-lg md:text-xl font-semibold leading-snug truncate',
@@ -172,12 +195,18 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
               >
                 {name}
               </p>
+              {encounter && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  Hors CRM
+                </span>
+              )}
+              </div>
               <p className="text-sm text-foreground/70 mt-1 flex items-center gap-1 font-medium">
                 <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
                 {standLabelFor(c.stands)}
               </p>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-3">
-                <RelBadge status={relationship} />
+                {!encounter && <RelBadge status={relationship} />}
                 {pendingVoiceCount > 0 && (
                   <span
                     className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold text-white"
@@ -208,9 +237,12 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
                 )}
               </div>
             </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground/50 shrink-0 self-center transition-transform group-hover:translate-x-0.5" />
+            {!encounter && (
+              <ChevronRight className="h-5 w-5 text-muted-foreground/50 shrink-0 self-center transition-transform group-hover:translate-x-0.5" />
+            )}
           </div>
-        </button>
+          </>,
+        )}
 
         {/* Actions directes — Note = action primaire (accent), Micro + Visité = secondaires (neutres) */}
         <div className="flex items-stretch gap-2 border-t border-border/60 p-3">
@@ -223,25 +255,29 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
           >
             <Plus className="h-4 w-4" /> Note
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-[44px] w-12 shrink-0 border-border/70 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
-            onClick={onToggleVoice}
-            aria-expanded={voiceOpen}
-            aria-label="Note vocale"
-          >
-            <Mic className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1 min-h-[44px] gap-2 border-border/70 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
-            onClick={onToggleVisited}
-          >
-            <Check className={cn('h-4 w-4', visited && 'text-info')} />
-            {visited ? 'Vu' : 'Visité'}
-          </Button>
+          {!encounter && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-[44px] w-12 shrink-0 border-border/70 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+                onClick={onToggleVoice}
+                aria-expanded={voiceOpen}
+                aria-label="Note vocale"
+              >
+                <Mic className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 min-h-[44px] gap-2 border-border/70 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+                onClick={onToggleVisited}
+              >
+                <Check className={cn('h-4 w-4', visited && 'text-info')} />
+                {visited ? 'Vu' : 'Visité'}
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Capture vocale inline (compacte) */}
@@ -310,6 +346,16 @@ const RadarCrmTerrainInner: React.FC = () => {
   const [noteOpenFor, setNoteOpenFor] = useState<string | null>(null);
   const [noteText, setNoteText] = useState('');
   const [savingNote, setSavingNote] = useState(false);
+
+  // --- Rencontre hors CRM (Mode Salon uniquement) ---
+  const [encounterOpen, setEncounterOpen] = useState(false);
+  const [encounterName, setEncounterName] = useState('');
+  const [encounterError, setEncounterError] = useState<string | null>(null);
+  const [encounterSaving, setEncounterSaving] = useState(false);
+  /** Mission fraîchement créée : on enchaîne sur une première note. */
+  const [encounterFollowUp, setEncounterFollowUp] = useState<{ missionId: string; name: string } | null>(null);
+  const [encounterNote, setEncounterNote] = useState('');
+  const [encounterNoteSaving, setEncounterNoteSaving] = useState(false);
 
   // --- Notes vocales : validation différée signalée sur la ligne ---
   // Ligne dont la capture vocale inline est ouverte.
@@ -471,11 +517,11 @@ const RadarCrmTerrainInner: React.FC = () => {
   }, [ev?.date_debut, ev?.date_fin]);
 
   const getRel = (c: SalonMissionCompany): RelationshipStatus =>
-    relOverrides[c.crm_company_id] ?? normalizeRelationship(c.relationship_status);
+    relOverrides[rowKey(c)] ?? normalizeRelationship(c.relationship_status);
 
   const setRel = async (companyId: string, next: RelationshipStatus) => {
     const prev = getRel(
-      (payload?.companies ?? []).find((c) => c.crm_company_id === companyId) ?? ({} as SalonMissionCompany),
+      (payload?.companies ?? []).find((c) => !!c.crm_company_id && c.crm_company_id === companyId) ?? ({} as SalonMissionCompany),
     );
     if (prev === next) return;
     setRelOverrides((o) => ({ ...o, [companyId]: next }));
@@ -497,10 +543,10 @@ const RadarCrmTerrainInner: React.FC = () => {
   const allCompanies = payload?.companies ?? [];
 
   const getVisited = (c: SalonMissionCompany): boolean =>
-    visitedOverrides[c.crm_company_id] ?? !!c.visited;
+    visitedOverrides[rowKey(c)] ?? !!c.visited;
 
   const noteCountFor = (c: SalonMissionCompany): number =>
-    (Array.isArray(c.notes) ? c.notes.length : 0) + (noteAdds[c.crm_company_id] ?? 0);
+    (Array.isArray(c.notes) ? c.notes.length : 0) + (noteAdds[rowKey(c)] ?? 0);
 
   // Check-list de tournée : non visités (par stand) puis visités (par stand).
   const { toSee, seen } = useMemo(() => {
@@ -518,6 +564,7 @@ const RadarCrmTerrainInner: React.FC = () => {
   const toggleVisited = async (c: SalonMissionCompany) => {
     if (!eventId) return;
     const id = c.crm_company_id;
+    if (!id) return; // rencontre hors CRM : déjà visitée par construction
     const next = !getVisited(c);
     setVisitedOverrides((o) => ({ ...o, [id]: next }));
     const { error: rpcErr } = await supabase.rpc('set_radar_mission_visited', {
@@ -537,7 +584,7 @@ const RadarCrmTerrainInner: React.FC = () => {
   };
 
   const openNote = (c: SalonMissionCompany) => {
-    setNoteOpenFor(c.crm_company_id);
+    setNoteOpenFor(rowKey(c));
     setNoteText('');
   };
   const closeNote = () => {
@@ -549,16 +596,22 @@ const RadarCrmTerrainInner: React.FC = () => {
     if (!eventId) return;
     const body = noteText.trim();
     if (!body || savingNote) return;
-    const id = c.crm_company_id;
+    const id = rowKey(c);
     setSavingNote(true);
     // Optimiste : incrémente le compteur et ferme le champ.
     setNoteAdds((o) => ({ ...o, [id]: (o[id] ?? 0) + 1 }));
     closeNote();
-    const { error: rpcErr } = await supabase.rpc('add_radar_mission_note', {
-      p_crm_company_id: id,
-      p_event_id: eventId,
-      p_body: body,
-    });
+    // Aiguillage : compte CRM -> par company ; rencontre hors CRM -> par mission.
+    const { error: rpcErr } = c.crm_company_id
+      ? await supabase.rpc('add_radar_mission_note', {
+          p_crm_company_id: c.crm_company_id,
+          p_event_id: eventId,
+          p_body: body,
+        })
+      : await supabase.rpc('add_radar_mission_note_by_mission', {
+          p_mission_id: c.mission_id as string,
+          p_body: body,
+        });
     setSavingNote(false);
     if (rpcErr) {
       console.error('[RadarCRM] add_radar_mission_note failed:', rpcErr);
@@ -573,8 +626,57 @@ const RadarCrmTerrainInner: React.FC = () => {
     }
   };
 
+  const submitEncounter = async () => {
+    const name = encounterName.trim();
+    if (!name) { setEncounterError('Entrez un nom'); return; }
+    if (!eventId || encounterSaving) return;
+    setEncounterError(null);
+    setEncounterSaving(true);
+    const { data, error: rpcErr } = await supabase.rpc('add_radar_terrain_encounter', {
+      p_event_id: eventId,
+      p_name: name,
+    });
+    setEncounterSaving(false);
+    if (rpcErr || !data) {
+      console.error('[RadarCRM] add_radar_terrain_encounter failed:', rpcErr);
+      toast({
+        title: 'Ajout impossible',
+        description: 'Cette entreprise n’a pas pu être ajoutée.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    void trackRadarEvent('radar_terrain_encounter_added', { eventId });
+    setEncounterOpen(false);
+    setEncounterName('');
+    setEncounterFollowUp({ missionId: data as unknown as string, name });
+    setEncounterNote('');
+    await load();
+    toast({ title: 'Entreprise ajoutée' });
+  };
+
+  const submitEncounterNote = async () => {
+    const body = encounterNote.trim();
+    if (!encounterFollowUp || !body || encounterNoteSaving) return;
+    setEncounterNoteSaving(true);
+    const { error: rpcErr } = await supabase.rpc('add_radar_mission_note_by_mission', {
+      p_mission_id: encounterFollowUp.missionId,
+      p_body: body,
+    });
+    setEncounterNoteSaving(false);
+    if (rpcErr) {
+      console.error('[RadarCRM] add_radar_mission_note_by_mission failed:', rpcErr);
+      toast({ title: 'Note non enregistrée', description: 'Réessayez.', variant: 'destructive' });
+      return;
+    }
+    setEncounterFollowUp(null);
+    setEncounterNote('');
+    await load();
+    toast({ title: 'Note ajoutée' });
+  };
+
   const openMission = (c: SalonMissionCompany) => {
-    if (!eventId) return;
+    if (!eventId || !c.crm_company_id) return;
     void trackRadarEvent('radar_mission_opened', { eventId, source: 'salon_mode' });
     setMission({
       companyId: c.crm_company_id,
@@ -592,7 +694,7 @@ const RadarCrmTerrainInner: React.FC = () => {
   /** Ouvre le Sheet mission pour un compte identifié par son id (compte ajouté ou déjà présent). */
   const openMissionById = (companyId: string, name: string) => {
     if (!eventId) return;
-    const c = (payload?.companies ?? []).find((x) => x.crm_company_id === companyId);
+    const c = (payload?.companies ?? []).find((x) => !!x.crm_company_id && x.crm_company_id === companyId);
     if (c) {
       openMission(c);
       return;
@@ -612,7 +714,7 @@ const RadarCrmTerrainInner: React.FC = () => {
   };
 
   const activeCompany = mission
-    ? (payload?.companies ?? []).find((c) => c.crm_company_id === mission.companyId) ?? null
+    ? (payload?.companies ?? []).find((c) => !!c.crm_company_id && c.crm_company_id === mission.companyId) ?? null
     : null;
 
   return (
@@ -705,23 +807,25 @@ const RadarCrmTerrainInner: React.FC = () => {
                 <ul className="space-y-3">
                   {toSee.map((c) => (
                     <TerrainRow
-                      key={c.crm_company_id}
+                      key={rowKey(c)}
                       company={c}
                       visited={false}
+                      encounter={isEncounter(c)}
+
                       relationship={getRel(c)}
                       noteCount={noteCountFor(c)}
-                      noteOpen={noteOpenFor === c.crm_company_id}
+                      noteOpen={noteOpenFor === rowKey(c)}
                       noteText={noteText}
                       savingNote={savingNote}
-                      pendingVoiceCount={pendingVoiceMap[c.crm_company_id] ?? 0}
-                      voiceProcessing={!!voiceProcessing[c.crm_company_id]}
-                      voiceOpen={voiceOpenFor === c.crm_company_id}
-                      voiceSlot={voiceOpenFor === c.crm_company_id && eventId ? (
+                      pendingVoiceCount={pendingVoiceMap[rowKey(c)] ?? 0}
+                      voiceProcessing={!!voiceProcessing[rowKey(c)]}
+                      voiceOpen={voiceOpenFor === rowKey(c)}
+                      voiceSlot={voiceOpenFor === rowKey(c) && eventId && c.crm_company_id ? (
                         <TerrainVoiceCapture
                           companyId={c.crm_company_id}
                           eventId={eventId}
-                          onProcessing={() => handleVoiceProcessing(c.crm_company_id)}
-                          onReady={() => handleVoiceReady(c.crm_company_id)}
+                          onProcessing={() => handleVoiceProcessing(rowKey(c))}
+                          onReady={() => handleVoiceReady(rowKey(c))}
                           onClose={closeVoice}
                         />
                       ) : undefined}
@@ -731,7 +835,7 @@ const RadarCrmTerrainInner: React.FC = () => {
                       onCloseNote={closeNote}
                       onChangeNote={setNoteText}
                       onSubmitNote={() => void submitNote(c)}
-                      onToggleVoice={() => openVoice(c.crm_company_id)}
+                      onToggleVoice={() => openVoice(rowKey(c))}
                     />
                   ))}
                 </ul>
@@ -747,23 +851,24 @@ const RadarCrmTerrainInner: React.FC = () => {
                     <ul className="space-y-3">
                       {seen.map((c) => (
                         <TerrainRow
-                          key={c.crm_company_id}
+                          key={rowKey(c)}
                           company={c}
                           visited
+                          encounter={isEncounter(c)}
                           relationship={getRel(c)}
                           noteCount={noteCountFor(c)}
-                          noteOpen={noteOpenFor === c.crm_company_id}
+                          noteOpen={noteOpenFor === rowKey(c)}
                           noteText={noteText}
                           savingNote={savingNote}
-                          pendingVoiceCount={pendingVoiceMap[c.crm_company_id] ?? 0}
-                          voiceProcessing={!!voiceProcessing[c.crm_company_id]}
-                          voiceOpen={voiceOpenFor === c.crm_company_id}
-                          voiceSlot={voiceOpenFor === c.crm_company_id && eventId ? (
+                          pendingVoiceCount={pendingVoiceMap[rowKey(c)] ?? 0}
+                          voiceProcessing={!!voiceProcessing[rowKey(c)]}
+                          voiceOpen={voiceOpenFor === rowKey(c)}
+                          voiceSlot={voiceOpenFor === rowKey(c) && eventId && c.crm_company_id ? (
                             <TerrainVoiceCapture
                               companyId={c.crm_company_id}
                               eventId={eventId}
-                              onProcessing={() => handleVoiceProcessing(c.crm_company_id)}
-                              onReady={() => handleVoiceReady(c.crm_company_id)}
+                              onProcessing={() => handleVoiceProcessing(rowKey(c))}
+                              onReady={() => handleVoiceReady(rowKey(c))}
                               onClose={closeVoice}
                             />
                           ) : undefined}
@@ -773,7 +878,7 @@ const RadarCrmTerrainInner: React.FC = () => {
                           onCloseNote={closeNote}
                           onChangeNote={setNoteText}
                           onSubmitNote={() => void submitNote(c)}
-                          onToggleVoice={() => openVoice(c.crm_company_id)}
+                          onToggleVoice={() => openVoice(rowKey(c))}
                         />
                       ))}
                     </ul>
@@ -781,6 +886,88 @@ const RadarCrmTerrainInner: React.FC = () => {
                 )}
               </div>
             )}
+
+            {/* Entreprise rencontrée hors CRM — geste terrain, Mode Salon uniquement */}
+            <div className="mt-6">
+              {!encounterOpen ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => { setEncounterOpen(true); setEncounterError(null); }}
+                  className="w-full min-h-[48px] gap-2 border-dashed text-muted-foreground hover:text-foreground"
+                >
+                  <UserPlus className="h-4 w-4" /> Ajouter une entreprise rencontrée
+                </Button>
+              ) : (
+                <div className="rounded-xl border border-border/60 bg-card p-3 space-y-2">
+                  <Input
+                    autoFocus
+                    value={encounterName}
+                    onChange={(e) => { setEncounterName(e.target.value); if (encounterError) setEncounterError(null); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void submitEncounter(); } }}
+                    placeholder="Nom de l’entreprise rencontrée"
+                    className="min-h-[44px] text-base"
+                  />
+                  {encounterError && (
+                    <p className="text-xs font-medium text-destructive">{encounterError}</p>
+                  )}
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => { setEncounterOpen(false); setEncounterName(''); setEncounterError(null); }}
+                      className="gap-1"
+                    >
+                      <X className="h-4 w-4" /> Annuler
+                    </Button>
+                    <Button type="button" size="sm" onClick={() => void submitEncounter()} disabled={encounterSaving} className="gap-1">
+                      {encounterSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                      Ajouter
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {encounterFollowUp && (
+                <div className="mt-3 rounded-xl border border-primary/40 bg-card p-3 space-y-2">
+                  <p className="text-sm font-medium text-foreground">
+                    Une première note sur {encounterFollowUp.name} ?
+                  </p>
+                  <Textarea
+                    autoFocus
+                    value={encounterNote}
+                    onChange={(e) => setEncounterNote(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void submitEncounterNote(); }
+                    }}
+                    placeholder="Note éclair… (Entrée pour ajouter)"
+                    className="min-h-[64px] text-base"
+                  />
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => { setEncounterFollowUp(null); setEncounterNote(''); }}
+                      className="gap-1"
+                    >
+                      Plus tard
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => void submitEncounterNote()}
+                      disabled={encounterNoteSaving || !encounterNote.trim()}
+                      className="gap-1"
+                    >
+                      {encounterNoteSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                      Ajouter
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </>
         )}
       </main>

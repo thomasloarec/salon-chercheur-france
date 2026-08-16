@@ -7510,6 +7510,7 @@ export type Database = {
           event_id: string
           id: string
           id_exposant: string | null
+          manual_company_name: string | null
           objective: string | null
           opening_line: string | null
           origin: string
@@ -7532,6 +7533,7 @@ export type Database = {
           event_id: string
           id?: string
           id_exposant?: string | null
+          manual_company_name?: string | null
           objective?: string | null
           opening_line?: string | null
           origin?: string
@@ -7554,6 +7556,7 @@ export type Database = {
           event_id?: string
           id?: string
           id_exposant?: string | null
+          manual_company_name?: string | null
           objective?: string | null
           opening_line?: string | null
           origin?: string
@@ -9887,6 +9890,10 @@ export type Database = {
         Args: { p_body: string; p_crm_company_id: string; p_event_id: string }
         Returns: string
       }
+      add_radar_mission_note_by_mission: {
+        Args: { p_body: string; p_mission_id: string }
+        Returns: string
+      }
       add_radar_mission_task: {
         Args: {
           p_body: string
@@ -9894,6 +9901,10 @@ export type Database = {
           p_due_at?: string
           p_event_id: string
         }
+        Returns: string
+      }
+      add_radar_terrain_encounter: {
+        Args: { p_event_id: string; p_name: string }
         Returns: string
       }
       admin_add_radar_member: {
