@@ -5,8 +5,11 @@ import { Button } from '@/components/ui/button';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { RefreshCw, Radar, Sparkles, Settings } from 'lucide-react';
-import StatCard from '@/components/radar-crm/RadarStatCard';
+import { RefreshCw, Radar, Settings } from 'lucide-react';
+import RadarActionCard from '@/components/radar-crm/RadarActionCard';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { useRadarActionStats, useSetEventsGoal } from '@/hooks/useRadarActionStats';
 import RadarOnboardingPanel from '@/components/radar-crm/RadarOnboardingPanel';
 import RadarActiveBanner from '@/components/radar-crm/RadarActiveBanner';
 import RadarPageGate from '@/components/radar-crm/RadarPageGate';
@@ -24,10 +27,15 @@ const RadarOverviewPage: React.FC = () => {
     onboarding, onboardingLoading,
     access, orgName, isSpaceOwner,
     getPref, offerEmpty,
-    matchedCompanies, futureGroups,
+    futureGroups,
     nextEvent, featured, starredCount, ongoingEvents,
     enterTerrain, onClickEvent,
   } = useRadarWorkspace();
+
+  const { data: actionStats } = useRadarActionStats(access?.account_id ?? null);
+  const setGoal = useSetEventsGoal();
+  const [goalEditing, setGoalEditing] = React.useState(false);
+  const [goalInput, setGoalInput] = React.useState('');
 
   // Compatibilité des anciens liens à paramètres.
   const tab = searchParams.get('tab');
@@ -65,6 +73,7 @@ const RadarOverviewPage: React.FC = () => {
   const kpiDetected = summary?.companies_detected ?? matchedCompanies.length;
   const kpiFutureSalons = summary?.future_salons ?? futureGroups.length;
   const kpiFutureParticipations = summary?.future_participations ?? 0;
+  void kpiAnalyzed;
 
   return (
     <div className="font-body bg-muted/10 min-h-[calc(100vh-200px)]">
