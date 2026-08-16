@@ -296,7 +296,7 @@ const RadarOverviewPage: React.FC = () => {
             <RadarActiveBanner
               analyzed={analyzedCount}
               futureCompanies={summary?.future_companies ?? 0}
-              futureSalons={kpiFutureSalons}
+              futureSalons={futureSalonsCount}
               featured={featured}
               starredCount={starredCount}
               ongoing={ongoingEvents}
