@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from '@/components/ui/accordion';
@@ -7,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import RadarPageGate from '@/components/radar-crm/RadarPageGate';
 import EventCard from '@/components/radar-crm/RadarEventCard';
+import RadarCalendarView from '@/components/radar-crm/RadarCalendarView';
 import DetailTable from '@/components/radar-crm/RadarDetailTable';
 import { NoFutureMatches } from '@/components/radar-crm/RadarStates';
 import { useRadarWorkspace } from '@/contexts/RadarWorkspaceContext';
@@ -17,6 +19,22 @@ const RadarUpcomingEventsPage: React.FC = () => {
     highlightedEventId, similarCounts, setSimilarCounts,
     getPref, getRel, setRel, onClickEvent, onOpenMission,
   } = useRadarWorkspace();
+
+  // Vue portée par l'URL (?vue=calendrier). `liste` est la valeur par défaut et n'y figure pas.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view = !highlightedEventId && searchParams.get('vue') === 'calendrier' ? 'calendrier' : 'liste';
+  const setView = (next: 'liste' | 'calendrier') => {
+    const params = new URLSearchParams(searchParams);
+    if (next === 'calendrier') params.set('vue', 'calendrier');
+    else params.delete('vue');
+    setSearchParams(params, { replace: true });
+  };
+  const selectFromCalendar = (g: { event_id: string }) => {
+    const params = new URLSearchParams(searchParams);
+    params.delete('vue');
+    params.set('eventId', g.event_id);
+    setSearchParams(params, { replace: true });
+  };
 
   const summary = radarView?.summary;
   const kpiAnalyzed = summary?.companies_analyzed ?? 0;
@@ -58,11 +76,35 @@ const RadarUpcomingEventsPage: React.FC = () => {
   return (
     <div className="font-body bg-muted/10 min-h-[calc(100vh-200px)]">
       <div className="max-w-6xl mx-auto px-4 py-10 md:py-14 space-y-8">
-        <h1 className="font-display text-3xl md:text-4xl font-semibold tracking-tight text-foreground">Salons à venir</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="font-display text-3xl md:text-4xl font-semibold tracking-tight text-foreground">Salons à venir</h1>
+          <div className="inline-flex items-center rounded-[var(--radius)] border border-border p-0.5 text-sm">
+            {(['liste', 'calendrier'] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setView(v)}
+                aria-pressed={view === v}
+                className={cn(
+                  'rounded-[calc(var(--radius)-2px)] px-3 py-1 capitalize transition-colors',
+                  view === v ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+        </div>
         <RadarPageGate>
           <div className="space-y-10">
             {futureGroups.length === 0 ? (
               <NoFutureMatches companiesCount={kpiAnalyzed} matchedCount={kpiDetected} />
+            ) : view === 'calendrier' ? (
+              <RadarCalendarView
+                groups={futureGroups}
+                highlightedEventId={highlightedEventId}
+                onSelectEvent={selectFromCalendar}
+              />
             ) : (
               <div className="space-y-6">
                 <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
