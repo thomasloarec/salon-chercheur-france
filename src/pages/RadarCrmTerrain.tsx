@@ -347,6 +347,16 @@ const RadarCrmTerrainInner: React.FC = () => {
   const [noteText, setNoteText] = useState('');
   const [savingNote, setSavingNote] = useState(false);
 
+  // --- Rencontre hors CRM (Mode Salon uniquement) ---
+  const [encounterOpen, setEncounterOpen] = useState(false);
+  const [encounterName, setEncounterName] = useState('');
+  const [encounterError, setEncounterError] = useState<string | null>(null);
+  const [encounterSaving, setEncounterSaving] = useState(false);
+  /** Mission fraîchement créée : on enchaîne sur une première note. */
+  const [encounterFollowUp, setEncounterFollowUp] = useState<{ missionId: string; name: string } | null>(null);
+  const [encounterNote, setEncounterNote] = useState('');
+  const [encounterNoteSaving, setEncounterNoteSaving] = useState(false);
+
   // --- Notes vocales : validation différée signalée sur la ligne ---
   // Ligne dont la capture vocale inline est ouverte.
   const [voiceOpenFor, setVoiceOpenFor] = useState<string | null>(null);
@@ -616,6 +626,55 @@ const RadarCrmTerrainInner: React.FC = () => {
     }
   };
 
+  const submitEncounter = async () => {
+    const name = encounterName.trim();
+    if (!name) { setEncounterError('Entrez un nom'); return; }
+    if (!eventId || encounterSaving) return;
+    setEncounterError(null);
+    setEncounterSaving(true);
+    const { data, error: rpcErr } = await supabase.rpc('add_radar_terrain_encounter', {
+      p_event_id: eventId,
+      p_name: name,
+    });
+    setEncounterSaving(false);
+    if (rpcErr || !data) {
+      console.error('[RadarCRM] add_radar_terrain_encounter failed:', rpcErr);
+      toast({
+        title: 'Ajout impossible',
+        description: 'Cette entreprise n’a pas pu être ajoutée.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    void trackRadarEvent('radar_terrain_encounter_added', { eventId });
+    setEncounterOpen(false);
+    setEncounterName('');
+    setEncounterFollowUp({ missionId: data as unknown as string, name });
+    setEncounterNote('');
+    await load();
+    toast({ title: 'Entreprise ajoutée' });
+  };
+
+  const submitEncounterNote = async () => {
+    const body = encounterNote.trim();
+    if (!encounterFollowUp || !body || encounterNoteSaving) return;
+    setEncounterNoteSaving(true);
+    const { error: rpcErr } = await supabase.rpc('add_radar_mission_note_by_mission', {
+      p_mission_id: encounterFollowUp.missionId,
+      p_body: body,
+    });
+    setEncounterNoteSaving(false);
+    if (rpcErr) {
+      console.error('[RadarCRM] add_radar_mission_note_by_mission failed:', rpcErr);
+      toast({ title: 'Note non enregistrée', description: 'Réessayez.', variant: 'destructive' });
+      return;
+    }
+    setEncounterFollowUp(null);
+    setEncounterNote('');
+    await load();
+    toast({ title: 'Note ajoutée' });
+  };
+
   const openMission = (c: SalonMissionCompany) => {
     if (!eventId || !c.crm_company_id) return;
     void trackRadarEvent('radar_mission_opened', { eventId, source: 'salon_mode' });
@@ -750,7 +809,8 @@ const RadarCrmTerrainInner: React.FC = () => {
                     <TerrainRow
                       key={rowKey(c)}
                       company={c}
-                      visited={false}                      encounter={isEncounter(c)}
+                      visited={false}
+                      encounter={isEncounter(c)}
 
                       relationship={getRel(c)}
                       noteCount={noteCountFor(c)}
