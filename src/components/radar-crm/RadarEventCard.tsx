@@ -85,8 +85,10 @@ const EventCard: React.FC<{
     nom_exposant: string | null,
     needs_review: boolean,
   ) => void;
-}> = ({ group, importId, variant = 'detailed', getPref, onView, similarCount = 0, onCompanyClick }) => {
+}> = ({ group, importId, variant = 'detailed', getPref, getRel, onSetRel, onView, similarCount = 0, onCompanyClick }) => {
   useEffect(() => { void trackRadarEvent('crm_result_event_card_viewed', { eventId: group.event_id }); }, [group.event_id]);
+  const [expanded, setExpanded] = useState(false);
+  const [showAllCompanies, setShowAllCompanies] = useState(false);
 
   // Comptes prioritaires d'abord, puis ordre existant.
   const ordered = [...group.companies].sort((a, b) => {
@@ -104,54 +106,9 @@ const EventCard: React.FC<{
   const deadline = group.days_until != null ? `J-${Math.max(0, group.days_until)}` : null;
   const place = [group.nom_lieu, group.ville].filter(Boolean).join(' · ');
 
-  if (variant === 'compact') {
-    return (
-      <Card
-        role="button"
-        tabIndex={0}
-        onClick={onView}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onView(); } }}
-        className="cursor-pointer border-border/60 shadow-none hover:border-border hover:shadow-sm transition-all bg-card"
-      >
-        <div className="flex items-center justify-between gap-3 px-4 py-3">
-          <div className="min-w-0">
-            <p className="text-[15px] font-medium text-foreground truncate" title={group.nom_event}>
-              {group.nom_event}
-            </p>
-            <p className="text-xs text-muted-foreground truncate mt-0.5">
-              {formatDate(group.date_debut)}{group.ville ? ` · ${group.ville}` : ''} · {group.companies.length} compte{group.companies.length > 1 ? 's' : ''}
-            </p>
-          </div>
-          {deadline && <span className="shrink-0 text-xs text-muted-foreground">{deadline}</span>}
-        </div>
-      </Card>
-    );
-  }
-
-  return (
-    <Card className="overflow-hidden border-border/60 shadow-none hover:shadow-sm hover:border-border transition-all bg-card">
-      {/* Bandeau image pleine largeur */}
-      <div className="w-full bg-muted overflow-hidden max-h-[120px]">
-        {group.url_image ? (
-          <img
-            src={group.url_image}
-            alt={group.nom_event}
-            className="w-full h-[120px] object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div
-            className="w-full h-[120px] flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))' }}
-          >
-            <span className="text-2xl font-bold text-primary-foreground tracking-wider opacity-90">
-              {eventInitials(group.nom_event)}
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div className="p-5 md:p-6 flex flex-col gap-4">
+  // Corps détaillé — partagé entre la variante détaillée et la carte compacte dépliée.
+  const body = (
+    <div className="p-5 md:p-6 flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <button
@@ -184,7 +141,8 @@ const EventCard: React.FC<{
 
         {/* Les comptes du CRM — sujet principal */}
         {ordered.length > 0 && (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3">
             <div className="flex shrink-0">
               {firstThree.map(({ company }, idx) => (
                 <div key={company.id} className={cn('rounded-md ring-2 ring-card', idx > 0 && '-ml-2')}>
@@ -193,6 +151,33 @@ const EventCard: React.FC<{
               ))}
             </div>
             <p className="text-[13px] text-foreground min-w-0">{namesLine}</p>
+            </div>
+            {ordered.length > 3 && (
+              <button
+                type="button"
+                onClick={() => setShowAllCompanies((v) => !v)}
+                className="w-fit text-xs text-muted-foreground hover:text-foreground hover:underline"
+              >
+                {showAllCompanies ? 'Masquer les comptes' : `Voir les ${ordered.length} comptes`}
+              </button>
+            )}
+            {showAllCompanies && (
+              <div className="flex flex-wrap gap-2">
+                {ordered.map((x) => (
+                  <CompanyChip
+                    key={`${x.company.id}-${x.id_exposant}`}
+                    company={x.company}
+                    stand={x.stand}
+                    nomExposant={x.nom_exposant}
+                    needsReview={x.needs_review}
+                    starred={getPref?.(x.company.id) === 'starred'}
+                    relationship={getRel?.(x.company)}
+                    onSetRelationship={onSetRel ? (next) => onSetRel(x.company, next) : undefined}
+                    onClick={() => onCompanyClick(x.company, x.id_exposant, x.stand, x.nom_exposant, x.needs_review)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -212,7 +197,60 @@ const EventCard: React.FC<{
           </Button>
           <AgendaLotexpoButton eventId={group.event_id} importId={importId} />
         </div>
-      </div>
+    </div>
+  );
+
+  if (variant === 'compact') {
+    return (
+      <Card className="overflow-hidden border-border/60 shadow-none hover:border-border hover:shadow-sm transition-all bg-card">
+        {expanded ? (
+          body
+        ) : (
+          <div
+            role="button"
+            tabIndex={0}
+            aria-expanded={false}
+            onClick={() => setExpanded(true)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(true); } }}
+            className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3"
+          >
+            <div className="min-w-0">
+              <span
+                role="link"
+                tabIndex={0}
+                title={group.nom_event}
+                onClick={(e) => { e.stopPropagation(); if (group.slug) onView(); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); if (group.slug) onView(); } }}
+                className="block truncate text-[15px] font-medium text-foreground hover:underline"
+              >
+                {group.nom_event}
+              </span>
+              <p className="text-xs text-muted-foreground truncate mt-0.5">
+                {formatDate(group.date_debut)}{group.ville ? ` · ${group.ville}` : ''} · {group.companies.length} compte{group.companies.length > 1 ? 's' : ''}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              {deadline && <span className="text-xs text-muted-foreground">{deadline}</span>}
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200" />
+            </div>
+          </div>
+        )}
+        {expanded && (
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            className="flex w-full items-center justify-center gap-1 border-t border-border/60 px-4 py-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            Replier <ChevronDown className="h-4 w-4 rotate-180 transition-transform duration-200" />
+          </button>
+        )}
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="overflow-hidden border-border/60 shadow-none hover:shadow-sm hover:border-border transition-all bg-card">
+      {body}
     </Card>
   );
 };
