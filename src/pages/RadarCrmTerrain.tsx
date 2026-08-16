@@ -8,8 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   ArrowLeft, MapPin, Star, ChevronRight, Calendar, StickyNote, CheckSquare,
-  Check, Plus, Loader2, X, ClipboardList, Mic,
+  Check, Plus, Loader2, X, ClipboardList, Mic, UserPlus,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import RadarMissionSheet, { type MissionTarget } from '@/components/radar-crm/RadarMissionSheet';
@@ -28,7 +29,8 @@ const ORANGE = '#ff751f';
 
 /** Shape renvoyée par get_radar_salon_missions (typée Json côté RPC). */
 interface SalonMissionCompany {
-  crm_company_id: string;
+  /** null pour une rencontre hors CRM (identifiée par mission_id). */
+  crm_company_id: string | null;
   company_name: string | null;
   description: string | null;
   nom_exposant: string | null;
@@ -36,6 +38,7 @@ interface SalonMissionCompany {
   relationship_status: string | null;
   visited: boolean | null;
   mission_id: string | null;
+  origin?: string | null;
   objective: string | null;
   opening_line: string | null;
   top_q1: string | null;
@@ -45,6 +48,18 @@ interface SalonMissionCompany {
   notes: unknown[] | null;
   tasks: Array<{ done?: boolean | null }> | null;
 }
+
+/**
+ * Clé d'affichage unique, valable pour les comptes CRM comme pour les rencontres
+ * hors CRM (crm_company_id null). Ne jamais comparer sur crm_company_id seul :
+ * deux rencontres manuelles auraient toutes deux null et se confondraient.
+ */
+const rowKey = (c: SalonMissionCompany): string =>
+  c.crm_company_id ?? c.mission_id ?? '';
+
+/** Rencontre saisie sur le terrain, hors CRM. */
+const isEncounter = (c: SalonMissionCompany): boolean =>
+  !c.crm_company_id || c.origin === 'rencontre';
 
 interface SalonMissionEvent {
   event_id?: string | null;
@@ -112,6 +127,8 @@ const RadarCrmTerrain: React.FC = () => {
 interface TerrainRowProps {
   company: SalonMissionCompany;
   visited: boolean;
+  /** Rencontre hors CRM : pas de fiche mission, ni statut, ni vocal. */
+  encounter: boolean;
   relationship: RelationshipStatus;
   noteCount: number;
   noteOpen: boolean;
@@ -136,12 +153,12 @@ interface TerrainRowProps {
 
 /** Ligne de check-list terrain : grande, tactile, actions directes. */
 const TerrainRow: React.FC<TerrainRowProps> = ({
-  company: c, visited, relationship, noteCount, noteOpen, noteText, savingNote,
+  company: c, visited, encounter, relationship, noteCount, noteOpen, noteText, savingNote,
   pendingVoiceCount, voiceProcessing, voiceOpen, voiceSlot,
   onOpenMission, onToggleVisited, onOpenNote, onCloseNote, onChangeNote, onSubmitNote, onToggleVoice,
 }) => {
   const taskCount = Array.isArray(c.tasks) ? c.tasks.filter((t) => !t?.done).length : 0;
-  const starred = c.pref_status === 'starred';
+  const starred = !encounter && c.pref_status === 'starred';
   const name = c.nom_exposant ?? c.company_name ?? 'Entreprise';
 
   return (
@@ -152,17 +169,23 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
           visited ? 'border-border/50 opacity-60' : starred ? 'border-primary/50' : 'border-border/60',
         )}
       >
-        {/* Zone tap → Sheet mission (hors boutons) */}
-        <button
-          type="button"
-          onClick={onOpenMission}
-          className="group w-full text-left p-4 md:p-5 rounded-t-xl hover:bg-secondary/40 active:bg-secondary/60 transition-colors"
-        >
+        {/* Zone tap → Sheet mission (hors boutons). Statique pour une rencontre hors CRM. */}
+        {React.createElement(
+          encounter ? 'div' : 'button',
+          encounter
+            ? { className: 'group w-full text-left p-4 md:p-5 rounded-t-xl' }
+            : {
+                type: 'button',
+                onClick: onOpenMission,
+                className: 'group w-full text-left p-4 md:p-5 rounded-t-xl hover:bg-secondary/40 active:bg-secondary/60 transition-colors',
+              },
+          <>
           <div className="flex items-start gap-3">
             {starred && (
               <Star className="h-5 w-5 fill-primary shrink-0 mt-0.5" aria-label="Compte prioritaire" />
             )}
             <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
               <p
                 className={cn(
                   'font-display text-lg md:text-xl font-semibold leading-snug truncate',
@@ -172,12 +195,18 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
               >
                 {name}
               </p>
+              {encounter && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  Hors CRM
+                </span>
+              )}
+              </div>
               <p className="text-sm text-foreground/70 mt-1 flex items-center gap-1 font-medium">
                 <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
                 {standLabelFor(c.stands)}
               </p>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-3">
-                <RelBadge status={relationship} />
+                {!encounter && <RelBadge status={relationship} />}
                 {pendingVoiceCount > 0 && (
                   <span
                     className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold text-white"
@@ -208,9 +237,12 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
                 )}
               </div>
             </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground/50 shrink-0 self-center transition-transform group-hover:translate-x-0.5" />
+            {!encounter && (
+              <ChevronRight className="h-5 w-5 text-muted-foreground/50 shrink-0 self-center transition-transform group-hover:translate-x-0.5" />
+            )}
           </div>
-        </button>
+          </>,
+        )}
 
         {/* Actions directes — Note = action primaire (accent), Micro + Visité = secondaires (neutres) */}
         <div className="flex items-stretch gap-2 border-t border-border/60 p-3">
@@ -223,25 +255,29 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
           >
             <Plus className="h-4 w-4" /> Note
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-[44px] w-12 shrink-0 border-border/70 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
-            onClick={onToggleVoice}
-            aria-expanded={voiceOpen}
-            aria-label="Note vocale"
-          >
-            <Mic className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1 min-h-[44px] gap-2 border-border/70 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
-            onClick={onToggleVisited}
-          >
-            <Check className={cn('h-4 w-4', visited && 'text-info')} />
-            {visited ? 'Vu' : 'Visité'}
-          </Button>
+          {!encounter && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-[44px] w-12 shrink-0 border-border/70 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+                onClick={onToggleVoice}
+                aria-expanded={voiceOpen}
+                aria-label="Note vocale"
+              >
+                <Mic className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 min-h-[44px] gap-2 border-border/70 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+                onClick={onToggleVisited}
+              >
+                <Check className={cn('h-4 w-4', visited && 'text-info')} />
+                {visited ? 'Vu' : 'Visité'}
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Capture vocale inline (compacte) */}
