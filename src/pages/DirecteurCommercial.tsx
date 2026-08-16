@@ -13,7 +13,9 @@ import {
 import { MotionConfig, motion } from 'framer-motion';
 import MainLayout from '@/components/layout/MainLayout';
 import LeadMagnetChat from '@/components/directeur-commercial/LeadMagnetChat';
+import RadarPricingSection from '@/components/radar-crm/RadarPricingSection';
 import ConnectCrmDialog from '@/components/crm/ConnectCrmDialog';
+
 import { Button } from '@/components/ui/button';
 import CrmSecurityBadge from '@/components/CrmSecurityBadge';
 
@@ -197,6 +199,9 @@ const DirecteurCommercial = () => {
         </motion.div>
       </motion.section>
 
+      {/* Tarif dynamique */}
+      <RadarPricingSection redirectPath="/directeur-commercial" />
+
       {/* CTA */}
       <motion.section
         initial="hidden"
@@ -226,6 +231,7 @@ const DirecteurCommercial = () => {
           redirectPath="/directeur-commercial"
         />
       </motion.section>
+
     </MainLayout>
     </MotionConfig>
   );

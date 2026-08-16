@@ -10684,6 +10684,7 @@ export type Database = {
       get_or_create_my_radar_account: { Args: never; Returns: string }
       get_outreach_pipeline_stats: { Args: never; Returns: Json }
       get_radar_crm_admin_stats: { Args: never; Returns: Json }
+      get_radar_crm_pricing: { Args: never; Returns: Json }
       get_radar_mission_context: {
         Args: { p_crm_company_id: string; p_event_id: string }
         Returns: Json

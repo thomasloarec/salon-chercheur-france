@@ -29,6 +29,8 @@ import CrmSecurityBadge from '@/components/CrmSecurityBadge';
 import RadarSpaceNameDialog from '@/components/radar-crm/RadarSpaceNameDialog';
 import type { CrmSourceType } from '@/lib/radarCrm/parseFile';
 import RadarPreviewTable from '@/components/radar-crm/RadarPreviewTable';
+import RadarPricingSection from '@/components/radar-crm/RadarPricingSection';
+
 import MissionCardPreview from '@/components/radar-crm/previews/MissionCardPreview';
 import ResultDashboardPreview from '@/components/radar-crm/previews/ResultDashboardPreview';
 import {
@@ -1128,7 +1130,11 @@ const RadarCrmPage: React.FC = () => {
         )}
       </section>
 
+      {/* 10. Tarif dynamique */}
+      <RadarPricingSection />
+
       {/* 11. FAQ */}
+
       <section className="max-w-3xl mx-auto px-4 py-14 md:py-20">
         <div className="mb-8">
           <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">Questions fréquentes</p>

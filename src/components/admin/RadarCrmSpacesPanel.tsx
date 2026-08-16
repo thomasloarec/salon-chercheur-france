@@ -266,9 +266,16 @@ const RadarCrmSpacesPanel: React.FC = () => {
                             >
                               Beta (accès libre)
                             </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={busy || s.plan === 'paid'}
+                              onSelect={() => setPlan(s, 'paid')}
+                            >
+                              Passer en payant
+                            </DropdownMenuItem>
                             <DropdownMenuItem disabled className="text-muted-foreground">
                               Activer / Essai 7j — gérés par sièges payants
                             </DropdownMenuItem>
+
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               disabled={busy || s.plan === 'free'}
