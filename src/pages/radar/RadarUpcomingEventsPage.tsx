@@ -79,21 +79,25 @@ const RadarUpcomingEventsPage: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 py-10 md:py-14 space-y-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="font-display text-3xl md:text-4xl font-semibold tracking-tight text-foreground">Salons à venir</h1>
-          <div className="inline-flex items-center rounded-[var(--radius)] border border-border p-0.5 text-sm">
-            {(['liste', 'calendrier'] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setView(v)}
-                aria-pressed={view === v}
-                className={cn(
-                  'rounded-[calc(var(--radius)-2px)] px-3 py-1 capitalize transition-colors',
-                  view === v ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
-                )}
-              >
-                {v}
-              </button>
-            ))}
+          <div className="inline-flex items-center gap-3">
+            <span className="text-[13px] text-muted-foreground">Affichage</span>
+            <div className="inline-flex items-center rounded-[var(--radius)] border border-border p-0.5 text-sm">
+              {(['liste', 'calendrier'] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setView(v)}
+                  aria-pressed={view === v}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-[calc(var(--radius)-2px)] px-3 py-1 capitalize transition-colors',
+                    view === v ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {v === 'liste' ? <List className="h-[15px] w-[15px]" /> : <CalendarDays className="h-[15px] w-[15px]" />}
+                  {v}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
         <RadarPageGate>
