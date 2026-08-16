@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Building2, Users, Loader2, MoreHorizontal, Lock, Minus, Plus, Ticket } from 'lucide-react';
+import { Building2, Users, Loader2, MoreHorizontal, Lock, Minus, Plus, Ticket, X } from 'lucide-react';
 
 type RadarPlan = 'trial' | 'free' | 'paid' | 'beta';
 
@@ -81,6 +81,10 @@ const RadarCrmSpacesPanel: React.FC = () => {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [seatsBusyId, setSeatsBusyId] = useState<string | null>(null);
   const [lockTarget, setLockTarget] = useState<RadarSpaceRow | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<
+    { space: RadarSpaceRow; member: RadarSpaceMember } | null
+  >(null);
+  const [removingUserId, setRemovingUserId] = useState<string | null>(null);
   const [membersByAccount, setMembersByAccount] = useState<
     Record<string, RadarSpaceMember[] | 'loading'>
   >({});
@@ -100,8 +104,8 @@ const RadarCrmSpacesPanel: React.FC = () => {
   }, [loadSpaces]);
 
   const loadMembers = useCallback(
-    async (accountId: string) => {
-      if (membersByAccount[accountId]) return;
+    async (accountId: string, force = false) => {
+      if (!force && membersByAccount[accountId]) return;
       setMembersByAccount((prev) => ({ ...prev, [accountId]: 'loading' }));
       const { data, error } = await supabase.rpc('admin_list_radar_account_members', {
         p_account_id: accountId,
@@ -113,6 +117,26 @@ const RadarCrmSpacesPanel: React.FC = () => {
     },
     [membersByAccount],
   );
+
+  const removeMember = async (space: RadarSpaceRow, member: RadarSpaceMember) => {
+    setRemovingUserId(member.user_id);
+    const { error } = await supabase.rpc('remove_radar_member', {
+      p_account_id: space.account_id,
+      p_user_id: member.user_id,
+    });
+    setRemovingUserId(null);
+    setRemoveTarget(null);
+    if (error) {
+      toast.error(
+        error.message.includes('cannot_remove_last_owner')
+          ? "Impossible de retirer le dernier super admin de l'espace."
+          : error.message,
+      );
+      return;
+    }
+    toast.success('Accès retiré');
+    await Promise.all([loadMembers(space.account_id, true), loadSpaces()]);
+  };
 
   const setPlan = async (space: RadarSpaceRow, plan: RadarPlan) => {
     setBusyId(space.account_id);
