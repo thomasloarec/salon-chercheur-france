@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { type EventGroup } from '@/types/radar';
 import {
