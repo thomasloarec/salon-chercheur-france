@@ -292,7 +292,7 @@ const EventDebriefPanel: React.FC<EventDebriefPanelProps> = ({
       .sort((a, b) => companyLabel(a).localeCompare(companyLabel(b), 'fr'));
   }, [showAll, allCompanies, worked]);
 
-  /** Bloc texte lisible du débrief (une entrée par entreprise travaillée). */
+  /** Bloc texte lisible du débrief (une entrée par entreprise suivie). */
   const buildDebriefText = (): string => {
     const dateRange = [fmtDate(ev?.date_debut), fmtDate(ev?.date_fin)]
       .filter(Boolean)
