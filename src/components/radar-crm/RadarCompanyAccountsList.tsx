@@ -3,10 +3,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Star, EyeOff, Eye, ChevronDown, ChevronUp, History, ExternalLink, Target,
+  Star, EyeOff, Eye, ChevronDown, ChevronUp, ExternalLink, Target, AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { type RelationshipStatus } from '@/lib/radarCrm/relationship';
+import { type RelationshipStatus, RELATIONSHIP_META } from '@/lib/radarCrm/relationship';
 import { type Company, type EventGroup, type Pref } from '@/types/radar';
 import { formatDate, EmptyText, CompanyAvatar, RelationshipSelect } from './RadarShared';
 
@@ -134,68 +134,29 @@ const CompanyAccountCard: React.FC<{
   onOpenMission: (g: EventGroup) => void;
   dimmed?: boolean;
 }> = ({ company, future, past, onClickEvent, pref, onSetPref, relationship, onSetRelationship, onOpenMission, dimmed }) => {
-  const INITIAL = 3;
-  const [expF, setExpF] = useState(false);
-  // Historique replié par défaut : on calme la carte (cf. polish v2).
-  const [expP, setExpP] = useState(false);
-  const futureShown = expF ? future : future.slice(0, INITIAL);
-  const futureMore = future.length - futureShown.length;
+  // Reste des salons (hors prochain) — replié par défaut.
+  const [expRest, setExpRest] = useState(false);
+  // Édition du statut : ouvre le sélecteur complet à la place de la pastille / des choix rapides.
+  const [editStatus, setEditStatus] = useState(false);
 
-  // Seuil d'imminence : l'orange sur le badge J-XX est réservé aux salons proches.
-  const IMMINENT_DAYS = 30;
+  const needsQualification = relationship === 'a_qualifier';
+  const next = future[0] ?? null;
+  const restFuture = future.slice(1);
+  const meta = RELATIONSHIP_META[relationship];
+
+  const applyStatus = (s: RelationshipStatus) => {
+    onSetRelationship(s);
+    setEditStatus(false);
+  };
+
+  const standFor = (g: EventGroup) =>
+    g.companies.find((x) => x.company.id === company.id)?.stand ?? null;
+
+  // Seuil d'imminence : l'accent est réservé aux salons très proches.
+  const IMMINENT_DAYS = 10;
+
   const renderRow = (g: EventGroup, tone: 'future' | 'past') => {
-    const stand = g.companies.find((x) => x.company.id === company.id)?.stand;
-    const imminent = g.days_until != null && g.days_until < IMMINENT_DAYS;
-    const rowInner = (
-      <>
-        <div className="flex items-center justify-between gap-2">
-          <p className={`text-sm truncate ${tone === 'future' ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-            {g.nom_event}
-          </p>
-          {tone === 'future' && g.days_until != null && (
-            <Badge
-              className={cn(
-                'shrink-0 border-none',
-                imminent
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground',
-              )}
-            >
-              J-{Math.max(0, g.days_until)}
-            </Badge>
-          )}
-        </div>
-        <p className="text-xs text-muted-foreground mt-1 truncate">
-          {formatDate(g.date_debut)}{g.ville ? ` · ${g.ville}` : ''}
-          {stand && <span className="ml-2 text-foreground font-medium">Stand {stand}</span>}
-        </p>
-      </>
-    );
-    // Salons à venir : ligne cliquable (événement) + action « Préparer » (mission).
-    if (tone === 'future') {
-      return (
-        <div key={g.event_id} className="flex items-stretch gap-1.5">
-          <button
-            type="button"
-            onClick={() => onClickEvent(g)}
-            disabled={!g.slug}
-            className="flex-1 min-w-0 text-left rounded-lg px-3 py-2.5 bg-muted/40 hover:bg-muted/70 transition-colors disabled:opacity-60"
-          >
-            {rowInner}
-          </button>
-          <button
-            type="button"
-            onClick={() => onOpenMission(g)}
-            title="Préparer ma visite"
-            aria-label={`Préparer ma visite — ${g.nom_event}`}
-            className="shrink-0 flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/5 px-2.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
-          >
-            <Target className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Préparer ma visite</span>
-          </button>
-        </div>
-      );
-    }
+    const stand = standFor(g);
     return (
       <button
         key={g.event_id}
@@ -204,10 +165,30 @@ const CompanyAccountCard: React.FC<{
         disabled={!g.slug}
         className="w-full text-left rounded-lg px-3 py-2.5 transition-colors disabled:opacity-60 hover:bg-muted/50"
       >
-        {rowInner}
+        <div className="flex items-center justify-between gap-2">
+          <p className={cn('text-sm truncate', tone === 'future' ? 'text-foreground' : 'text-muted-foreground')} title={g.nom_event}>
+            {g.nom_event}
+          </p>
+          {tone === 'future' && g.days_until != null && (
+            <Badge className="shrink-0 border-none bg-muted text-muted-foreground">
+              J-{Math.max(0, g.days_until)}
+            </Badge>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground mt-1 truncate">
+          {formatDate(g.date_debut)}{g.ville ? ` · ${g.ville}` : ''}
+          {stand && <span className="ml-2 text-foreground font-medium">Stand {stand}</span>}
+        </p>
       </button>
     );
   };
+
+  const restSegments = [
+    restFuture.length > 0
+      ? `${restFuture.length} autre${restFuture.length > 1 ? 's' : ''} salon${restFuture.length > 1 ? 's' : ''} à venir`
+      : null,
+    past.length > 0 ? `${past.length} passé${past.length > 1 ? 's' : ''}` : null,
+  ].filter(Boolean) as string[];
 
   return (
     <Card className={cn(
@@ -221,7 +202,28 @@ const CompanyAccountCard: React.FC<{
         <div className="flex items-start gap-3">
           <CompanyAvatar company={company} size="md" />
           <div className="min-w-0 flex-1">
-            <p className="font-display font-semibold text-base text-foreground truncate" title={company.company_name}>{company.company_name}</p>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <p className="font-display font-semibold text-base text-foreground truncate min-w-0" title={company.company_name}>
+                {company.company_name}
+              </p>
+              {!needsQualification && (
+                editStatus ? (
+                  <span className="shrink-0">
+                    <RelationshipSelect status={relationship} onChange={applyStatus} />
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setEditStatus(true)}
+                    title="Modifier le statut"
+                    className="shrink-0 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 hover:bg-muted/70 transition-colors"
+                  >
+                    <span className={cn('h-1.5 w-1.5 rounded-full', meta.dot)} aria-hidden="true" />
+                    <span className="text-[11px] font-medium text-foreground">{meta.label}</span>
+                  </button>
+                )
+              )}
+            </div>
             <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
               <ExternalLink className="h-3 w-3" />
               {company.normalized_domain ?? company.website_raw ?? ''}
@@ -252,13 +254,40 @@ const CompanyAccountCard: React.FC<{
           </div>
         </div>
 
-        {/* Statut relationnel — s'applique immédiatement (pas de bouton enregistrer) */}
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground shrink-0">
-            Statut
-          </span>
-          <RelationshipSelect status={relationship} onChange={onSetRelationship} />
-        </div>
+        {/* Bande de qualification — uniquement tant que le compte n'est pas qualifié. */}
+        {needsQualification && (
+          <div className="rounded-[var(--radius)] border border-primary/20 bg-primary/5 p-4 space-y-3">
+            <p className="flex items-start gap-1.5 text-xs text-foreground">
+              <AlertCircle className="h-[15px] w-[15px] shrink-0 text-primary" />
+              Quelle relation avez-vous avec ce compte ?
+            </p>
+            {editStatus ? (
+              <RelationshipSelect status={relationship} onChange={applyStatus} />
+            ) : (
+              <>
+                <div className="flex flex-wrap gap-1.5">
+                  {(['client_actif', 'prospect_chaud', 'prospect_froid'] as RelationshipStatus[]).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => applyStatus(s)}
+                      className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                    >
+                      {RELATIONSHIP_META[s].label}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditStatus(true)}
+                  className="text-[11px] text-muted-foreground hover:text-foreground hover:underline"
+                >
+                  Autre statut
+                </button>
+              </>
+            )}
+          </div>
+        )}
 
         {dimmed && (
           <Button
@@ -271,59 +300,57 @@ const CompanyAccountCard: React.FC<{
           </Button>
         )}
 
-        <div className="flex gap-6 text-sm">
-          <div>
-            <p className="font-display text-2xl font-semibold text-primary leading-none tracking-tight">{future.length}</p>
-            <p className="text-xs text-muted-foreground mt-1">à venir</p>
-          </div>
-          <div className="border-l border-border/60 pl-6">
-            <p className="font-display text-2xl font-semibold text-foreground/70 leading-none tracking-tight">{past.length}</p>
-            <p className="text-xs text-muted-foreground mt-1">passés</p>
-          </div>
-        </div>
-
-        {future.length > 0 && (
+        {/* Prochain salon */}
+        {next && (
           <div className="space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Salons à venir
+            <p className="text-[11px] text-muted-foreground">Prochain salon</p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onClickEvent(next)}
+                disabled={!next.slug}
+                title={next.nom_event}
+                className="group min-w-0 flex-1 flex items-center gap-1 text-left text-sm font-medium text-foreground hover:underline disabled:opacity-60 disabled:hover:no-underline"
+              >
+                <span className="truncate">{next.nom_event}</span>
+                <ExternalLink className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
+              {next.days_until != null && (
+                <Badge className={cn(
+                  'shrink-0 border-none',
+                  next.days_until < IMMINENT_DAYS
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-muted text-muted-foreground',
+                )}>
+                  J-{Math.max(0, next.days_until)}
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground truncate">
+              {formatDate(next.date_debut)}{next.ville ? ` · ${next.ville}` : ''}
+              {standFor(next) && <span className="ml-2 text-foreground font-medium">Stand {standFor(next)}</span>}
             </p>
-            {futureShown.map((g) => renderRow(g, 'future'))}
-            {futureMore > 0 && (
-              <button
-                type="button"
-                onClick={() => setExpF(true)}
-                className="text-xs font-medium text-primary hover:underline flex items-center gap-1"
-              >
-                <ChevronDown className="h-3 w-3" /> Voir {futureMore} salon{futureMore > 1 ? 's' : ''} de plus
-              </button>
-            )}
-            {expF && future.length > INITIAL && (
-              <button
-                type="button"
-                onClick={() => setExpF(false)}
-                className="text-xs font-medium text-muted-foreground hover:underline flex items-center gap-1"
-              >
-                <ChevronUp className="h-3 w-3" /> Réduire
-              </button>
-            )}
+            <Button size="sm" className="w-full" onClick={() => onOpenMission(next)}>
+              <Target className="h-3.5 w-3.5 mr-1.5" /> Préparer ma visite
+            </Button>
           </div>
         )}
 
-        {/* Historique passé : replié par défaut → une seule ligne discrète. */}
-        {past.length > 0 && (
+        {/* Reste des salons — une seule ligne repliable. */}
+        {restSegments.length > 0 && (
           <div className="space-y-2 pt-1 border-t border-border/50">
             <button
               type="button"
-              onClick={() => setExpP((o) => !o)}
-              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-              aria-expanded={expP}
+              onClick={() => setExpRest((o) => !o)}
+              aria-expanded={expRest}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              {expP ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-              <History className="h-3.5 w-3.5" />
-              {past.length} salon{past.length > 1 ? 's' : ''} passé{past.length > 1 ? 's' : ''}
+              {expRest ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              {restSegments.join(' · ')}
             </button>
-            {expP && (
+            {expRest && (
               <div className="space-y-2">
+                {restFuture.map((g) => renderRow(g, 'future'))}
                 {past.map((g) => renderRow(g, 'past'))}
               </div>
             )}

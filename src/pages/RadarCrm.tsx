@@ -189,6 +189,15 @@ const RadarCrmPage: React.FC = () => {
     }
   }, [authLoading, user]);
 
+  // Arrivée depuis une autre page avec #radar-upload : défilement vers la section de connexion.
+  useEffect(() => {
+    if (window.location.hash !== '#radar-upload') return;
+    const t = window.setTimeout(() => {
+      document.getElementById('radar-upload')?.scrollIntoView({ behavior: 'smooth' });
+    }, 300);
+    return () => window.clearTimeout(t);
+  }, []);
+
   const scrollToUpload = (source: string) => {
     void trackRadarEvent('radar_landing_cta_clicked', { source });
     document.getElementById('radar-upload')?.scrollIntoView({ behavior: 'smooth' });

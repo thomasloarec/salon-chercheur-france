@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Plus, Radar, Sparkles, Settings } from 'lucide-react';
+import { RefreshCw, Radar, Sparkles, Settings } from 'lucide-react';
 import StatCard from '@/components/radar-crm/RadarStatCard';
 import RadarOnboardingPanel from '@/components/radar-crm/RadarOnboardingPanel';
 import RadarActiveBanner from '@/components/radar-crm/RadarActiveBanner';
@@ -132,8 +132,8 @@ const RadarOverviewPage: React.FC = () => {
                 </Select>
               )}
               <Button asChild className="w-full sm:w-auto">
-                <Link to="/radar-crm">
-                  <Plus className="h-4 w-4 mr-2" /> Nouveau fichier CSV
+                <Link to="/radar-crm#radar-upload">
+                  <RefreshCw className="h-4 w-4 mr-2" /> Reconnecter mon CRM
                 </Link>
               </Button>
             </div>
