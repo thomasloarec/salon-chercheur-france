@@ -23,7 +23,7 @@ const RadarOverviewPage: React.FC = () => {
     radarView, loading,
     onboarding, onboardingLoading,
     access, orgName, isSpaceOwner,
-    getPref, offerEmpty, setSettingsOpen,
+    getPref, offerEmpty,
     matchedCompanies, futureGroups,
     nextEvent, featured, starredCount, ongoingEvents,
     enterTerrain, onClickEvent,
@@ -42,6 +42,7 @@ const RadarOverviewPage: React.FC = () => {
   if (tab === 'future') return redirectTo('/radar-crm/salons', ['tab']);
   if (tab === 'past') return redirectTo('/radar-crm/passes', ['tab']);
   if (eventId) return redirectTo('/radar-crm/salons', ['tab']);
+  if (searchParams.get('panel') === 'settings') return redirectTo('/radar-crm/equipe', ['panel']);
 
   const status: RadarStatus = radarView?.status ?? 'none';
   const isLocked = status === 'trial_expired' || status === 'free';
@@ -95,7 +96,7 @@ const RadarOverviewPage: React.FC = () => {
                   ) : isSpaceOwner ? (
                     <button
                       type="button"
-                      onClick={() => setSettingsOpen(true)}
+                      onClick={() => navigate('/radar-crm/equipe')}
                       className="font-medium text-primary underline underline-offset-2 hover:opacity-80"
                     >
                       Nommez cet espace
@@ -112,7 +113,7 @@ const RadarOverviewPage: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setSettingsOpen(true)}
+                onClick={() => navigate('/radar-crm/equipe')}
                 className="w-full sm:w-auto"
               >
                 <Settings className="h-4 w-4 mr-2" /> Paramètres Radar CRM
@@ -149,7 +150,7 @@ const RadarOverviewPage: React.FC = () => {
             onGoCompanies={() => navigate('/radar-crm/comptes')}
             onPrepareEvent={onPrepareEvent}
             onEnterTerrain={enterTerrain}
-            onOpenCollaboration={() => setSettingsOpen(true)}
+            onOpenCollaboration={() => navigate('/radar-crm/equipe')}
           />
         )}
 
@@ -186,13 +187,13 @@ const RadarOverviewPage: React.FC = () => {
               getPref={getPref}
               onEnterTerrain={enterTerrain}
               onClickEvent={onClickEvent}
-              onOpenSettings={() => setSettingsOpen(true)}
+              onOpenSettings={() => navigate('/radar-crm/equipe')}
             />
 
             {/* Nudge profil d'offre — discret, disparaît une fois le profil rempli */}
             {offerEmpty === true && (
               <div className="mt-6">
-                <OfferProfileNudge onOpenSettings={() => setSettingsOpen(true)} />
+                <OfferProfileNudge onOpenSettings={() => navigate('/radar-crm/equipe')} />
               </div>
             )}
           </>

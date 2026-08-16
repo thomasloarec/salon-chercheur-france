@@ -56,8 +56,6 @@ interface RadarWorkspaceValue {
   setOpenExhibitor: React.Dispatch<React.SetStateAction<{ exhibitor: any; event: any } | null>>;
   mission: { target: MissionTarget; company: Company } | null;
   setMission: React.Dispatch<React.SetStateAction<{ target: MissionTarget; company: Company } | null>>;
-  settingsOpen: boolean;
-  setSettingsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   accessOpen: boolean;
   setAccessOpen: React.Dispatch<React.SetStateAction<boolean>>;
   onOpenExhibitor: (
@@ -432,7 +430,6 @@ export const RadarWorkspaceProvider: React.FC<{ children: React.ReactNode }> = (
 
   // ── Dialogues partagés (montés une seule fois dans le layout) ───────
   const [openExhibitor, setOpenExhibitor] = useState<{ exhibitor: any; event: any } | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
   // Panneau mission (vue « Par salon ») — couple compte + salon.
   const [mission, setMission] = useState<{ target: MissionTarget; company: Company } | null>(null);
@@ -532,7 +529,7 @@ export const RadarWorkspaceProvider: React.FC<{ children: React.ReactNode }> = (
     eventGroups, matchedCompanies, futureGroups, pastGroups,
     nextEvent, featured, starredCount, ongoingEvents, seatBlockKind,
     openExhibitor, setOpenExhibitor, mission, setMission,
-    settingsOpen, setSettingsOpen, accessOpen, setAccessOpen,
+    accessOpen, setAccessOpen,
     onOpenExhibitor, onOpenMission, onClickEvent,
     reloadAll, refreshCockpit, enterTerrain,
   };
