@@ -129,7 +129,7 @@ const RadarCalendarView: React.FC<{
     return (
       <React.Fragment key={w.key}>
         {w.monthStart && (
-          <div className="pt-4 pb-1 text-xs text-muted-foreground">{w.monthStart}</div>
+          <div className="pt-6 pb-2 text-[15px] font-medium text-foreground">{w.monthStart}</div>
         )}
         <div
           className="grid gap-x-1 gap-y-1 border-t border-border/60 py-1.5"
