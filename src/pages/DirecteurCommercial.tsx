@@ -208,29 +208,61 @@ const DirecteurCommercial = () => {
         whileInView="show"
         viewport={VIEWPORT}
         variants={item}
-        className="mx-auto mb-16 max-w-4xl rounded-3xl bg-[#0b132b] p-6 text-white md:p-10"
+        className="relative mx-auto mb-16 max-w-4xl overflow-hidden rounded-[2.5rem] bg-bubble p-8 md:p-16 shadow-lg"
       >
-        <h2 className="heading-display text-2xl md:text-3xl">
-          Passez à la version connectée à votre CRM
-        </h2>
-        <p className="mt-3 max-w-2xl text-sm text-white/80 md:text-base">
-          On ne vous demande rien pour tester autant que vous voulez. Cette étape n'arrive que si
-          vous voulez équiper votre équipe. Dites-nous en deux minutes comment vous travaillez, et
-          on revient vers vous avec la meilleure façon de brancher vos données, sans vous imposer
-          d'import Excel.
-        </p>
-        <div className="mt-6 flex flex-wrap items-center gap-4">
-          <Button size="lg" className="rounded-full px-7" onClick={() => setConnectOpen(true)}>
-            Équiper mon équipe
-          </Button>
-          <CrmSecurityBadge variant="dark" />
+        {/* Glows */}
+        <div className="absolute -top-24 -right-24 h-80 w-80 rounded-full bg-primary/15 blur-[100px]" />
+        <div className="absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-surface-accent/60 blur-[100px]" />
+
+        {/* Subtle grid pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: 'radial-gradient(hsl(var(--foreground)) 1px, transparent 1px)',
+            backgroundSize: '32px 32px',
+          }}
+        />
+
+        {/* Glassy border */}
+        <div className="pointer-events-none absolute inset-0 rounded-[2.5rem] ring-1 ring-primary/10 ring-inset" />
+
+        <div className="relative flex flex-col items-center text-center">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+            </span>
+            <span className="text-xs font-bold uppercase tracking-widest text-primary">
+              Intégration Premium
+            </span>
+          </div>
+
+          <h2 className="heading-display max-w-3xl text-3xl md:text-4xl">
+            Passez à la version connectée à votre CRM
+          </h2>
+
+          <p className="mt-4 max-w-2xl text-base text-muted-foreground md:text-lg">
+            On ne vous demande rien pour tester autant que vous voulez. Cette étape n'arrive que si
+            vous voulez équiper votre équipe. Dites-nous en deux minutes comment vous travaillez, et
+            on revient vers vous avec la meilleure façon de brancher vos données, sans vous imposer
+            d'import Excel.
+          </p>
+
+          <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row">
+            <Button size="lg" className="rounded-full px-7" onClick={() => setConnectOpen(true)}>
+              Équiper mon équipe
+            </Button>
+            <CrmSecurityBadge variant="light" />
+          </div>
         </div>
+
         <ConnectCrmDialog
           open={connectOpen}
           onOpenChange={setConnectOpen}
           redirectPath="/directeur-commercial"
         />
       </motion.section>
+
 
     </MainLayout>
     </MotionConfig>
