@@ -395,7 +395,7 @@ const EventDebriefPanel: React.FC<EventDebriefPanelProps> = ({
   return (
     <div className={className}>
       <p className="text-sm text-foreground/80 leading-relaxed">
-        <span className="font-semibold text-foreground">{stats.N}</span> entreprise{stats.N > 1 ? 's' : ''} travaillée{stats.N > 1 ? 's' : ''}
+        <span className="font-semibold text-foreground">{stats.N}</span> entreprise{stats.N > 1 ? 's' : ''} suivie{stats.N > 1 ? 's' : ''}
         {' · '}<span className="font-semibold text-foreground">{stats.V}</span> visitée{stats.V > 1 ? 's' : ''}
         {' · '}<span className="font-semibold text-foreground">{stats.Nn}</span> note{stats.Nn > 1 ? 's' : ''}
         {' · '}<span className="font-semibold text-foreground">{stats.Nt}</span> tâche{stats.Nt > 1 ? 's' : ''}
