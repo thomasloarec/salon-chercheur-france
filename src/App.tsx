@@ -47,6 +47,7 @@ import RadarCrm from '@/pages/RadarCrm';
 import RadarOverviewPage from '@/pages/radar/RadarOverviewPage';
 import RadarAccountsPage from '@/pages/radar/RadarAccountsPage';
 import RadarUpcomingEventsPage from '@/pages/radar/RadarUpcomingEventsPage';
+import RadarModeSalonHub from '@/pages/radar/RadarModeSalonHub';
 import RadarPastEventsPage from '@/pages/radar/RadarPastEventsPage';
 import RadarTeamPage from '@/pages/radar/RadarTeamPage';
 import RadarCrmLayout from '@/components/radar-crm/RadarCrmLayout';
@@ -163,6 +164,7 @@ function App() {
               <Route path="/radar-crm/results" element={<RadarOverviewPage />} />
               <Route path="/radar-crm/comptes" element={<RadarAccountsPage />} />
               <Route path="/radar-crm/salons" element={<RadarUpcomingEventsPage />} />
+              <Route path="/radar-crm/mode-salon" element={<RadarModeSalonHub />} />
               <Route path="/radar-crm/passes" element={<RadarPastEventsPage />} />
               <Route path="/radar-crm/equipe" element={<RadarTeamPage />} />
             </Route>
