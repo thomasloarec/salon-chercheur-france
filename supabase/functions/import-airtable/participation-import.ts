@@ -203,7 +203,7 @@ export async function importParticipationChunk(
   errors.push(...stagingErrors);
 
   if (nextOffset) {
-    return { processed: inserted, staged: inserted, errors, done: false, offset: nextOffset };
+    return { processed: 0, staged: inserted, errors, done: false, offset: nextOffset };
   }
 
   // ---------- Dernière tranche : chargement ensembliste ----------
