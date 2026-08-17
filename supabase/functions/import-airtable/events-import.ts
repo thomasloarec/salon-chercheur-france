@@ -1,10 +1,12 @@
 import { normalizeDate, normalizeEventType, formatDescriptionHtml } from '../_shared/normalization-utils.ts';
+import { airtableFetch } from './chunk-utils.ts';
 import type { 
   AirtableEventRecord, 
   EventImportResult, 
   AirtableConfig,
   AirtableResponse 
 } from '../_shared/types.ts';
+
 
 const DEBUG_ROOT_CAUSE = true;
 
@@ -25,12 +27,8 @@ async function fetchAllEvents(airtableConfig: AirtableConfig): Promise<AirtableE
       console.log('[DEBUG_ROOT] Fetch URL:', url.toString());
     }
     
-    const response = await fetch(url.toString(), {
-      headers: {
-        'Authorization': `Bearer ${airtableConfig.pat}`,
-        'Content-Type': 'application/json'
-      }
-    });
+    const response = await airtableFetch(url.toString(), airtableConfig.pat, { maxRetries: 4 });
+
 
     if (!response.ok) {
       const errorBody = await response.text();
