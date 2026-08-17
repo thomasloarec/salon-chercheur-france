@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>https://lotexpo.com/nouveautes/decouvrez-nos-solutions-de-recolte-et-nos-chariots-f1779277</loc>
+    <lastmod>2026-08-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://lotexpo.com/nouveautes/cinq-voiliers-rm-a-flot-au-grand-pavois-rm890-rm1080-et-rm1380-a-bord-fd0b570a</loc>
     <lastmod>2026-07-27</lastmod>
     <changefreq>weekly</changefreq>
@@ -123,12 +129,6 @@
   <url>
     <loc>https://lotexpo.com/nouveautes/duplex-wedge-brake-56d9a1ca</loc>
     <lastmod>2026-06-19</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://lotexpo.com/nouveautes/strikemaster-missile-launch-vehicle-61c8a60b</loc>
-    <lastmod>2026-06-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -362,6 +362,12 @@
   </url>
   <url>
     <loc>https://lotexpo.com/nouveautes/nouveaute-technologique-en-messagerie-securisee-d796cf79</loc>
+    <lastmod>2026-06-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://lotexpo.com/nouveautes/strikemaster-missile-launch-vehicle-61c8a60b</loc>
     <lastmod>2026-06-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
