@@ -26,6 +26,7 @@ import AdminOverview from '@/pages/admin/AdminOverview';
 import AdminEventsPage from '@/pages/admin/AdminEventsPage';
 import AdminEventsSeoPage from '@/pages/admin/AdminEventsSeoPage';
 import AdminEventsDiagnosticsPage from '@/pages/admin/AdminEventsDiagnosticsPage';
+import AdminEventsCompletudePage from '@/pages/admin/AdminEventsCompletudePage';
 import AdminNoveltiesPage from '@/pages/admin/AdminNoveltiesPage';
 import AdminSystemAiPage from '@/pages/admin/AdminSystemAiPage';
 import AdminSystemTestPage from '@/pages/admin/AdminSystemTestPage';
@@ -178,6 +179,7 @@ function App() {
               <Route path="events" element={<AdminEventsPage />} />
               <Route path="events/seo" element={<AdminEventsSeoPage />} />
               <Route path="events/diagnostics" element={<AdminEventsDiagnosticsPage />} />
+              <Route path="events/completude" element={<AdminEventsCompletudePage />} />
               <Route path="events/:id" element={<AdminEventDetail />} />
               <Route path="events/by-text/:id_event_text" element={<AdminEventByText />} />
               <Route path="novelties" element={<AdminNoveltiesPage />} />

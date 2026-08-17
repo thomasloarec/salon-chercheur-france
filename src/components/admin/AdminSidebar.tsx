@@ -23,6 +23,7 @@ import {
   Building2,
   ClipboardList,
   Search,
+  Target,
   BarChart3,
   Bot,
   TestTube,
@@ -47,6 +48,7 @@ const navSections = [
     label: 'CONTENU',
     items: [
       { title: 'Liste & import', url: '/admin/events', icon: Calendar },
+      { title: 'Exposants à trouver', url: '/admin/events/completude', icon: Target },
       { title: 'Enrichissement SEO', url: '/admin/events/seo', icon: FileSearch },
       { title: 'Diagnostics', url: '/admin/events/diagnostics', icon: Search },
       { title: 'Modération', url: '/admin/novelties', icon: Star },
@@ -105,6 +107,7 @@ export function AdminSidebar() {
     '/admin/exhibitors/claims': counts?.claims ?? 0,
     '/admin/exhibitors': counts?.unmanagedExhibitors ?? 0,
     '/admin/organisateurs': counts?.organisateurs ?? 0,
+    '/admin/events/completude': counts?.exhibitorsToFind ?? 0,
   };
 
   const isActive = (url: string, end?: boolean) => {
