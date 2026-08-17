@@ -244,28 +244,37 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
           </>,
         )}
 
-        {/* Actions directes — Note = action primaire (accent), Micro + Visité = secondaires (neutres) */}
+        {/* Actions directes — Dictée primaire, Écrire secondaire, Visité secondaire */}
         <div className="flex items-stretch gap-2 border-t border-border/60 p-3">
-          <Button
-            type="button"
-            variant="default"
-            className="flex-[1.25] min-h-[44px] gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={noteOpen ? onCloseNote : onOpenNote}
-            aria-expanded={noteOpen}
-          >
-            <Plus className="h-4 w-4" /> Note
-          </Button>
-          {!encounter && (
+          {encounter ? (
+            <Button
+              type="button"
+              variant="default"
+              className="flex-1 min-h-[44px] gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={noteOpen ? onCloseNote : onOpenNote}
+              aria-expanded={noteOpen}
+            >
+              <Plus className="h-4 w-4" /> Écrire
+            </Button>
+          ) : (
             <>
               <Button
                 type="button"
-                variant="outline"
-                className="min-h-[44px] w-12 shrink-0 border-border/70 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+                variant="default"
+                className="flex-[1.25] min-h-[44px] gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={onToggleVoice}
                 aria-expanded={voiceOpen}
-                aria-label="Note vocale"
               >
-                <Mic className="h-4 w-4" />
+                <Mic className="h-4 w-4" /> Dicter
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-[44px] gap-2 border-border/70 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+                onClick={noteOpen ? onCloseNote : onOpenNote}
+                aria-expanded={noteOpen}
+              >
+                <Plus className="h-4 w-4" /> Écrire
               </Button>
               <Button
                 type="button"
