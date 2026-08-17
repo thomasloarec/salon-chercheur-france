@@ -6837,6 +6837,7 @@ export type Database = {
         Row: {
           created_at: string | null
           id_event: string | null
+          import_session_id: string | null
           nom_exposant: string | null
           reason: string
           record_id: string
@@ -6847,6 +6848,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id_event?: string | null
+          import_session_id?: string | null
           nom_exposant?: string | null
           reason: string
           record_id: string
@@ -6857,6 +6859,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           id_event?: string | null
+          import_session_id?: string | null
           nom_exposant?: string | null
           reason?: string
           record_id?: string
@@ -8519,6 +8522,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      staging_participation_import: {
+        Row: {
+          airtable_record_id: string | null
+          id: string
+          id_event_text: string | null
+          id_exposant: string | null
+          import_session_id: string
+          ingested_at: string
+          nom_exposant: string | null
+          stand_exposant: string | null
+          urlexpo_event: string | null
+          website_exposant: string | null
+        }
+        Insert: {
+          airtable_record_id?: string | null
+          id?: string
+          id_event_text?: string | null
+          id_exposant?: string | null
+          import_session_id: string
+          ingested_at?: string
+          nom_exposant?: string | null
+          stand_exposant?: string | null
+          urlexpo_event?: string | null
+          website_exposant?: string | null
+        }
+        Update: {
+          airtable_record_id?: string | null
+          id?: string
+          id_event_text?: string | null
+          id_exposant?: string | null
+          import_session_id?: string
+          ingested_at?: string
+          nom_exposant?: string | null
+          stand_exposant?: string | null
+          urlexpo_event?: string | null
+          website_exposant?: string | null
+        }
+        Relationships: []
       }
       sub_sectors: {
         Row: {
@@ -11256,6 +11298,13 @@ export type Database = {
           optin_confirme: boolean
           salon: string
           statut: string
+        }[]
+      }
+      load_participations_from_staging: {
+        Args: { p_session_id: string }
+        Returns: {
+          rejected: number
+          upserted: number
         }[]
       }
       log_application_event: {
