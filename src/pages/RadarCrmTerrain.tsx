@@ -581,6 +581,7 @@ const RadarCrmTerrainInner: React.FC = () => {
     if (!eventId) return;
     const id = c.crm_company_id;
     if (!id) return; // rencontre hors CRM : déjà visitée par construction
+    const prevSeen = seenCount;
     const next = !getVisited(c);
     setVisitedOverrides((o) => ({ ...o, [id]: next }));
     const { error: rpcErr } = await supabase.rpc('set_radar_mission_visited', {
@@ -596,6 +597,25 @@ const RadarCrmTerrainInner: React.FC = () => {
         description: 'Impossible de mettre à jour le statut « visité ».',
         variant: 'destructive',
       });
+      return;
+    }
+    // Jalons de session, non bloquants, déclenchés au franchissement.
+    if (next) {
+      const newSeen = prevSeen + 1;
+      const newRate = totalCount > 0 ? newSeen / totalCount : 0;
+      const prevRate = totalCount > 0 ? prevSeen / totalCount : 0;
+      if (!milestonesRef.current.first && newSeen >= 1) {
+        milestonesRef.current.first = true;
+        toast({ title: 'Bien lancé', description: 'Premier compte vu.' });
+      }
+      if (!milestonesRef.current.half && prevRate < 0.5 && newRate >= 0.5 && newRate < 1) {
+        milestonesRef.current.half = true;
+        toast({ title: 'Beau rythme', description: 'Moitié du salon parcourue.' });
+      }
+      if (!milestonesRef.current.done && newSeen === totalCount) {
+        milestonesRef.current.done = true;
+        toast({ title: 'Salon bouclé', description: 'Tous vos comptes sont vus.' });
+      }
     }
   };
 
