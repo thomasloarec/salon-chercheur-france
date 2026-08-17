@@ -1,6 +1,14 @@
 // sync-hubspot : synchronise les entreprises HubSpot de l'utilisateur vers crm_companies,
 // puis declenche le matching Radar. Miroir du pipeline crm-import (source = 'hubspot').
 // Autonome. Appelee par le front avec la session de l'utilisateur (JWT).
+//
+// Aligne sur sync-hubspot-cron (logique eprouvee en prod) sur trois points :
+//   1. Rafraichissement de token : en cas d'echec, on LEVE une erreur claire
+//      ("reconnectez HubSpot") au lieu de poursuivre en silence avec un token expire.
+//   2. Portail vide : on SUPPRIME l'import cree au lieu de le figer en 'completed'.
+//      Plus aucun import fantome a zero ligne ne peut etre laisse en base.
+//   3. Snapshot unique : apres un import reussi, on supprime les anciens imports
+//      HubSpot du meme utilisateur (cascade -> entreprises + matches). CSV intouches.
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const ALLOWED = ['https://lotexpo.com','https://www.lotexpo.com','https://lotexpo.fr','https://lotexpo.lovable.app','http://localhost:5173','http://localhost:3000','http://localhost:8080'];
@@ -66,13 +74,18 @@ Deno.serve(async (req) => {
   if (connErr) return json(req, { success: false, stage: 'connection', message: connErr.message }, 500);
   if (!conn) return json(req, { success: false, stage: 'connection', message: 'Aucune connexion HubSpot active' }, 400);
 
-  // Token : dechiffrer, rafraichir si expire
+  // Token : dechiffrer, rafraichir si expire.
   let accessToken: string;
   try { accessToken = await decryptToken(conn.access_token_enc); }
   catch (e) { return json(req, { success: false, stage: 'decrypt', message: String(e) }, 500); }
 
   const needRefresh = !conn.expires_at || new Date(conn.expires_at).getTime() <= Date.now() + 60000;
-  if (needRefresh && conn.refresh_token_enc) {
+  if (needRefresh) {
+    // Sans refresh token exploitable, ou si le refresh echoue, on NE poursuit PAS
+    // avec un token expire : on demande une reconnexion, sans creer d'import.
+    if (!conn.refresh_token_enc) {
+      return json(req, { success: false, stage: 'token', code: 'RECONNECT_REQUIRED', message: 'Votre connexion HubSpot a expire. Reconnectez HubSpot pour synchroniser.' }, 401);
+    }
     try {
       const rt = await decryptToken(conn.refresh_token_enc);
       const r = await fetch('https://api.hubapi.com/oauth/v1/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'refresh_token', client_id: Deno.env.get('HUBSPOT_CLIENT_ID') || '', client_secret: Deno.env.get('HUBSPOT_CLIENT_SECRET') || '', refresh_token: rt }) });
@@ -80,15 +93,20 @@ Deno.serve(async (req) => {
       if (r.ok && t.access_token) {
         accessToken = t.access_token;
         await admin.from('crm_connections').update({ access_token_enc: await encryptToken(t.access_token), refresh_token_enc: t.refresh_token ? await encryptToken(t.refresh_token) : conn.refresh_token_enc, expires_at: new Date(Date.now() + (Number(t.expires_in) || 1800) * 1000).toISOString() }).eq('id', conn.id);
+      } else {
+        // Refresh refuse par HubSpot (token revoque, appli deconnectee cote HubSpot...) : reconnexion requise.
+        return json(req, { success: false, stage: 'token', code: 'RECONNECT_REQUIRED', message: 'Votre connexion HubSpot a expire. Reconnectez HubSpot pour synchroniser.' }, 401);
       }
-    } catch (_e) { /* on tente avec le token courant */ }
+    } catch (_e) {
+      return json(req, { success: false, stage: 'token', code: 'RECONNECT_REQUIRED', message: 'Votre connexion HubSpot a expire. Reconnectez HubSpot pour synchroniser.' }, 401);
+    }
   }
 
   // Meme gate d'import que le CSV (autorise le 1er usage, sinon acces valide requis)
   const { data: canImport } = await admin.rpc('can_radar_import', { p_user_id: user.id });
   if (canImport === false) return json(req, { success: false, stage: 'access', message: 'Acces Radar requis' }, 403);
 
-  // Creer l'import
+  // Creer l'import (snapshot en cours)
   const { data: imp, error: impErr } = await admin.from('crm_imports').insert({ user_id: user.id, source_type: 'hubspot', file_name: 'HubSpot (portail ' + (conn.portal_id ?? '') + ')', status: 'processing', total_rows: 0 }).select('id').single();
   if (impErr || !imp) return json(req, { success: false, stage: 'import_create', message: impErr?.message }, 500);
   const importId = imp.id as string;
@@ -113,8 +131,10 @@ Deno.serve(async (req) => {
     } while (after && pages < 40 && rows.length < 3500);
 
     if (rows.length === 0) {
-      await admin.from('crm_imports').update({ status: 'completed', total_rows: 0, matched_companies_count: 0, unmatched_companies_count: 0 }).eq('id', importId);
-      return json(req, { success: true, importId, companies: 0, matched: 0, unmatched: 0, portal_id: conn.portal_id, message: 'Aucune entreprise dans ce portail HubSpot' });
+      // Portail vide (ou reponse transitoire) : on SUPPRIME l'import vide et on garde
+      // le snapshot precedent. Aucun import fantome laisse en base (aligne sur le cron).
+      await admin.from('crm_imports').delete().eq('id', importId);
+      return json(req, { success: true, importId: null, companies: 0, matched: 0, unmatched: 0, portal_id: conn.portal_id, message: 'Aucune entreprise dans ce portail HubSpot. Verifiez que le bon portail est connecte.' });
     }
 
     // Dedup par domaine normalise (evite les conflits d'upsert)
@@ -141,6 +161,10 @@ Deno.serve(async (req) => {
     const stats = (matchData || {}) as Record<string, number>;
 
     await admin.from('crm_imports').update({ status: 'completed', total_rows: toWrite.length, matched_companies_count: stats.matchedCompaniesCount ?? 0, unmatched_companies_count: stats.unmatchedCompaniesCount ?? 0 }).eq('id', importId);
+
+    // Snapshot unique : ne garder que ce nouvel import HubSpot (les anciens + entreprises
+    // + matches partent en cascade). Nettoie aussi tout import vide herite. CSV intouches.
+    await admin.from('crm_imports').delete().eq('user_id', user.id).eq('source_type', 'hubspot').neq('id', importId);
 
     return json(req, { success: true, importId, companies: toWrite.length, matched: stats.matchedCompaniesCount ?? 0, unmatched: stats.unmatchedCompaniesCount ?? 0, portal_id: conn.portal_id });
   } catch (e) {
