@@ -815,23 +815,40 @@ const RadarCrmTerrainInner: React.FC = () => {
                 )}
               </p>
               {totalCount > 0 && (
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground">
-                    <Check className="h-4 w-4 text-info" />
-                    <span>{seenCount} vus</span>
-                    <span className="text-muted-foreground font-normal">·</span>
-                    <span className={cn(toSeeCount > 0 ? 'text-foreground' : 'text-muted-foreground')}>
-                      {toSeeCount} à voir
-                    </span>
+                <div className="mt-3 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground">
+                      <Check className="h-4 w-4 text-info" />
+                      <span>{seenCount} vus</span>
+                      <span className="text-muted-foreground font-normal">·</span>
+                      <span className={cn(toSeeCount > 0 ? 'text-foreground' : 'text-muted-foreground')}>
+                        {toSeeCount} à voir
+                      </span>
+                    </div>
+                    {showDebrief(phase) && (
+                      <Button
+                        variant="outline"
+                        onClick={() => eventId && navigate(`/radar-crm/debrief/${eventId}`)}
+                        className="gap-2 min-h-[44px]"
+                      >
+                        <ClipboardList className="h-4 w-4" /> Débrief du salon
+                      </Button>
+                    )}
                   </div>
-                  {showDebrief(phase) && (
-                    <Button
-                      variant="outline"
-                      onClick={() => eventId && navigate(`/radar-crm/debrief/${eventId}`)}
-                      className="gap-2 min-h-[44px]"
-                    >
-                      <ClipboardList className="h-4 w-4" /> Débrief du salon
-                    </Button>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
+                      style={{ width: `${progressRate * 100}%` }}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={Math.round(progressRate * 100)}
+                      role="progressbar"
+                    />
+                  </div>
+                  {toSeeCount === 0 && (
+                    <p className="text-sm font-medium text-foreground">
+                      Salon bouclé, tous vos comptes sont vus.
+                    </p>
                   )}
                 </div>
               )}
