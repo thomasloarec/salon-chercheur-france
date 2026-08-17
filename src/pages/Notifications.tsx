@@ -39,6 +39,11 @@ export default function NotificationsPage() {
               </span>
             )}
           </div>
+          {unreadCount > 0 && (
+            <Button variant="outline" onClick={() => markAllAsRead()}>
+              Tout marquer comme lu
+            </Button>
+          )}
         </div>
         
         <div className="space-y-2">
