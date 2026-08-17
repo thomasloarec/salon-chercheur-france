@@ -248,27 +248,53 @@ serve(async (req) => {
           maxPages: MAX_AIRTABLE_PAGES_PER_CHUNK,
           timeBudgetMs: CHUNK_TIME_BUDGET_MS,
           startedAt,
+          sessionId,
         });
 
         await persistErrors(supabaseClient, chunk.errors, 'participation', sessionId);
-        await bumpSessionCounters(supabaseClient, sessionId, {
-          participations_imported: chunk.processed,
-          participations_errors: chunk.errors.length,
-        });
 
         if (!chunk.done) {
           return json({ success: true, done: false, offset: chunk.offset, processed: chunk.processed });
         }
 
+        const upserted = chunk.upserted ?? 0;
+        const rejected = chunk.rejected ?? 0;
+        const stagedTotal = chunk.stagedTotal ?? 0;
+
+        // Statut honnête : jamais "completed" si rien n'a été chargé alors que des lignes existaient
+        const status =
+          stagedTotal > 0 && upserted === 0
+            ? 'failed'
+            : rejected > 0
+              ? 'completed_with_errors'
+              : 'completed';
+
         const { error: finErr } = await supabaseClient
           .from('import_sessions')
-          .update({ status: 'completed', completed_at: new Date().toISOString() })
+          .update({
+            status,
+            completed_at: new Date().toISOString(),
+            participations_imported: upserted,
+            participations_errors: rejected,
+          })
           .eq('id', sessionId);
         if (finErr) console.error('[SESSION] Erreur finalisation:', finErr.message);
 
         fireAndForget();
 
-        return json({ success: true, done: true, completed: true, session_id: sessionId, processed: chunk.processed });
+        return json({
+          success: status !== 'failed',
+          done: true,
+          completed: true,
+          status,
+          session_id: sessionId,
+          processed: upserted,
+          rejected,
+          staged: stagedTotal,
+          ...(status === 'failed'
+            ? { error: `Aucune participation chargée alors que ${stagedTotal} lignes ont été extraites` }
+            : {}),
+        });
       }
 
       return json({ success: false, error: 'unknown_step' }, 400);
@@ -332,7 +358,8 @@ serve(async (req) => {
 
     // 3. Import des participations
     console.log('[DEBUG] Début import participations...');
-    const { participationsImported, participationErrors } = await importParticipation(supabaseClient, airtableConfig);
+    const { participationsImported, participationErrors, stagedTotal, upserted, rejected } =
+      await importParticipation(supabaseClient, airtableConfig, sessionId);
     console.log('[DEBUG] participationsImported =', participationsImported);
     console.log('[DEBUG] participationErrors =', participationErrors.length);
 
@@ -355,17 +382,24 @@ serve(async (req) => {
     }
 
     // ÉTAPE 5: Mettre à jour la session avec le résumé
+    const participationStatus =
+      stagedTotal > 0 && upserted === 0
+        ? 'failed'
+        : rejected > 0
+          ? 'completed_with_errors'
+          : 'completed';
+
     const { error: updateError } = await supabaseClient
       .from('import_sessions')
       .update({
-        status: 'completed',
+        status: participationStatus,
         completed_at: new Date().toISOString(),
         events_imported: eventsImported,
         exposants_imported: exposantsImported,
         participations_imported: participationsImported,
         events_errors: eventErrors.length,
         exposants_errors: exposantErrors.length,
-        participations_errors: participationErrors.length,
+        participations_errors: rejected,
       })
       .eq('id', sessionId);
 
@@ -374,11 +408,13 @@ serve(async (req) => {
     }
 
     const summary = {
-      success: true,
+      success: participationStatus !== 'failed',
+      status: participationStatus,
       sessionId,
       eventsImported,
       exposantsImported,
       participationsImported,
+      participationsRejected: rejected,
       errors: {
         events: eventErrors,
         exposants: exposantErrors,
