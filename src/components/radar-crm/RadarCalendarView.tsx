@@ -168,8 +168,8 @@ const RadarCalendarView: React.FC<{
             const start = parseYmd(s.group.date_debut);
             const end = parseYmd(s.group.date_fin) ?? start;
             const label = start
-              ? `${s.group.nom_event}, du ${dayMonthLabel(start)}${end && end > start ? ` au ${dayMonthLabel(end)}` : ''}, ${s.group.company_count} compte${s.group.company_count > 1 ? 's' : ''}`
-              : s.group.nom_event;
+              ? `${s.group.nom_event} - ${s.group.ville || 'Ville non précisée'}, du ${dayMonthLabel(start)}${end && end > start ? ` au ${dayMonthLabel(end)}` : ''}, ${s.group.company_count} compte${s.group.company_count > 1 ? 's' : ''}`
+              : `${s.group.nom_event} - ${s.group.ville || 'Ville non précisée'}`;
             return (
               <button
                 key={`${s.group.event_id}-${i}`}
