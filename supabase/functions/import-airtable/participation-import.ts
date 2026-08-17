@@ -5,29 +5,12 @@ import type {
 } from '../_shared/types.ts';
 import {
   fetchAirtablePageRange,
-  batchUpsertCounted,
   SUPABASE_BATCH_SIZE,
   MAX_AIRTABLE_PAGES_PER_CHUNK,
   CHUNK_TIME_BUDGET_MS,
   type ChunkOptions,
   type ChunkResult,
 } from './chunk-utils.ts';
-
-function normalizeDomain(input?: string | null): string | null {
-  if (!input) return null;
-  let s = input.trim().toLowerCase();
-  s = s.replace(/^https?:\/\//, '').replace(/^www\./, '');
-  s = s.split('/')[0].split('#')[0].split('?')[0];
-  s = s.replace(/\.$/, '').replace(/:\d+$/, '');
-  return s || null;
-}
-
-interface Referentials {
-  eventIdToUuidMap: Map<string, string>;
-  allEventIds: Set<string>;
-  websiteToExposantMap: Map<string, string>;
-  lockedStands: Map<string, string | null>;
-}
 
 async function loadEventReferentials(supabaseClient: any) {
   const [{ data: publishedEvents }, { data: stagingEvents }] = await Promise.all([
@@ -108,150 +91,86 @@ async function syncStagingEvents(
   return {};
 }
 
-async function loadExposantMap(supabaseClient: any): Promise<Map<string, string>> {
-  const websiteToExposantMap = new Map<string, string>();
-  let offset = 0;
-  const pageSize = 1000;
-
-  while (true) {
-    const { data: page, error } = await supabaseClient
-      .from('exposants')
-      .select('id_exposant, website_exposant')
-      .range(offset, offset + pageSize - 1);
-
-    if (error || !page || page.length === 0) break;
-    page.forEach((e: any) => {
-      if (e.website_exposant && e.id_exposant) {
-        const normalized = normalizeDomain(e.website_exposant);
-        if (normalized) websiteToExposantMap.set(normalized, e.id_exposant);
-      }
-    });
-    if (page.length < pageSize) break;
-    offset += pageSize;
-  }
-
-  console.log(`[MAPPING] ${websiteToExposantMap.size} websites mappés`);
-  return websiteToExposantMap;
+function firstValue(v: any): string | null {
+  const raw = Array.isArray(v) ? v[0] : v;
+  if (raw === null || raw === undefined) return null;
+  const s = String(raw).trim();
+  return s || null;
 }
 
-async function loadLockedStands(supabaseClient: any): Promise<Map<string, string | null>> {
-  // Clé STABLE indépendante du stand : (id_exposant, id_event_text)
-  const lockedStands = new Map<string, string | null>();
-  let lockedOffset = 0;
-  const lockedPageSize = 1000;
-
-  while (true) {
-    const { data: lockedPage, error: lockedError } = await supabaseClient
-      .from('participation')
-      .select('id_exposant, id_event_text, stand_exposant')
-      .eq('stand_locked', true)
-      .range(lockedOffset, lockedOffset + lockedPageSize - 1);
-
-    if (lockedError) {
-      console.error('[STAND_LOCK] Lecture impossible:', lockedError.message);
-      break;
-    }
-    if (!lockedPage || lockedPage.length === 0) break;
-    lockedPage.forEach((p: any) => {
-      if (p.id_exposant && p.id_event_text) {
-        lockedStands.set(`${p.id_exposant}__${p.id_event_text}`, p.stand_exposant ?? null);
-      }
-    });
-    if (lockedPage.length < lockedPageSize) break;
-    lockedOffset += lockedPageSize;
-  }
-
-  return lockedStands;
-}
-
-/** Prépare, dédoublonne et upserte un ensemble d'enregistrements Airtable Participation. */
-function prepareRows(
-  records: AirtableParticipationRecord[],
-  ref: Referentials,
-): { rows: any[]; errors: Array<{ record_id: string; reason: string }> } {
-  const toInsert: any[] = [];
-  const participationErrors: Array<{ record_id: string; reason: string }> = [];
-
-  for (const r of records) {
+/**
+ * Extraction brute Airtable -> staging_participation_import.
+ * Aucune validation ici : le loader SQL valide, rejette et charge.
+ */
+function toStagingRows(records: AirtableParticipationRecord[], sessionId: string): any[] {
+  return records.map((r) => {
     const f = r.fields as any;
-    const recordId = r.id;
-
-    const rawEventField = f['id_event_text'];
-    const eventIdText = Array.isArray(rawEventField) ? rawEventField[0]?.trim() : rawEventField?.trim();
-
-    if (!eventIdText || !ref.allEventIds.has(eventIdText)) {
-      participationErrors.push({ record_id: recordId, reason: `event ${eventIdText || 'vide'} introuvable` });
-      continue;
-    }
-
-    const rawWebsite = f['website_exposant'];
-    const websiteExposant = Array.isArray(rawWebsite) ? rawWebsite[0]?.trim() : rawWebsite?.trim();
-    const normalizedWebsite = normalizeDomain(websiteExposant);
-
-    if (!normalizedWebsite) {
-      participationErrors.push({ record_id: recordId, reason: 'website manquant' });
-      continue;
-    }
-
-    const exposantId = ref.websiteToExposantMap.get(normalizedWebsite);
-    if (!exposantId) {
-      participationErrors.push({ record_id: recordId, reason: `exposant non trouvé: ${normalizedWebsite}` });
-      continue;
-    }
-
-    const standInfo = f['stand_exposant']?.trim() || '';
-    const urlExpoKey = `${eventIdText}_${normalizedWebsite}_${standInfo}`;
-    const eventUuid = ref.eventIdToUuidMap.get(eventIdText);
-
-    toInsert.push({
-      urlexpo_event: urlExpoKey,
-      id_event_text: eventIdText,
-      id_event: eventUuid || null,
-      id_exposant: exposantId,
-      stand_exposant: standInfo || null,
-      website_exposant: websiteExposant,
-      last_seen_at: new Date().toISOString(),
-    });
-  }
-
-  // Dédoublonnage intra-tranche par clé métier stable (exposant, événement)
-  const uniqueMap = new Map<string, any>();
-  for (const item of toInsert) uniqueMap.set(`${item.id_exposant}__${item.id_event_text}`, item);
-  const rows = Array.from(uniqueMap.values());
-
-  // PROTECTION STAND : ne jamais écraser un stand verrouillé par l'exposant
-  let preservedStands = 0;
-  if (ref.lockedStands.size > 0) {
-    for (const item of rows) {
-      const lockKey = `${item.id_exposant}__${item.id_event_text}`;
-      if (ref.lockedStands.has(lockKey)) {
-        item.stand_exposant = ref.lockedStands.get(lockKey) ?? null;
-        preservedStands++;
-      }
-    }
-  }
-  console.log(`[PREP] ${rows.length} participations à insérer (${toInsert.length - rows.length} doublons, ${participationErrors.length} erreurs, ${preservedStands} stands préservés)`);
-
-  return { rows, errors: participationErrors };
+    return {
+      import_session_id: sessionId,
+      airtable_record_id: r.id,
+      id_event_text: firstValue(f['id_event_text']),
+      id_exposant: firstValue(f['id_exposant']),
+      website_exposant: firstValue(f['website_exposant']),
+      stand_exposant: firstValue(f['stand_exposant']),
+      urlexpo_event: firstValue(f['urlexpo_event']),
+      nom_exposant: firstValue(f['nom_exposant']),
+    };
+  });
 }
 
-export type ParticipationChunkOptions = ChunkOptions;
+/** INSERT simple par paquets (table staging sans contrainte unique). */
+async function insertStagingRows(
+  supabaseClient: any,
+  rows: any[],
+  batchSize = SUPABASE_BATCH_SIZE,
+): Promise<{ inserted: number; errors: Array<{ record_id: string; reason: string }> }> {
+  let inserted = 0;
+  const errors: Array<{ record_id: string; reason: string }> = [];
 
-/** Traite UNE tranche bornée de participations (80 pages max, budget 60 s). */
+  for (let i = 0; i < rows.length; i += batchSize) {
+    const batch = rows.slice(i, i + batchSize);
+    const { error } = await supabaseClient.from('staging_participation_import').insert(batch);
+    if (error) {
+      console.error('[STAGING] Erreur insertion batch:', error.message);
+      errors.push({ record_id: 'STAGING_BATCH', reason: error.message });
+    } else {
+      inserted += batch.length;
+    }
+  }
+  return { inserted, errors };
+}
+
+export interface ParticipationChunkOptions extends ChunkOptions {
+  sessionId: string;
+}
+
+export interface ParticipationChunkResult extends ChunkResult {
+  staged: number;
+  stagedTotal?: number;
+  upserted?: number;
+  rejected?: number;
+}
+
+/** Traite UNE tranche bornée : extraction vers staging, puis chargement final via loader SQL. */
 export async function importParticipationChunk(
   supabaseClient: any,
   airtableConfig: AirtableConfig,
-  opts: ParticipationChunkOptions = {},
-): Promise<ChunkResult> {
+  opts: ParticipationChunkOptions,
+): Promise<ParticipationChunkResult> {
   const startedAt = opts.startedAt ?? Date.now();
+  const sessionId = opts.sessionId;
   const errors: Array<{ record_id: string; reason: string }> = [];
 
   const { publishedEvents, stagingEvents, eventIdToUuidMap, allEventIds } = await loadEventReferentials(supabaseClient);
 
-  const [websiteToExposantMap, lockedStands] = await Promise.all([
-    loadExposantMap(supabaseClient),
-    loadLockedStands(supabaseClient),
-  ]);
+  // Première tranche : purge du staging de la session
+  if (!opts.offset) {
+    const { error: purgeErr } = await supabaseClient
+      .from('staging_participation_import')
+      .delete()
+      .eq('import_session_id', sessionId);
+    if (purgeErr) console.error('[STAGING] Purge initiale impossible:', purgeErr.message);
+  }
 
   const { records, nextOffset, pagesFetched } = await fetchAirtablePageRange<AirtableParticipationRecord>(
     'Participation',
@@ -265,61 +184,79 @@ export async function importParticipationChunk(
   );
   console.log(`[FETCH] Tranche participations: ${records.length} enregistrements sur ${pagesFetched} pages`);
 
-  // Sync staging -> events restreinte aux événements référencés par CETTE tranche
   const usedEventIds = new Set<string>();
   for (const r of records) {
-    const raw = (r.fields as any)['id_event_text'];
-    const rawEventId = Array.isArray(raw) ? raw[0]?.trim() : raw?.trim();
-    if (rawEventId) usedEventIds.add(rawEventId);
+    const id = firstValue((r.fields as any)['id_event_text']);
+    if (id) usedEventIds.add(id);
   }
 
   const { error: syncErr } = await syncStagingEvents(
     supabaseClient, stagingEvents, publishedEvents, eventIdToUuidMap, allEventIds, usedEventIds,
   );
   if (syncErr) {
-    return { processed: 0, errors: [{ record_id: 'SYNC_ERROR', reason: syncErr }], done: true };
+    return { processed: 0, staged: 0, errors: [{ record_id: 'SYNC_ERROR', reason: syncErr }], done: true };
   }
 
-  const ref: Referentials = { eventIdToUuidMap, allEventIds, websiteToExposantMap, lockedStands };
-  const { rows, errors: prepErrors } = prepareRows(records, ref);
-  errors.push(...prepErrors);
+  const { inserted, errors: stagingErrors } = await insertStagingRows(
+    supabaseClient, toStagingRows(records, sessionId),
+  );
+  errors.push(...stagingErrors);
 
-  let processed = 0;
-  if (rows.length > 0) {
-    const { inserted, errors: batchErrors } = await batchUpsertCounted(
-      supabaseClient, 'participation', rows, 'id_exposant,id_event_text', SUPABASE_BATCH_SIZE,
-    );
-    processed = inserted;
-    batchErrors.forEach(err => errors.push({ record_id: 'BATCH', reason: err }));
+  if (nextOffset) {
+    return { processed: inserted, staged: inserted, errors, done: false, offset: nextOffset };
   }
 
-  return { processed, errors, done: !nextOffset, offset: nextOffset };
+  // ---------- Dernière tranche : chargement ensembliste ----------
+  const { count: stagedTotal } = await supabaseClient
+    .from('staging_participation_import')
+    .select('id', { count: 'exact', head: true })
+    .eq('import_session_id', sessionId);
+
+  const { data: loadRes, error: loadErr } = await supabaseClient
+    .rpc('load_participations_from_staging', { p_session_id: sessionId });
+
+  if (loadErr) {
+    console.error('[LOADER] Erreur:', loadErr.message);
+    errors.push({ record_id: 'LOADER', reason: loadErr.message });
+    return { processed: 0, staged: inserted, stagedTotal: stagedTotal ?? 0, upserted: 0, rejected: 0, errors, done: true };
+  }
+
+  const row = Array.isArray(loadRes) ? loadRes[0] : loadRes;
+  const upserted = Number(row?.upserted) || 0;
+  const rejected = Number(row?.rejected) || 0;
+  console.log(`[LOADER] ${upserted} participations chargées, ${rejected} rejetées (staging: ${stagedTotal})`);
+
+  const { error: cleanErr } = await supabaseClient
+    .from('staging_participation_import')
+    .delete()
+    .eq('import_session_id', sessionId);
+  if (cleanErr) console.error('[STAGING] Purge finale impossible:', cleanErr.message);
+
+  return { processed: upserted, staged: inserted, stagedTotal: stagedTotal ?? 0, upserted, rejected, errors, done: true };
 }
 
-/**
- * Chemin legacy : comportement monolithique historique.
- * Fetch complet, sync staging restreinte aux événements réellement référencés,
- * puis préparation / dédoublonnage / upsert global.
- */
+/** Chemin legacy monolithique : même pipeline staging + loader, en une passe. */
 export async function importParticipation(
   supabaseClient: any,
   airtableConfig: AirtableConfig,
-): Promise<ParticipationImportResult> {
-  console.log('[PARTICIPATION] Début import (legacy)...');
+  sessionId: string,
+): Promise<ParticipationImportResult & { stagedTotal: number; upserted: number; rejected: number }> {
+  console.log('[PARTICIPATION] Début import (legacy, pipeline staging)...');
 
   const { publishedEvents, stagingEvents, eventIdToUuidMap, allEventIds } = await loadEventReferentials(supabaseClient);
-  console.log(`[EVENTS] ${allEventIds.size} événements disponibles`);
 
-  // Fetch complet (boucle de tranches sans budget temps)
+  await supabaseClient.from('staging_participation_import').delete().eq('import_session_id', sessionId);
+
   const allParticipations: AirtableParticipationRecord[] = [];
   let offset: string | undefined = undefined;
   while (true) {
-    const page: { records: AirtableParticipationRecord[]; nextOffset?: string; pagesFetched: number } = await fetchAirtablePageRange<AirtableParticipationRecord>("Participation", airtableConfig, {
-      offset,
-      maxPages: MAX_AIRTABLE_PAGES_PER_CHUNK,
-      timeBudgetMs: Number.MAX_SAFE_INTEGER,
-      startedAt: Date.now(),
-    });
+    const page: { records: AirtableParticipationRecord[]; nextOffset?: string; pagesFetched: number } =
+      await fetchAirtablePageRange<AirtableParticipationRecord>('Participation', airtableConfig, {
+        offset,
+        maxPages: MAX_AIRTABLE_PAGES_PER_CHUNK,
+        timeBudgetMs: Number.MAX_SAFE_INTEGER,
+        startedAt: Date.now(),
+      });
     allParticipations.push(...page.records);
     if (!page.nextOffset) break;
     offset = page.nextOffset;
@@ -328,36 +265,41 @@ export async function importParticipation(
 
   const usedEventIds = new Set<string>();
   for (const r of allParticipations) {
-    const raw = (r.fields as any)['id_event_text'];
-    const rawEventId = Array.isArray(raw) ? raw[0]?.trim() : raw?.trim();
-    if (rawEventId) usedEventIds.add(rawEventId);
+    const id = firstValue((r.fields as any)['id_event_text']);
+    if (id) usedEventIds.add(id);
   }
-  console.log(`[EVENTS] ${usedEventIds.size} événements référencés par participations`);
 
   const { error: syncErr } = await syncStagingEvents(
     supabaseClient, stagingEvents, publishedEvents, eventIdToUuidMap, allEventIds, usedEventIds,
   );
   if (syncErr) {
-    return { participationsImported: 0, participationErrors: [{ record_id: 'SYNC_ERROR', reason: syncErr }] };
+    return {
+      participationsImported: 0,
+      participationErrors: [{ record_id: 'SYNC_ERROR', reason: syncErr }],
+      stagedTotal: 0, upserted: 0, rejected: 0,
+    };
   }
 
-  const [websiteToExposantMap, lockedStands] = await Promise.all([
-    loadExposantMap(supabaseClient),
-    loadLockedStands(supabaseClient),
-  ]);
+  const participationErrors: Array<{ record_id: string; reason: string }> = [];
+  const { inserted, errors: stagingErrors } = await insertStagingRows(
+    supabaseClient, toStagingRows(allParticipations, sessionId),
+  );
+  participationErrors.push(...stagingErrors);
 
-  const ref: Referentials = { eventIdToUuidMap, allEventIds, websiteToExposantMap, lockedStands };
-  const { rows, errors: participationErrors } = prepareRows(allParticipations, ref);
+  const { data: loadRes, error: loadErr } = await supabaseClient
+    .rpc('load_participations_from_staging', { p_session_id: sessionId });
 
-  let participationsImported = 0;
-  if (rows.length > 0) {
-    const { inserted, errors } = await batchUpsertCounted(
-      supabaseClient, 'participation', rows, 'id_exposant,id_event_text', SUPABASE_BATCH_SIZE,
-    );
-    participationsImported = inserted;
-    errors.forEach(err => participationErrors.push({ record_id: 'BATCH', reason: err }));
+  if (loadErr) {
+    participationErrors.push({ record_id: 'LOADER', reason: loadErr.message });
+    return { participationsImported: 0, participationErrors, stagedTotal: inserted, upserted: 0, rejected: 0 };
   }
 
-  console.log(`[DONE] ${participationsImported} participations importées`);
-  return { participationsImported, participationErrors };
+  const row = Array.isArray(loadRes) ? loadRes[0] : loadRes;
+  const upserted = Number(row?.upserted) || 0;
+  const rejected = Number(row?.rejected) || 0;
+
+  await supabaseClient.from('staging_participation_import').delete().eq('import_session_id', sessionId);
+
+  console.log(`[DONE] ${upserted} participations chargées, ${rejected} rejetées`);
+  return { participationsImported: upserted, participationErrors, stagedTotal: inserted, upserted, rejected };
 }
