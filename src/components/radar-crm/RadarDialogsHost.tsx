@@ -10,7 +10,6 @@ import { useRadarWorkspace } from '@/contexts/RadarWorkspaceContext';
  * Les états d'ouverture vivent dans RadarWorkspaceContext.
  */
 const RadarDialogsHost: React.FC = () => {
-  const navigate = useNavigate();
   const {
     openExhibitor, setOpenExhibitor,
     mission, setMission,
