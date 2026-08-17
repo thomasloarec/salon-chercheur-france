@@ -1,10 +1,12 @@
 import { normalizeDate, normalizeEventType, formatDescriptionHtml } from '../_shared/normalization-utils.ts';
+import { airtableFetch } from './chunk-utils.ts';
 import type { 
   AirtableEventRecord, 
   EventImportResult, 
   AirtableConfig,
   AirtableResponse 
 } from '../_shared/types.ts';
+
 
 const DEBUG_ROOT_CAUSE = true;
 
