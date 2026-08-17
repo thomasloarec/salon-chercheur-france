@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
@@ -173,7 +174,6 @@ const RadarMissionSheet: React.FC<{
   onOpenChange: (open: boolean) => void;
   relationship: RelationshipStatus;
   onChangeRelationship: (next: RelationshipStatus) => void;
-  onOpenSettings: () => void;
   /** Mode d'affichage : « prepa » (défaut, cockpit/préparation) ou « terrain » (mode salon). */
   mode?: 'terrain' | 'prepa';
   /** Terrain : état « visité » du compte (toggle accessible dans le Sheet). */
@@ -181,9 +181,10 @@ const RadarMissionSheet: React.FC<{
   /** Terrain : bascule le statut « visité ». Non fourni en prepa. */
   onToggleVisited?: () => void;
 }> = ({
-  target, open, onOpenChange, relationship, onChangeRelationship, onOpenSettings,
+  target, open, onOpenChange, relationship, onChangeRelationship,
   mode = 'prepa', visited = false, onToggleVisited,
 }) => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   // Auto-save silencieux (façon Notion) : statut discret + drapeau « dirty ».
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -778,7 +779,7 @@ const RadarMissionSheet: React.FC<{
         )}
         <button
           type="button"
-          onClick={() => { onOpenChange(false); onOpenSettings(); }}
+          onClick={() => { onOpenChange(false); navigate('/radar-crm/equipe'); }}
           className="text-xs text-primary underline underline-offset-2 hover:text-primary/80"
         >
           Compléter mon profil

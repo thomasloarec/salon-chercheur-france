@@ -1,5 +1,4 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { ExhibitorDetailDialog } from '@/components/event/ExhibitorDetailDialog';
 import AccessRequestDialog from '@/components/radar-crm/AccessRequestDialog';
 import RadarMissionSheet from '@/components/radar-crm/RadarMissionSheet';
@@ -11,7 +10,6 @@ import { useRadarWorkspace } from '@/contexts/RadarWorkspaceContext';
  * Les états d'ouverture vivent dans RadarWorkspaceContext.
  */
 const RadarDialogsHost: React.FC = () => {
-  const navigate = useNavigate();
   const {
     openExhibitor, setOpenExhibitor,
     mission, setMission,
@@ -37,7 +35,6 @@ const RadarDialogsHost: React.FC = () => {
         onOpenChange={(o) => { if (!o) setMission(null); }}
         relationship={mission ? getRel(mission.company) : DEFAULT_RELATIONSHIP}
         onChangeRelationship={(next) => (mission ? setRel(mission.company, next) : undefined)}
-        onOpenSettings={() => navigate('/radar-crm/equipe')}
       />
     </>
   );

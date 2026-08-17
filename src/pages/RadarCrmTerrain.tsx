@@ -14,7 +14,6 @@ import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 import { trackRadarEvent } from '@/lib/radarCrm/tracking';
 import RadarMissionSheet, { type MissionTarget } from '@/components/radar-crm/RadarMissionSheet';
-import RadarCrmSettingsDialog from '@/components/radar-crm/RadarCrmSettingsDialog';
 import TerrainVoiceCapture from '@/components/radar-crm/TerrainVoiceCapture';
 import {
   type RelationshipStatus, RELATIONSHIP_META, normalizeRelationship, DEFAULT_RELATIONSHIP,
@@ -340,7 +339,6 @@ const RadarCrmTerrainInner: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [payload, setPayload] = useState<SalonMissionsPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [mission, setMission] = useState<{ target: MissionTarget; companyId: string } | null>(null);
 
 
@@ -1051,12 +1049,6 @@ const RadarCrmTerrainInner: React.FC = () => {
         }}
         relationship={activeCompany ? getRel(activeCompany) : DEFAULT_RELATIONSHIP}
         onChangeRelationship={(next) => (mission ? setRel(mission.companyId, next) : undefined)}
-        onOpenSettings={() => setSettingsOpen(true)}
-      />
-
-      <RadarCrmSettingsDialog
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
       />
     </div>
   );
