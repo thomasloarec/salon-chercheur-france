@@ -189,6 +189,11 @@ const RadarCalendarView: React.FC<{
                 style={{ gridColumn: `${2 + s.start} / span ${s.span}`, gridRow: `${s.row + 1} / span 1` }}
               >
                 <span className="truncate min-w-0">{s.group.nom_event}</span>
+                {s.group.ville && (
+                  <span className="truncate max-w-[80px] sm:max-w-[120px] text-[11px] text-muted-foreground">
+                    {s.group.ville}
+                  </span>
+                )}
                 <span className="inline-flex items-center gap-0.5 shrink-0 text-[11px] opacity-70">
                   <Building2 className="h-3 w-3" />
                   {s.group.company_count}
