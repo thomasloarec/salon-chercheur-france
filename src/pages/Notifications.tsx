@@ -11,7 +11,8 @@ export default function NotificationsPage() {
     notifications, 
     isLoading, 
     unreadCount,
-    markAsRead
+    markAsRead,
+    markAllAsRead
   } = useNotifications()
   
   const displayedNotifications = notifications?.slice(0, displayLimit) || []
