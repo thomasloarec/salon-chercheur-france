@@ -37,7 +37,6 @@ const RadarDialogsHost: React.FC = () => {
         onOpenChange={(o) => { if (!o) setMission(null); }}
         relationship={mission ? getRel(mission.company) : DEFAULT_RELATIONSHIP}
         onChangeRelationship={(next) => (mission ? setRel(mission.company, next) : undefined)}
-        onOpenSettings={() => navigate('/radar-crm/equipe')}
       />
     </>
   );
