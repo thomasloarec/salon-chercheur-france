@@ -244,28 +244,37 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
           </>,
         )}
 
-        {/* Actions directes — Note = action primaire (accent), Micro + Visité = secondaires (neutres) */}
+        {/* Actions directes — Dictée primaire, Écrire secondaire, Visité secondaire */}
         <div className="flex items-stretch gap-2 border-t border-border/60 p-3">
-          <Button
-            type="button"
-            variant="default"
-            className="flex-[1.25] min-h-[44px] gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={noteOpen ? onCloseNote : onOpenNote}
-            aria-expanded={noteOpen}
-          >
-            <Plus className="h-4 w-4" /> Note
-          </Button>
-          {!encounter && (
+          {encounter ? (
+            <Button
+              type="button"
+              variant="default"
+              className="flex-1 min-h-[44px] gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={noteOpen ? onCloseNote : onOpenNote}
+              aria-expanded={noteOpen}
+            >
+              <Plus className="h-4 w-4" /> Écrire
+            </Button>
+          ) : (
             <>
               <Button
                 type="button"
-                variant="outline"
-                className="min-h-[44px] w-12 shrink-0 border-border/70 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+                variant="default"
+                className="flex-[1.25] min-h-[44px] gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={onToggleVoice}
                 aria-expanded={voiceOpen}
-                aria-label="Note vocale"
               >
-                <Mic className="h-4 w-4" />
+                <Mic className="h-4 w-4" /> Dicter
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-[44px] gap-2 border-border/70 text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+                onClick={noteOpen ? onCloseNote : onOpenNote}
+                aria-expanded={noteOpen}
+              >
+                <Plus className="h-4 w-4" /> Écrire
               </Button>
               <Button
                 type="button"
@@ -365,6 +374,12 @@ const RadarCrmTerrainInner: React.FC = () => {
   // Sociétés dont une capture vocale est en cours d'analyse (indicateur neutre « Analyse… »).
   const [voiceProcessing, setVoiceProcessing] = useState<Record<string, boolean>>({});
   const voiceWatchRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Jalons de session : non persistants, déclenchés une seule fois au franchissement.
+  const milestonesRef = useRef<{ first: boolean; half: boolean; done: boolean }>({
+    first: false,
+    half: false,
+    done: false,
+  });
 
   // Auth gate — même comportement que le cockpit.
   useEffect(() => {
@@ -408,7 +423,9 @@ const RadarCrmTerrainInner: React.FC = () => {
     setVisitedOverrides({});
     setNoteAdds({});
     setNoteOpenFor(null);
+    setVoiceOpenFor(null);
     setNoteText('');
+    milestonesRef.current = { first: false, half: false, done: false };
     setLoading(false);
   }, [eventId, user, navigate]);
 
@@ -560,11 +577,13 @@ const RadarCrmTerrainInner: React.FC = () => {
   const totalCount = allCompanies.length;
   const seenCount = seen.length;
   const toSeeCount = toSee.length;
+  const progressRate = totalCount > 0 ? seenCount / totalCount : 0;
 
   const toggleVisited = async (c: SalonMissionCompany) => {
     if (!eventId) return;
     const id = c.crm_company_id;
     if (!id) return; // rencontre hors CRM : déjà visitée par construction
+    const prevSeen = seenCount;
     const next = !getVisited(c);
     setVisitedOverrides((o) => ({ ...o, [id]: next }));
     const { error: rpcErr } = await supabase.rpc('set_radar_mission_visited', {
@@ -580,10 +599,30 @@ const RadarCrmTerrainInner: React.FC = () => {
         description: 'Impossible de mettre à jour le statut « visité ».',
         variant: 'destructive',
       });
+      return;
+    }
+    // Jalons de session, non bloquants, déclenchés au franchissement.
+    if (next) {
+      const newSeen = prevSeen + 1;
+      const newRate = totalCount > 0 ? newSeen / totalCount : 0;
+      const prevRate = totalCount > 0 ? prevSeen / totalCount : 0;
+      if (!milestonesRef.current.first && newSeen >= 1) {
+        milestonesRef.current.first = true;
+        toast({ title: 'Bien lancé', description: 'Premier compte vu.' });
+      }
+      if (!milestonesRef.current.half && prevRate < 0.5 && newRate >= 0.5 && newRate < 1) {
+        milestonesRef.current.half = true;
+        toast({ title: 'Beau rythme', description: 'Moitié du salon parcourue.' });
+      }
+      if (!milestonesRef.current.done && newSeen === totalCount) {
+        milestonesRef.current.done = true;
+        toast({ title: 'Salon bouclé', description: 'Tous vos comptes sont vus.' });
+      }
     }
   };
 
   const openNote = (c: SalonMissionCompany) => {
+    setVoiceOpenFor(null); // dictée et écriture mutuellement exclusives
     setNoteOpenFor(rowKey(c));
     setNoteText('');
   };
@@ -776,23 +815,40 @@ const RadarCrmTerrainInner: React.FC = () => {
                 )}
               </p>
               {totalCount > 0 && (
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground">
-                    <Check className="h-4 w-4 text-info" />
-                    <span>{seenCount} vus</span>
-                    <span className="text-muted-foreground font-normal">·</span>
-                    <span className={cn(toSeeCount > 0 ? 'text-foreground' : 'text-muted-foreground')}>
-                      {toSeeCount} à voir
-                    </span>
+                <div className="mt-3 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground">
+                      <Check className="h-4 w-4 text-info" />
+                      <span>{seenCount} vus</span>
+                      <span className="text-muted-foreground font-normal">·</span>
+                      <span className={cn(toSeeCount > 0 ? 'text-foreground' : 'text-muted-foreground')}>
+                        {toSeeCount} à voir
+                      </span>
+                    </div>
+                    {showDebrief(phase) && (
+                      <Button
+                        variant="outline"
+                        onClick={() => eventId && navigate(`/radar-crm/debrief/${eventId}`)}
+                        className="gap-2 min-h-[44px]"
+                      >
+                        <ClipboardList className="h-4 w-4" /> Débrief du salon
+                      </Button>
+                    )}
                   </div>
-                  {showDebrief(phase) && (
-                    <Button
-                      variant="outline"
-                      onClick={() => eventId && navigate(`/radar-crm/debrief/${eventId}`)}
-                      className="gap-2 min-h-[44px]"
-                    >
-                      <ClipboardList className="h-4 w-4" /> Débrief du salon
-                    </Button>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
+                      style={{ width: `${progressRate * 100}%` }}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={Math.round(progressRate * 100)}
+                      role="progressbar"
+                    />
+                  </div>
+                  {toSeeCount === 0 && (
+                    <p className="text-sm font-medium text-foreground">
+                      Salon bouclé, tous vos comptes sont vus.
+                    </p>
                   )}
                 </div>
               )}
