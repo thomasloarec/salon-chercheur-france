@@ -248,27 +248,53 @@ serve(async (req) => {
           maxPages: MAX_AIRTABLE_PAGES_PER_CHUNK,
           timeBudgetMs: CHUNK_TIME_BUDGET_MS,
           startedAt,
+          sessionId,
         });
 
         await persistErrors(supabaseClient, chunk.errors, 'participation', sessionId);
-        await bumpSessionCounters(supabaseClient, sessionId, {
-          participations_imported: chunk.processed,
-          participations_errors: chunk.errors.length,
-        });
 
         if (!chunk.done) {
           return json({ success: true, done: false, offset: chunk.offset, processed: chunk.processed });
         }
 
+        const upserted = chunk.upserted ?? 0;
+        const rejected = chunk.rejected ?? 0;
+        const stagedTotal = chunk.stagedTotal ?? 0;
+
+        // Statut honnête : jamais "completed" si rien n'a été chargé alors que des lignes existaient
+        const status =
+          stagedTotal > 0 && upserted === 0
+            ? 'failed'
+            : rejected > 0
+              ? 'completed_with_errors'
+              : 'completed';
+
         const { error: finErr } = await supabaseClient
           .from('import_sessions')
-          .update({ status: 'completed', completed_at: new Date().toISOString() })
+          .update({
+            status,
+            completed_at: new Date().toISOString(),
+            participations_imported: upserted,
+            participations_errors: rejected,
+          })
           .eq('id', sessionId);
         if (finErr) console.error('[SESSION] Erreur finalisation:', finErr.message);
 
         fireAndForget();
 
-        return json({ success: true, done: true, completed: true, session_id: sessionId, processed: chunk.processed });
+        return json({
+          success: status !== 'failed',
+          done: true,
+          completed: true,
+          status,
+          session_id: sessionId,
+          processed: upserted,
+          rejected,
+          staged: stagedTotal,
+          ...(status === 'failed'
+            ? { error: `Aucune participation chargée alors que ${stagedTotal} lignes ont été extraites` }
+            : {}),
+        });
       }
 
       return json({ success: false, error: 'unknown_step' }, 400);
