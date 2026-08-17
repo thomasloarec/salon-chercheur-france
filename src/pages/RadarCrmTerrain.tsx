@@ -423,7 +423,9 @@ const RadarCrmTerrainInner: React.FC = () => {
     setVisitedOverrides({});
     setNoteAdds({});
     setNoteOpenFor(null);
+    setVoiceOpenFor(null);
     setNoteText('');
+    milestonesRef.current = { first: false, half: false, done: false };
     setLoading(false);
   }, [eventId, user, navigate]);
 
