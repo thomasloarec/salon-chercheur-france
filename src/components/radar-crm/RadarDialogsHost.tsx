@@ -1,5 +1,4 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { ExhibitorDetailDialog } from '@/components/event/ExhibitorDetailDialog';
 import AccessRequestDialog from '@/components/radar-crm/AccessRequestDialog';
 import RadarMissionSheet from '@/components/radar-crm/RadarMissionSheet';
