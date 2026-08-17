@@ -374,6 +374,12 @@ const RadarCrmTerrainInner: React.FC = () => {
   // Sociétés dont une capture vocale est en cours d'analyse (indicateur neutre « Analyse… »).
   const [voiceProcessing, setVoiceProcessing] = useState<Record<string, boolean>>({});
   const voiceWatchRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Jalons de session : non persistants, déclenchés une seule fois au franchissement.
+  const milestonesRef = useRef<{ first: boolean; half: boolean; done: boolean }>({
+    first: false,
+    half: false,
+    done: false,
+  });
 
   // Auth gate — même comportement que le cockpit.
   useEffect(() => {
@@ -593,6 +599,7 @@ const RadarCrmTerrainInner: React.FC = () => {
   };
 
   const openNote = (c: SalonMissionCompany) => {
+    setVoiceOpenFor(null); // dictée et écriture mutuellement exclusives
     setNoteOpenFor(rowKey(c));
     setNoteText('');
   };
