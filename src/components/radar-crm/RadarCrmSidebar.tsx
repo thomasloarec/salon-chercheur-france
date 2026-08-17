@@ -27,6 +27,7 @@ export function RadarCrmSidebar() {
 
   const overviewActive = onResults;
   const terrainActive = location.pathname.startsWith('/radar-crm/terrain/');
+  const hubActive = location.pathname === '/radar-crm/mode-salon';
   const settingsActive = location.pathname === '/radar-crm/equipe';
 
   const Count: React.FC<{ n: number }> = ({ n }) => (
@@ -92,30 +93,22 @@ export function RadarCrmSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                {live ? (
-                  <SidebarMenuButton asChild isActive={terrainActive}>
-                    <Link to={'/radar-crm/terrain/' + live.event_id} className="flex items-center gap-2">
-                      <Radar className="h-4 w-4" />
-                      {!collapsed && (
-                        <span className="flex-1 min-w-0">
-                          <span className="block truncate">Mode Salon</span>
-                          {live.nom_event && (
-                            <span className="block text-[11px] text-muted-foreground truncate">{live.nom_event}</span>
-                          )}
-                        </span>
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
-                ) : (
-                  <SidebarMenuButton
-                    disabled
-                    className="opacity-50 cursor-not-allowed"
-                    title={loading ? undefined : 'Aucun salon en cours aujourd\u2019hui'}
+                <SidebarMenuButton asChild isActive={terrainActive || hubActive}>
+                  <Link
+                    to={live ? '/radar-crm/terrain/' + live.event_id : '/radar-crm/mode-salon'}
+                    className="flex items-center gap-2"
                   >
                     <Radar className="h-4 w-4" />
-                    {!collapsed && <span className="flex-1">Mode Salon</span>}
-                  </SidebarMenuButton>
-                )}
+                    {!collapsed && (
+                      <span className="flex-1 min-w-0">
+                        <span className="block truncate">Mode Salon</span>
+                        {live?.nom_event && (
+                          <span className="block text-[11px] text-muted-foreground truncate">{live.nom_event}</span>
+                        )}
+                      </span>
+                    )}
+                  </Link>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
