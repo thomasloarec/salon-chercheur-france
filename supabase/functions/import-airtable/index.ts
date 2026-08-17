@@ -358,7 +358,8 @@ serve(async (req) => {
 
     // 3. Import des participations
     console.log('[DEBUG] Début import participations...');
-    const { participationsImported, participationErrors } = await importParticipation(supabaseClient, airtableConfig);
+    const { participationsImported, participationErrors, stagedTotal, upserted, rejected } =
+      await importParticipation(supabaseClient, airtableConfig, sessionId);
     console.log('[DEBUG] participationsImported =', participationsImported);
     console.log('[DEBUG] participationErrors =', participationErrors.length);
 
@@ -381,17 +382,24 @@ serve(async (req) => {
     }
 
     // ÉTAPE 5: Mettre à jour la session avec le résumé
+    const participationStatus =
+      stagedTotal > 0 && upserted === 0
+        ? 'failed'
+        : rejected > 0
+          ? 'completed_with_errors'
+          : 'completed';
+
     const { error: updateError } = await supabaseClient
       .from('import_sessions')
       .update({
-        status: 'completed',
+        status: participationStatus,
         completed_at: new Date().toISOString(),
         events_imported: eventsImported,
         exposants_imported: exposantsImported,
         participations_imported: participationsImported,
         events_errors: eventErrors.length,
         exposants_errors: exposantErrors.length,
-        participations_errors: participationErrors.length,
+        participations_errors: rejected,
       })
       .eq('id', sessionId);
 
@@ -400,11 +408,13 @@ serve(async (req) => {
     }
 
     const summary = {
-      success: true,
+      success: participationStatus !== 'failed',
+      status: participationStatus,
       sessionId,
       eventsImported,
       exposantsImported,
       participationsImported,
+      participationsRejected: rejected,
       errors: {
         events: eventErrors,
         exposants: exposantErrors,
