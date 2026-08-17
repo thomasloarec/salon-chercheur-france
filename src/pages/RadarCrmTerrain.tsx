@@ -575,6 +575,7 @@ const RadarCrmTerrainInner: React.FC = () => {
   const totalCount = allCompanies.length;
   const seenCount = seen.length;
   const toSeeCount = toSee.length;
+  const progressRate = totalCount > 0 ? seenCount / totalCount : 0;
 
   const toggleVisited = async (c: SalonMissionCompany) => {
     if (!eventId) return;
