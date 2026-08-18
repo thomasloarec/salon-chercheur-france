@@ -359,8 +359,9 @@ serve(async (req) => {
 
     // 3. Import des participations
     console.log('[DEBUG] Début import participations...');
-    const { participationsImported, participationErrors, stagedTotal, upserted, rejected } =
+    const { participationErrors, stagedTotal, upserted, rejected, newParticipations } =
       await importParticipation(supabaseClient, airtableConfig, sessionId);
+    const participationsImported = newParticipations;
     console.log('[DEBUG] participationsImported =', participationsImported);
     console.log('[DEBUG] participationErrors =', participationErrors.length);
 
