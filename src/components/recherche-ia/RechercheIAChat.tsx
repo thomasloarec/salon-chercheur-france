@@ -371,7 +371,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
       >
         <span className="text-foreground">Posez votre question,</span>
         <span className="block text-primary">
-          trouvez votre <RotatingText words={ROTATING_WORDS} />.
+          trouvez votre <RotatingText words={ROTATING_WORDS} suffix="." />
         </span>
       </Heading>
       {!hasStarted && (
