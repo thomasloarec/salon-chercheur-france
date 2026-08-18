@@ -104,7 +104,7 @@ function RotatingText({ words, intervalMs = 2400 }: { words: string[]; intervalM
   }, [reduced, words, intervalMs]);
 
   return (
-    <span className="relative inline-block min-w-[12ch] text-center" aria-live="polite">
+    <span className="relative inline-block whitespace-nowrap" aria-live="polite">
       <span
         className={`inline-block transition-all duration-300 ease-out ${
           visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'
