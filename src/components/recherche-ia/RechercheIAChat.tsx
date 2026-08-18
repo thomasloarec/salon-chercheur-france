@@ -86,7 +86,15 @@ function useTypewriter(queries: string[], active: boolean) {
 const ROTATING_WORDS = ['salon', 'client', 'concurrent', 'fournisseur', 'partenaire', 'distributeur', 'prospect'];
 
 /** Mot tournant avec fondu doux, respecte prefers-reduced-motion. */
-function RotatingText({ words, intervalMs = 2400 }: { words: string[]; intervalMs?: number }) {
+function RotatingText({
+  words,
+  suffix,
+  intervalMs = 2400,
+}: {
+  words: string[];
+  suffix?: string;
+  intervalMs?: number;
+}) {
   const reduced = usePrefersReducedMotion();
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
@@ -104,7 +112,7 @@ function RotatingText({ words, intervalMs = 2400 }: { words: string[]; intervalM
   }, [reduced, words, intervalMs]);
 
   return (
-    <span className="relative inline-block min-w-[12ch] text-center" aria-live="polite">
+    <span className="relative inline-block whitespace-nowrap" aria-live="polite">
       <span
         className={`inline-block transition-all duration-300 ease-out ${
           visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'
@@ -112,6 +120,7 @@ function RotatingText({ words, intervalMs = 2400 }: { words: string[]; intervalM
       >
         {words[index]}
       </span>
+      {suffix}
     </span>
   );
 }
@@ -362,7 +371,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
       >
         <span className="text-foreground">Posez votre question,</span>
         <span className="block text-primary">
-          trouvez votre <RotatingText words={ROTATING_WORDS} />.
+          trouvez votre <RotatingText words={ROTATING_WORDS} suffix="." />
         </span>
       </Heading>
       {!hasStarted && (
