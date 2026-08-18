@@ -260,6 +260,7 @@ serve(async (req) => {
         const upserted = chunk.upserted ?? 0;
         const rejected = chunk.rejected ?? 0;
         const stagedTotal = chunk.stagedTotal ?? 0;
+        const newParticipations = chunk.newParticipations ?? 0;
 
         // Statut honnête : jamais "completed" si rien n'a été chargé alors que des lignes existaient
         const status =
@@ -276,6 +277,7 @@ serve(async (req) => {
             completed_at: new Date().toISOString(),
             participations_imported: upserted,
             participations_errors: rejected,
+          })
           })
           .eq('id', sessionId);
         if (finErr) console.error('[SESSION] Erreur finalisation:', finErr.message);
