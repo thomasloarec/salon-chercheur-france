@@ -275,9 +275,8 @@ serve(async (req) => {
           .update({
             status,
             completed_at: new Date().toISOString(),
-            participations_imported: upserted,
+            participations_imported: newParticipations,
             participations_errors: rejected,
-          })
           })
           .eq('id', sessionId);
         if (finErr) console.error('[SESSION] Erreur finalisation:', finErr.message);
@@ -290,7 +289,7 @@ serve(async (req) => {
           completed: true,
           status,
           session_id: sessionId,
-          processed: upserted,
+          processed: newParticipations,
           rejected,
           staged: stagedTotal,
           ...(status === 'failed'
