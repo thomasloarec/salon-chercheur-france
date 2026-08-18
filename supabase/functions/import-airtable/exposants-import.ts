@@ -158,6 +158,17 @@ export async function importExposantsChunk(
 
   let processed = 0;
   if (exposantsToUpsert.length > 0) {
+    // Compter les NOUVEAUX exposants (absents en base) avant l'upsert
+    let newCount = 0;
+    const allIds = exposantsToUpsert.map(e => e.id_exposant);
+    for (let i = 0; i < allIds.length; i += 500) {
+      const slice = allIds.slice(i, i + 500);
+      const { data: existing } = await supabaseClient
+        .from('exposants').select('id_exposant').in('id_exposant', slice);
+      const existingSet = new Set((existing || []).map((e: any) => e.id_exposant));
+      newCount += slice.filter((id) => !existingSet.has(id)).length;
+    }
+
     const { inserted, errors } = await batchUpsertCounted(
       supabaseClient,
       'exposants',
@@ -165,7 +176,8 @@ export async function importExposantsChunk(
       'id_exposant',
       SUPABASE_BATCH_SIZE,
     );
-    processed = inserted;
+    console.log(`[PREP] ${newCount} nouveaux exposants (sur ${inserted} upsertés)`);
+    processed = newCount;
     errors.forEach(err => exposantErrors.push({ record_id: 'BATCH', reason: err }));
   }
 
