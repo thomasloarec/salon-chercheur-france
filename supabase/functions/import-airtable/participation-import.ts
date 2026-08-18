@@ -149,6 +149,8 @@ export interface ParticipationChunkResult extends ChunkResult {
   stagedTotal?: number;
   upserted?: number;
   rejected?: number;
+  newParticipations?: number;
+  updatedParticipations?: number;
 }
 
 /** Traite UNE tranche bornée : extraction vers staging, puis chargement final via loader SQL. */
@@ -224,7 +226,9 @@ export async function importParticipationChunk(
   const row = Array.isArray(loadRes) ? loadRes[0] : loadRes;
   const upserted = Number(row?.upserted) || 0;
   const rejected = Number(row?.rejected) || 0;
-  console.log(`[LOADER] ${upserted} participations chargées, ${rejected} rejetées (staging: ${stagedTotal})`);
+  const newParticipations = Number(row?.inserted) || 0;
+  const updatedParticipations = Number(row?.updated) || 0;
+  console.log(`[LOADER] ${upserted} participations chargées (${newParticipations} nouvelles, ${updatedParticipations} mises à jour), ${rejected} rejetées (staging: ${stagedTotal})`);
 
   const { error: cleanErr } = await supabaseClient
     .from('staging_participation_import')
@@ -232,7 +236,17 @@ export async function importParticipationChunk(
     .eq('import_session_id', sessionId);
   if (cleanErr) console.error('[STAGING] Purge finale impossible:', cleanErr.message);
 
-  return { processed: upserted, staged: inserted, stagedTotal: stagedTotal ?? 0, upserted, rejected, errors, done: true };
+  return {
+    processed: upserted,
+    staged: inserted,
+    stagedTotal: stagedTotal ?? 0,
+    upserted,
+    rejected,
+    newParticipations,
+    updatedParticipations,
+    errors,
+    done: true,
+  };
 }
 
 /** Chemin legacy monolithique : même pipeline staging + loader, en une passe. */
@@ -240,7 +254,7 @@ export async function importParticipation(
   supabaseClient: any,
   airtableConfig: AirtableConfig,
   sessionId: string,
-): Promise<ParticipationImportResult & { stagedTotal: number; upserted: number; rejected: number }> {
+): Promise<ParticipationImportResult & { stagedTotal: number; upserted: number; rejected: number; newParticipations: number; updatedParticipations: number }> {
   console.log('[PARTICIPATION] Début import (legacy, pipeline staging)...');
 
   const { publishedEvents, stagingEvents, eventIdToUuidMap, allEventIds } = await loadEventReferentials(supabaseClient);
@@ -276,7 +290,7 @@ export async function importParticipation(
     return {
       participationsImported: 0,
       participationErrors: [{ record_id: 'SYNC_ERROR', reason: syncErr }],
-      stagedTotal: 0, upserted: 0, rejected: 0,
+      stagedTotal: 0, upserted: 0, rejected: 0, newParticipations: 0, updatedParticipations: 0,
     };
   }
 
@@ -291,15 +305,17 @@ export async function importParticipation(
 
   if (loadErr) {
     participationErrors.push({ record_id: 'LOADER', reason: loadErr.message });
-    return { participationsImported: 0, participationErrors, stagedTotal: inserted, upserted: 0, rejected: 0 };
+    return { participationsImported: 0, participationErrors, stagedTotal: inserted, upserted: 0, rejected: 0, newParticipations: 0, updatedParticipations: 0 };
   }
 
   const row = Array.isArray(loadRes) ? loadRes[0] : loadRes;
   const upserted = Number(row?.upserted) || 0;
   const rejected = Number(row?.rejected) || 0;
+  const newParticipations = Number(row?.inserted) || 0;
+  const updatedParticipations = Number(row?.updated) || 0;
 
   await supabaseClient.from('staging_participation_import').delete().eq('import_session_id', sessionId);
 
-  console.log(`[DONE] ${upserted} participations chargées, ${rejected} rejetées`);
-  return { participationsImported: upserted, participationErrors, stagedTotal: inserted, upserted, rejected };
+  console.log(`[DONE] ${upserted} participations chargées (${newParticipations} nouvelles), ${rejected} rejetées`);
+  return { participationsImported: upserted, participationErrors, stagedTotal: inserted, upserted, rejected, newParticipations, updatedParticipations };
 }

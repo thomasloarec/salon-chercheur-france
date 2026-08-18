@@ -260,6 +260,7 @@ serve(async (req) => {
         const upserted = chunk.upserted ?? 0;
         const rejected = chunk.rejected ?? 0;
         const stagedTotal = chunk.stagedTotal ?? 0;
+        const newParticipations = chunk.newParticipations ?? 0;
 
         // Statut honnête : jamais "completed" si rien n'a été chargé alors que des lignes existaient
         const status =
@@ -274,7 +275,7 @@ serve(async (req) => {
           .update({
             status,
             completed_at: new Date().toISOString(),
-            participations_imported: upserted,
+            participations_imported: newParticipations,
             participations_errors: rejected,
           })
           .eq('id', sessionId);
@@ -288,7 +289,7 @@ serve(async (req) => {
           completed: true,
           status,
           session_id: sessionId,
-          processed: upserted,
+          processed: newParticipations,
           rejected,
           staged: stagedTotal,
           ...(status === 'failed'
@@ -358,8 +359,9 @@ serve(async (req) => {
 
     // 3. Import des participations
     console.log('[DEBUG] Début import participations...');
-    const { participationsImported, participationErrors, stagedTotal, upserted, rejected } =
+    const { participationErrors, stagedTotal, upserted, rejected, newParticipations } =
       await importParticipation(supabaseClient, airtableConfig, sessionId);
+    const participationsImported = newParticipations;
     console.log('[DEBUG] participationsImported =', participationsImported);
     console.log('[DEBUG] participationErrors =', participationErrors.length);
 
