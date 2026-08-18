@@ -11303,7 +11303,9 @@ export type Database = {
       load_participations_from_staging: {
         Args: { p_session_id: string }
         Returns: {
+          inserted: number
           rejected: number
+          updated: number
           upserted: number
         }[]
       }
