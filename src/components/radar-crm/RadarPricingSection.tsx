@@ -62,13 +62,13 @@ export const RadarPricingSection: React.FC<RadarPricingSectionProps> = ({
     };
   }, []);
 
-  const urgencyText = (() => {
+  const placesText = (() => {
     if (!pricing) return null;
-    if (pricing.is_last_tier) return 'Tarif standard';
+    if (pricing.is_last_tier) return 'Tarif standard.';
     if (pricing.seats_remaining > 0) {
-      return `Plus que ${pricing.seats_remaining} siège${pricing.seats_remaining > 1 ? 's' : ''} à ce tarif de lancement`;
+      return `Tarif réservé aux premières entreprises inscrites. Plus que ${pricing.seats_remaining} entreprise${pricing.seats_remaining > 1 ? 's' : ''} à ce tarif de lancement.`;
     }
-    return 'Tarif de lancement complet';
+    return 'Tarif de lancement complet.';
   })();
 
   const wrapperClass =
@@ -85,16 +85,13 @@ export const RadarPricingSection: React.FC<RadarPricingSectionProps> = ({
               Tarif de lancement
             </p>
             <h2 className="heading-display mb-4 text-2xl text-inverse md:text-3xl">
-              Équipez votre équipe sans faire exploser votre budget.
+              Faites partie des premières entreprises et bloquez un tarif réduit à vie, par
+              utilisateur.
             </h2>
-            <p className="text-sm text-inverse/80 md:text-base">
-              1 siège = 1 entreprise (1 admin + 1 CRM). Toute votre équipe commerciale partage le
-              même espace, sans surcoût.
-            </p>
-            {urgencyText && (
+            {placesText && (
               <p className="mt-4 flex items-center gap-2 text-sm font-medium text-surface-accent">
                 <Sparkles className="h-4 w-4" />
-                {urgencyText}
+                {placesText}
               </p>
             )}
             {error && (
@@ -119,7 +116,7 @@ export const RadarPricingSection: React.FC<RadarPricingSectionProps> = ({
                   )}
                   {pricing.discount_pct > 0 && (
                     <span className="text-sm text-inverse/60 line-through">
-                      au lieu de {formatPrice(pricing.full_price_month)} €/mois
+                      au lieu de {formatPrice(pricing.full_price_month)} € par utilisateur / mois
                     </span>
                   )}
                 </div>
@@ -128,10 +125,16 @@ export const RadarPricingSection: React.FC<RadarPricingSectionProps> = ({
                   <span className="font-display text-5xl font-semibold text-inverse">
                     {formatPrice(pricing.price_month)} €
                   </span>
-                  <span className="text-sm text-inverse/80">par siège / mois</span>
+                  <span className="text-sm text-inverse/80">par utilisateur / mois</span>
                 </div>
                 <p className="mt-1 text-sm text-inverse/70">
-                  facturé annuellement ({formatPrice(pricing.price_year)} €/an)
+                  facturé annuellement, soit {formatPrice(pricing.price_year)} € par utilisateur / an
+                </p>
+
+                <p className="mt-4 text-sm text-inverse/80">
+                  Vous payez par utilisateur. Chaque commercial que vous ajoutez à votre espace
+                  bénéficie du tarif de lancement de votre entreprise. Par exemple, 3 commerciaux au
+                  tarif ci-dessus reviennent à 3 × {formatPrice(pricing.price_month)} € par mois.
                 </p>
 
                 <Button
