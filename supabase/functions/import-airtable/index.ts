@@ -174,11 +174,18 @@ serve(async (req) => {
           .lt('started_at', tenMinutesAgo);
         if (orphanError) console.warn('[SESSION] Nettoyage sessions orphelines:', orphanError.message);
 
+        const { error: stagingCleanupError } = await supabaseClient
+          .from('staging_participation_import')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000');
+        if (stagingCleanupError) console.warn('[CLEANUP] Avertissement suppression staging participations:', stagingCleanupError.message);
+
         const { error: cleanupError } = await supabaseClient
           .from('import_errors')
           .delete()
           .eq('resolved', false);
         if (cleanupError) console.warn('[CLEANUP] Avertissement suppression erreurs:', cleanupError.message);
+
 
         const { data: sessionData, error: sessionError } = await supabaseClient
           .from('import_sessions')
