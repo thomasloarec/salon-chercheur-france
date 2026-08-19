@@ -457,7 +457,7 @@ const RadarCrmPage: React.FC = () => {
             <p className="text-base md:text-lg text-muted-foreground mb-8">
               Radar CRM repère les comptes de votre CRM qui exposent, et prépare chaque visite à votre
               place : un objectif, une phrase pour engager, les 3 bonnes questions. Comme si un
-              commercial de 20 ans qui connaît votre métier faisait le travail avant vous.
+              commercial expert de votre domaine faisait le travail avant vous.
             </p>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
               <Button
@@ -649,7 +649,7 @@ const RadarCrmPage: React.FC = () => {
           </h2>
           <p className="text-base md:text-lg text-primary-foreground/80 leading-relaxed">
             L’idée n’est pas de vous transformer en négociateur d’élite. C’est de vous donner, sur
-            chaque compte, le plan qu’un commercial de 20 ans qui connaît votre secteur vous aurait
+            chaque compte, le plan qu’un commercial expert qui connaît votre secteur vous aurait
             soufflé. Vous suivez le plan. Radar CRM apporte l’expertise.
           </p>
           <p className="mt-6 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-inverse-primary">
