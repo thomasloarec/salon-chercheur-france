@@ -6,6 +6,7 @@ import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { EventPageHeader } from '@/components/event/EventPageHeader';
+import EventLongDescription from '@/components/event/EventLongDescription';
 
 import { EventWhyVisit } from '@/components/event/EventWhyVisit';
 import { RelatedEvents } from '@/components/event/RelatedEvents';
