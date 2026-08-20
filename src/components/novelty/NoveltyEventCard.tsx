@@ -287,7 +287,15 @@ export default function NoveltyEventCard({
 
             {/* Titre — clic = navigation crawlable vers la page nouveauté */}
             <Link to={detailHref} className="block text-left">
-              <h3 className="font-semibold text-base sm:text-lg leading-snug line-clamp-2 group-hover:text-primary transition-colors hover:text-primary">
+              <h3
+                className={cn(
+                  'leading-snug line-clamp-2 group-hover:text-primary transition-colors hover:text-primary',
+                  variant === 'feature'
+                    ? 'heading-display text-xl sm:text-2xl'
+                    : 'font-semibold text-base sm:text-lg',
+                )}
+              >
+
                 {novelty.title}
               </h3>
             </Link>
