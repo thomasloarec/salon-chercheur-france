@@ -260,9 +260,10 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             />
 
             {/* Bandeau discret : revendication de la page salon par l'organisateur */}
-            <div className="mt-8">
+            <div className="mt-6">
               <ClaimSalonBanner event={event} />
             </div>
+
           </EventBand>
 
           {/* ═══ Bande 2 — blanc : frise statistiques + nouveautés ═══ */}
@@ -278,7 +279,8 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 
             {/* Past event banner */}
             {isEventPast && (
-              <div className="mt-10 rounded-r-lg border-l-4 border-primary bg-primary/10 px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
+              <div className="mt-6 rounded-r-lg border-l-4 border-primary bg-primary/10 px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
+
                 <p className="text-sm text-foreground/80">
                   Cet événement est terminé. Retrouvez les prochains salons de ce secteur sur Lotexpo.
                 </p>
@@ -293,10 +295,11 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 
             {/* Nouveautés en pleine largeur */}
             <Reveal>
-              <section id="nouveautes" className="mt-10 min-w-0 md:mt-14 lg:mt-20">
+              <section id="nouveautes" className="mt-8 min-w-0 md:mt-8 lg:mt-10">
                 <NoveltiesSection event={event} exhibitorCount={exhibitorCount} isEventPast={isEventPast} />
               </section>
             </Reveal>
+
 
           </EventBand>
 
@@ -349,7 +352,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
           </EventBand>
 
           {/* ═══ Bande 5 — blanc : blocs bas de page ═══ */}
-          <EventBand tone="white" space="md" innerClassName="space-y-12 md:space-y-16 lg:space-y-24">
+          <EventBand tone="white" space="md" innerClassName="space-y-8 md:space-y-10 lg:space-y-12">
             {/* Autres éditions de ce salon (séries) */}
             <Reveal>
               <EventSeriesBlock event={event} onSeriesIds={handleSeriesIds} />
