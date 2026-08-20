@@ -18,18 +18,44 @@ const sanitize = (dirty: string) =>
 
 function InfoCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <article className="flex h-full flex-col rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-7">
+    <article className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-[0_1px_3px_hsl(var(--foreground)/0.06)] sm:p-7">
+      {/* Filet violet vertical : accent discret en tête de bloc */}
+      <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-primary/70" />
       <h3 className="heading-display mb-4 text-xl text-foreground sm:text-2xl">{title}</h3>
       <div className="min-h-0 flex-1">{children}</div>
     </article>
   );
 }
 
+/** Ligne d'information pratique : icône violette, libellé discret, valeur. */
+function PracticalRow({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof CalendarDays;
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <li className="flex items-start gap-3">
+      <span className="mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-violet-soft">
+        <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+          {label}
+        </span>
+        <span className="block text-sm text-foreground">{value}</span>
+      </span>
+    </li>
+  );
+}
+
 /**
- * Lot 12 — zone « Tout savoir sur … ».
- * Le carousel du lot 7 est supprimé : les deux blocs sont désormais côte à
- * côte et toujours visibles (empilés sous 1024 px). Le slide « Pourquoi
- * visiter » est retiré définitivement (décision produit).
+ * Lot 13 — zone « Tout savoir sur … ».
+ * Deux blocs côte à côte : « À propos » (chapô + corps) et « Préparer votre
+ * venue » (liste structurée + carte Google dominante).
  *
  * La description longue reste entière dans le DOM (SEO) : « En savoir plus »
  * ne fait que retirer le line-clamp.
@@ -37,19 +63,24 @@ function InfoCard({ title, children }: { title: string; children: React.ReactNod
 export default function EventInfoBlocks({ event }: EventInfoBlocksProps) {
   const [showFullDescription, setShowFullDescription] = useState(false);
 
-  const descriptionHtml = useMemo(() => {
+  const { lead, bodyHtml } = useMemo(() => {
     const isEnriched =
       event.enrichissement_statut === 'valide' && !!event.description_enrichie;
     const raw = isEnriched ? event.description_enrichie! : event.description_event || '';
-    if (!raw.trim()) return '';
-    return isEnriched
-      ? raw
-          .split(/\n\n+/)
-          .filter((p) => p.trim())
-          .map((p) => `<p>${p.replace(/\n/g, '<br/>')}</p>`)
-          .join('')
-      : raw;
+    if (!raw.trim()) return { lead: '', bodyHtml: '' };
+
+    if (isEnriched) {
+      const paragraphs = raw.split(/\n\n+/).filter((p) => p.trim());
+      const [first, ...rest] = paragraphs;
+      return {
+        lead: first?.replace(/\n/g, ' ') ?? '',
+        bodyHtml: rest.map((p) => `<p>${p.replace(/\n/g, '<br/>')}</p>`).join(''),
+      };
+    }
+    return { lead: '', bodyHtml: raw };
   }, [event.description_enrichie, event.description_event, event.enrichissement_statut]);
+
+  const hasDescription = !!(lead || bodyHtml);
 
   const addressLine = [
     event.rue,
@@ -83,20 +114,26 @@ export default function EventInfoBlocks({ event }: EventInfoBlocksProps) {
       aria-label={`Informations sur ${event.nom_event}`}
       className="mx-auto w-full max-w-[1280px]"
     >
-      <h2 className="heading-display mb-6 text-xl text-foreground sm:text-2xl">
+      <h2 className="heading-display mb-5 text-xl text-foreground sm:text-2xl">
         Tout savoir sur {event.nom_event}
       </h2>
 
       <div className="grid items-stretch gap-6 lg:grid-cols-2">
-        {descriptionHtml && (
+        {hasDescription && (
           <InfoCard title="À propos de l'événement">
-            <div
-              className={cn(
-                'prose prose-sm max-w-none text-left leading-relaxed text-muted-foreground [&>p]:mb-3 [&_*]:text-left',
-                !showFullDescription && 'line-clamp-[12]',
+            <div className={cn(!showFullDescription && 'line-clamp-[12]')}>
+              {lead && (
+                <p className="mb-3 text-[17px] font-medium leading-relaxed text-foreground">
+                  {lead}
+                </p>
               )}
-              dangerouslySetInnerHTML={{ __html: sanitize(descriptionHtml) }}
-            />
+              {bodyHtml && (
+                <div
+                  className="prose prose-sm max-w-none text-left leading-relaxed text-muted-foreground [&>p]:mb-3 [&_*]:text-left"
+                  dangerouslySetInnerHTML={{ __html: sanitize(bodyHtml) }}
+                />
+              )}
+            </div>
             <Button
               variant="link"
               size="sm"
@@ -109,33 +146,26 @@ export default function EventInfoBlocks({ event }: EventInfoBlocksProps) {
         )}
 
         <InfoCard title="Préparer votre venue">
-          <ul className="mb-4 space-y-3 text-sm text-muted-foreground">
-            {dateLabel && (
-              <li className="flex items-start gap-2.5">
-                <CalendarDays className="mt-0.5 h-4 w-4 flex-shrink-0 text-foreground" />
-                <span>{dateLabel}</span>
-              </li>
+          <div className="grid gap-5 sm:grid-cols-2 sm:items-start">
+            <ul className="space-y-4">
+              {dateLabel && <PracticalRow icon={CalendarDays} label="Dates" value={dateLabel} />}
+              {event.nom_lieu && (
+                <PracticalRow icon={Building} label="Lieu" value={event.nom_lieu} />
+              )}
+              {addressLine && (
+                <PracticalRow icon={MapPin} label="Adresse" value={addressLine} />
+              )}
+              {showTarif && <PracticalRow icon={Euro} label="Tarif" value={event.tarif} />}
+            </ul>
+
+            {mapAddress && (
+              <EventMapEmbed
+                address={mapAddress}
+                height={280}
+                className="w-full sm:min-h-[280px]"
+              />
             )}
-            {event.nom_lieu && (
-              <li className="flex items-start gap-2.5">
-                <Building className="mt-0.5 h-4 w-4 flex-shrink-0 text-foreground" />
-                <span>{event.nom_lieu}</span>
-              </li>
-            )}
-            {addressLine && (
-              <li className="flex items-start gap-2.5">
-                <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-foreground" />
-                <span>{addressLine}</span>
-              </li>
-            )}
-            {showTarif && (
-              <li className="flex items-start gap-2.5">
-                <Euro className="mt-0.5 h-4 w-4 flex-shrink-0 text-foreground" />
-                <span>{event.tarif}</span>
-              </li>
-            )}
-          </ul>
-          {mapAddress && <EventMapEmbed address={mapAddress} height={220} className="w-full" />}
+          </div>
         </InfoCard>
       </div>
     </section>
