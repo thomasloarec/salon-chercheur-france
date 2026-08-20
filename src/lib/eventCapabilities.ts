@@ -86,6 +86,29 @@ export function getEventDurationDays(
 }
 
 /**
+ * Index du jour courant dans l'événement (1-based), ou null hors période.
+ * Comparaison en jours calendaires, date_fin inclusive.
+ */
+export function getEventDayIndex(
+  dateDebut: DateLike,
+  dateFin: DateLike,
+): number | null {
+  const start = toDayString(dateDebut);
+  const end = toDayString(dateFin) ?? start;
+  if (!start || !end) return null;
+  const today = todayString();
+  if (today < start || today > end) return null;
+  return diffCalendarDays(start, today) + 1;
+}
+
+/** Nombre de jours calendaires jusqu'à l'ouverture (négatif si passée). */
+export function getDaysUntilStart(dateDebut: DateLike): number | null {
+  const start = toDayString(dateDebut);
+  if (!start) return null;
+  return diffCalendarDays(todayString(), start);
+}
+
+/**
  * Renvoie la valeur numérique d'affluence, ou null si la donnée n'est pas exploitable
  * ("non communiqué", "nc", "n/a"…). Sert uniquement à décider si la donnée existe :
  * l'affichage reste géré par formatAffluenceWithSuffix.

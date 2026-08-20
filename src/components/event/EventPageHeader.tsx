@@ -176,9 +176,7 @@ export const EventPageHeader = ({
     metadata.push({ key: 'tarif', icon: Euro, content: <span>{event.tarif}</span> });
   }
 
-  if (affluenceLabel) {
-    metadata.push({ key: 'affluence', icon: Users, content: <span>{affluenceLabel}</span> });
-  }
+  // L'affluence est désormais portée par la frise statistiques (lot 3).
 
   return (
     <section
