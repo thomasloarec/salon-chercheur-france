@@ -329,6 +329,11 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               onPrepareVisit={() => setPrepareVisitOpen(true)}
             />
 
+            {/* Lot 7 — Zone gris très clair : carousel unique d'informations */}
+            <section className="-mx-4 rounded-2xl bg-muted/60 px-4 py-8 sm:px-8 sm:py-10">
+              <EventInfoCarousel event={event} />
+            </section>
+
             {/* Autres éditions de ce salon (séries) */}
             <EventSeriesBlock event={event} onSeriesIds={handleSeriesIds} />
 
