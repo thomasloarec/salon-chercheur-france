@@ -20,8 +20,11 @@ interface Props {
   includeUncategorized: boolean;
   /** Titre dynamique, ex. « Exposants en Textile haut de gamme et broderie » */
   title: string;
+  /** Icône de la catégorie active — signal de continuité avec l'onglet. */
+  titleIcon?: React.ComponentType<{ className?: string }>;
   onSelect: (row: CategoryExhibitorRow) => void;
 }
+
 
 /**
  * Lot 6 — carousel horizontal d'exposants, alimenté par la RPC publique
