@@ -10296,6 +10296,22 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_list_event_claim_identities: {
+        Args: { p_event_id: string }
+        Returns: {
+          company: string
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          job_title: string
+          last_name: string
+          message: string
+          phone: string
+          requester_user_id: string
+          status: string
+        }[]
+      }
       admin_list_radar_account_members: {
         Args: { p_account_id: string }
         Returns: {
