@@ -256,7 +256,15 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               </div>
             </section>
             
-            <EventPageHeader event={event} />
+            <EventPageHeader
+              event={event}
+              canPrepareVisit={canPrepareVisit}
+              onPrepareVisit={() => setPrepareVisitOpen(true)}
+            />
+
+            {/* Bloc de transition temporaire (lot 2) : description longue sortie du Hero.
+                Le lot 7 l'intégrera au carousel « À propos de l'événement ». */}
+            <EventLongDescription event={event} />
 
             {/* Bandeau discret : revendication de la page salon par l'organisateur */}
             <ClaimSalonBanner event={event} />
