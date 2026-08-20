@@ -260,9 +260,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               onPrepareVisit={() => setPrepareVisitOpen(true)}
             />
 
-            {/* Bloc de transition temporaire (lot 2) : description longue sortie du Hero.
-                Le lot 7 l'intégrera au carousel « À propos de l'événement ». */}
-            <EventLongDescription event={event} />
+            {/* Lot 7 : la description longue est désormais dans le carousel d'informations. */}
 
             {/* Bandeau discret : revendication de la page salon par l'organisateur */}
             <ClaimSalonBanner event={event} />
