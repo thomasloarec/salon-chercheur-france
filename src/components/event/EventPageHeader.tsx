@@ -1,42 +1,95 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Link } from 'react-router-dom';
-import { CalendarDays, ExternalLink, EyeOff, Calendar, Building, Users, CalendarCheck } from 'lucide-react';
+import {
+  CalendarDays,
+  ExternalLink,
+  EyeOff,
+  Calendar,
+  Building,
+  Users,
+  MapPin,
+  Euro,
+  Sparkles,
+  ChevronDown,
+  CalendarCheck,
+  ImageOff,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import CalBtn from '@/components/CalBtn';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
 import { getEventTypeLabel } from '@/constants/eventTypes';
 import { formatAffluenceWithSuffix } from '@/utils/affluenceUtils';
 import type { Event } from '@/types/event';
-import { isEventPast as isEventPastFn } from '@/lib/eventCapabilities';
+import {
+  isEventPast as isEventPastFn,
+  parseAffluence,
+  isTarifDisplayable,
+} from '@/lib/eventCapabilities';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { EventSectors } from '@/components/ui/event-sectors';
+import { useEventSectors } from '@/hooks/useSectors';
 import { toast } from 'sonner';
-import DOMPurify from 'dompurify';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
+import { format as formatDateFn, addDays } from 'date-fns';
 
 interface EventPageHeaderProps {
   event: Event;
+  /** Le CTA Parcours IA n'est rendu que si true (capabilities.canPrepareVisit). */
+  canPrepareVisit?: boolean;
+  /** Ouvre l'unique instance du PrepareVisitWizard, portée par EventPageContent. */
+  onPrepareVisit?: () => void;
 }
 
-export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
+/** Secteur principal, résolu comme EventSectors (table normalisée puis colonne secteur). */
+function useMainSector(event: Event): string | null {
+  const { data: eventSectors = [] } = useEventSectors(event.id_event || '');
+  if (eventSectors.length > 0) return eventSectors[0]?.name ?? null;
+  const raw = event.secteur;
+  if (!raw) return null;
+  if (Array.isArray(raw)) {
+    const first = raw.flat().find((s) => typeof s === 'string' && s.trim());
+    return (first as string) ?? null;
+  }
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        const first = Array.isArray(parsed) ? parsed.flat().find(Boolean) : null;
+        return typeof first === 'string' ? first : null;
+      } catch {
+        return trimmed || null;
+      }
+    }
+    return trimmed.split(',')[0]?.trim() || null;
+  }
+  return null;
+}
+
+export const EventPageHeader = ({
+  event,
+  canPrepareVisit = false,
+  onPrepareVisit,
+}: EventPageHeaderProps) => {
   const { user } = useAuth();
   const { isAdmin } = useIsAdmin();
   const { data: isFavorite = false } = useIsFavorite(event.id);
   const toggleFavorite = useToggleFavorite();
-  const [showFullDescription, setShowFullDescription] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
+  const mainSector = useMainSector(event);
 
   const isEventPast = isEventPastFn(event.date_debut, event.date_fin);
 
-  const formatDate = (dateStr: string) => {
-    return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
-  };
+  const formatDate = (dateStr: string) => format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
 
   const official = event.url_site_officiel;
 
@@ -45,373 +98,279 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
       setShowAuthModal(true);
       return;
     }
-
     try {
       await toggleFavorite.mutateAsync(event.id);
-      toast.success(isFavorite ? "Retiré de votre agenda" : "Ajouté à votre agenda");
+      toast.success(isFavorite ? 'Retiré de votre agenda' : 'Ajouté à votre agenda');
     } catch (error) {
       console.error('Error toggling favorite:', error);
-      toast.error("Une erreur est survenue");
+      toast.error('Une erreur est survenue');
     }
   };
 
-  const sanitize = (dirtyHtml: string) => {
-    return DOMPurify.sanitize(dirtyHtml, { 
-      ADD_TAGS: ['mark'],
-      FORBID_ATTR: ['style']
-    });
+  // Liens calendrier — logique identique à CalBtn (all-day, fin exclusive).
+  const openCalendar = (type: 'gcal' | 'outlook') => {
+    const start = new Date(event.date_debut);
+    const endExclusive = addDays(new Date(event.date_fin), 1);
+    const details = event.description_event || '';
+    const encodedTitle = encodeURIComponent(event.nom_event);
+    const encodedLocation = encodeURIComponent(
+      `${event.nom_lieu || ''} ${event.rue || ''} ${event.ville}`.trim(),
+    );
+
+    if (type === 'gcal') {
+      const url =
+        `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodedTitle}` +
+        `&dates=${formatDateFn(start, 'yyyyMMdd')}/${formatDateFn(endExclusive, 'yyyyMMdd')}` +
+        `&details=${encodeURIComponent(details)}&location=${encodedLocation}`;
+      window.open(url, '_blank');
+    } else {
+      const url =
+        `https://outlook.office.com/calendar/0/deeplink/compose?path=/calendar/action/compose` +
+        `&rru=addevent&subject=${encodedTitle}&body=${encodeURIComponent(details)}` +
+        `&location=${encodedLocation}&allday=true` +
+        `&startdt=${formatDateFn(start, 'yyyy-MM-dd')}&enddt=${formatDateFn(endExclusive, 'yyyy-MM-dd')}`;
+      window.open(url, '_blank');
+    }
   };
 
-  const secteurText = Array.isArray(event.secteur) 
-    ? event.secteur.join(', ').toLowerCase() 
-    : (event.secteur?.toLowerCase() || '');
-  const defaultDescription = `Découvrez ${event.nom_event}, un événement incontournable du secteur ${secteurText}. 
-    Retrouvez les dernières innovations, rencontrez les professionnels du secteur et développez votre réseau.`;
+  const affluenceValue = parseAffluence(event.affluence ?? null);
+  const affluenceLabel = affluenceValue ? formatAffluenceWithSuffix(event.affluence!) : null;
+  const showTarif = isTarifDisplayable(event.tarif);
 
-  const isEnriched = event.enrichissement_statut === 'valide' && !!event.description_enrichie;
-  const rawDescription = isEnriched
-    ? event.description_enrichie!
-    : (event.description_event || defaultDescription);
+  const metadata: { key: string; icon: typeof CalendarDays; content: React.ReactNode }[] = [];
 
-  // Convert plain-text newlines to <p> tags for enriched descriptions
-  const description = isEnriched
-    ? rawDescription
-        .split(/\n\n+/)
-        .filter(p => p.trim())
-        .map(p => `<p>${p.replace(/\n/g, '<br/>')}</p>`)
-        .join('')
-    : rawDescription;
+  metadata.push({
+    key: 'dates',
+    icon: CalendarDays,
+    content: (
+      <time dateTime={event.date_debut}>
+        {formatDate(event.date_debut)}
+        {event.date_debut !== event.date_fin && (
+          <>
+            {' – '}
+            <time dateTime={event.date_fin}>{formatDate(event.date_fin)}</time>
+          </>
+        )}
+      </time>
+    ),
+  });
+
+  if (event.ville) {
+    metadata.push({
+      key: 'ville',
+      icon: MapPin,
+      content: (
+        <span>
+          {event.ville}
+          {event.country && event.country !== 'France' ? `, ${event.country}` : ', France'}
+        </span>
+      ),
+    });
+  }
+
+  if (event.nom_lieu) {
+    metadata.push({ key: 'lieu', icon: Building, content: <span>{event.nom_lieu}</span> });
+  }
+
+  if (showTarif) {
+    metadata.push({ key: 'tarif', icon: Euro, content: <span>{event.tarif}</span> });
+  }
+
+  if (affluenceLabel) {
+    metadata.push({ key: 'affluence', icon: Users, content: <span>{affluenceLabel}</span> });
+  }
 
   return (
-    <section className={cn(
-      "bg-card rounded-lg shadow-sm p-8 mb-8 relative",
-      !event.visible && isAdmin && "bg-muted opacity-50"
-    )}>
-       {!event.visible && isAdmin && (
-        <Badge
-          variant="destructive"
-          className="absolute top-4 right-4 z-10"
-          title="Événement invisible"
-        >
+    <section
+      className={cn(
+        'relative mx-auto w-full max-w-[1280px] rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8',
+        !event.visible && isAdmin && 'bg-muted opacity-50',
+      )}
+    >
+      {!event.visible && isAdmin && (
+        <Badge variant="destructive" className="absolute right-4 top-4 z-10" title="Événement invisible">
           <EyeOff className="h-4 w-4" />
         </Badge>
       )}
-      
-      <div className="flex flex-col sm:flex-row sm:items-start gap-6">
-        {/* Mobile: Bloc complet avec image à droite du titre */}
-        <div className="sm:hidden">
-          <div className="flex items-start gap-4 mb-4">
-            <div className="flex-1 min-w-0">
-              <EventSectors 
-                event={event} 
-                className="flex flex-wrap gap-2 mb-3"
-                sectorClassName="text-xs px-2 py-0.5"
-              />
-              <h1 className="heading-display text-xl font-bold text-foreground leading-tight text-left mb-2 break-words">
-                {event.nom_event}
-              </h1>
-            </div>
-            {event.url_image && (
-              <div className="relative">
-                <img
-                  src={event.url_image}
-                  alt={`Affiche ${event.nom_event}`}
-                  loading="lazy"
-                  className="w-20 h-auto object-contain flex-shrink-0 rounded-md shadow"
-                />
-                {isEventPast && (
-                  <div className="absolute inset-0 bg-black/50 rounded-md flex items-center justify-center">
-                    <span className="text-white text-[10px] font-semibold tracking-[0.8px] uppercase border border-white/60 rounded-md px-2 py-1 bg-white/15">
-                      Terminé
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
 
-          {/* Ville */}
-          {event.ville && (
-            <p className="text-sm text-muted-foreground mb-3 flex items-center gap-1">
-              📍 {event.ville}{event.country && event.country !== 'France' ? `, ${event.country}` : ', France'}
+      <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-10">
+        {/* Colonne gauche : contenu */}
+        <div className="order-1 min-w-0 flex-1">
+          {/* 1. Badges discrets */}
+          {(event.type_event || mainSector) && (
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              {event.type_event && (
+                <span className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  {getEventTypeLabel(event.type_event)}
+                </span>
+              )}
+              {mainSector && (
+                <span className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  {mainSector}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* 2. H1 */}
+          <h1 className="heading-display break-words text-2xl font-bold leading-tight text-foreground sm:text-3xl lg:text-[2.5rem]">
+            {event.nom_event}
+          </h1>
+
+          {/* 3. Accroche */}
+          {event.accroche && (
+            <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground">
+              {event.accroche}
             </p>
           )}
 
-          {/* Infos: Date, Type, Affluence, Lieu */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground mb-4">
-            <div className="flex items-center">
-              <CalendarDays className="h-4 w-4 mr-1.5 text-foreground flex-shrink-0" />
-              <time dateTime={event.date_debut}>
-                {formatDate(event.date_debut)}
-                {event.date_debut !== event.date_fin && (
-                  <> - <time dateTime={event.date_fin}>{formatDate(event.date_fin)}</time></>
-                )}
-              </time>
-            </div>
+          {/* 4. Metadata */}
+          <ul className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+            {metadata.map(({ key, icon: Icon, content }) => (
+              <li key={key} className="flex items-center gap-1.5">
+                <Icon className="h-4 w-4 flex-shrink-0 text-foreground" aria-hidden="true" />
+                {content}
+              </li>
+            ))}
+          </ul>
 
-            {event.type_event && (
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-1.5 text-foreground flex-shrink-0" />
-                <span>{getEventTypeLabel(event.type_event)}</span>
-              </div>
-            )}
-
-            {event.affluence && (() => {
-              const formattedAffluence = formatAffluenceWithSuffix(event.affluence);
-              if (!formattedAffluence) return null;
-              return (
-                <div className="flex items-center">
-                  <Users className="h-4 w-4 mr-1.5 text-foreground flex-shrink-0" />
-                  <span>{formattedAffluence}</span>
+          {/* Image — mobile uniquement, entre metadata et CTA */}
+          {event.url_image && !imageFailed && (
+            <div className="relative mt-6 w-32 md:hidden">
+              <img
+                src={event.url_image}
+                alt={`Affiche du salon ${event.nom_event}${event.ville ? ` à ${event.ville}` : ''}`}
+                loading="lazy"
+                width={128}
+                height={128}
+                onError={() => setImageFailed(true)}
+                className="h-32 w-32 rounded-xl border border-border bg-background object-contain p-2"
+              />
+              {isEventPast && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-foreground/50">
+                  <span className="rounded-md border border-background/60 bg-background/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-background">
+                    Terminé
+                  </span>
                 </div>
-              );
-            })()}
-
-            {event.nom_lieu && (
-              <div className="flex items-center">
-                <Building className="h-4 w-4 mr-1.5 text-foreground flex-shrink-0" />
-                <span>{event.nom_lieu}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Description mobile */}
-          <div className="mb-4">
-            <div
-              className={cn(
-                "prose prose-sm max-w-none text-muted-foreground leading-relaxed text-left [&_*]:text-left [&>p]:mb-3",
-                !showFullDescription && "line-clamp-2"
               )}
-              dangerouslySetInnerHTML={{
-                __html: sanitize(description)
-              }}
-            />
-            <Button
-              variant="link"
-              size="sm"
-              className="p-0 h-auto mt-1 text-primary"
-              onClick={() => setShowFullDescription(!showFullDescription)}
-            >
-              {showFullDescription ? 'Voir moins' : 'Voir plus...'}
-            </Button>
-          </div>
+            </div>
+          )}
 
-          {/* Boutons d'action mobile */}
-          <Separator className="mb-4" />
-          <div className="flex flex-wrap gap-2 items-center">
+          {/* Actions */}
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            {canPrepareVisit && (
+              <Button
+                size="lg"
+                onClick={onPrepareVisit}
+                className="min-h-[44px] w-full gap-2 transition-colors duration-200 sm:w-auto"
+              >
+                <Sparkles className="h-4 w-4" />
+                Préparer ma visite avec l'IA
+              </Button>
+            )}
+
             {isEventPast ? (
-              <Button variant="outline" size="sm" disabled className="opacity-50 cursor-not-allowed">
+              <Button
+                variant="outline"
+                size="lg"
+                disabled
+                className="min-h-[44px] w-full cursor-not-allowed opacity-60 sm:w-auto"
+              >
                 Inscriptions fermées
               </Button>
             ) : (
-              <>
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  onClick={handleFavoriteClick}
-                  disabled={toggleFavorite.isPending}
-                  className={cn(
-                    "transition-all duration-200",
-                    isFavorite 
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90 border-primary" 
-                      : "bg-card hover:bg-muted"
-                  )}
-                >
-                  {isFavorite ? (
-                    <CalendarCheck className="h-4 w-4 mr-1.5" />
-                  ) : (
-                    <Calendar className="h-4 w-4 mr-1.5" />
-                  )}
-                  Agenda
-                </Button>
-                <CalBtn type="gcal" event={event} />
-                <CalBtn type="outlook" event={event} />
-              </>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    disabled={toggleFavorite.isPending}
+                    className="min-h-[44px] w-full gap-2 sm:w-auto"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Ajouter à mon agenda
+                    <ChevronDown className="h-4 w-4 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56 bg-popover">
+                  <DropdownMenuItem onSelect={() => void handleFavoriteClick()} className="gap-2 py-2.5">
+                    {isFavorite ? (
+                      <CalendarCheck className="h-4 w-4 text-primary" />
+                    ) : (
+                      <Calendar className="h-4 w-4" />
+                    )}
+                    {isFavorite ? 'Retirer de l’agenda Lotexpo' : 'Agenda Lotexpo'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => openCalendar('gcal')} className="gap-2 py-2.5">
+                    <Calendar className="h-4 w-4" />
+                    Google Calendar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => openCalendar('outlook')} className="gap-2 py-2.5">
+                    <Calendar className="h-4 w-4" />
+                    Outlook
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
+
             {official && (
-              <Button 
+              <Button
                 variant="outline"
-                size="sm"
+                size="lg"
                 onClick={() => window.open(official, '_blank')}
+                className="min-h-[44px] w-full gap-2 sm:w-auto"
               >
-                <ExternalLink className="h-4 w-4 mr-1.5" />
+                <ExternalLink className="h-4 w-4" />
                 Site officiel
               </Button>
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            {isEventPast ? 'Cet événement est terminé.' : 'Ajoutez cet événement à votre agenda en un clic.'}
+
+          <p className="mt-2 text-xs text-muted-foreground">
+            {isEventPast
+              ? 'Cet événement est terminé.'
+              : 'Ajoutez cet événement à votre agenda en un clic.'}
           </p>
         </div>
 
-        <div className="flex-1 hidden sm:block">
-          {/* Secteurs d'activité avec pastilles couleur */}
-          <EventSectors 
-            event={event} 
-            className="flex flex-wrap gap-2 mb-6"
-            sectorClassName="text-sm px-3 py-1"
-          />
-
-          {/* ✅ AMÉLIORATION : Titre optimisé */}
-          <h1 className="heading-display text-xl sm:text-2xl lg:text-3xl font-bold text-foreground leading-tight text-left mb-2 break-words">
-            {event.nom_event}
-          </h1>
-
-          {/* ✅ AJOUT : Ville visible sous le H1 pour le local SEO */}
-          {event.ville && (
-            <p className="text-base text-muted-foreground mb-4 flex items-center gap-1">
-              📍 {event.ville}{event.country && event.country !== 'France' ? `, ${event.country}` : ', France'}
-            </p>
-          )}
-
-          {/* Toutes les infos sur une seule ligne */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-base text-muted-foreground mb-6">
-            {/* Date */}
-            <div className="flex items-center">
-              <CalendarDays className="h-4 w-4 mr-2 text-foreground flex-shrink-0" />
-              <time dateTime={event.date_debut}>
-                {formatDate(event.date_debut)}
-                {event.date_debut !== event.date_fin && (
-                  <> - <time dateTime={event.date_fin}>{formatDate(event.date_fin)}</time></>
-                )}
-              </time>
-            </div>
-
-            {/* Type */}
-            {event.type_event && (
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-2 text-foreground flex-shrink-0" />
-                <span>{getEventTypeLabel(event.type_event)}</span>
-              </div>
-            )}
-
-            {/* Affluence - ne pas afficher si "non communiqué" ou similaire */}
-            {event.affluence && (() => {
-              const formattedAffluence = formatAffluenceWithSuffix(event.affluence);
-              if (!formattedAffluence) return null;
-              return (
-                <div className="flex items-center">
-                  <Users className="h-4 w-4 mr-2 text-foreground flex-shrink-0" />
-                  <span>{formattedAffluence}</span>
+        {/* Colonne droite : image (desktop) */}
+        {event.url_image && !imageFailed && (
+          <div className="order-2 hidden flex-shrink-0 md:block">
+            <div className="relative flex h-48 w-48 items-center justify-center overflow-hidden rounded-2xl border border-border bg-background p-3 lg:h-56 lg:w-56">
+              <img
+                src={event.url_image}
+                srcSet={`${event.url_image} 1x, ${event.url_image} 2x`}
+                sizes="(max-width: 1024px) 192px, 224px"
+                alt={`Affiche du salon ${event.nom_event}${event.ville ? ` à ${event.ville}` : ''}${
+                  event.date_debut ? ` ${new Date(event.date_debut).getFullYear()}` : ''
+                }`}
+                loading="lazy"
+                width={224}
+                height={224}
+                onError={() => setImageFailed(true)}
+                className="max-h-full max-w-full object-contain"
+              />
+              {isEventPast && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-foreground/50">
+                  <span className="rounded-md border-[1.5px] border-background/60 bg-background/20 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-background">
+                    Événement passé
+                  </span>
                 </div>
-              );
-            })()}
-
-            {/* Nom du lieu */}
-            {event.nom_lieu && (
-              <div className="flex items-center">
-                <Building className="h-4 w-4 mr-2 text-foreground flex-shrink-0" />
-                <span>{event.nom_lieu}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Description de l'événement */}
-          <div className="my-6">
-            <div
-              className={cn(
-                "prose prose-sm max-w-none text-muted-foreground leading-relaxed text-left [&_*]:text-left [&>p]:mb-3",
-                !showFullDescription && "line-clamp-2"
               )}
-              dangerouslySetInnerHTML={{
-                __html: sanitize(description)
-              }}
-            />
-            <Button
-              variant="link"
-              size="sm"
-              className="p-0 h-auto mt-1 text-primary"
-              onClick={() => setShowFullDescription(!showFullDescription)}
-            >
-              {showFullDescription ? 'Voir moins' : 'Voir plus...'}
-            </Button>
-
-          </div>
-
-          {/* Conteneur pour le séparateur et les actions afin de limiter la largeur */}
-          <div className="w-fit">
-            <Separator className="mb-4" />
-            <div className="flex flex-wrap gap-3 items-center">
-              {/* Boutons calendrier avec texte explicatif */}
-              <div className="flex flex-col">
-                <div className="flex flex-wrap items-center gap-2">
-                  {isEventPast ? (
-                    <Button variant="outline" size="sm" disabled className="opacity-50 cursor-not-allowed">
-                      Inscriptions fermées
-                    </Button>
-                  ) : (
-                    <>
-                      <Button 
-                        variant="outline"
-                        size="sm"
-                        onClick={handleFavoriteClick}
-                        disabled={toggleFavorite.isPending}
-                        className={cn(
-                          "transition-all duration-200",
-                          isFavorite 
-                            ? "bg-primary text-primary-foreground hover:bg-primary/90 border-primary" 
-                            : "bg-card hover:bg-muted"
-                        )}
-                      >
-                        {isFavorite ? (
-                          <CalendarCheck className="h-4 w-4 mr-2" />
-                        ) : (
-                          <Calendar className="h-4 w-4 mr-2" />
-                        )}
-                        Agenda Lotexpo
-                      </Button>
-                      <CalBtn type="gcal" event={event} />
-                      <CalBtn type="outlook" event={event} />
-                    </>
-                  )}
-                  {official && (
-                    <Button 
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(official, '_blank')}
-                    >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Site officiel
-                    </Button>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {isEventPast ? 'Cet événement est terminé.' : 'Ajoutez cet événement à votre agenda en un clic.'}
-                </p>
-              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* ✅ AMÉLIORATION : Image optimisée avec srcset pour SEO - Masquée sur mobile (affichée en haut) */}
-        {event.url_image && (
-          <div className="relative hidden sm:block flex-shrink-0">
-            <img
-              src={event.url_image}
-              srcSet={`${event.url_image} 1x, ${event.url_image} 2x`}
-              sizes="(max-width: 640px) 112px, (max-width: 1024px) 160px, 192px"
-              alt={`Affiche du salon ${event.nom_event}${event.ville ? ` à ${event.ville}` : ''}${event.date_debut ? ` ${new Date(event.date_debut).getFullYear()}` : ''}`}
-              loading="lazy"
-              width="192"
-              height="auto"
-              className="sm:w-40 lg:w-48 h-auto object-contain rounded-md shadow-lg"
-            />
-            {isEventPast && (
-              <div className="absolute inset-0 bg-black/50 rounded-md flex items-center justify-center">
-                <span className="text-white text-[13px] font-semibold tracking-[0.8px] uppercase border-[1.5px] border-white/60 rounded-md px-4 py-2 bg-white/15">
-                  Événement passé
-                </span>
-              </div>
-            )}
+        {event.url_image && imageFailed && (
+          <div className="order-2 hidden flex-shrink-0 md:block">
+            <div className="flex h-48 w-48 items-center justify-center rounded-2xl border border-border bg-muted lg:h-56 lg:w-56">
+              <ImageOff className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+            </div>
           </div>
         )}
       </div>
 
-      {/* Auth Required Modal */}
-      <AuthRequiredModal
-        open={showAuthModal}
-        onOpenChange={setShowAuthModal}
-      />
+      <AuthRequiredModal open={showAuthModal} onOpenChange={setShowAuthModal} />
     </section>
   );
 };
