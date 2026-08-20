@@ -125,7 +125,7 @@ export const ExhibitorCategoryCarousel: React.FC<Props> = ({
                 key={row.id_exposant}
                 className={cn(
                   cardWidth,
-                  'snap-start rounded-xl border bg-card transition-colors duration-200 hover:border-primary/50',
+                  'snap-start rounded-xl border bg-card transition-[border-color,box-shadow,transform] duration-200 hover:border-primary/50 hover:-translate-y-0.5 hover:shadow-sm motion-reduce:transition-none motion-reduce:hover:translate-y-0',
                 )}
               >
                 <button

@@ -172,8 +172,10 @@ export const EventPageHeader = ({
   return (
     <section
       className={cn(
-        'relative mx-auto w-full max-w-[1280px] rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8',
-        !event.visible && isAdmin && 'bg-muted opacity-50',
+        // Lot 11 — le Hero n'est plus une carte posée sur du gris : il occupe
+        // le haut de page, son fond texturé est porté par la bande parente.
+        'relative w-full',
+        !event.visible && isAdmin && 'opacity-50',
       )}
     >
       {!event.visible && isAdmin && (

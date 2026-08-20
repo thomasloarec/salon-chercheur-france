@@ -1,9 +1,9 @@
 import React from 'react';
 import { format, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Sparkles, Calendar, Bell, Lock } from 'lucide-react';
+import { Sparkles, Bell, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import DarkTexturePanel from '@/components/event/DarkTexturePanel';
 
 interface NoveltiesPreLaunchBannerProps {
   eventDate: string;
@@ -11,92 +11,69 @@ interface NoveltiesPreLaunchBannerProps {
   onNotifyMe?: () => void;
 }
 
-export function NoveltiesPreLaunchBanner({ 
-  eventDate, 
+/**
+ * Lot 11 — état « Les nouveautés arrivent bientôt » (au-delà de J-90).
+ * Registre sombre texturé de la page d'accueil, traité comme une invitation.
+ * Textes strictement inchangés.
+ */
+export function NoveltiesPreLaunchBanner({
+  eventDate,
   eventName,
-  onNotifyMe 
+  onNotifyMe,
 }: NoveltiesPreLaunchBannerProps) {
   const daysUntilEvent = differenceInDays(new Date(eventDate), new Date());
   const daysUntilNovelties = Math.max(0, daysUntilEvent - 90);
-  
+
   // Date d'ouverture des nouveautés (J-90)
   const noveltiesOpenDate = new Date(eventDate);
   noveltiesOpenDate.setDate(noveltiesOpenDate.getDate() - 90);
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-background to-primary/5">
-      <div className="relative p-8 md:p-12 text-center">
-        {/* Icône principale */}
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-6">
-          <Sparkles className="h-8 w-8 text-foreground animate-pulse" />
+    <DarkTexturePanel>
+      <div className="px-6 py-10 text-center sm:px-10 sm:py-12">
+        <div className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-full bg-inverse-primary/15 ring-1 ring-inverse-primary/30">
+          <Sparkles className="h-6 w-6 text-inverse-primary" />
         </div>
 
-        {/* Titre principal */}
-        <h3 className="text-2xl md:text-3xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
+        <h3 className="heading-display text-2xl leading-tight text-inverse md:text-3xl">
           Les nouveautés arrivent bientôt
         </h3>
 
-        {/* Sous-titre explicatif */}
-        <p className="text-base text-muted-foreground mb-6 max-w-2xl mx-auto">
-          Les exposants de <strong>{eventName}</strong> dévoileront leurs innovations 
-          <br className="hidden sm:inline" />
-          <strong> à partir du {format(noveltiesOpenDate, 'dd MMMM yyyy', { locale: fr })}</strong>
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-inverse-muted sm:text-base">
+          Les exposants de <strong className="text-inverse">{eventName}</strong> dévoileront leurs innovations{' '}
+          <strong className="text-inverse">
+            à partir du {format(noveltiesOpenDate, 'dd MMMM yyyy', { locale: fr })}
+          </strong>
         </p>
 
-        {/* Timeline visuelle élégante */}
-        <div className="max-w-3xl mx-auto mb-8">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex flex-col items-center">
-              <div className="w-3 h-3 rounded-full bg-primary mb-2" />
-              <span className="text-xs text-muted-foreground">Aujourd'hui</span>
-            </div>
-            
-            <div className="flex-1 h-0.5 bg-gradient-to-r from-primary via-primary/30 to-muted mx-4 relative">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <Badge variant="secondary" className="text-xs whitespace-nowrap px-3 py-1">
-                  {daysUntilNovelties} jour{daysUntilNovelties > 1 ? 's' : ''}
-                </Badge>
-              </div>
-            </div>
-            
-            <div className="flex flex-col items-center">
-              <div className="w-3 h-3 rounded-full bg-muted mb-2 animate-pulse" />
-              <span className="text-xs text-muted-foreground">Nouveautés</span>
-            </div>
-            
-            <div className="flex-1 h-0.5 bg-muted mx-4" />
-            
-            <div className="flex flex-col items-center">
-              <div className="w-3 h-3 rounded-full bg-muted mb-2" />
-              <span className="text-xs text-muted-foreground">Salon</span>
-            </div>
-          </div>
+        {/* Repère temporel — statique, aucun compteur animé */}
+        <div className="mx-auto mt-6 flex max-w-md items-center gap-3">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-inverse-primary" />
+          <span className="h-px flex-1 bg-inverse-muted/30" />
+          <span className="whitespace-nowrap rounded-full border border-inverse-muted/30 px-3 py-1 text-xs font-medium tabular-nums text-inverse-muted">
+            {daysUntilNovelties} jour{daysUntilNovelties > 1 ? 's' : ''}
+          </span>
+          <span className="h-px flex-1 bg-inverse-muted/30" />
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-inverse-muted/50" />
         </div>
 
-        {/* CTA notification - UN SEUL BOUTON */}
-        <div className="flex justify-center">
-          {onNotifyMe && (
-            <Button 
-              onClick={onNotifyMe}
-              size="lg"
-              className="gap-2"
-            >
+        {onNotifyMe && (
+          <div className="mt-7 flex justify-center">
+            <Button onClick={onNotifyMe} size="lg" className="gap-2">
               <Bell className="h-4 w-4" />
               Me notifier à l'ouverture
             </Button>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Note pour exposants */}
-        <div className="mt-8 pt-6 border-t border-primary/10">
-          <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-            <Lock className="h-4 w-4" />
-            <span>
-              <strong>Exposants :</strong> La publication de nouveautés ouvrira 90 jours avant l'événement
-            </span>
-          </p>
-        </div>
+        <p className="mt-7 flex items-center justify-center gap-2 border-t border-inverse-muted/20 pt-5 text-xs text-inverse-muted sm:text-sm">
+          <Lock className="h-4 w-4 shrink-0" />
+          <span>
+            <strong className="text-inverse">Exposants :</strong> La publication de nouveautés
+            ouvrira 90 jours avant l'événement
+          </span>
+        </p>
       </div>
-    </div>
+    </DarkTexturePanel>
   );
 }

@@ -43,7 +43,7 @@ export const EventCompactCard = ({
       <Link
         to={`/events/${slug}`}
         className={cn(
-          'group flex items-center gap-3 rounded-xl border border-border bg-card p-2.5 transition-colors duration-200 hover:border-primary/40 hover:bg-accent/40',
+          'group flex items-center gap-3 rounded-xl border border-border bg-card p-2.5 transition-[background-color,border-color,box-shadow,transform] duration-200 hover:border-primary/40 hover:bg-accent/40 hover:-translate-y-0.5 hover:shadow-sm motion-reduce:transition-none motion-reduce:hover:translate-y-0',
           className,
         )}
       >
@@ -88,7 +88,7 @@ export const EventCompactCard = ({
     <Link
       to={`/events/${slug}`}
       className={cn(
-        'group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow duration-200 hover:shadow-md',
+        'group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-[box-shadow,transform] duration-200 hover:shadow-md hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0',
         className,
       )}
     >
