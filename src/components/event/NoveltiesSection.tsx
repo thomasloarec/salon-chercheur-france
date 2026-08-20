@@ -1,20 +1,22 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Loader2, Rocket } from 'lucide-react';
-import { differenceInDays } from 'date-fns';
-import NoveltyEventCard from '@/components/novelty/NoveltyEventCard';
+import NoveltiesCarousel from './NoveltiesCarousel';
 import AddNoveltyButton from '@/components/novelty/AddNoveltyButton';
 import NoveltyExampleEmptyState from '@/components/novelty/NoveltyExampleEmptyState';
 import { NoveltiesPreLaunchBanner } from './NoveltiesPreLaunchBanner';
 import { NoveltyNotificationDialog } from './NoveltyNotificationDialog';
 import { useInfiniteNovelties } from '@/hooks/useInfiniteNovelties';
 import { useNoveltyCommentCounts } from '@/hooks/useNoveltyComments';
+import { getDaysUntilStart, NOVELTY_OPEN_DAYS_BEFORE } from '@/lib/eventCapabilities';
 import type { Event } from '@/types/event';
 import { Button } from '@/components/ui/button';
 
-type SortBy = 'awaited' | 'recent';
-
-const INITIAL_VISIBLE = 4;
+/**
+ * Le carousel affiche l'intégralité des nouveautés d'un salon (maximum
+ * constaté en base : 7). On charge donc une seule page suffisamment large
+ * plutôt que de conserver la pagination + scroll infini de l'ancienne liste.
+ */
+const PAGE_SIZE = 30;
 
 interface NoveltiesSectionProps {
   event: Event;
@@ -22,151 +24,96 @@ interface NoveltiesSectionProps {
   isEventPast?: boolean;
 }
 
-export default function NoveltiesSection({ event, exhibitorCount, isEventPast = false }: NoveltiesSectionProps) {
+export default function NoveltiesSection({
+  event,
+  exhibitorCount,
+  isEventPast = false,
+}: NoveltiesSectionProps) {
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
-  const [sortBy, setSortBy] = useState<SortBy>('awaited');
-  const [showAll, setShowAll] = useState(false);
-  const loaderRef = useRef<HTMLDivElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const targetNoveltyId = searchParams.get('novelty');
-  const handledTargetRef = useRef<string | null>(null);
+  const [deepLinkId, setDeepLinkId] = useState<string | null>(targetNoveltyId);
+  const cleanedRef = useRef(false);
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    error,
-  } = useInfiniteNovelties({
+  const { data, isLoading, error, refetch, isFetching } = useInfiniteNovelties({
     event_id: event.id,
-    sort: sortBy,
-    pageSize: 10,
+    sort: 'awaited',
+    pageSize: PAGE_SIZE,
     enabled: !!event.id,
   });
 
-  // Intersection Observer pour le scroll infini (uniquement quand "Tout afficher")
-  const handleObserver = useCallback(
-    (entries: IntersectionObserverEntry[]) => {
-      const target = entries[0];
-      if (
-        target.isIntersecting &&
-        hasNextPage &&
-        !isFetchingNextPage &&
-        showAll
-      ) {
-        fetchNextPage();
-      }
-    },
-    [hasNextPage, isFetchingNextPage, fetchNextPage, showAll],
-  );
-
-  useEffect(() => {
-    const option = { root: null, rootMargin: '100px', threshold: 0.1 };
-    const observer = new IntersectionObserver(handleObserver, option);
-    if (loaderRef.current) {
-      observer.observe(loaderRef.current);
-    }
-    return () => observer.disconnect();
-  }, [handleObserver]);
-
-  const daysUntilEvent = differenceInDays(
-    new Date(event.date_debut),
-    new Date(),
-  );
-  const isPreLaunch = daysUntilEvent > 90;
-
-  const allNovelties = data?.pages.flatMap((page) => page.data) ?? [];
-  const { data: commentCounts = {} } = useNoveltyCommentCounts(
-    allNovelties.map((n) => n.id),
-  );
+  const novelties = data?.pages.flatMap((page) => page.data) ?? [];
   const total = data?.pages[0]?.total ?? 0;
+  const { data: commentCounts = {} } = useNoveltyCommentCounts(
+    novelties.map((n) => n.id),
+  );
 
-  // Deep-link : si ?novelty=<id> est présent, charger les pages suivantes
-  // jusqu'à trouver la card, scroll + highlight, puis nettoyer l'URL.
+  // Deep-link : on mémorise la cible puis on nettoie l'URL. La sélection dans
+  // le carousel remplace le highlight de 3 secondes de l'ancienne liste.
   useEffect(() => {
-    if (!targetNoveltyId || isLoading) return;
-    if (handledTargetRef.current === targetNoveltyId) return;
+    if (!targetNoveltyId || cleanedRef.current) return;
+    setDeepLinkId(targetNoveltyId);
+    cleanedRef.current = true;
+    const timer = window.setTimeout(() => {
+      const next = new URLSearchParams(searchParams);
+      next.delete('novelty');
+      setSearchParams(next, { replace: true });
+      const el = document.getElementById('nouveautes');
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [targetNoveltyId, searchParams, setSearchParams]);
 
-    const found = allNovelties.some((n) => n.id === targetNoveltyId);
+  const daysUntilEvent = getDaysUntilStart(event.date_debut);
+  const isPreLaunch =
+    daysUntilEvent !== null && daysUntilEvent > NOVELTY_OPEN_DAYS_BEFORE;
 
-    if (!found) {
-      if (hasNextPage && !isFetchingNextPage) {
-        // Forcer l'expansion pour rendre la nouveauté ciblée visible
-        setShowAll(true);
-        fetchNextPage();
-      } else if (!hasNextPage) {
-        handledTargetRef.current = targetNoveltyId;
-      }
-      return;
-    }
-
-    // S'assurer que la card est rendue (sortir du repli si nécessaire)
-    setShowAll(true);
-    handledTargetRef.current = targetNoveltyId;
-
-    const rafId = requestAnimationFrame(() => {
-      const el = document.getElementById(`novelty-${targetNoveltyId}`);
-      if (!el) return;
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      el.classList.add('novelty-deeplink-highlight');
-      window.setTimeout(() => {
-        el.classList.remove('novelty-deeplink-highlight');
-        const next = new URLSearchParams(searchParams);
-        next.delete('novelty');
-        setSearchParams(next, { replace: true });
-      }, 3000);
-    });
-
-    return () => cancelAnimationFrame(rafId);
-  }, [
-    targetNoveltyId,
-    isLoading,
-    allNovelties,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-    searchParams,
-    setSearchParams,
-  ]);
-
+  // ── Chargement : squelette aux dimensions du carousel (évite le CLS)
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="h-7 w-40 bg-muted animate-pulse rounded" />
-          <div className="h-9 w-28 bg-muted animate-pulse rounded" />
+      <section className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="h-8 w-72 max-w-[60%] animate-pulse rounded bg-muted" />
+          <div className="h-9 w-28 animate-pulse rounded bg-muted" />
         </div>
-        <div className="space-y-3">
-          <div className="h-32 bg-muted animate-pulse rounded-2xl" />
-          <div className="h-32 bg-muted animate-pulse rounded-2xl" />
-        </div>
-      </div>
+        <div className="h-[420px] animate-pulse rounded-2xl bg-muted" />
+      </section>
     );
   }
 
-  // ÉTAT A — Aucune nouveauté
-  if (!error && total === 0) {
-    // Pour les événements terminés, ne pas inciter à publier : la création
-    // de nouveautés est interdite après la fin du salon.
-    if (isEventPast) {
-      return null;
-    }
+  // ── Erreur : réessai ciblé, sans recharger la page
+  if (error) {
+    return (
+      <section className="space-y-3">
+        <h2 className="heading-display text-2xl">Nouveautés à découvrir sur le salon</h2>
+        <div className="rounded-2xl border p-6 text-center">
+          <p className="mb-3 text-sm text-destructive">
+            Les nouveautés n'ont pas pu être chargées.
+          </p>
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            Réessayer
+          </Button>
+        </div>
+      </section>
+    );
+  }
+
+  // ── Zéro nouveauté
+  if (total === 0) {
+    // Événement terminé : aucune incitation à publier, section absente.
+    if (isEventPast) return null;
 
     if (isPreLaunch) {
       return (
         <>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Nouveautés</h2>
-            </div>
-
+          <section className="space-y-4">
+            <h2 className="heading-display text-2xl">Nouveautés à découvrir sur le salon</h2>
             <NoveltiesPreLaunchBanner
               eventDate={event.date_debut}
               eventName={event.nom_event}
               onNotifyMe={() => setNotificationDialogOpen(true)}
             />
-          </div>
+          </section>
 
           <NoveltyNotificationDialog
             open={notificationDialogOpen}
@@ -180,123 +127,35 @@ export default function NoveltiesSection({ event, exhibitorCount, isEventPast = 
       );
     }
 
-    // Cas normal : pas de nouveautés -> empty state pédagogique avec carte exemple
+    // Période ouverte : carte exemple pédagogique + CTA exposant très visible.
     return <NoveltyExampleEmptyState event={event} exhibitorCount={exhibitorCount} />;
   }
 
-  // Error state
-  if (error) {
-    return (
-      <section className="space-y-3">
-        <h2 className="text-xl font-semibold">Nouveautés</h2>
-        <div className="rounded-2xl border p-6 text-center">
-          <p className="text-destructive mb-3 text-sm">
-            Erreur lors du chargement des nouveautés
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="text-sm text-primary hover:underline"
-          >
-            Réessayer
-          </button>
-        </div>
-      </section>
-    );
-  }
-
-  // ÉTATS B & C — au moins une nouveauté
-  const sectionTitle = total <= 3 ? 'Nouveautés à repérer' : 'Nouveautés';
-  const visibleNovelties =
-    showAll || total <= INITIAL_VISIBLE
-      ? allNovelties
-      : allNovelties.slice(0, INITIAL_VISIBLE);
-  const hasMoreToShow =
-    !showAll &&
-    total > INITIAL_VISIBLE &&
-    allNovelties.length > INITIAL_VISIBLE;
-
+  // ── Au moins une nouveauté
   return (
-    <section className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-semibold">{sectionTitle}</h2>
-            <span className="text-sm text-muted-foreground tabular-nums">
-              ({total})
-            </span>
-          </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Repérez les annonces des exposants pour préparer votre visite.
-          </p>
-          <p className="text-sm text-foreground/80 mt-2 max-w-xl">
+    <section className="space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="heading-display text-2xl sm:text-[28px]">
+            Nouveautés à découvrir sur le salon
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
             {total === 1
-              ? '1 Nouveauté est déjà visible sur ce salon. Ajoutez la vôtre pour donner aux visiteurs une autre raison de passer sur votre stand.'
-              : `${total} Nouveautés sont déjà visibles sur ce salon. Ajoutez la vôtre pour être repéré avant l'ouverture.`}
+              ? '1 nouveauté publiée par les exposants.'
+              : `${total} nouveautés publiées par les exposants.`}
           </p>
         </div>
-        <AddNoveltyButton
-          event={event}
-          label="Publier"
-          size="sm"
-          variant="outline"
-          className="shrink-0"
-        />
-      </div>
-
-      {/* Tri — uniquement si 4+ nouveautés */}
-      {total > 3 && (
-        <div className="flex gap-2">
-          <Button
-            variant={sortBy === 'awaited' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSortBy('awaited')}
-            aria-pressed={sortBy === 'awaited'}
-          >
-            Les plus attendues
-          </Button>
-          <Button
-            variant={sortBy === 'recent' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSortBy('recent')}
-            aria-pressed={sortBy === 'recent'}
-          >
-            Récentes
-          </Button>
+        <div className="flex shrink-0 items-center gap-3">
+          <AddNoveltyButton event={event} label="Publier" size="sm" variant="outline" />
         </div>
-      )}
-
-      {/* Liste compacte */}
-      <div className="space-y-3">
-        {visibleNovelties.map((novelty) => (
-          <NoveltyEventCard
-            key={novelty.id}
-            novelty={novelty}
-            eventSlug={event.slug}
-            eventDateDebut={event.date_debut}
-            eventName={event.nom_event}
-            eventVille={event.ville}
-            event={event}
-            commentCount={commentCounts[novelty.id] ?? 0}
-          />
-        ))}
       </div>
 
-      {/* Révélation progressive : afficher le reste */}
-      {hasMoreToShow && (
-        <div className="flex justify-center pt-1">
-          <Button variant="outline" size="sm" onClick={() => setShowAll(true)}>
-            Afficher les {total - INITIAL_VISIBLE} autres nouveautés
-          </Button>
-        </div>
-      )}
-
-      {/* Loader scroll infini (actif seulement après "Tout afficher") */}
-      <div ref={loaderRef} className="flex justify-center py-2">
-        {isFetchingNextPage && (
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        )}
-      </div>
+      <NoveltiesCarousel
+        novelties={novelties}
+        event={event}
+        commentCounts={commentCounts}
+        initialNoveltyId={deepLinkId}
+      />
     </section>
   );
 }
