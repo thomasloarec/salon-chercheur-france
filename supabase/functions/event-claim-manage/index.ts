@@ -136,6 +136,52 @@ async function notifyRequester(admin: any, params: { userId: string; eventName: 
   }
 }
 
+// Email au demandeur après décision (Resend). Ne lève JAMAIS.
+async function sendRequesterDecisionEmail(
+  admin: any,
+  params: { userId: string; eventName: string; eventSlug?: string | null; approved: boolean },
+): Promise<void> {
+  try {
+    const { data: userRes, error: userErr } = await admin.auth.admin.getUserById(params.userId)
+    if (userErr) throw userErr
+    const email = userRes?.user?.email
+    if (!email) {
+      console.warn("[event-claim] pas d'email pour le demandeur, email ignoré")
+      return
+    }
+
+    const safeEvent = escapeHtml(params.eventName)
+    const subject = params.approved
+      ? `Votre revendication a été validée — ${params.eventName}`
+      : `Votre revendication n'a pas été retenue — ${params.eventName}`
+
+    const href = params.eventSlug
+      ? `https://lotexpo.com/events/${params.eventSlug}/gerer`
+      : 'https://lotexpo.com'
+
+    const html = renderEmailShell({
+      title: subject,
+      preheader: params.approved
+        ? `Vous gérez désormais la page du salon ${params.eventName}.`
+        : `Votre demande pour ${params.eventName} n'a pas été retenue.`,
+      bodyBlocks: [
+        heading(params.approved ? 'Revendication validée' : 'Revendication refusée'),
+        paragraph(
+          params.approved
+            ? `Bonne nouvelle : vous gérez désormais la page du salon <strong>${safeEvent}</strong> sur Lotexpo. Vous pouvez compléter la fiche, proposer des modifications et activer vos exposants depuis votre espace organisateur.`
+            : `Votre demande de revendication pour le salon <strong>${safeEvent}</strong> n'a pas été retenue par notre équipe. Si vous pensez qu'il s'agit d'une erreur, répondez à cet email.`,
+        ),
+      ],
+      cta: params.approved ? { label: 'Ouvrir mon espace organisateur', href } : undefined,
+    })
+
+    const { id } = await sendResendEmail({ to: [email], subject, html })
+    console.log(`[event-claim] email demandeur envoyé (${id})`)
+  } catch (err) {
+    console.error('[event-claim] email demandeur échoué (non-bloquant):', err)
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
 
@@ -239,7 +285,7 @@ Deno.serve(async (req) => {
         .maybeSingle()
       if (!claim) return json({ error: 'CLAIM_NOT_FOUND', message: 'Demande introuvable.' }, 404)
 
-      const { data: ev } = await admin.from('events').select('nom_event').eq('id', claim.event_id).maybeSingle()
+      const { data: ev } = await admin.from('events').select('nom_event, slug').eq('id', claim.event_id).maybeSingle()
       const eventName = ev?.nom_event ?? 'ce salon'
 
       if (action === 'approve') {
@@ -252,6 +298,12 @@ Deno.serve(async (req) => {
           return json({ error: 'APPROVE_FAILED', message: rpcErr.message }, 400)
         }
         await notifyRequester(admin, { userId: claim.requester_user_id, eventName, approved: true })
+        await sendRequesterDecisionEmail(admin, {
+          userId: claim.requester_user_id,
+          eventName,
+          eventSlug: ev?.slug ?? null,
+          approved: true,
+        })
         return json({ success: true, event_id: claim.event_id, status: 'approved' })
       } else {
         const { error: rpcErr } = await admin.rpc('admin_reject_event_claim', {
@@ -263,6 +315,12 @@ Deno.serve(async (req) => {
           return json({ error: 'REJECT_FAILED', message: rpcErr.message }, 400)
         }
         await notifyRequester(admin, { userId: claim.requester_user_id, eventName, approved: false })
+        await sendRequesterDecisionEmail(admin, {
+          userId: claim.requester_user_id,
+          eventName,
+          eventSlug: ev?.slug ?? null,
+          approved: false,
+        })
         return json({ success: true, event_id: claim.event_id, status: 'rejected' })
       }
     }
