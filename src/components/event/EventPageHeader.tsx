@@ -7,7 +7,6 @@ import {
   EyeOff,
   Calendar,
   Building,
-  Users,
   MapPin,
   Euro,
   Sparkles,
@@ -25,11 +24,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
 import { getEventTypeLabel } from '@/constants/eventTypes';
-import { formatAffluenceWithSuffix } from '@/utils/affluenceUtils';
 import type { Event } from '@/types/event';
 import {
   isEventPast as isEventPastFn,
-  parseAffluence,
   isTarifDisplayable,
 } from '@/lib/eventCapabilities';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -133,8 +130,6 @@ export const EventPageHeader = ({
     }
   };
 
-  const affluenceValue = parseAffluence(event.affluence ?? null);
-  const affluenceLabel = affluenceValue ? formatAffluenceWithSuffix(event.affluence!) : null;
   const showTarif = isTarifDisplayable(event.tarif);
 
   const metadata: { key: string; icon: typeof CalendarDays; content: React.ReactNode }[] = [];
@@ -176,9 +171,7 @@ export const EventPageHeader = ({
     metadata.push({ key: 'tarif', icon: Euro, content: <span>{event.tarif}</span> });
   }
 
-  if (affluenceLabel) {
-    metadata.push({ key: 'affluence', icon: Users, content: <span>{affluenceLabel}</span> });
-  }
+  // L'affluence est désormais portée par la frise statistiques (lot 3).
 
   return (
     <section

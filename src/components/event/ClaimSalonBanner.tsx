@@ -56,12 +56,13 @@ const ClaimSalonBanner = ({ event }: ClaimSalonBannerProps) => {
   // Current user is the owner → discreet indicator, no claim button.
   if (isOwner) {
     return (
-      <div className="rounded-lg bg-muted px-4 py-2.5 flex items-center gap-2 text-sm text-muted-foreground">
-        <ShieldCheck className="h-4 w-4 text-info flex-shrink-0" />
+      <div className="mx-auto w-full max-w-[1280px] rounded-xl border border-border bg-muted/40 px-4 py-2 flex items-center gap-2 text-sm text-muted-foreground">
+        <ShieldCheck className="h-4 w-4 text-primary flex-shrink-0" />
         <span>Vous gérez ce salon.</span>
       </div>
     );
   }
+
 
   const pending = justRequested || existingClaim?.status === 'pending';
 
@@ -97,7 +98,7 @@ const ClaimSalonBanner = ({ event }: ClaimSalonBannerProps) => {
 
   return (
     <>
-    <div className="rounded-lg bg-muted px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-sm">
+    <div className="mx-auto w-full max-w-[1280px] rounded-xl border border-border bg-muted/40 px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-sm">
       <span className="text-muted-foreground">Vous organisez ce salon ?</span>
       {pending ? (
         <Button variant="outline" size="sm" disabled>

@@ -14,7 +14,7 @@ import NoveltiesSection from '@/components/event/NoveltiesSection';
 import { EventSeriesBlock } from '@/components/event/EventSeriesBlock';
 import { SameCityEventsBlock } from '@/components/event/SameCityEventsBlock';
 import { SectorArticlesBlock } from '@/components/event/SectorArticlesBlock';
-import { EventKeyFigures } from '@/components/event/EventKeyFigures';
+import { EventStatsStrip } from '@/components/event/EventStatsStrip';
 import { EventFaqBlock } from '@/components/event/EventFaqBlock';
 
 import ExhibitorsSidebar from '@/components/event/ExhibitorsSidebar';
@@ -270,14 +270,13 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             {/* Bandeau discret : revendication de la page salon par l'organisateur */}
             <ClaimSalonBanner event={event} />
 
-            {/* Indicateurs utiles — uniquement événements à venir */}
-            {!isEventPast && (
-              <EventKeyFigures
-                event={event}
-                exhibitorCount={exhibitorCount}
-                noveltyCount={noveltyCount}
-              />
-            )}
+            {/* Frise statistiques — présente aussi sur les événements passés (mode historique) */}
+            <EventStatsStrip
+              event={event}
+              exhibitorCount={exhibitorCount}
+              noveltyCount={noveltyCount}
+            />
+
 
             {/* Past event banner */}
             {isEventPast && (
