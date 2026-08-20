@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { formatStandShort } from '@/utils/standUtils';
 import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -383,8 +384,11 @@ export default function NoveltyEventCard({
                   </span>
                 </button>
                 {standInfo && (
-                  <span className="text-xs text-primary font-medium shrink-0">
-                    · Stand {standInfo}
+                  <span
+                    className="text-xs text-primary font-medium shrink-0"
+                    title={`Stand ${standInfo}`}
+                  >
+                    · Stand {formatStandShort(standInfo)}
                   </span>
                 )}
               </div>

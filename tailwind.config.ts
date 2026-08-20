@@ -69,6 +69,7 @@ export default {
 					foreground: 'hsl(var(--bubble-foreground))',
 					border: 'hsl(var(--bubble-border))'
 				},
+				'violet-soft': 'hsl(var(--violet-soft))',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',

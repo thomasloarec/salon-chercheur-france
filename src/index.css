@@ -26,6 +26,8 @@
     --lx-violet-up:  249 100% 72%;   /* #8670ff — 5,06:1 sur navy */
     --lx-on-navy-60: 222 25% 70%;    /* #9fabc6 — 7,98:1 sur navy */
     --lx-danger:     352 74% 50%;    /* #de213a — 4,79:1 sur blanc */
+    --lx-violet-soft: 245 82% 96%;   /* #eeedfe — surface violet clair */
+    --violet-soft: var(--lx-violet-soft);
 
     /* ─── LA SIXIÈME COULEUR ────────────────────────────────────────
        L'ambre est HORS CHARTE, et c'est assumé. La palette va de 203° à

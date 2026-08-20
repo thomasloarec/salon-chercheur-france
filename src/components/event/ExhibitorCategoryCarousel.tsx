@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, MapPin, BadgeCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { normalizeStandNumber } from '@/utils/standUtils';
+import { formatStandShort, normalizeStandNumber } from '@/utils/standUtils';
 import ExhibitorAvatar from './ExhibitorAvatar';
 import ExhibitorFullProfileCTA from '@/components/exhibitor/ExhibitorFullProfileCTA';
 import {
@@ -110,7 +110,7 @@ export const ExhibitorCategoryCarousel: React.FC<Props> = ({
 
       <div
         ref={scrollerRef}
-        className="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:thin]"
+        className="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         {isLoading && rows.length === 0
           ? Array.from({ length: 5 }).map((_, i) => (
@@ -149,9 +149,12 @@ export const ExhibitorCategoryCarousel: React.FC<Props> = ({
                       )}
                     </div>
                     {row.stand && (
-                      <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                        <MapPin className="h-3 w-3" />
-                        Stand {normalizeStandNumber(row.stand)}
+                      <p
+                        className="mt-1 flex items-center gap-1 truncate text-xs text-muted-foreground"
+                        title={`Stand ${normalizeStandNumber(row.stand)}`}
+                      >
+                        <MapPin className="h-3 w-3 flex-none" />
+                        <span className="truncate">Stand {formatStandShort(row.stand)}</span>
                       </p>
                     )}
                   </div>
