@@ -293,13 +293,40 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               </div>
             )}
             
-            {/* Colonne principale : Nouveautés → Exposants → IA. Sidebar : À propos. */}
-            <div className="grid grid-cols-12 gap-6">
-              <div className="col-span-12 lg:col-span-8 space-y-8">
-                {/* B. Nouveautés — bloc principal, design inchangé */}
-                <section id="nouveautes">
+            {/* Lot 4 — Grille 70 / 30 : Nouveautés à gauche, Radar CRM à droite.
+                Sans exposant, le Radar ne s'affiche pas et les Nouveautés
+                occupent toute la largeur (pas de colonne vide). */}
+            <div
+              className="grid gap-6 items-start"
+              style={
+                capabilities.showRadarCrm
+                  ? undefined
+                  : { gridTemplateColumns: 'minmax(0, 1fr)' }
+              }
+            >
+              <div
+                className={
+                  capabilities.showRadarCrm
+                    ? 'grid gap-6 items-start lg:[grid-template-columns:minmax(0,7fr)_minmax(280px,3fr)]'
+                    : 'grid gap-6'
+                }
+              >
+                <section id="nouveautes" className="min-w-0">
                   <NoveltiesSection event={event} exhibitorCount={exhibitorCount} isEventPast={isEventPast} />
                 </section>
+
+                {capabilities.showRadarCrm && (
+                  <aside className="min-w-0">
+                    <EventRadarCrmWidget event={event} isEventPast={isEventPast} />
+                  </aside>
+                )}
+              </div>
+            </div>
+
+            {/* Colonne principale : Exposants → IA. Sidebar : À propos. */}
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-12 lg:col-span-8 space-y-8">
+
 
                 {/* C. Exposants — déplacés sous les Nouveautés, en pleine largeur */}
                 {exhibitorCount > 0 && (
