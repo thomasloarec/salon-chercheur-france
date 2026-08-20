@@ -219,7 +219,7 @@ export default function NoveltyEventCard({
             className={cn(
               'relative shrink-0 bg-muted overflow-hidden group/img w-full',
               variant === 'feature'
-                ? 'aspect-[4/3] sm:aspect-[3/4] sm:w-[44%] md:w-[46%]'
+                ? 'aspect-[4/3] sm:aspect-[3/4] sm:w-[40%] md:w-[38%]'
                 : 'aspect-[4/3] sm:aspect-[4/5] sm:w-44 md:w-48',
             )}
             aria-label={`Voir le détail de ${novelty.title}`}
