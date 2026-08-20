@@ -260,14 +260,15 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             />
 
             {/* Bandeau discret : revendication de la page salon par l'organisateur */}
-            <div className="mt-6">
+            <div className="mt-2">
               <ClaimSalonBanner event={event} />
             </div>
+
 
           </EventBand>
 
           {/* ═══ Bande 2 — blanc : frise statistiques + nouveautés ═══ */}
-          <EventBand tone="white" space="md">
+          <EventBand tone="white" space="sm" className="pt-2 md:pt-3 lg:pt-4">
             <Reveal>
               {/* Frise statistiques — présente aussi sur les événements passés */}
               <EventStatsStrip
