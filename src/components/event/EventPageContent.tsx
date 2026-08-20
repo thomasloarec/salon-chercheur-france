@@ -6,19 +6,16 @@ import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { EventPageHeader } from '@/components/event/EventPageHeader';
-import EventLongDescription from '@/components/event/EventLongDescription';
-
-import { EventWhyVisit } from '@/components/event/EventWhyVisit';
 import { RelatedEvents } from '@/components/event/RelatedEvents';
 import NoveltiesSection from '@/components/event/NoveltiesSection';
 import { EventSeriesBlock } from '@/components/event/EventSeriesBlock';
 import { SameCityEventsBlock } from '@/components/event/SameCityEventsBlock';
 import { SectorArticlesBlock } from '@/components/event/SectorArticlesBlock';
 import { EventStatsStrip } from '@/components/event/EventStatsStrip';
-import { EventFaqBlock } from '@/components/event/EventFaqBlock';
+import EventAiBanner from '@/components/event/EventAiBanner';
+import EventInfoCarousel from '@/components/event/EventInfoCarousel';
 
 import EventExhibitorsSection from '@/components/event/EventExhibitorsSection';
-import EventAboutSidebar from '@/components/event/EventAboutSidebar';
 import ClaimSalonBanner from '@/components/event/ClaimSalonBanner';
 import EventRadarCrmWidget from '@/components/event/EventRadarCrmWidget';
 import { SEOHead } from '@/components/event/SEOHead';
@@ -27,7 +24,7 @@ import PrepareVisitWizard from '@/components/event/PrepareVisitWizard';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Eye, Sparkles, Check, ChevronDown, Route, Database, Clock, UserCheck, ArrowRight, Settings } from 'lucide-react';
+import { Eye, Settings } from 'lucide-react';
 import { useExhibitorsByEvent } from '@/hooks/useExhibitorsByEvent';
 import { useEventCardStats } from '@/hooks/useEventCardStats';
 import { getEventCapabilities, PARCOURS_IA_MIN_EXHIBITORS } from '@/lib/eventCapabilities';
@@ -263,9 +260,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               onPrepareVisit={() => setPrepareVisitOpen(true)}
             />
 
-            {/* Bloc de transition temporaire (lot 2) : description longue sortie du Hero.
-                Le lot 7 l'intégrera au carousel « À propos de l'événement ». */}
-            <EventLongDescription event={event} />
+            {/* Lot 7 : la description longue est désormais dans le carousel d'informations. */}
 
             {/* Bandeau discret : revendication de la page salon par l'organisateur */}
             <ClaimSalonBanner event={event} />
@@ -316,101 +311,28 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             </div>
 
 
-            {/* Colonne principale : Exposants → IA. Sidebar : À propos. */}
-            <div className="grid grid-cols-12 gap-6">
-              <div className="col-span-12 lg:col-span-8 space-y-8">
+            {/* C. Exposants — approche category-first (lot 6), pleine largeur (lot 7) */}
+            {exhibitorCount > 0 && (
+              <section id="exposants">
+                <EventExhibitorsSection
+                  event={event}
+                  exhibitorCount={exhibitorCount}
+                  aiAvailable={canPrepareVisit}
+                  onPrepareVisit={() => setPrepareVisitOpen(true)}
+                />
+              </section>
+            )}
 
+            {/* Lot 7 — Bandeau navy Parcours IA (masqué si indisponible) */}
+            <EventAiBanner
+              canPrepareVisit={canPrepareVisit}
+              onPrepareVisit={() => setPrepareVisitOpen(true)}
+            />
 
-                {/* C. Exposants — approche category-first (lot 6) */}
-                {exhibitorCount > 0 && (
-                  <section id="exposants">
-                    <EventExhibitorsSection
-                      event={event}
-                      exhibitorCount={exhibitorCount}
-                      aiAvailable={canPrepareVisit}
-                      onPrepareVisit={() => setPrepareVisitOpen(true)}
-                    />
-                  </section>
-                )}
-
-
-                {/* Connecteur visuel discret : continuité Exposants → Parcours IA */}
-                {canPrepareVisit && (
-                  <div className="flex justify-center -my-3" aria-hidden="true">
-                    <ChevronDown className="w-5 h-5 text-foreground" />
-                  </div>
-                )}
-
-                {/* D. Préparer ma visite avec l'IA — carte sobre & premium.
-                    Conserve la logique métier existante (seuil ≥ 80 exposants, événement à venir). */}
-                {canPrepareVisit && (
-                  <section
-                    aria-label="Préparer votre visite avec l'IA Lotexpo"
-                    className="rounded-lg border border-primary/20 bg-primary/5 overflow-hidden"
-                  >
-                    <div className="space-y-4 px-6 py-[22px]">
-                      {/* Eyebrow : carré bleu marine + label */}
-                      <div className="flex items-center gap-2.5">
-                        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary">
-                          <Route className="w-[18px] h-[18px] text-primary-foreground" />
-                        </span>
-                        <span className="text-xs font-medium uppercase tracking-[0.08em] text-primary">
-                          Parcours IA
-                        </span>
-                      </div>
-
-                      {/* Titre + sous-titre */}
-                      <div className="space-y-1.5">
-                        <h3 className="text-[21px] font-medium leading-snug text-foreground">
-                          Votre visite de {event.nom_event}, préparée par l'IA
-                        </h3>
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                          Lotexpo lit les {exhibitorCount} fiches exposants et sélectionne
-                          les stands qui comptent vraiment pour vous.
-                        </p>
-                      </div>
-
-                      {/* Puces */}
-                      <div className="flex flex-wrap gap-2">
-                        {[
-                          { icon: Database, label: `${exhibitorCount} exposants analysés` },
-                          { icon: Clock, label: '≈ 30 secondes' },
-                          { icon: UserCheck, label: 'adapté à votre rôle' },
-                        ].map(({ icon: Icon, label }) => (
-                          <span
-                            key={label}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-card px-3 py-1.5 text-xs font-medium text-primary"
-                          >
-                            <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-                            {label}
-                          </span>
-                        ))}
-                      </div>
-
-                      {/* CTA */}
-                      <Button
-                        onClick={() => setPrepareVisitOpen(true)}
-                        size="lg"
-                        className="gap-2 w-full sm:w-auto"
-                      >
-                        Créer mon parcours
-                        <ArrowRight className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </section>
-                )}
-              </div>
-
-              {/* E. Sidebar : À propos de l'événement.
-                  Le Radar CRM est remonté dans la grille 70 / 30 (lot 4). */}
-              <aside className="col-span-12 lg:col-span-4 space-y-6">
-                <EventAboutSidebar event={event} />
-              </aside>
-
-            </div>
-
-            {/* Bloc "Pourquoi visiter" — juste après les exposants, avant les suggestions */}
-            <EventWhyVisit event={event} />
+            {/* Lot 7 — Zone gris très clair : carousel unique d'informations */}
+            <section className="-mx-4 rounded-2xl bg-muted/60 px-4 py-8 sm:px-8 sm:py-10">
+              <EventInfoCarousel event={event} />
+            </section>
 
             {/* Autres éditions de ce salon (séries) */}
             <EventSeriesBlock event={event} onSeriesIds={handleSeriesIds} />
@@ -421,10 +343,6 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             {/* Événements similaires pour le maillage interne SEO */}
             <RelatedEvents event={event} limit={4} excludeIds={seriesEventIds} />
 
-            {/* FAQ — uniquement si faq_json rempli et événement à venir */}
-            {!isEventPast && Array.isArray(event.faq_json) && event.faq_json.length > 0 && (
-              <EventFaqBlock faq={event.faq_json} eventName={event.nom_event} />
-            )}
 
             {/* Articles de blog liés au secteur */}
             <SectorArticlesBlock event={event} />
