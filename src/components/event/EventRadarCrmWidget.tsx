@@ -39,10 +39,11 @@ const WidgetShell: React.FC<{ children: React.ReactNode; reveal?: boolean }> = (
     aria-label="Radar CRM"
   >
     <div className="flex items-center gap-2 bg-surface-inverse px-4 py-3">
-      <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-on-primary/20">
-        <Radar className="h-4 w-4 text-on-primary" aria-hidden="true" />
+      <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-inverse-primary/20">
+        <Radar className="h-4 w-4 text-inverse-primary" aria-hidden="true" />
       </span>
-      <h2 className="heading-display text-base text-on">Radar CRM</h2>
+      <h2 className="heading-display text-base text-inverse">Radar CRM</h2>
+
 
     </div>
     <div className={`space-y-3 p-4 ${reveal ? 'radar-reveal' : ''}`}>{children}</div>
