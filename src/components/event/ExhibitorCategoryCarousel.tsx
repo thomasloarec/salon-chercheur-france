@@ -85,13 +85,17 @@ export const ExhibitorCategoryCarousel: React.FC<Props> = ({
     'w-[78%] xs:w-[70%] sm:w-[46%] md:w-[31%] lg:w-[31%] xl:w-[25%] flex-none';
 
   return (
-    <div className="mt-6">
+    <div className="mt-5 animate-fade-in motion-reduce:animate-none">
       <div className="flex items-end justify-between gap-3">
-        <h3 className="heading-display text-lg font-semibold text-foreground">
-          {title}
-          {total > 0 && <span className="ml-1.5 text-muted-foreground">({total})</span>}
+        <h3 className="heading-display flex items-center gap-2 text-lg font-semibold text-foreground">
+          {TitleIcon && <TitleIcon className="h-4 w-4 flex-none text-primary" />}
+          <span>
+            {title}
+            {total > 0 && <span className="ml-1.5 text-muted-foreground">({total})</span>}
+          </span>
         </h3>
         <div className="hidden gap-1.5 sm:flex">
+
           <Button
             variant="outline"
             size="icon"
