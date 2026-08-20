@@ -11,6 +11,7 @@ import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
 import { getEventTypeLabel } from '@/constants/eventTypes';
 import { formatAffluenceWithSuffix } from '@/utils/affluenceUtils';
 import type { Event } from '@/types/event';
+import { isEventPast as isEventPastFn } from '@/lib/eventCapabilities';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -31,10 +32,7 @@ export const EventPageHeader = ({ event }: EventPageHeaderProps) => {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  const today = new Date().toISOString().split('T')[0];
-  const isEventPast = event.date_fin
-    ? event.date_fin < today
-    : event.date_debut ? event.date_debut < today : false;
+  const isEventPast = isEventPastFn(event.date_debut, event.date_fin);
 
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd MMMM yyyy', { locale: fr });
