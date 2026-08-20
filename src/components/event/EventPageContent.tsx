@@ -28,6 +28,8 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Eye, Sparkles, Check, ChevronDown, Route, Database, Clock, UserCheck, ArrowRight, Settings } from 'lucide-react';
 import { useExhibitorsByEvent } from '@/hooks/useExhibitorsByEvent';
+import { useEventCardStats } from '@/hooks/useEventCardStats';
+import { getEventCapabilities, PARCOURS_IA_MIN_EXHIBITORS } from '@/lib/eventCapabilities';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Event } from '@/types/event';
 
@@ -58,25 +60,24 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
     setSeriesEventIds(ids);
   }, []);
 
-  // Auto-open wizard from ?prepare=1 query param (e.g. from agenda page)
-  useEffect(() => {
-    if (searchParams.get('prepare') === '1' && exhibitorCount >= 80) {
-      setPrepareVisitOpen(true);
-    }
-  }, [searchParams]);
+  // Compteurs unifiés via la RPC publique get_event_card_stats.
+  const { data: cardStats, isLoading: cardStatsLoading } = useEventCardStats([event.id]);
+  const stats = cardStats?.[event.id];
 
-  // Get exhibitor count to conditionally show "Préparer ma visite" button
-  const { data: exhibitorsData } = useExhibitorsByEvent(
-    event.slug || '',
+  // Repli admin / ?preview=1 : la RPC filtre sur visible = true, un événement
+  // caché y renvoie zéro ligne. Dans ce seul cas, on retombe sur l'ancien comptage.
+  const needsFallbackCount =
+    (isAdmin || isPreview) && !cardStatsLoading && !stats;
+
+  const { data: exhibitorsFallback } = useExhibitorsByEvent(
+    needsFallbackCount ? event.slug || '' : '',
     undefined,
     1,
     0,
-    event.id_event
+    needsFallbackCount ? event.id_event : undefined
   );
-  const exhibitorCount = exhibitorsData?.total || 0;
 
-  // Novelty count for KeyFigures
-  const { data: noveltyCountData } = useQuery({
+  const { data: noveltyFallback } = useQuery({
     queryKey: ['novelty-count', event.id],
     queryFn: async () => {
       const { count } = await supabase
@@ -86,16 +87,25 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
         .in('status', ['published', 'approved']);
       return count ?? 0;
     },
-    enabled: !!event.id,
+    enabled: !!event.id && needsFallbackCount,
   });
-  const noveltyCount = noveltyCountData ?? 0;
 
-  const isEventPast = useMemo(() => {
-    const endDate = event.date_fin || event.date_debut;
-    if (!endDate) return false;
-    const today = new Date().toISOString().split('T')[0];
-    return endDate < today;
-  }, [event.date_fin, event.date_debut]);
+  const exhibitorCount = stats?.exhibitor_count ?? exhibitorsFallback?.total ?? 0;
+  const noveltyCount = stats?.novelty_count ?? noveltyFallback ?? 0;
+
+  const capabilities = useMemo(
+    () => getEventCapabilities(event, exhibitorCount),
+    [event, exhibitorCount],
+  );
+  const isEventPast = capabilities.isPast;
+  const canPrepareVisit = capabilities.canPrepareVisit;
+
+  // Auto-open wizard from ?prepare=1 query param (e.g. from agenda page)
+  useEffect(() => {
+    if (searchParams.get('prepare') === '1' && exhibitorCount >= PARCOURS_IA_MIN_EXHIBITORS) {
+      setPrepareVisitOpen(true);
+    }
+  }, [searchParams, exhibitorCount]);
 
   const sectorLink = useMemo(() => {
     const secteur = event.secteur;
@@ -289,14 +299,14 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                     <ExhibitorsSidebar
                       event={event}
                       variant="main"
-                      aiAvailable={exhibitorCount >= 80 && !isEventPast}
+                      aiAvailable={canPrepareVisit}
                       onPrepareVisit={() => setPrepareVisitOpen(true)}
                     />
                   </section>
                 )}
 
                 {/* Connecteur visuel discret : continuité Exposants → Parcours IA */}
-                {exhibitorCount >= 80 && !isEventPast && (
+                {canPrepareVisit && (
                   <div className="flex justify-center -my-3" aria-hidden="true">
                     <ChevronDown className="w-5 h-5 text-foreground" />
                   </div>
@@ -304,7 +314,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 
                 {/* D. Préparer ma visite avec l'IA — carte sobre & premium.
                     Conserve la logique métier existante (seuil ≥ 80 exposants, événement à venir). */}
-                {exhibitorCount >= 80 && !isEventPast && (
+                {canPrepareVisit && (
                   <section
                     aria-label="Préparer votre visite avec l'IA Lotexpo"
                     className="rounded-lg border border-primary/20 bg-primary/5 overflow-hidden"

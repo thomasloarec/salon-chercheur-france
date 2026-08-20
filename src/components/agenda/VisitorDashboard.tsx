@@ -25,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { PARCOURS_IA_MIN_EXHIBITORS } from '@/lib/eventCapabilities';
 
 const NOVELTY_TYPE_LABELS = {
   Launch: 'Lancement',
@@ -290,7 +291,7 @@ export function VisitorDashboard({ events, likedNovelties, isLoading }: VisitorD
                 )}
 
                 {/* Prompt for events without visit plan */}
-                {!visitPlan && !isPast && (event as any)._exhibitorCount >= 80 && (
+                {!visitPlan && !isPast && (event as any)._exhibitorCount >= PARCOURS_IA_MIN_EXHIBITORS && (
                   <div className="mt-4 pt-4 border-t">
                     <Link
                       to={`/events/${event.slug}?prepare=1`}

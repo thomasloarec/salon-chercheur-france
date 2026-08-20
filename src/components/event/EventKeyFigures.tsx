@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { differenceInCalendarDays } from 'date-fns';
 import { Store, Sparkles, Clock, Wand2 } from 'lucide-react';
 import type { Event } from '@/types/event';
+import { PARCOURS_IA_MIN_EXHIBITORS } from '@/lib/eventCapabilities';
 
 interface EventKeyFiguresProps {
   event: Event;
@@ -38,7 +39,7 @@ export const EventKeyFigures = ({ event, exhibitorCount, noveltyCount }: EventKe
     }
 
     // Préparation visite IA — shown when >= 80 exhibitors
-    if (exhibitorCount && exhibitorCount >= 80) {
+    if (exhibitorCount && exhibitorCount >= PARCOURS_IA_MIN_EXHIBITORS) {
       items.push({
         icon: <Wand2 className="h-4 w-4" />,
         label: 'Visite IA',
