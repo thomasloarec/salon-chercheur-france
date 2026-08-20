@@ -221,7 +221,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
           {/* ═══ Bande 1 — Hero, texture claire (page Recherche IA) ═══
               Contient : notice aperçu, actions admin/propriétaire, Hero,
               bande de revendication en continuité. */}
-          <EventBand tone="light-texture" space="md" className="pt-6 md:pt-8">
+          <EventBand tone="light-texture" space="sm" className="pt-6 md:pt-8 pb-2 md:pb-3 lg:pb-4">
             {/* Preview notice */}
             {isPreview && (
               <div className="mb-6 rounded-lg border-l-4 border-primary bg-primary/10 p-4">
