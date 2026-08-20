@@ -311,101 +311,23 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             </div>
 
 
-            {/* Colonne principale : Exposants → IA. Sidebar : À propos. */}
-            <div className="grid grid-cols-12 gap-6">
-              <div className="col-span-12 lg:col-span-8 space-y-8">
+            {/* C. Exposants — approche category-first (lot 6), pleine largeur (lot 7) */}
+            {exhibitorCount > 0 && (
+              <section id="exposants">
+                <EventExhibitorsSection
+                  event={event}
+                  exhibitorCount={exhibitorCount}
+                  aiAvailable={canPrepareVisit}
+                  onPrepareVisit={() => setPrepareVisitOpen(true)}
+                />
+              </section>
+            )}
 
-
-                {/* C. Exposants — approche category-first (lot 6) */}
-                {exhibitorCount > 0 && (
-                  <section id="exposants">
-                    <EventExhibitorsSection
-                      event={event}
-                      exhibitorCount={exhibitorCount}
-                      aiAvailable={canPrepareVisit}
-                      onPrepareVisit={() => setPrepareVisitOpen(true)}
-                    />
-                  </section>
-                )}
-
-
-                {/* Connecteur visuel discret : continuité Exposants → Parcours IA */}
-                {canPrepareVisit && (
-                  <div className="flex justify-center -my-3" aria-hidden="true">
-                    <ChevronDown className="w-5 h-5 text-foreground" />
-                  </div>
-                )}
-
-                {/* D. Préparer ma visite avec l'IA — carte sobre & premium.
-                    Conserve la logique métier existante (seuil ≥ 80 exposants, événement à venir). */}
-                {canPrepareVisit && (
-                  <section
-                    aria-label="Préparer votre visite avec l'IA Lotexpo"
-                    className="rounded-lg border border-primary/20 bg-primary/5 overflow-hidden"
-                  >
-                    <div className="space-y-4 px-6 py-[22px]">
-                      {/* Eyebrow : carré bleu marine + label */}
-                      <div className="flex items-center gap-2.5">
-                        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary">
-                          <Route className="w-[18px] h-[18px] text-primary-foreground" />
-                        </span>
-                        <span className="text-xs font-medium uppercase tracking-[0.08em] text-primary">
-                          Parcours IA
-                        </span>
-                      </div>
-
-                      {/* Titre + sous-titre */}
-                      <div className="space-y-1.5">
-                        <h3 className="text-[21px] font-medium leading-snug text-foreground">
-                          Votre visite de {event.nom_event}, préparée par l'IA
-                        </h3>
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                          Lotexpo lit les {exhibitorCount} fiches exposants et sélectionne
-                          les stands qui comptent vraiment pour vous.
-                        </p>
-                      </div>
-
-                      {/* Puces */}
-                      <div className="flex flex-wrap gap-2">
-                        {[
-                          { icon: Database, label: `${exhibitorCount} exposants analysés` },
-                          { icon: Clock, label: '≈ 30 secondes' },
-                          { icon: UserCheck, label: 'adapté à votre rôle' },
-                        ].map(({ icon: Icon, label }) => (
-                          <span
-                            key={label}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-card px-3 py-1.5 text-xs font-medium text-primary"
-                          >
-                            <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-                            {label}
-                          </span>
-                        ))}
-                      </div>
-
-                      {/* CTA */}
-                      <Button
-                        onClick={() => setPrepareVisitOpen(true)}
-                        size="lg"
-                        className="gap-2 w-full sm:w-auto"
-                      >
-                        Créer mon parcours
-                        <ArrowRight className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </section>
-                )}
-              </div>
-
-              {/* E. Sidebar : À propos de l'événement.
-                  Le Radar CRM est remonté dans la grille 70 / 30 (lot 4). */}
-              <aside className="col-span-12 lg:col-span-4 space-y-6">
-                <EventAboutSidebar event={event} />
-              </aside>
-
-            </div>
-
-            {/* Bloc "Pourquoi visiter" — juste après les exposants, avant les suggestions */}
-            <EventWhyVisit event={event} />
+            {/* Lot 7 — Bandeau navy Parcours IA (masqué si indisponible) */}
+            <EventAiBanner
+              canPrepareVisit={canPrepareVisit}
+              onPrepareVisit={() => setPrepareVisitOpen(true)}
+            />
 
             {/* Autres éditions de ce salon (séries) */}
             <EventSeriesBlock event={event} onSeriesIds={handleSeriesIds} />
@@ -416,10 +338,6 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             {/* Événements similaires pour le maillage interne SEO */}
             <RelatedEvents event={event} limit={4} excludeIds={seriesEventIds} />
 
-            {/* FAQ — uniquement si faq_json rempli et événement à venir */}
-            {!isEventPast && Array.isArray(event.faq_json) && event.faq_json.length > 0 && (
-              <EventFaqBlock faq={event.faq_json} eventName={event.nom_event} />
-            )}
 
             {/* Articles de blog liés au secteur */}
             <SectorArticlesBlock event={event} />
