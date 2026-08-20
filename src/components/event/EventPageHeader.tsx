@@ -8,7 +8,6 @@ import {
   Calendar,
   Building,
   MapPin,
-  Euro,
   Sparkles,
   ChevronDown,
   CalendarCheck,
@@ -27,7 +26,6 @@ import { getEventTypeLabel } from '@/constants/eventTypes';
 import type { Event } from '@/types/event';
 import {
   isEventPast as isEventPastFn,
-  isTarifDisplayable,
 } from '@/lib/eventCapabilities';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useAuth } from '@/contexts/AuthContext';
@@ -130,7 +128,6 @@ export const EventPageHeader = ({
     }
   };
 
-  const showTarif = isTarifDisplayable(event.tarif);
 
   const metadata: { key: string; icon: typeof CalendarDays; content: React.ReactNode }[] = [];
 
@@ -197,7 +194,7 @@ export const EventPageHeader = ({
                 </span>
               )}
               {mainSector && (
-                <span className="inline-flex items-center rounded-full border border-accent/40 bg-accent px-2.5 py-1 text-[11px] font-medium tracking-[0.02em] text-primary">
+                <span className="inline-flex items-center rounded-full border border-primary/20 bg-violet-soft px-2.5 py-1 text-[11px] font-medium tracking-[0.02em] text-primary">
                   {mainSector}
                 </span>
               )}
