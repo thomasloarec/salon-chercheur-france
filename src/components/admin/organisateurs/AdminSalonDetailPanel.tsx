@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, CalendarDays, ExternalLink, Check, X, User, ArrowRight, PencilLine, Download, FileText } from 'lucide-react';
+import { ArrowLeft, CalendarDays, ExternalLink, Check, X, User, ArrowRight, PencilLine, Download, FileText, Mail, Phone, Briefcase, Building2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import VerifiedBadge from '@/components/exhibitor/VerifiedBadge';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +23,10 @@ interface ClaimRow {
   created_at: string;
   requester_user_id: string;
   requester_name: string | null;
+  email: string | null;
+  phone: string | null;
+  job_title: string | null;
+  company: string | null;
 }
 
 interface ChangeRequestRow {
@@ -34,6 +38,8 @@ interface ChangeRequestRow {
   changed_fields: string[];
   proposed_changes: Record<string, any>;
   previous_values: Record<string, any>;
+  review_note: string | null;
+  reviewed_at: string | null;
 }
 
 const FIELD_LABELS: Record<string, string> = {
@@ -123,42 +129,34 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
           [owner?.first_name, owner?.last_name].filter(Boolean).join(' ').trim() || null;
       }
 
-      const { data: claimsData } = await supabase
-        .from('event_claim_requests')
-        .select('id, status, message, created_at, requester_user_id')
-        .eq('event_id', salonId)
-        .order('created_at', { ascending: false });
+      const { data: claimsData } = await (supabase as any).rpc('admin_list_event_claim_identities', {
+        p_event_id: salonId,
+      });
 
-      const userIds = [...new Set((claimsData || []).map((c) => c.requester_user_id))];
-      let profilesById: Record<string, string> = {};
-      if (userIds.length) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, first_name, last_name')
-          .in('user_id', userIds);
-        profilesById = Object.fromEntries(
-          (profiles || []).map((p) => [
-            p.user_id,
-            [p.first_name, p.last_name].filter(Boolean).join(' ').trim() || '—',
-          ]),
-        );
-      }
-
-      const claims: ClaimRow[] = (claimsData || []).map((c) => ({
-        id: c.id,
-        status: c.status,
-        message: c.message,
-        created_at: c.created_at,
-        requester_user_id: c.requester_user_id,
-        requester_name: profilesById[c.requester_user_id] ?? null,
-      }));
+      const profilesById: Record<string, string> = {};
+      const claims: ClaimRow[] = ((claimsData as any[]) || []).map((c) => {
+        const fullName =
+          [c.first_name, c.last_name].filter(Boolean).join(' ').trim() || null;
+        profilesById[c.requester_user_id] = fullName ?? '—';
+        return {
+          id: c.id,
+          status: c.status,
+          message: c.message,
+          created_at: c.created_at,
+          requester_user_id: c.requester_user_id,
+          requester_name: fullName,
+          email: c.email ?? null,
+          phone: c.phone ?? null,
+          job_title: c.job_title ?? null,
+          company: c.company ?? null,
+        };
+      });
 
       // Demandes de modification en attente
       const { data: changesData } = await supabase
         .from('event_change_requests')
-        .select('id, status, created_at, requester_user_id, changed_fields, proposed_changes, previous_values')
+        .select('id, status, created_at, requester_user_id, changed_fields, proposed_changes, previous_values, review_note, reviewed_at')
         .eq('event_id', salonId)
-        .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
       const changeUserIds = [...new Set((changesData || []).map((c) => c.requester_user_id))];
@@ -184,6 +182,8 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
         changed_fields: (c.changed_fields as string[]) || [],
         proposed_changes: (c.proposed_changes as Record<string, any>) || {},
         previous_values: (c.previous_values as Record<string, any>) || {},
+        review_note: (c as any).review_note ?? null,
+        reviewed_at: (c as any).reviewed_at ?? null,
       }));
 
       return { event, ownerName, claims, changeRequests };
