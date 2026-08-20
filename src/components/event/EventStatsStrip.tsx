@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -130,11 +130,8 @@ export const EventStatsStrip = ({ event, exhibitorCount, noveltyCount }: EventSt
       )}
     >
       <div
-        className={cn(
-          'grid gap-y-6 gap-x-4',
-          columns === 2 ? 'grid-cols-2' : columns === 3 ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2',
-        )}
-        style={{ gridTemplateColumns: undefined }}
+        className="grid grid-cols-2 gap-y-6 gap-x-4 sm:[grid-template-columns:var(--stats-cols)]"
+        style={{ ['--stats-cols' as string]: `repeat(${columns}, minmax(0, 1fr))` } as React.CSSProperties}
       >
         {stats.map((stat, index) => (
           <div
