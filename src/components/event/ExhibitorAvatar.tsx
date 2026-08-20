@@ -61,53 +61,51 @@ export const ExhibitorAvatar: React.FC<ExhibitorAvatarProps> = ({
 }) => {
   const resolved = getExhibitorLogoUrl(logoUrl, website);
   const [failed, setFailed] = useState(false);
+  const showImage = !!resolved && !failed;
 
-  if (!resolved || failed) {
-    return (
-      <div
-        className={cn(
-          'flex items-center justify-center rounded-lg ring-1',
-          toneForName(name),
-          className,
-        )}
-        aria-hidden="true"
-      >
-        <span
-          className={cn(
-            'heading-display font-semibold leading-none tracking-tight',
-            textClassName ?? 'text-base',
-          )}
-        >
-          {getMonogram(name)}
-        </span>
-      </div>
-    );
-  }
-
+  // Le monogramme est TOUJOURS rendu, en couche de fond. L'image se pose
+  // par-dessus. Un favicon transparent ou blanc — cas de Özel Tekstil et
+  // Pakipek Group — laisse donc apparaître le monogramme au lieu d'un carré
+  // vide. Le pixel ne peut pas être inspecté : le service de favicons de
+  // Google ne renvoie pas d'en-tête CORS, le canvas serait teinté.
   return (
     <div
       className={cn(
-        'flex items-center justify-center overflow-hidden rounded-lg border bg-background p-1',
+        'relative flex items-center justify-center overflow-hidden rounded-lg ring-1',
+        toneForName(name),
         className,
       )}
+      aria-hidden="true"
     >
-      <img
-        src={resolved}
-        alt=""
-        loading="lazy"
-        decoding="async"
-        width={64}
-        height={64}
-        className="h-full w-full object-contain"
-        onError={() => setFailed(true)}
-        onLoad={(e) => {
-          const img = e.currentTarget;
-          // Favicon générique / image vide → on bascule sur le monogramme.
-          if (img.naturalWidth < MIN_USABLE_PX || img.naturalHeight < MIN_USABLE_PX) {
-            setFailed(true);
-          }
-        }}
-      />
+      <span
+        className={cn(
+          'heading-display font-semibold leading-none tracking-tight',
+          textClassName ?? 'text-base',
+        )}
+      >
+        {getMonogram(name)}
+      </span>
+
+      {showImage && (
+        <img
+          src={resolved}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          width={64}
+          height={64}
+          className="absolute inset-0 h-full w-full object-contain p-1"
+          onError={() => setFailed(true)}
+          onLoad={(e) => {
+            const img = e.currentTarget;
+            // Favicon générique 16 px servi par défaut quand le domaine n'en
+            // publie pas → on retombe sur le seul monogramme.
+            if (img.naturalWidth < MIN_USABLE_PX || img.naturalHeight < MIN_USABLE_PX) {
+              setFailed(true);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

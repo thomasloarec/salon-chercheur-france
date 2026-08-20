@@ -59,17 +59,18 @@ export const EventBand: React.FC<EventBandProps> = ({
         <>
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.35]"
+            className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat opacity-70"
             style={{ backgroundImage: "url('/backgrounds/recherche-ia-bg.jpg')" }}
           />
           {/* Voile blanc : la texture donne de la matière sans jamais réduire
-              le contraste du H1 posé dessus. */}
+              le contraste du texte posé dessus. Le dégradé se ferme vers le bas
+              pour raccorder proprement sur la bande blanche suivante. */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
             style={{
               background:
-                'linear-gradient(180deg, hsl(var(--background) / 0.62), hsl(var(--background) / 0.86))',
+                'linear-gradient(180deg, hsl(var(--background) / 0.42) 0%, hsl(var(--background) / 0.62) 55%, hsl(var(--background) / 0.95) 100%)',
             }}
           />
         </>
