@@ -18,6 +18,8 @@ interface AddNoveltyButtonProps {
   size?: 'default' | 'sm' | 'lg';
   className?: string;
   label?: string;
+  /** Libellé replié sous 640 px (jamais un verbe seul). */
+  shortLabel?: string;
 }
 
 export default function AddNoveltyButton({ 
@@ -25,9 +27,21 @@ export default function AddNoveltyButton({
   variant = 'default', 
   size = 'default',
   className,
-  label
+  label,
+  shortLabel
 }: AddNoveltyButtonProps) {
   const defaultLabel = 'Exposant ? Ajouter votre nouveauté';
+  const resolvedLabel = label || defaultLabel;
+  const renderLabel = () =>
+    shortLabel ? (
+      <>
+        <span className="hidden sm:inline">{resolvedLabel}</span>
+        <span className="sm:hidden">{shortLabel}</span>
+      </>
+    ) : (
+      resolvedLabel
+    );
+
   const navigate = useNavigate();
 
   // Vérifier si on est en période de pré-lancement (plus de 90 jours avant l'événement)
@@ -67,7 +81,8 @@ export default function AddNoveltyButton({
                 className={className}
               >
                 <Lock className="h-4 w-4 mr-2" />
-                {label || defaultLabel}
+                {renderLabel()}
+
               </Button>
             </div>
           </TooltipTrigger>
@@ -92,7 +107,7 @@ export default function AddNoveltyButton({
       className={className}
     >
       <Plus className="h-4 w-4 mr-2" />
-      {label || defaultLabel}
+      {renderLabel()}
     </Button>
   );
 }

@@ -13,7 +13,7 @@ import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { cn } from '@/lib/utils';
 import type { Event } from '@/types/event';
-import EventCategoryCards, { type CategoryCardModel } from './EventCategoryCards';
+import EventCategoryCards, { iconFor, type CategoryCardModel } from './EventCategoryCards';
 import ExhibitorCategoryCarousel from './ExhibitorCategoryCarousel';
 import ExhibitorAvatar from './ExhibitorAvatar';
 import { ExhibitorsModal } from './ExhibitorsModal';
@@ -341,11 +341,11 @@ export const EventExhibitorsSection: React.FC<Props> = ({
           />
         ) : (
           <>
-            {/* Étape 2 — cartes de catégories */}
+            {/* Étape 2 — onglets de catégories (une seule rangée défilable) */}
             {loadingCategories ? (
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Skeleton key={i} className="h-[104px] rounded-xl" />
+              <div className="mt-5 flex gap-2.5 overflow-hidden">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-[86px] w-[13rem] flex-none rounded-xl" />
                 ))}
               </div>
             ) : hasCategoryNav ? (
@@ -354,30 +354,50 @@ export const EventExhibitorsSection: React.FC<Props> = ({
                   cards={visibleCards}
                   activeKey={activeCard?.key ?? null}
                   onSelect={setActiveKey}
+                  panelId="exposants-panel"
                 />
-                {cards.length > VISIBLE_CARDS && (
-                  <button
-                    type="button"
-                    onClick={() => setAllCategoriesOpen(true)}
-                    className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                  >
-                    <LayoutGrid className="h-4 w-4" />
-                    Voir toutes les catégories ({(categories || []).filter((c) => c.category_id).length})
-                  </button>
-                )}
               </div>
             ) : null}
 
-            {/* Étape 3 — carousel */}
-            <ExhibitorCategoryCarousel
-              key={carousel.title}
-              eventId={event.id}
-              eventSlug={event.slug}
-              categoryIds={carousel.categoryIds}
-              includeUncategorized={carousel.includeUncategorized}
-              title={carousel.title}
-              onSelect={openFromRpcRow}
-            />
+            {/* Étape 3 — panneau relié à l'onglet actif */}
+            <div
+              id="exposants-panel"
+              role={hasCategoryNav ? 'tabpanel' : undefined}
+              aria-labelledby={
+                hasCategoryNav && activeCard ? `cat-tab-${activeCard.key}` : undefined
+              }
+              className={cn(
+                hasCategoryNav &&
+                  'rounded-xl rounded-tl-none border border-primary/40 bg-violet-soft/25 px-4 pb-4 pt-1',
+              )}
+            >
+              <ExhibitorCategoryCarousel
+                key={carousel.title}
+                eventId={event.id}
+                eventSlug={event.slug}
+                categoryIds={carousel.categoryIds}
+                includeUncategorized={carousel.includeUncategorized}
+                title={carousel.title}
+                titleIcon={
+                  hasCategoryNav && activeCard
+                    ? iconFor(activeCard.slug || activeCard.key)
+                    : undefined
+                }
+                onSelect={openFromRpcRow}
+              />
+            </div>
+
+            {cards.length > VISIBLE_CARDS && (
+              <button
+                type="button"
+                onClick={() => setAllCategoriesOpen(true)}
+                className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+              >
+                <LayoutGrid className="h-4 w-4" />
+                Voir toutes les catégories ({(categories || []).filter((c) => c.category_id).length})
+              </button>
+            )}
+
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <Button variant="outline" size="sm" onClick={handleOpenModal}>
