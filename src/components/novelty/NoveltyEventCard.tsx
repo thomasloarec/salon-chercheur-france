@@ -258,7 +258,13 @@ export default function NoveltyEventCard({
           </Link>
 
           {/* Zone texte */}
-          <div className="flex-1 min-w-0 p-4 sm:p-5 flex flex-col gap-2.5">
+          <div
+            className={cn(
+              'flex-1 min-w-0 flex flex-col gap-2.5',
+              variant === 'feature' ? 'p-5 sm:p-6' : 'p-4 sm:p-5',
+            )}
+          >
+
             {/* Méta : type + countdown */}
             <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="secondary" className="font-medium">
