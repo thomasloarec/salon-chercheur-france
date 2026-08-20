@@ -61,8 +61,15 @@ interface NoveltyEventCardProps {
   event?: Event;
   /** Nombre de commentaires. L'indicateur n'est affiche que si > 0. */
   commentCount?: number;
+  /**
+   * 'compact' (défaut) : card horizontale de liste, image secondaire.
+   * 'feature' : card mise en avant (carousel), image dominante à gauche.
+   * Seule la mise en page change : toutes les fonctions sont identiques.
+   */
+  variant?: 'compact' | 'feature';
   className?: string;
 }
+
 
 /**
  * Card compacte pour l'affichage des nouveautés sur la page événement.
