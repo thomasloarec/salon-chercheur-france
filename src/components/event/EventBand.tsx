@@ -16,11 +16,12 @@ export type BandSpace = 'sm' | 'md' | 'lg' | 'none';
  */
 const SPACE: Record<BandSpace, string> = {
   none: '',
-  // ~48 px mobile / 64 px tablette / 96 px desktop
-  sm: 'py-8 md:py-10 lg:py-14',
-  md: 'py-12 md:py-16 lg:py-24',
-  lg: 'py-14 md:py-20 lg:py-28',
+  // Lot 13 — aucun padding de bande ne dépasse 56 px (py-14) sur desktop.
+  sm: 'py-6 md:py-8 lg:py-10',
+  md: 'py-8 md:py-10 lg:py-14',
+  lg: 'py-10 md:py-12 lg:py-14',
 };
+
 
 interface EventBandProps {
   tone?: BandTone;
