@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Search, Info, Building2, Route, LayoutGrid } from 'lucide-react';
+import { Search, Info, Building2, Route } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,7 +13,11 @@ import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { cn } from '@/lib/utils';
 import type { Event } from '@/types/event';
-import EventCategoryCards, { iconFor, type CategoryCardModel } from './EventCategoryCards';
+import EventCategoryCards, {
+  iconFor,
+  PANEL_SHADOW,
+  type CategoryCardModel,
+} from './EventCategoryCards';
 import ExhibitorCategoryCarousel from './ExhibitorCategoryCarousel';
 import ExhibitorAvatar from './ExhibitorAvatar';
 import { ExhibitorsModal } from './ExhibitorsModal';
@@ -355,21 +359,23 @@ export const EventExhibitorsSection: React.FC<Props> = ({
                   activeKey={activeCard?.key ?? null}
                   onSelect={setActiveKey}
                   panelId="exposants-panel"
+                  onShowAll={
+                    cards.length > VISIBLE_CARDS ? () => setAllCategoriesOpen(true) : undefined
+                  }
+                  showAllCount={(categories || []).filter((c) => c.category_id).length}
                 />
               </div>
             ) : null}
 
-            {/* Étape 3 — panneau relié à l'onglet actif */}
+            {/* Étape 3 — panneau relié à l'onglet actif (surface blanche continue) */}
             <div
               id="exposants-panel"
               role={hasCategoryNav ? 'tabpanel' : undefined}
               aria-labelledby={
                 hasCategoryNav && activeCard ? `cat-tab-${activeCard.key}` : undefined
               }
-              className={cn(
-                hasCategoryNav &&
-                  'rounded-xl rounded-tl-none border border-primary/40 bg-violet-soft/25 px-4 pb-4 pt-1',
-              )}
+              style={hasCategoryNav ? { boxShadow: PANEL_SHADOW } : undefined}
+              className={cn(hasCategoryNav && 'rounded-xl border-0 bg-card px-4 pb-4 pt-1')}
             >
               <ExhibitorCategoryCarousel
                 key={carousel.title}
@@ -387,16 +393,7 @@ export const EventExhibitorsSection: React.FC<Props> = ({
               />
             </div>
 
-            {cards.length > VISIBLE_CARDS && (
-              <button
-                type="button"
-                onClick={() => setAllCategoriesOpen(true)}
-                className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-              >
-                <LayoutGrid className="h-4 w-4" />
-                Voir toutes les catégories ({(categories || []).filter((c) => c.category_id).length})
-              </button>
-            )}
+
 
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
