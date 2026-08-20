@@ -81,7 +81,8 @@ export default function AddNoveltyButton({
                 className={className}
               >
                 <Lock className="h-4 w-4 mr-2" />
-                {label || defaultLabel}
+                {renderLabel()}
+
               </Button>
             </div>
           </TooltipTrigger>
@@ -106,7 +107,7 @@ export default function AddNoveltyButton({
       className={className}
     >
       <Plus className="h-4 w-4 mr-2" />
-      {label || defaultLabel}
+      {renderLabel()}
     </Button>
   );
 }
