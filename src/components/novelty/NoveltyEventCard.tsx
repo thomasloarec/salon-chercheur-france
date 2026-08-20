@@ -205,7 +205,10 @@ export default function NoveltyEventCard({
         id={`novelty-${novelty.id}`}
         data-novelty-id={novelty.id}
         className={cn(
-          'group overflow-hidden border-border/60 hover:shadow-md hover:border-primary/30 transition-all scroll-mt-24',
+          'group overflow-hidden border-border/60 transition-all scroll-mt-24',
+          variant === 'feature'
+            ? 'border-border/70 shadow-sm'
+            : 'hover:shadow-md hover:border-primary/30',
           className,
         )}
       >
@@ -213,9 +216,15 @@ export default function NoveltyEventCard({
           {/* Visuel — clic = navigation crawlable vers la page nouveauté */}
           <Link
             to={detailHref}
-            className="relative shrink-0 bg-muted overflow-hidden w-full sm:w-44 md:w-48 aspect-[4/3] sm:aspect-[4/5] group/img"
+            className={cn(
+              'relative shrink-0 bg-muted overflow-hidden group/img w-full',
+              variant === 'feature'
+                ? 'aspect-[4/3] sm:aspect-[3/4] sm:w-[44%] md:w-[46%]'
+                : 'aspect-[4/3] sm:aspect-[4/5] sm:w-44 md:w-48',
+            )}
             aria-label={`Voir le détail de ${novelty.title}`}
           >
+
             {image ? (
               <>
                 <img
