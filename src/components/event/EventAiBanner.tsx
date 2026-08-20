@@ -17,15 +17,18 @@ export default function EventAiBanner({ canPrepareVisit, onPrepareVisit }: Event
   if (!canPrepareVisit) return null;
 
   return (
-    <section
+    <div
       aria-label="Préparer votre visite avec l'IA Lotexpo"
-      className="mx-auto w-full max-w-[1280px] overflow-hidden rounded-2xl bg-surface-inverse px-6 py-10 text-background sm:px-10 sm:py-14"
+      role="region"
+      className="w-full"
     >
+      {/* Lot 11 — plus de carte : le registre sombre texturé est porté par la
+          bande pleine largeur parente (EventBand tone="dark-texture"). */}
       <div className="mx-auto flex max-w-3xl flex-col items-center gap-5 text-center">
-        <h2 className="heading-display text-2xl leading-tight text-background sm:text-4xl">
+        <h2 className="heading-display text-2xl leading-tight text-inverse sm:text-4xl">
           Ne visitez plus un salon au hasard
         </h2>
-        <p className="max-w-xl text-sm leading-relaxed text-background/75 sm:text-base">
+        <p className="max-w-xl text-sm leading-relaxed text-inverse-muted sm:text-base">
           Lotexpo analyse les exposants et aide à identifier ceux qui correspondent
           aux objectifs du visiteur.
         </p>
