@@ -16,3 +16,22 @@ export function normalizeStandNumber(stand: string | null | undefined): string |
   
   return trimmed;
 }
+
+/**
+ * Format compact pour les cartes : premier emplacement + reste compté.
+ * Ex. "H7.2-R007, A12, B3" -> "H7.2-R007 +2".
+ * Le format des stands n'est pas normalisé : on coupe simplement à la
+ * première virgule, c'est robuste et suffisant.
+ */
+export function formatStandShort(stand: string | null | undefined): string | null {
+  const normalized = normalizeStandNumber(stand);
+  if (!normalized) return null;
+
+  const parts = normalized
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  if (parts.length <= 1) return parts[0] ?? normalized;
+  return `${parts[0]} +${parts.length - 1}`;
+}
