@@ -6,6 +6,7 @@ import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { EventPageHeader } from '@/components/event/EventPageHeader';
+import EventLongDescription from '@/components/event/EventLongDescription';
 
 import { EventWhyVisit } from '@/components/event/EventWhyVisit';
 import { RelatedEvents } from '@/components/event/RelatedEvents';
@@ -256,7 +257,15 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               </div>
             </section>
             
-            <EventPageHeader event={event} />
+            <EventPageHeader
+              event={event}
+              canPrepareVisit={canPrepareVisit}
+              onPrepareVisit={() => setPrepareVisitOpen(true)}
+            />
+
+            {/* Bloc de transition temporaire (lot 2) : description longue sortie du Hero.
+                Le lot 7 l'intégrera au carousel « À propos de l'événement ». */}
+            <EventLongDescription event={event} />
 
             {/* Bandeau discret : revendication de la page salon par l'organisateur */}
             <ClaimSalonBanner event={event} />

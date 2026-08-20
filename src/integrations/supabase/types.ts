@@ -11120,6 +11120,36 @@ export type Database = {
       }
       get_or_create_my_radar_account: { Args: never; Returns: string }
       get_outreach_pipeline_stats: { Args: never; Returns: Json }
+      get_public_event_categories: {
+        Args: { p_event_id: string }
+        Returns: {
+          category_id: string
+          example_names: string[]
+          exhibitor_count: number
+          label: string
+          slug: string
+        }[]
+      }
+      get_public_event_exhibitors_by_category: {
+        Args: {
+          p_category_ids: string[]
+          p_event_id: string
+          p_include_uncategorized?: boolean
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: {
+          display_name: string
+          id_exposant: string
+          is_verified: boolean
+          logo_url: string
+          public_slug: string
+          seo_indexable: boolean
+          stand: string
+          total_count: number
+          website: string
+        }[]
+      }
       get_radar_action_stats: { Args: never; Returns: Json }
       get_radar_crm_admin_stats: { Args: never; Returns: Json }
       get_radar_crm_pricing: { Args: never; Returns: Json }

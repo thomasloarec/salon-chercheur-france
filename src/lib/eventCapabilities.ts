@@ -144,3 +144,21 @@ export function getEventCapabilities(
     affluenceValue: parseAffluence(event.affluence ?? null),
   };
 }
+
+/**
+ * Le champ events.tarif n'est jamais NULL mais contient souvent des valeurs
+ * non informatives ("Voir site internet", "non communiqué", "A venir"…).
+ * Renvoie true uniquement si la valeur apporte une information tarifaire.
+ */
+export function isTarifDisplayable(raw: string | null | undefined): boolean {
+  if (!raw) return false;
+  const normalized = String(raw)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+  if (!normalized) return false;
+  if (normalized.startsWith('voir ')) return false;
+  const blocked = new Set(['non communique', 'nc', 'n/a', 'na', 'a venir', 'inconnu', '-', '—']);
+  return !blocked.has(normalized);
+}
