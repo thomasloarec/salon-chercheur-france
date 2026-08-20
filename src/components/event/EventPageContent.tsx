@@ -13,7 +13,7 @@ import { SameCityEventsBlock } from '@/components/event/SameCityEventsBlock';
 import { SectorArticlesBlock } from '@/components/event/SectorArticlesBlock';
 import { EventStatsStrip } from '@/components/event/EventStatsStrip';
 import EventAiBanner from '@/components/event/EventAiBanner';
-import EventInfoCarousel from '@/components/event/EventInfoCarousel';
+import EventInfoBlocks from '@/components/event/EventInfoBlocks';
 import EventBand from '@/components/event/EventBand';
 import { Reveal } from '@/components/ui/reveal';
 
@@ -265,8 +265,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             </div>
           </EventBand>
 
-          {/* ═══ Bande 2 — blanc : frise statistiques, nouveautés,
-              exposants + Radar CRM ═══ */}
+          {/* ═══ Bande 2 — blanc : frise statistiques + nouveautés ═══ */}
           <EventBand tone="white" space="md">
             <Reveal>
               {/* Frise statistiques — présente aussi sur les événements passés */}
@@ -294,23 +293,26 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 
             {/* Nouveautés en pleine largeur */}
             <Reveal>
-              <section id="nouveautes" className="mt-12 min-w-0 md:mt-16 lg:mt-24">
+              <section id="nouveautes" className="mt-10 min-w-0 md:mt-14 lg:mt-20">
                 <NoveltiesSection event={event} exhibitorCount={exhibitorCount} isEventPast={isEventPast} />
               </section>
             </Reveal>
 
-            {/* Exposants 70 % adossés au Radar CRM 30 %. */}
-            {exhibitorCount > 0 && (
+          </EventBand>
+
+          {/* ═══ Bande 2b — gris très clair : exposants + Radar CRM ═══ */}
+          {exhibitorCount > 0 && (
+            <EventBand tone="soft" space="md">
               <Reveal>
                 <div
                   className={
                     capabilities.showRadarCrm
-                      ? 'mt-12 grid items-start gap-6 md:mt-16 lg:mt-24 lg:[grid-template-columns:minmax(0,7fr)_minmax(280px,3fr)]'
-                      : 'mt-12 grid gap-6 md:mt-16 lg:mt-24'
+                      ? 'grid items-start gap-6 lg:[grid-template-columns:minmax(0,7fr)_minmax(280px,3fr)]'
+                      : 'grid gap-6'
                   }
                 >
                   {capabilities.showRadarCrm && (
-                    <aside className="order-first min-w-0 lg:order-last lg:sticky lg:top-24">
+                    <aside className="order-first min-w-0 lg:order-last lg:sticky lg:top-24 lg:self-start">
                       <EventRadarCrmWidget event={event} isEventPast={isEventPast} />
                     </aside>
                   )}
@@ -325,8 +327,8 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                   </section>
                 </div>
               </Reveal>
-            )}
-          </EventBand>
+            </EventBand>
+          )}
 
           {/* ═══ Bande 3 — texture sombre : bandeau Parcours IA.
               Rendue uniquement quand le bandeau l'est : jamais de bande vide. */}
@@ -342,7 +344,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
           {/* ═══ Bande 4 — gris très clair : carousel d'informations ═══ */}
           <EventBand tone="soft" space="md">
             <Reveal>
-              <EventInfoCarousel event={event} />
+              <EventInfoBlocks event={event} />
             </Reveal>
           </EventBand>
 

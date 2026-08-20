@@ -76,7 +76,7 @@ export default function NoveltiesSection({
           <div className="h-8 w-72 max-w-[60%] animate-pulse rounded bg-muted" />
           <div className="h-9 w-28 animate-pulse rounded bg-muted" />
         </div>
-        <div className="mx-auto h-[420px] w-full max-w-4xl animate-pulse rounded-2xl bg-muted" />
+        <div className="h-[420px] w-full animate-pulse rounded-2xl bg-muted" />
       </section>
     );
   }
@@ -112,13 +112,12 @@ export default function NoveltiesSection({
               <AddNoveltyButton event={event} label="Publier" size="sm" variant="outline" />
             </div>
 
-            <div className="mx-auto w-full max-w-4xl">
             <NoveltiesPreLaunchBanner
               eventDate={event.date_debut}
               eventName={event.nom_event}
+              exhibitorCount={exhibitorCount}
               onNotifyMe={() => setNotificationDialogOpen(true)}
             />
-            </div>
           </section>
 
           <NoveltyNotificationDialog
@@ -135,9 +134,7 @@ export default function NoveltiesSection({
 
     // Période ouverte : carte exemple pédagogique + CTA exposant très visible.
     return (
-      <div className="mx-auto w-full max-w-4xl">
-        <NoveltyExampleEmptyState event={event} exhibitorCount={exhibitorCount} />
-      </div>
+      <NoveltyExampleEmptyState event={event} exhibitorCount={exhibitorCount} />
     );
   }
 
