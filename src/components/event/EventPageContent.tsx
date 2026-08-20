@@ -400,13 +400,12 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                 )}
               </div>
 
-              {/* E. Sidebar : À propos de l'événement (Exposants retirés) */}
+              {/* E. Sidebar : À propos de l'événement.
+                  Le Radar CRM est remonté dans la grille 70 / 30 (lot 4). */}
               <aside className="col-span-12 lg:col-span-4 space-y-6">
                 <EventAboutSidebar event={event} />
-                {exhibitorCount > 0 && (
-                  <EventRadarCrmWidget event={event} isEventPast={isEventPast} />
-                )}
               </aside>
+
             </div>
 
             {/* Bloc "Pourquoi visiter" — juste après les exposants, avant les suggestions */}
