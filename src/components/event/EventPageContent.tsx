@@ -17,7 +17,7 @@ import { SectorArticlesBlock } from '@/components/event/SectorArticlesBlock';
 import { EventStatsStrip } from '@/components/event/EventStatsStrip';
 import { EventFaqBlock } from '@/components/event/EventFaqBlock';
 
-import ExhibitorsSidebar from '@/components/event/ExhibitorsSidebar';
+import EventExhibitorsSection from '@/components/event/EventExhibitorsSection';
 import EventAboutSidebar from '@/components/event/EventAboutSidebar';
 import ClaimSalonBanner from '@/components/event/ClaimSalonBanner';
 import EventRadarCrmWidget from '@/components/event/EventRadarCrmWidget';
@@ -321,17 +321,18 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               <div className="col-span-12 lg:col-span-8 space-y-8">
 
 
-                {/* C. Exposants — déplacés sous les Nouveautés, en pleine largeur */}
+                {/* C. Exposants — approche category-first (lot 6) */}
                 {exhibitorCount > 0 && (
                   <section id="exposants">
-                    <ExhibitorsSidebar
+                    <EventExhibitorsSection
                       event={event}
-                      variant="main"
+                      exhibitorCount={exhibitorCount}
                       aiAvailable={canPrepareVisit}
                       onPrepareVisit={() => setPrepareVisitOpen(true)}
                     />
                   </section>
                 )}
+
 
                 {/* Connecteur visuel discret : continuité Exposants → Parcours IA */}
                 {canPrepareVisit && (
