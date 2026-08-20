@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
-import { CalendarDays, FileText, BookOpen } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { CalendarDays, FileText } from 'lucide-react';
 import { useSectorArticles } from '@/hooks/useSectorArticles';
+import { cn } from '@/lib/utils';
 import type { Event } from '@/types/event';
 
 interface SectorArticlesBlockProps {
@@ -9,9 +9,10 @@ interface SectorArticlesBlockProps {
 }
 
 /**
- * Shows up to 3 blog articles matching the event's sector(s).
- * Uses the same card style as the Blog listing page for consistency.
- * Hidden if no matching articles found.
+ * « À lire sur [Secteur] » (lot 9) — rangée distincte, pleine largeur,
+ * toujours EN DESSOUS des événements similaires, jamais à côté.
+ * Jusqu'à 3 articles publiés. Avec 1 ou 2 articles, la rangée est contenue
+ * et centrée plutôt qu'étirée.
  */
 export const SectorArticlesBlock = ({ event }: SectorArticlesBlockProps) => {
   const sectors = Array.isArray(event.secteur)
@@ -26,56 +27,63 @@ export const SectorArticlesBlock = ({ event }: SectorArticlesBlockProps) => {
     return null;
   }
 
+  const sectorLabel = sectors[0] as string | undefined;
+  const count = articles.length;
+
   return (
-    <section className="mt-8">
-      <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-        <BookOpen className="h-5 w-5 text-foreground" />
-        Articles sur ce secteur
+    <section className="min-w-0">
+      <h2 className="heading-display text-xl font-semibold text-foreground sm:text-2xl">
+        {sectorLabel ? `À lire sur ${sectorLabel}` : 'À lire sur ce secteur'}
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div
+        className={cn(
+          'mt-4 grid gap-5',
+          count === 1 && 'max-w-md',
+          count === 2 && 'max-w-3xl sm:grid-cols-2',
+          count >= 3 && 'sm:grid-cols-2 lg:grid-cols-3',
+        )}
+      >
         {articles.map((article) => (
           <Link
             key={article.id}
             to={`/blog/${article.slug}`}
-            className="group"
+            className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow duration-200 hover:shadow-md"
           >
-            <Card className="overflow-hidden h-full hover:shadow-lg transition-shadow">
-              {article.header_image_url ? (
-                <div className="aspect-[16/9] overflow-hidden">
-                  <img
-                    src={article.header_image_url}
-                    alt={article.h1_title || article.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                </div>
-              ) : (
-                <div className="aspect-[16/9] bg-muted flex items-center justify-center">
-                  <FileText className="h-12 w-12 text-muted-foreground" />
-                </div>
+            {article.header_image_url ? (
+              <div className="aspect-[16/9] overflow-hidden bg-muted">
+                <img
+                  src={article.header_image_url}
+                  alt={article.h1_title || article.title}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              </div>
+            ) : (
+              <div className="flex aspect-[16/9] items-center justify-center bg-muted">
+                <FileText className="h-8 w-8 text-muted-foreground/60" />
+              </div>
+            )}
+            <div className="flex flex-1 flex-col gap-2 p-4">
+              <h3 className="line-clamp-2 text-base font-semibold text-foreground transition-colors group-hover:text-primary">
+                {article.h1_title || article.title}
+              </h3>
+              {article.intro_text && (
+                <p className="line-clamp-2 text-sm text-muted-foreground">
+                  {article.intro_text.slice(0, 150)}
+                </p>
               )}
-              <CardContent className="p-5 space-y-3">
-                <h3 className="text-lg font-semibold group-hover:text-primary transition-colors line-clamp-2">
-                  {article.h1_title || article.title}
-                </h3>
-                {article.intro_text && (
-                  <p className="text-sm text-muted-foreground line-clamp-3">
-                    {article.intro_text.slice(0, 150)}...
-                  </p>
-                )}
-                {article.published_at && (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground pt-1">
-                    <CalendarDays className="h-3.5 w-3.5" />
-                    {new Date(article.published_at).toLocaleDateString('fr-FR', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              {article.published_at && (
+                <span className="mt-auto inline-flex items-center gap-1 pt-1 text-xs text-muted-foreground">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  {new Date(article.published_at).toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </span>
+              )}
+            </div>
           </Link>
         ))}
       </div>
