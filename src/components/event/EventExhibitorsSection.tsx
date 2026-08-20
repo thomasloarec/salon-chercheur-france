@@ -176,10 +176,12 @@ export const EventExhibitorsSection: React.FC<Props> = ({
   // si elle a été choisie depuis le drawer (singleton compris).
   const visibleCards: CategoryCardModel[] = useMemo(() => {
     const head = cards.slice(0, VISIBLE_CARDS);
-    if (activeCard && !head.some((c) => c.key === activeCard.key)) {
-      return [activeCard, ...head.slice(0, VISIBLE_CARDS - 1)];
-    }
-    return head;
+    if (!activeCard || head.some((c) => c.key === activeCard.key)) return head;
+    // La carte « Autres exposants » reste accessible en dernier rang.
+    const othersCard = head.find((c) => c.key === OTHERS_KEY);
+    const rest = head.filter((c) => c.key !== OTHERS_KEY);
+    const kept = rest.slice(0, VISIBLE_CARDS - 1 - (othersCard ? 1 : 0));
+    return othersCard ? [activeCard, ...kept, othersCard] : [activeCard, ...kept];
   }, [cards, activeCard]);
 
   // Paramètres du carousel selon l'état (catégorie, bucket « Autres », ou repli).
