@@ -61,8 +61,15 @@ interface NoveltyEventCardProps {
   event?: Event;
   /** Nombre de commentaires. L'indicateur n'est affiche que si > 0. */
   commentCount?: number;
+  /**
+   * 'compact' (défaut) : card horizontale de liste, image secondaire.
+   * 'feature' : card mise en avant (carousel), image dominante à gauche.
+   * Seule la mise en page change : toutes les fonctions sont identiques.
+   */
+  variant?: 'compact' | 'feature';
   className?: string;
 }
+
 
 /**
  * Card compacte pour l'affichage des nouveautés sur la page événement.
@@ -80,7 +87,9 @@ export default function NoveltyEventCard({
   eventVille,
   event,
   commentCount = 0,
+  variant = 'compact',
   className,
+
 }: NoveltyEventCardProps) {
   const { user } = useAuth();
   const { isLiked, toggleLike, isPending } = useNoveltyLike(
@@ -196,7 +205,10 @@ export default function NoveltyEventCard({
         id={`novelty-${novelty.id}`}
         data-novelty-id={novelty.id}
         className={cn(
-          'group overflow-hidden border-border/60 hover:shadow-md hover:border-primary/30 transition-all scroll-mt-24',
+          'group overflow-hidden border-border/60 transition-all scroll-mt-24',
+          variant === 'feature'
+            ? 'border-border/70 shadow-sm'
+            : 'hover:shadow-md hover:border-primary/30',
           className,
         )}
       >
@@ -204,17 +216,29 @@ export default function NoveltyEventCard({
           {/* Visuel — clic = navigation crawlable vers la page nouveauté */}
           <Link
             to={detailHref}
-            className="relative shrink-0 bg-muted overflow-hidden w-full sm:w-44 md:w-48 aspect-[4/3] sm:aspect-[4/5] group/img"
+            className={cn(
+              'relative shrink-0 bg-muted overflow-hidden group/img w-full',
+              variant === 'feature'
+                ? 'aspect-[4/3] sm:aspect-[3/4] sm:w-[44%] md:w-[46%]'
+                : 'aspect-[4/3] sm:aspect-[4/5] sm:w-44 md:w-48',
+            )}
             aria-label={`Voir le détail de ${novelty.title}`}
           >
+
             {image ? (
               <>
                 <img
                   src={image}
                   alt={novelty.title}
-                  loading="lazy"
-                  className="absolute inset-0 w-full h-full object-cover group-hover/img:scale-[1.03] transition-transform duration-500"
+                  loading={variant === 'feature' ? 'eager' : 'lazy'}
+                  className={cn(
+                    'absolute inset-0 w-full h-full transition-transform duration-500 motion-reduce:transition-none',
+                    variant === 'feature'
+                      ? 'object-contain p-2'
+                      : 'object-cover group-hover/img:scale-[1.03]',
+                  )}
                 />
+
                 {/* Badge nombre d'images si plusieurs */}
                 {imageCount > 1 && (
                   <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-medium px-2 py-0.5 rounded-full inline-flex items-center gap-1 tabular-nums">
@@ -234,7 +258,13 @@ export default function NoveltyEventCard({
           </Link>
 
           {/* Zone texte */}
-          <div className="flex-1 min-w-0 p-4 sm:p-5 flex flex-col gap-2.5">
+          <div
+            className={cn(
+              'flex-1 min-w-0 flex flex-col gap-2.5',
+              variant === 'feature' ? 'p-5 sm:p-6' : 'p-4 sm:p-5',
+            )}
+          >
+
             {/* Méta : type + countdown */}
             <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="secondary" className="font-medium">
@@ -257,7 +287,15 @@ export default function NoveltyEventCard({
 
             {/* Titre — clic = navigation crawlable vers la page nouveauté */}
             <Link to={detailHref} className="block text-left">
-              <h3 className="font-semibold text-base sm:text-lg leading-snug line-clamp-2 group-hover:text-primary transition-colors hover:text-primary">
+              <h3
+                className={cn(
+                  'leading-snug line-clamp-2 group-hover:text-primary transition-colors hover:text-primary',
+                  variant === 'feature'
+                    ? 'heading-display text-xl sm:text-2xl'
+                    : 'font-semibold text-base sm:text-lg',
+                )}
+              >
+
                 {novelty.title}
               </h3>
             </Link>
