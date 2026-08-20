@@ -273,7 +273,7 @@ export const EventExhibitorsSection: React.FC<Props> = ({
   // État sans exposant : message existant, pas de catégories, pas de carousel.
   if (total === 0) {
     return (
-      <div className="rounded-lg border bg-white p-6 shadow-sm">
+      <div className="w-full">
         <h2 className="heading-display text-xl font-semibold">Exposants</h2>
         <div className="mt-4 rounded-md bg-muted/50 p-4 text-sm leading-relaxed text-muted-foreground">
           <p className="mb-1 font-medium text-foreground">
@@ -304,7 +304,7 @@ export const EventExhibitorsSection: React.FC<Props> = ({
 
   return (
     <>
-      <div className="rounded-lg border bg-white p-6 shadow-sm">
+      <div className="w-full">
         {/* Étape 1 — en-tête */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">

@@ -37,6 +37,6 @@ export default function EventAiBanner({ canPrepareVisit, onPrepareVisit }: Event
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
-    </section>
+    </div>
   );
 }
