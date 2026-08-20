@@ -1,114 +1,79 @@
-import { Link } from "react-router-dom";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import { Calendar, MapPin, ArrowRight } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useRelatedEvents } from "@/hooks/useRelatedEvents";
-import type { Event } from "@/types/event";
-import { getSectorUrl } from "@/lib/sectorUrl";
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useRelatedEvents } from '@/hooks/useRelatedEvents';
+import { getSectorUrl } from '@/lib/sectorUrl';
+import EventCompactCard from './EventCompactCard';
+import type { Event } from '@/types/event';
 
 interface RelatedEventsProps {
-  event: Pick<Event, "id_event" | "secteur" | "ville">;
+  event: Pick<Event, 'id_event' | 'secteur' | 'ville'>;
   limit?: number;
   excludeIds?: string[];
 }
 
+/**
+ * « Vous pourriez également être intéressé par » (lot 9).
+ * Rangée pleine largeur, seule sur sa ligne. Carousel horizontal sur petit écran.
+ * Les éditions déjà affichées (bloc séries) sont exclues via excludeIds.
+ */
 export const RelatedEvents = ({ event, limit = 4, excludeIds = [] }: RelatedEventsProps) => {
-  const { data: rawRelatedEvents, isLoading } = useRelatedEvents(event.id_event, limit + excludeIds.length);
+  const { data: rawRelatedEvents, isLoading } = useRelatedEvents(
+    event.id_event,
+    limit + excludeIds.length,
+  );
 
-  // Filter out events already shown in series block
-  const relatedEvents = rawRelatedEvents?.filter(e => !excludeIds.includes(e.id)).slice(0, limit) ?? null;
+  const relatedEvents =
+    rawRelatedEvents?.filter((e) => !excludeIds.includes(e.id)).slice(0, limit) ?? null;
 
-  // Don't render if no related events
   if (!isLoading && (!relatedEvents || relatedEvents.length === 0)) {
     return null;
   }
 
-  const formatDate = (dateStr: string) => {
-    return format(new Date(dateStr), "dd MMM yyyy", { locale: fr });
-  };
+  const sectorLabel =
+    event.secteur && Array.isArray(event.secteur) && event.secteur.length > 0
+      ? (event.secteur[0] as string)
+      : null;
 
   return (
-    <section className="mt-8">
-      <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-        <ArrowRight className="h-5 w-5 text-foreground" />
-        Événements similaires
+    <section className="min-w-0">
+      <h2 className="heading-display text-xl font-semibold text-foreground sm:text-2xl">
+        Vous pourriez également être intéressé par
       </h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {isLoading ? (
-          // Skeleton loading
-          Array.from({ length: limit }).map((_, i) => (
-            <Card key={i} className="p-4">
-              <Skeleton className="h-24 w-full rounded-md mb-3" />
-              <Skeleton className="h-4 w-3/4 mb-2" />
-              <Skeleton className="h-3 w-1/2" />
-            </Card>
-          ))
-        ) : (
-          relatedEvents?.map((relEvent) => (
-            <Link
-              key={relEvent.id}
-              to={`/events/${relEvent.slug}`}
-              className="group"
-            >
-              <Card className="p-4 h-full hover:shadow-md transition-shadow border-primary/10 hover:border-primary/30">
-                {/* Image */}
-                {relEvent.url_image && (
-                  <div className="aspect-video rounded-md overflow-hidden mb-3 bg-muted">
-                    <img
-                      src={relEvent.url_image}
-                      alt={relEvent.nom_event}
-                      loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                )}
-
-                {/* Title */}
-                <h3 className="font-medium text-sm text-foreground line-clamp-2 group-hover:text-primary transition-colors mb-2">
-                  {relEvent.nom_event}
-                </h3>
-
-                {/* Metadata */}
-                <div className="space-y-1 text-xs text-muted-foreground">
-                  {relEvent.date_debut && (
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>{formatDate(relEvent.date_debut)}</span>
-                    </div>
-                  )}
-                  {relEvent.ville && (
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      <span>{relEvent.ville}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Shared sectors badge */}
-                {relEvent.shared_sectors_count && relEvent.shared_sectors_count > 0 && (
-                  <div className="mt-2">
-                    <span className="inline-block text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                      {relEvent.shared_sectors_count} secteur{relEvent.shared_sectors_count > 1 ? "s" : ""} en commun
-                    </span>
-                  </div>
-                )}
-              </Card>
-            </Link>
-          ))
-        )}
+      <div className="mt-4 -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4">
+        {isLoading
+          ? Array.from({ length: limit }).map((_, i) => (
+              <Skeleton key={i} className="h-56 w-[78%] flex-none rounded-xl sm:w-auto" />
+            ))
+          : relatedEvents?.map((relEvent) => (
+              <EventCompactCard
+                key={relEvent.id}
+                variant="tile"
+                slug={relEvent.slug}
+                name={relEvent.nom_event}
+                dateDebut={relEvent.date_debut}
+                ville={relEvent.ville}
+                imageUrl={relEvent.url_image}
+                badge={
+                  relEvent.shared_sectors_count && relEvent.shared_sectors_count > 0
+                    ? `${relEvent.shared_sectors_count} secteur${
+                        relEvent.shared_sectors_count > 1 ? 's' : ''
+                      } en commun`
+                    : null
+                }
+                className="w-[78%] flex-none snap-start sm:w-auto"
+              />
+            ))}
       </div>
 
-      {/* Link to all events */}
-      {event.secteur && Array.isArray(event.secteur) && event.secteur.length > 0 && (
-        <div className="mt-4 text-center">
+      {sectorLabel && (
+        <div className="mt-4">
           <Link
-            to={getSectorUrl(event.secteur[0])}
-            className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+            to={getSectorUrl(sectorLabel)}
+            className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
           >
-            Voir tous les événements {event.secteur[0]}
+            Voir tous les événements {sectorLabel}
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
