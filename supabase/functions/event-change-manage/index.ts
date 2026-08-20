@@ -181,7 +181,7 @@ async function sendOrganizerDecisionEmail(
     }
 
     const href = params.eventSlug
-      ? `https://lotexpo.com/organisateur/salon/${params.eventSlug}`
+      ? `https://lotexpo.com/events/${params.eventSlug}/gerer`
       : 'https://lotexpo.com'
 
     const html = renderEmailShell({
