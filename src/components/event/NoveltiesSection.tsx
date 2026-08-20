@@ -107,7 +107,11 @@ export default function NoveltiesSection({
       return (
         <>
           <section className="space-y-4">
-            <h2 className="heading-display text-2xl">Nouveautés à découvrir sur le salon</h2>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="heading-display text-2xl">Nouveautés à découvrir sur le salon</h2>
+              <AddNoveltyButton event={event} label="Publier" size="sm" variant="outline" />
+            </div>
+
             <NoveltiesPreLaunchBanner
               eventDate={event.date_debut}
               eventName={event.nom_event}
