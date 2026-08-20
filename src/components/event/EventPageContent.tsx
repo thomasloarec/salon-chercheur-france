@@ -295,33 +295,26 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             
             {/* Lot 4 — Grille 70 / 30 : Nouveautés à gauche, Radar CRM à droite.
                 Sans exposant, le Radar ne s'affiche pas et les Nouveautés
-                occupent toute la largeur (pas de colonne vide). */}
+                occupent toute la largeur (pas de colonne vide).
+                Mobile / tablette : empilé, Nouveautés d'abord. */}
             <div
-              className="grid gap-6 items-start"
-              style={
+              className={
                 capabilities.showRadarCrm
-                  ? undefined
-                  : { gridTemplateColumns: 'minmax(0, 1fr)' }
+                  ? 'grid items-start gap-6 lg:[grid-template-columns:minmax(0,7fr)_minmax(280px,3fr)]'
+                  : 'grid gap-6'
               }
             >
-              <div
-                className={
-                  capabilities.showRadarCrm
-                    ? 'grid gap-6 items-start lg:[grid-template-columns:minmax(0,7fr)_minmax(280px,3fr)]'
-                    : 'grid gap-6'
-                }
-              >
-                <section id="nouveautes" className="min-w-0">
-                  <NoveltiesSection event={event} exhibitorCount={exhibitorCount} isEventPast={isEventPast} />
-                </section>
+              <section id="nouveautes" className="min-w-0">
+                <NoveltiesSection event={event} exhibitorCount={exhibitorCount} isEventPast={isEventPast} />
+              </section>
 
-                {capabilities.showRadarCrm && (
-                  <aside className="min-w-0">
-                    <EventRadarCrmWidget event={event} isEventPast={isEventPast} />
-                  </aside>
-                )}
-              </div>
+              {capabilities.showRadarCrm && (
+                <aside className="min-w-0">
+                  <EventRadarCrmWidget event={event} isEventPast={isEventPast} />
+                </aside>
+              )}
             </div>
+
 
             {/* Colonne principale : Exposants → IA. Sidebar : À propos. */}
             <div className="grid grid-cols-12 gap-6">
