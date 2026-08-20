@@ -26,28 +26,81 @@ const MAX_VISIBLE = 4;
 
 /**
  * Conteneur carte commun aux neuf états.
- * Lot 5 : en-tête navy, titre en heading-display (Playfair), corps en police
- * courante. Dimensions stables d'un état à l'autre pour éviter tout saut de
- * mise en page quand les données arrivent.
+ *
+ * Lot 12 : registre navy texturé (même actif que le bandeau Parcours IA),
+ * liseré violet, hauteur minimale garantie. Les états sans données ont
+ * exactement la même présence que l'état plein : c'est le seul moyen pour
+ * qu'un visiteur découvre l'outil.
  */
 const WidgetShell: React.FC<{ children: React.ReactNode; reveal?: boolean }> = ({
   children,
   reveal,
 }) => (
   <section
-    className="overflow-hidden rounded-xl border border-border bg-card"
+    className="relative flex min-h-[340px] w-full flex-col overflow-hidden rounded-2xl bg-surface-inverse text-inverse ring-1 ring-inset ring-primary/40"
     aria-label="Radar CRM"
   >
-    <div className="flex items-center gap-2 bg-surface-inverse px-4 py-3">
-      <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-inverse-primary/20">
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.28]"
+      style={{ backgroundImage: 'url(/home-texture-plexus.jpg)' }}
+    />
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0"
+      style={{
+        background:
+          'radial-gradient(85% 65% at 50% 30%, transparent, hsl(var(--surface-inverse) / 0.9))',
+      }}
+    />
+    {/* Marqueur d'identité : halo violet discret en tête de bloc. */}
+    <div
+      aria-hidden
+      className="pointer-events-none absolute -top-16 left-1/2 h-32 w-56 -translate-x-1/2 rounded-full bg-primary/25 blur-3xl"
+    />
+
+    <div className="relative flex items-center gap-2 px-4 pb-3 pt-4">
+      <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-inverse-primary/20 ring-1 ring-inverse-primary/40">
         <Radar className="h-4 w-4 text-inverse-primary" aria-hidden="true" />
       </span>
       <h2 className="heading-display text-base text-inverse">Radar CRM</h2>
-
-
     </div>
-    <div className={`space-y-3 p-4 ${reveal ? 'radar-reveal' : ''}`}>{children}</div>
+
+    <div
+      className={`relative flex flex-1 flex-col gap-3 px-4 pb-4 ${reveal ? 'radar-reveal' : ''}`}
+    >
+      {children}
+    </div>
   </section>
+);
+
+/**
+ * Lignes fantômes purement décoratives : elles suggèrent une liste
+ * d'entreprises sans rien révéler. Aucun nom, aucune initiale, aucun logo,
+ * aucun domaine, aucun compteur — leur nombre est fixe et sans rapport avec
+ * les données.
+ */
+const GhostRows: React.FC<{ locked?: boolean }> = ({ locked }) => (
+  <ul className="space-y-2" aria-hidden="true">
+    {[0, 1, 2].map((i) => (
+      <li
+        key={i}
+        className="flex items-center gap-2.5 rounded-lg border border-inverse/10 bg-inverse/[0.06] px-2.5 py-2.5"
+      >
+        <span className="h-8 w-8 flex-shrink-0 rounded bg-inverse/15" />
+        <span className="min-w-0 flex-1 space-y-1.5">
+          <span
+            className="block h-3 rounded bg-inverse/15"
+            style={{ width: `${[86, 68, 76][i]}%` }}
+          />
+          <span className="block h-2.5 w-1/3 rounded bg-inverse/10" />
+        </span>
+        {locked && (
+          <Lock className="h-3.5 w-3.5 flex-shrink-0 text-inverse/50" aria-hidden="true" />
+        )}
+      </li>
+    ))}
+  </ul>
 );
 
 /**
@@ -108,17 +161,23 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
   if (!authLoading && !user) {
     return (
       <WidgetShell>
-        <p className="text-sm text-muted-foreground">
-          Vous utilisez un CRM ? Découvrez si vos prospects exposent sur ce salon.
+        <p className="text-sm font-medium text-inverse">
+          Vos prospects exposent peut-être sur ce salon.
         </p>
-        <Button asChild variant="outline" size="sm" className="w-full">
-          <Link
-            to="/radar-crm"
-            onClick={() => void trackRadarEvent('crm_event_widget_teaser_clicked', { eventId })}
-          >
-            Tester Radar CRM
-          </Link>
-        </Button>
+        <p className="text-xs text-inverse/75">
+          Radar CRM croise votre portefeuille avec la liste des exposants.
+        </p>
+        <GhostRows />
+        <div className="mt-auto pt-2">
+          <Button asChild size="sm" className="w-full">
+            <Link
+              to="/radar-crm"
+              onClick={() => void trackRadarEvent('crm_event_widget_teaser_clicked', { eventId })}
+            >
+              Tester Radar CRM
+            </Link>
+          </Button>
+        </div>
       </WidgetShell>
     );
   }
@@ -127,19 +186,19 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
   if (authLoading || (user && isLoading)) {
     return (
       <WidgetShell>
-        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-4 w-3/4 bg-inverse/10" />
         <div className="space-y-2">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-2 rounded-lg border border-border px-2.5 py-2">
-              <Skeleton className="h-8 w-8 flex-shrink-0 rounded" />
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-2 rounded-lg border border-inverse/10 px-2.5 py-2">
+              <Skeleton className="h-8 w-8 flex-shrink-0 rounded bg-inverse/10" />
               <div className="min-w-0 flex-1 space-y-1.5">
-                <Skeleton className="h-3.5 w-full" />
-                <Skeleton className="h-3 w-1/2" />
+                <Skeleton className="h-3.5 w-full bg-inverse/10" />
+                <Skeleton className="h-3 w-1/2 bg-inverse/10" />
               </div>
             </div>
           ))}
         </div>
-        <Skeleton className="h-9 w-full" />
+        <Skeleton className="mt-auto h-9 w-full bg-inverse/10" />
       </WidgetShell>
     );
   }
@@ -147,37 +206,44 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
   // État 3 — erreur : la RPC gatée a échoué. Testé AVANT `!data`, sinon la branche
   // était inatteignable (en erreur, React Query ne renvoie aucune donnée).
   if (isError) {
-
     return (
       <WidgetShell>
-        <div className="flex items-start gap-2 rounded-lg bg-danger-surface px-3 py-2.5 text-sm text-foreground">
-          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-destructive" aria-hidden="true" />
+        <div className="flex items-start gap-2 rounded-lg border border-inverse/15 bg-inverse/[0.06] px-3 py-2.5 text-sm text-inverse">
+          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-inverse-primary" aria-hidden="true" />
           Impossible de charger vos correspondances CRM pour le moment.
         </div>
-        <Button variant="outline" size="sm" className="w-full" onClick={() => void refetch()}>
-          <RefreshCw className="mr-1.5 h-4 w-4" aria-hidden="true" />
-          Réessayer
-        </Button>
+        <GhostRows />
+        <div className="mt-auto pt-2">
+          <Button size="sm" className="w-full" onClick={() => void refetch()}>
+            <RefreshCw className="mr-1.5 h-4 w-4" aria-hidden="true" />
+            Réessayer
+          </Button>
+        </div>
       </WidgetShell>
     );
   }
 
   if (!data) return null;
 
-
   // État 4 — connecté, aucun import CRM
   if (data.status === 'no_imports') {
     return (
       <WidgetShell>
-        <p className="text-sm text-muted-foreground">
-          Importez votre fichier CRM pour voir si vos entreprises exposent sur ce salon.
+        <p className="text-sm font-medium text-inverse">
+          Voyez qui de votre portefeuille expose ici.
         </p>
-        <Button asChild variant="outline" size="sm" className="w-full">
-          <Link to="/radar-crm">
-            <Upload className="mr-1.5 h-4 w-4" aria-hidden="true" />
-            Importer mon fichier
-          </Link>
-        </Button>
+        <p className="text-xs text-inverse/75">
+          Importez votre fichier CRM, Radar CRM fait le rapprochement.
+        </p>
+        <GhostRows />
+        <div className="mt-auto pt-2">
+          <Button asChild size="sm" className="w-full">
+            <Link to="/radar-crm">
+              <Upload className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              Importer mon fichier
+            </Link>
+          </Button>
+        </div>
       </WidgetShell>
     );
   }
@@ -186,16 +252,19 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
   if (data.status === 'processing') {
     return (
       <WidgetShell>
-        <div className="flex items-center gap-2 text-sm text-foreground">
-          <Loader2 className="h-4 w-4 flex-shrink-0 animate-spin text-primary" aria-hidden="true" />
+        <div className="flex items-center gap-2 text-sm font-medium text-inverse">
+          <Loader2 className="h-4 w-4 flex-shrink-0 animate-spin text-inverse-primary" aria-hidden="true" />
           Analyse CRM en cours…
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-inverse/75">
           Vos correspondances seront bientôt disponibles.
         </p>
-        <Button asChild variant="ghost" size="sm" className="w-full justify-start px-0">
-          <Link to="/radar-crm/results" className="text-primary">Voir mon Radar CRM</Link>
-        </Button>
+        <GhostRows />
+        <div className="mt-auto pt-2">
+          <Button asChild size="sm" className="w-full">
+            <Link to="/radar-crm/results">Voir mon Radar CRM</Link>
+          </Button>
+        </div>
       </WidgetShell>
     );
   }
@@ -204,13 +273,16 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
   if (data.status === 'failed') {
     return (
       <WidgetShell>
-        <div className="flex items-start gap-2 rounded-lg bg-warning-surface px-3 py-2.5 text-sm text-warning-foreground">
-          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-warning" aria-hidden="true" />
+        <div className="flex items-start gap-2 rounded-lg border border-inverse/15 bg-inverse/[0.06] px-3 py-2.5 text-sm text-inverse">
+          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-inverse-primary" aria-hidden="true" />
           Votre dernier import CRM n'a pas pu être analysé.
         </div>
-        <Button asChild variant="outline" size="sm" className="w-full">
-          <Link to="/radar-crm">Relancer un import</Link>
-        </Button>
+        <GhostRows />
+        <div className="mt-auto pt-2">
+          <Button asChild size="sm" className="w-full">
+            <Link to="/radar-crm">Relancer un import</Link>
+          </Button>
+        </div>
       </WidgetShell>
     );
   }
@@ -220,56 +292,47 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
   if (data.status === 'no_matches') {
     return (
       <WidgetShell reveal>
-        <p className="text-sm text-foreground">
+        <p className="text-sm font-medium text-inverse">
           Aucune entreprise de votre CRM n'expose sur ce salon.
         </p>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-inverse/75">
           Votre import est bien pris en compte : ce salon ne croise simplement pas votre
           portefeuille pour le moment.
         </p>
-        <Button asChild variant="ghost" size="sm" className="w-full justify-start px-0">
-          <Link to="/radar-crm/results" className="text-primary">Voir mon Radar CRM</Link>
-        </Button>
+        <GhostRows />
+        <div className="mt-auto pt-2">
+          <Button asChild size="sm" className="w-full">
+            <Link to="/radar-crm/results">Voir mon Radar CRM</Link>
+          </Button>
+        </div>
       </WidgetShell>
     );
   }
 
   // État 8 — verrouillé : la RPC ne renvoie NI compteur NI identités, seulement
   // `has_matches`. Rien ici ne doit permettre de déduire un nombre : les
-  // placeholders sont en nombre fixe (2) et sans rapport avec les données.
+  // lignes fantômes sont en nombre fixe et sans rapport avec les données.
   if (data.status === 'locked') {
     return (
       <WidgetShell>
-        <p className="text-sm text-foreground">
+        <p className="text-sm font-medium text-inverse">
           Des entreprises de votre CRM exposent à ce salon.
         </p>
-        <ul className="space-y-2" aria-hidden="true">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <li
-              key={i}
-              className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-2.5 py-2"
-            >
-              <span className="h-8 w-8 flex-shrink-0 rounded bg-muted blur-[2px]" />
-              <span className="min-w-0 flex-1 space-y-1.5">
-                <span className="block h-3 w-full rounded bg-muted blur-[2px]" />
-                <span className="block h-2.5 w-1/2 rounded bg-muted blur-[2px]" />
-              </span>
-              <Lock className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" aria-hidden="true" />
-            </li>
-          ))}
-        </ul>
-        <p className="text-xs text-muted-foreground">
+        <GhostRows locked />
+        <p className="text-xs text-inverse/75">
           Débloquez pour voir quelles entreprises exposent et préparer vos rendez-vous.
         </p>
-        <Button asChild size="sm" className="w-full">
-          <Link
-            to="/radar-crm/results"
-            onClick={() => void trackRadarEvent('crm_access_requested', { source: 'event_widget', eventId })}
-          >
-            <Lock className="mr-1.5 h-4 w-4" aria-hidden="true" />
-            Débloquer
-          </Link>
-        </Button>
+        <div className="mt-auto pt-2">
+          <Button asChild size="sm" className="w-full">
+            <Link
+              to="/radar-crm/results"
+              onClick={() => void trackRadarEvent('crm_access_requested', { source: 'event_widget', eventId })}
+            >
+              <Lock className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              Débloquer
+            </Link>
+          </Button>
+        </div>
       </WidgetShell>
     );
   }
@@ -297,7 +360,7 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
   return (
     <>
       <WidgetShell reveal>
-        <p className="text-sm text-foreground">
+        <p className="text-sm text-inverse">
           <strong className="font-semibold">{data.total}</strong> entreprise{data.total > 1 ? 's' : ''} de votre CRM
           {data.total > 1 ? ' exposent' : ' expose'} sur ce salon.
         </p>
@@ -313,9 +376,9 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
                 <button
                   type="button"
                   onClick={() => openExhibitor(m)}
-                  className="flex w-full items-start gap-2.5 rounded-lg border border-border bg-card px-2.5 py-2.5 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                  className="flex w-full items-start gap-2.5 rounded-lg border border-inverse/15 bg-inverse/[0.06] px-2.5 py-2.5 text-left transition-colors hover:border-inverse-primary/50 hover:bg-inverse/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inverse-primary focus-visible:ring-offset-1"
                 >
-                  <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-background p-0.5">
+                  <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-inverse/15 bg-background p-0.5">
                     {logoUrl ? (
                       <img
                         src={logoUrl}
@@ -335,14 +398,14 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
                         ellipse ensuite, nom complet dans `title`. Pas de réduction
                         de la taille de police. */}
                     <span
-                      className="line-clamp-2 break-words text-sm font-medium leading-snug text-foreground"
+                      className="line-clamp-2 break-words text-sm font-medium leading-snug text-inverse"
                       title={m.crmCompanyName}
                     >
                       {m.crmCompanyName}
                     </span>
                     {showExhibitor && (
                       <span
-                        className="mt-0.5 line-clamp-2 break-words text-xs leading-snug text-muted-foreground"
+                        className="mt-0.5 line-clamp-2 break-words text-xs leading-snug text-inverse/75"
                         title={m.exhibitorName ?? undefined}
                       >
                         Exposant : {m.exhibitorName}
@@ -350,12 +413,12 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
                     )}
                     <span className="mt-1 flex flex-wrap items-center gap-1.5">
                       {m.stand && (
-                        <span className="inline-flex items-center rounded-full bg-bubble px-2 py-0.5 text-[11px] font-medium text-bubble-foreground">
+                        <span className="inline-flex items-center rounded-full bg-inverse/15 px-2 py-0.5 text-[11px] font-medium text-inverse">
                           Stand {m.stand}
                         </span>
                       )}
                       {m.needsReview && (
-                        <span className="inline-flex items-center rounded-full border border-warning bg-warning-surface px-2 py-0.5 text-[11px] font-medium text-warning-foreground">
+                        <span className="inline-flex items-center rounded-full border border-inverse/30 px-2 py-0.5 text-[11px] font-medium text-inverse/80">
                           à vérifier
                         </span>
                       )}
@@ -368,20 +431,22 @@ const EventRadarCrmWidget: React.FC<EventRadarCrmWidgetProps> = ({ event, isEven
         </ul>
 
         {remaining > 0 && (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-inverse/75">
             +{remaining} autre{remaining > 1 ? 's' : ''} entreprise{remaining > 1 ? 's' : ''} détectée{remaining > 1 ? 's' : ''}
           </p>
         )}
 
-        <Button asChild size="sm" className="w-full">
-          <Link
-            to={`/radar-crm/results?eventId=${eventId}`}
-            onClick={() => void trackRadarEvent('crm_event_widget_results_clicked', { eventId, count: data.total })}
-          >
-            Voir dans Radar CRM
-            <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
-          </Link>
-        </Button>
+        <div className="mt-auto pt-2">
+          <Button asChild size="sm" className="w-full">
+            <Link
+              to={`/radar-crm/results?eventId=${eventId}`}
+              onClick={() => void trackRadarEvent('crm_event_widget_results_clicked', { eventId, count: data.total })}
+            >
+              Voir dans Radar CRM
+              <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
+            </Link>
+          </Button>
+        </div>
       </WidgetShell>
 
       {/* Popup détail existante (description, site web, autres salons…) */}
