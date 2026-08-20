@@ -142,12 +142,47 @@ export const EventExhibitorsSection: React.FC<Props> = ({
     return base;
   }, [retained, hasOthers, hasCategoryNav, othersCount]);
 
+  // Lot 9 — toutes les catégories, singletons compris, pour permettre
+  // la sélection directe d'une catégorie à un seul exposant depuis le drawer.
+  const allCards: CategoryCardModel[] = useMemo(() => {
+    const named = (categories || []).filter((r) => r.category_id);
+    const base: CategoryCardModel[] = named.map((r) => ({
+      key: r.category_id as string,
+      label: r.label,
+      slug: r.slug,
+      count: r.exhibitor_count,
+      examples: r.example_names || [],
+    }));
+    if (hasOthers && hasCategoryNav) {
+      base.push({
+        key: OTHERS_KEY,
+        label: 'Autres exposants',
+        slug: 'autres-exposants',
+        count: othersCount,
+        examples: [],
+      });
+    }
+    return base;
+  }, [categories, hasOthers, hasCategoryNav, othersCount]);
+
   // Première catégorie sélectionnée par défaut.
   useEffect(() => {
     if (!activeKey && cards.length > 0) setActiveKey(cards[0].key);
   }, [cards, activeKey]);
 
-  const activeCard = cards.find((c) => c.key === activeKey) ?? cards[0] ?? null;
+  const activeCard = allCards.find((c) => c.key === activeKey) ?? cards[0] ?? null;
+
+  // Les cartes visibles : les plus fournies, plus la catégorie active
+  // si elle a été choisie depuis le drawer (singleton compris).
+  const visibleCards: CategoryCardModel[] = useMemo(() => {
+    const head = cards.slice(0, VISIBLE_CARDS);
+    if (!activeCard || head.some((c) => c.key === activeCard.key)) return head;
+    // La carte « Autres exposants » reste accessible en dernier rang.
+    const othersCard = head.find((c) => c.key === OTHERS_KEY);
+    const rest = head.filter((c) => c.key !== OTHERS_KEY);
+    const kept = rest.slice(0, VISIBLE_CARDS - 1 - (othersCard ? 1 : 0));
+    return othersCard ? [activeCard, ...kept, othersCard] : [activeCard, ...kept];
+  }, [cards, activeCard]);
 
   // Paramètres du carousel selon l'état (catégorie, bucket « Autres », ou repli).
   const carousel = useMemo(() => {
@@ -316,7 +351,7 @@ export const EventExhibitorsSection: React.FC<Props> = ({
             ) : hasCategoryNav ? (
               <div className="mt-5">
                 <EventCategoryCards
-                  cards={cards.slice(0, VISIBLE_CARDS)}
+                  cards={visibleCards}
                   activeKey={activeCard?.key ?? null}
                   onSelect={setActiveKey}
                 />
@@ -374,7 +409,9 @@ export const EventExhibitorsSection: React.FC<Props> = ({
                   key={c.category_id}
                   type="button"
                   onClick={() => {
-                    setActiveKey(c.exhibitor_count > 1 ? (c.category_id as string) : OTHERS_KEY);
+                    // Lot 9 — même pour une catégorie à un seul exposant,
+                    // on affiche SA catégorie et non le bucket « Autres ».
+                    setActiveKey(c.category_id as string);
                     setAllCategoriesOpen(false);
                   }}
                   className={cn(
