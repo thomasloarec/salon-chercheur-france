@@ -14,6 +14,8 @@ import { SectorArticlesBlock } from '@/components/event/SectorArticlesBlock';
 import { EventStatsStrip } from '@/components/event/EventStatsStrip';
 import EventAiBanner from '@/components/event/EventAiBanner';
 import EventInfoCarousel from '@/components/event/EventInfoCarousel';
+import EventBand from '@/components/event/EventBand';
+import { Reveal } from '@/components/ui/reveal';
 
 import EventExhibitorsSection from '@/components/event/EventExhibitorsSection';
 import ClaimSalonBanner from '@/components/event/ClaimSalonBanner';
@@ -157,7 +159,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
   return (
     <>
       <SEOHead event={event} noIndex={isPreview} />
-      <div className="min-h-screen bg-muted/30">
+      <div className="min-h-screen bg-background">
         <Header />
         
         {/* Admin toolbar - shown if user is admin */}
@@ -215,25 +217,22 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
           </div>
         )}
         
-        <main className="py-8">
-          <div className="container mx-auto px-4 space-y-8">
+        <main>
+          {/* ═══ Bande 1 — Hero, texture claire (page Recherche IA) ═══
+              Contient : notice aperçu, actions admin/propriétaire, Hero,
+              bande de revendication en continuité. */}
+          <EventBand tone="light-texture" space="md" className="pt-6 md:pt-8">
             {/* Preview notice */}
             {isPreview && (
-              <div className="bg-primary/10 border-l-4 border-primary p-4 rounded">
-                <div className="flex items-center">
-                  <div className="ml-3">
-                    <p className="text-sm text-foreground/80">
-                      <strong>Mode aperçu:</strong> Cet événement n'est pas encore publié et n'est visible que par les administrateurs.
-                    </p>
-                  </div>
-                </div>
+              <div className="mb-6 rounded-lg border-l-4 border-primary bg-primary/10 p-4">
+                <p className="text-sm text-foreground/80">
+                  <strong>Mode aperçu:</strong> Cet événement n'est pas encore publié et n'est visible que par les administrateurs.
+                </p>
               </div>
             )}
 
-            {/* Admin Menu */}
-            <section className="flex items-center justify-between">
-              <div></div>
-              <div className="flex items-center gap-2">
+            {(isOwner || isAdmin) && (
+              <div className="mb-4 flex items-center justify-end gap-2">
                 {isOwner && (
                   <Button
                     variant="outline"
@@ -252,30 +251,35 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                   onEventDeleted={handleEventDeleted}
                 />
               </div>
-            </section>
-            
+            )}
+
             <EventPageHeader
               event={event}
               canPrepareVisit={canPrepareVisit}
               onPrepareVisit={() => setPrepareVisitOpen(true)}
             />
 
-            {/* Lot 7 : la description longue est désormais dans le carousel d'informations. */}
-
             {/* Bandeau discret : revendication de la page salon par l'organisateur */}
-            <ClaimSalonBanner event={event} />
+            <div className="mt-8">
+              <ClaimSalonBanner event={event} />
+            </div>
+          </EventBand>
 
-            {/* Frise statistiques — présente aussi sur les événements passés (mode historique) */}
-            <EventStatsStrip
-              event={event}
-              exhibitorCount={exhibitorCount}
-              noveltyCount={noveltyCount}
-            />
-
+          {/* ═══ Bande 2 — blanc : frise statistiques, nouveautés,
+              exposants + Radar CRM ═══ */}
+          <EventBand tone="white" space="md">
+            <Reveal>
+              {/* Frise statistiques — présente aussi sur les événements passés */}
+              <EventStatsStrip
+                event={event}
+                exhibitorCount={exhibitorCount}
+                noveltyCount={noveltyCount}
+              />
+            </Reveal>
 
             {/* Past event banner */}
             {isEventPast && (
-              <div className="rounded-r-lg border-l-4 border-primary bg-primary/10 px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
+              <div className="mt-10 rounded-r-lg border-l-4 border-primary bg-primary/10 px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
                 <p className="text-sm text-foreground/80">
                   Cet événement est terminé. Retrouvez les prochains salons de ce secteur sur Lotexpo.
                 </p>
@@ -287,67 +291,87 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                 </Link>
               </div>
             )}
-            
-            {/* Lot 8 — Nouveautés en pleine largeur */}
-            <section id="nouveautes" className="min-w-0">
-              <NoveltiesSection event={event} exhibitorCount={exhibitorCount} isEventPast={isEventPast} />
-            </section>
 
-            {/* Lot 8 — Exposants 70 % adossés au Radar CRM 30 %.
-                Mêmes conditions d'affichage : au moins un exposant.
-                Si le Radar est masqué (événement passé), les exposants
-                reprennent la pleine largeur. Mobile : Radar en tête. */}
+            {/* Nouveautés en pleine largeur */}
+            <Reveal>
+              <section id="nouveautes" className="mt-12 min-w-0 md:mt-16 lg:mt-24">
+                <NoveltiesSection event={event} exhibitorCount={exhibitorCount} isEventPast={isEventPast} />
+              </section>
+            </Reveal>
+
+            {/* Exposants 70 % adossés au Radar CRM 30 %. */}
             {exhibitorCount > 0 && (
-              <div
-                className={
-                  capabilities.showRadarCrm
-                    ? 'grid items-start gap-6 lg:[grid-template-columns:minmax(0,7fr)_minmax(280px,3fr)]'
-                    : 'grid gap-6'
-                }
-              >
-                {capabilities.showRadarCrm && (
-                  <aside className="order-first min-w-0 lg:order-last lg:sticky lg:top-24">
-                    <EventRadarCrmWidget event={event} isEventPast={isEventPast} />
-                  </aside>
-                )}
+              <Reveal>
+                <div
+                  className={
+                    capabilities.showRadarCrm
+                      ? 'mt-12 grid items-start gap-6 md:mt-16 lg:mt-24 lg:[grid-template-columns:minmax(0,7fr)_minmax(280px,3fr)]'
+                      : 'mt-12 grid gap-6 md:mt-16 lg:mt-24'
+                  }
+                >
+                  {capabilities.showRadarCrm && (
+                    <aside className="order-first min-w-0 lg:order-last lg:sticky lg:top-24">
+                      <EventRadarCrmWidget event={event} isEventPast={isEventPast} />
+                    </aside>
+                  )}
 
-                <section id="exposants" className="min-w-0">
-                  <EventExhibitorsSection
-                    event={event}
-                    exhibitorCount={exhibitorCount}
-                    aiAvailable={canPrepareVisit}
-                    onPrepareVisit={() => setPrepareVisitOpen(true)}
-                  />
-                </section>
-              </div>
+                  <section id="exposants" className="min-w-0">
+                    <EventExhibitorsSection
+                      event={event}
+                      exhibitorCount={exhibitorCount}
+                      aiAvailable={canPrepareVisit}
+                      onPrepareVisit={() => setPrepareVisitOpen(true)}
+                    />
+                  </section>
+                </div>
+              </Reveal>
             )}
+          </EventBand>
 
-            {/* Lot 7 — Bandeau navy Parcours IA (masqué si indisponible) */}
-            <EventAiBanner
-              canPrepareVisit={canPrepareVisit}
-              onPrepareVisit={() => setPrepareVisitOpen(true)}
-            />
+          {/* ═══ Bande 3 — texture sombre : bandeau Parcours IA.
+              Rendue uniquement quand le bandeau l'est : jamais de bande vide. */}
+          {canPrepareVisit && (
+            <EventBand tone="dark-texture" space="md">
+              <EventAiBanner
+                canPrepareVisit={canPrepareVisit}
+                onPrepareVisit={() => setPrepareVisitOpen(true)}
+              />
+            </EventBand>
+          )}
 
-            {/* Lot 7 — Zone gris très clair : carousel unique d'informations */}
-            <section className="-mx-4 rounded-2xl bg-muted/60 px-4 py-8 sm:px-8 sm:py-10">
+          {/* ═══ Bande 4 — gris très clair : carousel d'informations ═══ */}
+          <EventBand tone="soft" space="md">
+            <Reveal>
               <EventInfoCarousel event={event} />
-            </section>
+            </Reveal>
+          </EventBand>
 
+          {/* ═══ Bande 5 — blanc : blocs bas de page ═══ */}
+          <EventBand tone="white" space="md" innerClassName="space-y-12 md:space-y-16 lg:space-y-24">
             {/* Autres éditions de ce salon (séries) */}
-            <EventSeriesBlock event={event} onSeriesIds={handleSeriesIds} />
+            <Reveal>
+              <EventSeriesBlock event={event} onSeriesIds={handleSeriesIds} />
+            </Reveal>
 
             {/* Salons dans la même ville */}
-            <SameCityEventsBlock event={event} />
+            <Reveal>
+              <SameCityEventsBlock event={event} />
+            </Reveal>
 
             {/* Événements similaires pour le maillage interne SEO */}
-            <RelatedEvents event={event} limit={4} excludeIds={seriesEventIds} />
-
+            <Reveal>
+              <RelatedEvents event={event} limit={4} excludeIds={seriesEventIds} />
+            </Reveal>
 
             {/* Articles de blog liés au secteur */}
-            <SectorArticlesBlock event={event} />
+            <Reveal>
+              <SectorArticlesBlock event={event} />
+            </Reveal>
+          </EventBand>
 
-            {/* À propos de cette fiche — indépendance de la plateforme */}
-            <aside className="rounded-xl border border-border bg-muted/40 px-4 py-3">
+          {/* ═══ Bande 6 — blanc : disclaimer ═══ */}
+          <EventBand tone="white" space="sm">
+            <aside className="border-t border-border pt-6">
               <p className="text-xs leading-relaxed text-muted-foreground">
                 <span className="font-medium text-foreground/80">À propos de cette fiche. </span>
                 Lotexpo est une plateforme indépendante. Cette fiche est établie à partir d'informations publiques. Sa présence n'implique ni affiliation, ni partenariat officiel, ni mandat de l'organisateur, sauf mention contraire sur cette page. Les marques citées appartiennent à leurs titulaires et sont utilisées à seule fin d'identifier l'événement. Les informations officielles restent celles publiées par l'organisateur. Demande de correction ou de retrait : contact@lotexpo.com.{' '}
@@ -356,7 +380,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                 </Link>
               </p>
             </aside>
-          </div>
+          </EventBand>
         </main>
 
         <Footer />
