@@ -421,23 +421,29 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <PencilLine className="h-4 w-4" />
-                Modifications proposées
+                Modifications proposées (historique)
               </CardTitle>
             </CardHeader>
             <CardContent>
               {data.changeRequests.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-6">
-                  Aucune modification en attente pour ce salon.
+                  Aucune demande de modification pour ce salon.
                 </p>
               ) : (
                 <div className="space-y-4">
-                  {data.changeRequests.map((cr) => (
+                  {data.changeRequests.map((cr) => {
+                    const meta = statusMeta[cr.status] ?? {
+                      label: cr.status,
+                      className: 'bg-muted text-muted-foreground',
+                    };
+                    const isPending = cr.status === 'pending';
+                    return (
                     <div key={cr.id} className="border rounded-lg p-4 space-y-4">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <p className="font-medium text-sm">{cr.requester_name || '—'}</p>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs bg-amber-100 text-amber-800 border-amber-300">
-                            En attente
+                          <Badge variant="outline" className={`text-xs ${meta.className}`}>
+                            {meta.label}
                           </Badge>
                           <span className="text-xs text-muted-foreground">
                             {new Date(cr.created_at).toLocaleDateString('fr-FR')}
