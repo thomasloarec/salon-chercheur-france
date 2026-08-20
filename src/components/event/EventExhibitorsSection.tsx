@@ -20,7 +20,7 @@ import { ExhibitorsModal } from './ExhibitorsModal';
 import { ExhibitorDetailDialog } from './ExhibitorDetailDialog';
 
 const OTHERS_KEY = '__others__';
-const VISIBLE_CARDS = 6;
+const VISIBLE_CARDS = 4;
 
 const LIST_NOTICE =
   "Cette liste est constituée à partir des informations publiques disponibles. Elle peut être incomplète : certains exposants n'annoncent pas leur participation en ligne. Pour une liste exhaustive, consultez le site officiel de l'événement.";
