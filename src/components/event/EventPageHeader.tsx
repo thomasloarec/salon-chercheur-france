@@ -7,7 +7,6 @@ import {
   EyeOff,
   Calendar,
   Building,
-  Users,
   MapPin,
   Euro,
   Sparkles,
@@ -25,7 +24,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
 import { getEventTypeLabel } from '@/constants/eventTypes';
-import { formatAffluenceWithSuffix } from '@/utils/affluenceUtils';
 import type { Event } from '@/types/event';
 import {
   isEventPast as isEventPastFn,
@@ -133,8 +131,6 @@ export const EventPageHeader = ({
     }
   };
 
-  const affluenceValue = parseAffluence(event.affluence ?? null);
-  const affluenceLabel = affluenceValue ? formatAffluenceWithSuffix(event.affluence!) : null;
   const showTarif = isTarifDisplayable(event.tarif);
 
   const metadata: { key: string; icon: typeof CalendarDays; content: React.ReactNode }[] = [];
