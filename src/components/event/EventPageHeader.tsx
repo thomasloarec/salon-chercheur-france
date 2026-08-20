@@ -27,7 +27,6 @@ import { getEventTypeLabel } from '@/constants/eventTypes';
 import type { Event } from '@/types/event';
 import {
   isEventPast as isEventPastFn,
-  parseAffluence,
   isTarifDisplayable,
 } from '@/lib/eventCapabilities';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
