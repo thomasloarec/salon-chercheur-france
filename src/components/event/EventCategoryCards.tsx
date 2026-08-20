@@ -59,7 +59,7 @@ export const EventCategoryCards: React.FC<Props> = ({ cards, activeKey, onSelect
           aria-selected={active}
           onClick={() => onSelect(card.key)}
           className={cn(
-            'rounded-xl border bg-card p-4 text-left transition-[background-color,border-color,box-shadow] duration-200 motion-reduce:transition-none',
+            'rounded-xl border bg-card p-4 text-left transition-[background-color,border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-sm motion-reduce:transition-none motion-reduce:hover:translate-y-0',
             active
               ? 'border-primary bg-accent shadow-sm'
               : 'hover:border-primary/40 hover:bg-muted/40',
