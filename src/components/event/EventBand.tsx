@@ -57,20 +57,21 @@ export const EventBand: React.FC<EventBandProps> = ({
     >
       {tone === 'light-texture' && (
         <>
+          {/* Texture reprise telle quelle de la page Recherche IA. Elle est
+              par nature très pâle (247–255) : aucun voile n'est nécessaire,
+              le contraste du texte reste celui du blanc. */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat opacity-70"
+            className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{ backgroundImage: "url('/backgrounds/recherche-ia-bg.jpg')" }}
           />
-          {/* Voile blanc : la texture donne de la matière sans jamais réduire
-              le contraste du texte posé dessus. Le dégradé se ferme vers le bas
-              pour raccorder proprement sur la bande blanche suivante. */}
+          {/* Fondu bas uniquement : raccord propre sur la bande blanche suivante. */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-24"
             style={{
               background:
-                'linear-gradient(180deg, hsl(var(--background) / 0.42) 0%, hsl(var(--background) / 0.62) 55%, hsl(var(--background) / 0.95) 100%)',
+                'linear-gradient(180deg, hsl(var(--background) / 0), hsl(var(--background)))',
             }}
           />
         </>
