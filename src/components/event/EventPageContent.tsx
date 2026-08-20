@@ -6,19 +6,16 @@ import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { EventPageHeader } from '@/components/event/EventPageHeader';
-import EventLongDescription from '@/components/event/EventLongDescription';
-
-import { EventWhyVisit } from '@/components/event/EventWhyVisit';
 import { RelatedEvents } from '@/components/event/RelatedEvents';
 import NoveltiesSection from '@/components/event/NoveltiesSection';
 import { EventSeriesBlock } from '@/components/event/EventSeriesBlock';
 import { SameCityEventsBlock } from '@/components/event/SameCityEventsBlock';
 import { SectorArticlesBlock } from '@/components/event/SectorArticlesBlock';
 import { EventStatsStrip } from '@/components/event/EventStatsStrip';
-import { EventFaqBlock } from '@/components/event/EventFaqBlock';
+import EventAiBanner from '@/components/event/EventAiBanner';
+import EventInfoCarousel from '@/components/event/EventInfoCarousel';
 
 import EventExhibitorsSection from '@/components/event/EventExhibitorsSection';
-import EventAboutSidebar from '@/components/event/EventAboutSidebar';
 import ClaimSalonBanner from '@/components/event/ClaimSalonBanner';
 import EventRadarCrmWidget from '@/components/event/EventRadarCrmWidget';
 import { SEOHead } from '@/components/event/SEOHead';
