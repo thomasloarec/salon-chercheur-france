@@ -36,8 +36,10 @@ export const ExhibitorCategoryCarousel: React.FC<Props> = ({
   categoryIds,
   includeUncategorized,
   title,
+  titleIcon: TitleIcon,
   onSelect,
 }) => {
+
   const key = useMemo(
     () => `${[...categoryIds].sort().join(',')}|${includeUncategorized}`,
     [categoryIds, includeUncategorized],
