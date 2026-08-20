@@ -28,6 +28,8 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Eye, Sparkles, Check, ChevronDown, Route, Database, Clock, UserCheck, ArrowRight, Settings } from 'lucide-react';
 import { useExhibitorsByEvent } from '@/hooks/useExhibitorsByEvent';
+import { useEventCardStats } from '@/hooks/useEventCardStats';
+import { getEventCapabilities, PARCOURS_IA_MIN_EXHIBITORS } from '@/lib/eventCapabilities';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Event } from '@/types/event';
 
@@ -297,14 +299,14 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                     <ExhibitorsSidebar
                       event={event}
                       variant="main"
-                      aiAvailable={exhibitorCount >= 80 && !isEventPast}
+                      aiAvailable={canPrepareVisit}
                       onPrepareVisit={() => setPrepareVisitOpen(true)}
                     />
                   </section>
                 )}
 
                 {/* Connecteur visuel discret : continuité Exposants → Parcours IA */}
-                {exhibitorCount >= 80 && !isEventPast && (
+                {canPrepareVisit && (
                   <div className="flex justify-center -my-3" aria-hidden="true">
                     <ChevronDown className="w-5 h-5 text-foreground" />
                   </div>
@@ -312,7 +314,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 
                 {/* D. Préparer ma visite avec l'IA — carte sobre & premium.
                     Conserve la logique métier existante (seuil ≥ 80 exposants, événement à venir). */}
-                {exhibitorCount >= 80 && !isEventPast && (
+                {canPrepareVisit && (
                   <section
                     aria-label="Préparer votre visite avec l'IA Lotexpo"
                     className="rounded-lg border border-primary/20 bg-primary/5 overflow-hidden"
