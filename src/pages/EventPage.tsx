@@ -52,7 +52,7 @@ const EventPage = () => {
           console.log('🆔 Trying UUID lookup first:', slug);
           let query = supabase
             .from('events')
-            .select('*')
+            .select('*, event_ai(accroche)')
             .eq('id', slug);
 
           if (!isAdmin && !isPreview) {
@@ -73,7 +73,7 @@ const EventPage = () => {
           console.log('🔗 Fallback to slug lookup:', slug);
           let query = supabase
             .from('events')
-            .select('*')
+            .select('*, event_ai(accroche)')
             .eq('slug', slug);
 
           if (!isAdmin && !isPreview) {
@@ -171,6 +171,10 @@ const EventPage = () => {
           enrichissement_statut: eventData.enrichissement_statut,
           enrichissement_date: eventData.enrichissement_date,
           description_enrichie: eventData.description_enrichie,
+          // Accroche IA (event_ai.accroche) — chargée ici, affichée au lot 2
+          accroche: Array.isArray(eventData.event_ai)
+            ? (eventData.event_ai[0]?.accroche ?? undefined)
+            : (eventData.event_ai?.accroche ?? undefined),
           suggested_keywords: Array.isArray(eventData.suggested_keywords)
             ? (eventData.suggested_keywords as string[])
             : [],
