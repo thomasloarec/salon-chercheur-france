@@ -77,7 +77,7 @@ export const ExhibitorCategoryCarousel: React.FC<Props> = ({
   };
 
   const cardWidth =
-    'w-[78%] xs:w-[70%] sm:w-[46%] md:w-[31%] lg:w-[23.5%] xl:w-[19.5%] flex-none';
+    'w-[78%] xs:w-[70%] sm:w-[46%] md:w-[31%] lg:w-[31%] xl:w-[25%] flex-none';
 
   return (
     <div className="mt-6">

@@ -288,39 +288,38 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               </div>
             )}
             
-            {/* Lot 4 — Grille 70 / 30 : Nouveautés à gauche, Radar CRM à droite.
-                Sans exposant, le Radar ne s'affiche pas et les Nouveautés
-                occupent toute la largeur (pas de colonne vide).
-                Mobile / tablette : empilé, Nouveautés d'abord. */}
-            <div
-              className={
-                capabilities.showRadarCrm
-                  ? 'grid items-start gap-6 lg:[grid-template-columns:minmax(0,7fr)_minmax(280px,3fr)]'
-                  : 'grid gap-6'
-              }
-            >
-              <section id="nouveautes" className="min-w-0">
-                <NoveltiesSection event={event} exhibitorCount={exhibitorCount} isEventPast={isEventPast} />
-              </section>
+            {/* Lot 8 — Nouveautés en pleine largeur */}
+            <section id="nouveautes" className="min-w-0">
+              <NoveltiesSection event={event} exhibitorCount={exhibitorCount} isEventPast={isEventPast} />
+            </section>
 
-              {capabilities.showRadarCrm && (
-                <aside className="min-w-0">
-                  <EventRadarCrmWidget event={event} isEventPast={isEventPast} />
-                </aside>
-              )}
-            </div>
-
-
-            {/* C. Exposants — approche category-first (lot 6), pleine largeur (lot 7) */}
+            {/* Lot 8 — Exposants 70 % adossés au Radar CRM 30 %.
+                Mêmes conditions d'affichage : au moins un exposant.
+                Si le Radar est masqué (événement passé), les exposants
+                reprennent la pleine largeur. Mobile : Radar en tête. */}
             {exhibitorCount > 0 && (
-              <section id="exposants">
-                <EventExhibitorsSection
-                  event={event}
-                  exhibitorCount={exhibitorCount}
-                  aiAvailable={canPrepareVisit}
-                  onPrepareVisit={() => setPrepareVisitOpen(true)}
-                />
-              </section>
+              <div
+                className={
+                  capabilities.showRadarCrm
+                    ? 'grid items-start gap-6 lg:[grid-template-columns:minmax(0,7fr)_minmax(280px,3fr)]'
+                    : 'grid gap-6'
+                }
+              >
+                {capabilities.showRadarCrm && (
+                  <aside className="order-first min-w-0 lg:order-last lg:sticky lg:top-24">
+                    <EventRadarCrmWidget event={event} isEventPast={isEventPast} />
+                  </aside>
+                )}
+
+                <section id="exposants" className="min-w-0">
+                  <EventExhibitorsSection
+                    event={event}
+                    exhibitorCount={exhibitorCount}
+                    aiAvailable={canPrepareVisit}
+                    onPrepareVisit={() => setPrepareVisitOpen(true)}
+                  />
+                </section>
+              </div>
             )}
 
             {/* Lot 7 — Bandeau navy Parcours IA (masqué si indisponible) */}
