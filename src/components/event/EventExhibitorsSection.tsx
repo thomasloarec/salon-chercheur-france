@@ -13,7 +13,11 @@ import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
 import { normalizeStandNumber } from '@/utils/standUtils';
 import { cn } from '@/lib/utils';
 import type { Event } from '@/types/event';
-import EventCategoryCards, { iconFor, type CategoryCardModel } from './EventCategoryCards';
+import EventCategoryCards, {
+  iconFor,
+  PANEL_SHADOW,
+  type CategoryCardModel,
+} from './EventCategoryCards';
 import ExhibitorCategoryCarousel from './ExhibitorCategoryCarousel';
 import ExhibitorAvatar from './ExhibitorAvatar';
 import { ExhibitorsModal } from './ExhibitorsModal';
