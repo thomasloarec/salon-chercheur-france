@@ -167,9 +167,8 @@ export const EventPageHeader = ({
     metadata.push({ key: 'lieu', icon: Building, content: <span>{event.nom_lieu}</span> });
   }
 
-  if (showTarif) {
-    metadata.push({ key: 'tarif', icon: Euro, content: <span>{event.tarif}</span> });
-  }
+  // Lot 10 — le tarif quitte la metadata du Hero : il reste dans le slide
+  // « Préparer votre venue » (EventInfoCarousel).
 
   // L'affluence est désormais portée par la frise statistiques (lot 3).
 
@@ -193,12 +192,12 @@ export const EventPageHeader = ({
           {(event.type_event || mainSector) && (
             <div className="mb-4 flex flex-wrap items-center gap-2">
               {event.type_event && (
-                <span className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                <span className="inline-flex items-center rounded-md border border-border bg-muted px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground">
                   {getEventTypeLabel(event.type_event)}
                 </span>
               )}
               {mainSector && (
-                <span className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                <span className="inline-flex items-center rounded-full border border-accent/40 bg-accent px-2.5 py-1 text-[11px] font-medium tracking-[0.02em] text-primary">
                   {mainSector}
                 </span>
               )}
@@ -319,11 +318,9 @@ export const EventPageHeader = ({
             )}
           </div>
 
-          <p className="mt-2 text-xs text-muted-foreground">
-            {isEventPast
-              ? 'Cet événement est terminé.'
-              : 'Ajoutez cet événement à votre agenda en un clic.'}
-          </p>
+          {isEventPast && (
+            <p className="mt-2 text-xs text-muted-foreground">Cet événement est terminé.</p>
+          )}
         </div>
 
         {/* Colonne droite : image (desktop) */}
