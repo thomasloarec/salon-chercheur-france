@@ -112,13 +112,12 @@ export default function NoveltiesSection({
               <AddNoveltyButton event={event} label="Publier" size="sm" variant="outline" />
             </div>
 
-            <div className="mx-auto w-full max-w-4xl">
             <NoveltiesPreLaunchBanner
               eventDate={event.date_debut}
               eventName={event.nom_event}
+              exhibitorCount={exhibitorCount}
               onNotifyMe={() => setNotificationDialogOpen(true)}
             />
-            </div>
           </section>
 
           <NoveltyNotificationDialog
@@ -135,9 +134,7 @@ export default function NoveltiesSection({
 
     // Période ouverte : carte exemple pédagogique + CTA exposant très visible.
     return (
-      <div className="mx-auto w-full max-w-4xl">
-        <NoveltyExampleEmptyState event={event} exhibitorCount={exhibitorCount} />
-      </div>
+      <NoveltyExampleEmptyState event={event} exhibitorCount={exhibitorCount} />
     );
   }
 
