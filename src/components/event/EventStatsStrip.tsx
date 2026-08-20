@@ -126,18 +126,18 @@ export const EventStatsStrip = ({ event, exhibitorCount, noveltyCount }: EventSt
       className={cn(
         // Lot 11 — seul encadrement conservé : la boîte porte du sens, elle
         // regroupe des mesures. Allégée : bordure fine, rayon modéré, zéro ombre.
-        'mx-auto w-full max-w-[1280px] rounded-xl border border-border bg-background px-4 py-6 sm:px-10 sm:py-8',
+        'mx-auto w-full max-w-[1280px] rounded-xl border border-border bg-background px-4 py-4 sm:px-10 sm:py-6',
       )}
     >
       <div
-        className="grid grid-cols-2 gap-y-6 gap-x-4 sm:[grid-template-columns:var(--stats-cols)]"
+        className="grid grid-cols-2 gap-y-4 gap-x-4 sm:[grid-template-columns:var(--stats-cols)]"
         style={{ ['--stats-cols' as string]: `repeat(${columns}, minmax(0, 1fr))` } as React.CSSProperties}
       >
         {stats.map((stat, index) => (
           <div
             key={stat.key}
             className={cn(
-              'flex min-h-[76px] flex-col items-center justify-center gap-1 text-center',
+              'flex min-h-[64px] flex-col items-center justify-center gap-1 text-center',
               // 3 tuiles sur mobile : la dernière occupe toute la largeur, jamais orpheline étirée
               columns === 3 && index === 2 && 'col-span-2 sm:col-span-1',
               index > 0 && 'sm:border-l sm:border-border',
@@ -154,6 +154,7 @@ export const EventStatsStrip = ({ event, exhibitorCount, noveltyCount }: EventSt
       </div>
     </section>
   );
+
 };
 
 export default EventStatsStrip;
