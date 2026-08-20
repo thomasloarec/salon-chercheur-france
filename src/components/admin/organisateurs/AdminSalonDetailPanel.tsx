@@ -513,39 +513,53 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
                         })}
                       </div>
 
-                      <Textarea
-                        placeholder="Note (optionnelle, transmise en cas de refus)"
-                        value={notes[cr.id] ?? ''}
-                        onChange={(e) => setNotes((prev) => ({ ...prev, [cr.id]: e.target.value }))}
-                        rows={2}
-                        className="text-sm"
-                      />
+                      {isPending ? (
+                        <>
+                          <Textarea
+                            placeholder="Note (optionnelle, transmise à l'organisateur en cas de refus)"
+                            value={notes[cr.id] ?? ''}
+                            onChange={(e) => setNotes((prev) => ({ ...prev, [cr.id]: e.target.value }))}
+                            rows={2}
+                            className="text-sm"
+                          />
 
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => changeMutation.mutate({ requestId: cr.id, action: 'approve' })}
-                          disabled={changeMutation.isPending}
-                          className="flex items-center gap-1"
-                        >
-                          <Check className="h-4 w-4" />
-                          Valider
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            changeMutation.mutate({ requestId: cr.id, action: 'reject', note: notes[cr.id]?.trim() || undefined })
-                          }
-                          disabled={changeMutation.isPending}
-                          className="flex items-center gap-1"
-                        >
-                          <X className="h-4 w-4" />
-                          Refuser
-                        </Button>
-                      </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => changeMutation.mutate({ requestId: cr.id, action: 'approve' })}
+                              disabled={changeMutation.isPending}
+                              className="flex items-center gap-1"
+                            >
+                              <Check className="h-4 w-4" />
+                              Valider
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                changeMutation.mutate({ requestId: cr.id, action: 'reject', note: notes[cr.id]?.trim() || undefined })
+                              }
+                              disabled={changeMutation.isPending}
+                              className="flex items-center gap-1"
+                            >
+                              <X className="h-4 w-4" />
+                              Refuser
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          {cr.reviewed_at && (
+                            <p>Traitée le {new Date(cr.reviewed_at).toLocaleDateString('fr-FR')}</p>
+                          )}
+                          {cr.review_note && (
+                            <p className="italic text-foreground/70">Note envoyée : « {cr.review_note} »</p>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
