@@ -87,7 +87,9 @@ export default function NoveltyEventCard({
   eventVille,
   event,
   commentCount = 0,
+  variant = 'compact',
   className,
+
 }: NoveltyEventCardProps) {
   const { user } = useAuth();
   const { isLiked, toggleLike, isPending } = useNoveltyLike(
