@@ -212,6 +212,20 @@
   .answer-reveal { animation: none; }
 }
 
+/* Lot 5 — Radar CRM : transition douce à l'arrivée des données.
+   Une seule passe, pas de cascade ni de pulsation. */
+@keyframes radarReveal {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.radar-reveal {
+  animation: radarReveal 0.2s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .radar-reveal { animation: none; }
+}
+
+
 /* Custom animations for smooth interactions */
 @keyframes fade-in-up {
   from {
