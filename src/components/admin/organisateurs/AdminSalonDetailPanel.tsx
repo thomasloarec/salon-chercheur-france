@@ -346,6 +346,34 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
                       >
                         <div className="min-w-0">
                           <p className="font-medium text-sm">{c.requester_name || '—'}</p>
+                          <div className="mt-1 grid gap-1 text-xs text-muted-foreground">
+                            {c.email && (
+                              <span className="flex items-center gap-1.5">
+                                <Mail className="h-3.5 w-3.5 shrink-0" />
+                                <a href={`mailto:${c.email}`} className="hover:text-primary underline-offset-2 hover:underline break-all">
+                                  {c.email}
+                                </a>
+                              </span>
+                            )}
+                            {c.phone && (
+                              <span className="flex items-center gap-1.5">
+                                <Phone className="h-3.5 w-3.5 shrink-0" />
+                                <a href={`tel:${c.phone}`} className="hover:text-primary">{c.phone}</a>
+                              </span>
+                            )}
+                            {c.job_title && (
+                              <span className="flex items-center gap-1.5">
+                                <Briefcase className="h-3.5 w-3.5 shrink-0" />
+                                {c.job_title}
+                              </span>
+                            )}
+                            {c.company && (
+                              <span className="flex items-center gap-1.5">
+                                <Building2 className="h-3.5 w-3.5 shrink-0" />
+                                {c.company}
+                              </span>
+                            )}
+                          </div>
                           {c.message && (
                             <p className="text-sm text-foreground/70 mt-1 italic">« {c.message} »</p>
                           )}
