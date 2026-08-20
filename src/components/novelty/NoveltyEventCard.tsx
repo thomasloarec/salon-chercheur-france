@@ -230,9 +230,15 @@ export default function NoveltyEventCard({
                 <img
                   src={image}
                   alt={novelty.title}
-                  loading="lazy"
-                  className="absolute inset-0 w-full h-full object-cover group-hover/img:scale-[1.03] transition-transform duration-500"
+                  loading={variant === 'feature' ? 'eager' : 'lazy'}
+                  className={cn(
+                    'absolute inset-0 w-full h-full transition-transform duration-500 motion-reduce:transition-none',
+                    variant === 'feature'
+                      ? 'object-contain p-2'
+                      : 'object-cover group-hover/img:scale-[1.03]',
+                  )}
                 />
+
                 {/* Badge nombre d'images si plusieurs */}
                 {imageCount > 1 && (
                   <div className="absolute top-2 right-2 bg-black/70 text-white text-xs font-medium px-2 py-0.5 rounded-full inline-flex items-center gap-1 tabular-nums">
