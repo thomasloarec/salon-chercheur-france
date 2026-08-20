@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export type RelatedEvent = {
@@ -15,65 +15,36 @@ export type RelatedEvent = {
   shared_sectors_count: number;
 };
 
+/**
+ * Événements similaires via la RPC `related_events`.
+ * Lot 9 : passé sous React Query (cache + dédoublonnage), sans modifier
+ * les paramètres d'appel, les résultats ni leur ordre.
+ */
 export function useRelatedEvents(eventId: string | null, limit = 6) {
-  const [data, setData] = useState<RelatedEvent[] | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(!!eventId);
-  const [error, setError] = useState<string | null>(null);
+  const query = useQuery({
+    queryKey: ['related-events', eventId, limit],
+    enabled: !!eventId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      if (!eventId) return [] as RelatedEvent[];
 
-  useEffect(() => {
-    let mounted = true;
-    
-    async function fetchRelatedEvents() {
-      if (!eventId) {
-        setData([]);
-        setIsLoading(false);
-        return;
+      const { data, error } = await supabase.rpc('related_events', {
+        p_event_id: eventId,
+        p_limit: limit,
+      });
+
+      if (error) {
+        console.error('Error fetching related events:', error);
+        return [] as RelatedEvent[];
       }
 
-      console.debug('[useRelatedEvents] call related_events', { eventId, limit });
-      setIsLoading(true);
-      setError(null);
+      return (data ?? []) as RelatedEvent[];
+    },
+  });
 
-      try {
-        const { data: relatedEvents, error: rpcError } = await supabase.rpc('related_events', {
-          p_event_id: eventId,
-          p_limit: limit
-        });
-
-        console.debug('[useRelatedEvents] result', { 
-          error: rpcError, 
-          count: relatedEvents?.length || 0, 
-          sample: relatedEvents?.[0],
-          allData: relatedEvents
-        });
-
-        if (!mounted) return;
-
-        if (rpcError) {
-          console.error('Error fetching related events:', rpcError);
-          setError(rpcError.message);
-          setData([]);
-        } else {
-          setData(relatedEvents ?? []);
-        }
-      } catch (err) {
-        if (!mounted) return;
-        console.error('Error:', err);
-        setError(err instanceof Error ? err.message : 'Une erreur est survenue');
-        setData([]);
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    fetchRelatedEvents();
-
-    return () => {
-      mounted = false;
-    };
-  }, [eventId, limit]);
-
-  return { data, isLoading, error };
+  return {
+    data: (query.data ?? null) as RelatedEvent[] | null,
+    isLoading: !!eventId && query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+  };
 }
