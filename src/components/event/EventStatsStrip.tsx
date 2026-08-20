@@ -124,9 +124,7 @@ export const EventStatsStrip = ({ event, exhibitorCount, noveltyCount }: EventSt
     <section
       aria-label="Chiffres clés de l'événement"
       className={cn(
-        'mx-auto w-full rounded-2xl border border-border bg-card px-4 py-6 shadow-sm sm:px-8 sm:py-8',
-        'transition-all duration-200 motion-reduce:transition-none',
-        columns === 2 ? 'max-w-xl' : 'max-w-[1280px]',
+        'mx-auto w-full max-w-[1280px] rounded-2xl border border-border bg-card px-4 py-6 shadow-sm sm:px-10 sm:py-8',
       )}
     >
       <div
