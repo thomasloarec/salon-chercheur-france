@@ -110,7 +110,7 @@ export const ExhibitorCategoryCarousel: React.FC<Props> = ({
 
       <div
         ref={scrollerRef}
-        className="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:thin]"
+        className="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         {isLoading && rows.length === 0
           ? Array.from({ length: 5 }).map((_, i) => (
