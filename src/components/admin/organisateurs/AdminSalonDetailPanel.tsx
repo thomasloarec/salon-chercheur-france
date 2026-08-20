@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, CalendarDays, ExternalLink, Check, X, User, ArrowRight, PencilLine, Download, FileText } from 'lucide-react';
+import { ArrowLeft, CalendarDays, ExternalLink, Check, X, User, ArrowRight, PencilLine, Download, FileText, Mail, Phone, Briefcase, Building2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import VerifiedBadge from '@/components/exhibitor/VerifiedBadge';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +23,10 @@ interface ClaimRow {
   created_at: string;
   requester_user_id: string;
   requester_name: string | null;
+  email: string | null;
+  phone: string | null;
+  job_title: string | null;
+  company: string | null;
 }
 
 interface ChangeRequestRow {
@@ -34,6 +38,8 @@ interface ChangeRequestRow {
   changed_fields: string[];
   proposed_changes: Record<string, any>;
   previous_values: Record<string, any>;
+  review_note: string | null;
+  reviewed_at: string | null;
 }
 
 const FIELD_LABELS: Record<string, string> = {
@@ -123,42 +129,34 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
           [owner?.first_name, owner?.last_name].filter(Boolean).join(' ').trim() || null;
       }
 
-      const { data: claimsData } = await supabase
-        .from('event_claim_requests')
-        .select('id, status, message, created_at, requester_user_id')
-        .eq('event_id', salonId)
-        .order('created_at', { ascending: false });
+      const { data: claimsData } = await (supabase as any).rpc('admin_list_event_claim_identities', {
+        p_event_id: salonId,
+      });
 
-      const userIds = [...new Set((claimsData || []).map((c) => c.requester_user_id))];
-      let profilesById: Record<string, string> = {};
-      if (userIds.length) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, first_name, last_name')
-          .in('user_id', userIds);
-        profilesById = Object.fromEntries(
-          (profiles || []).map((p) => [
-            p.user_id,
-            [p.first_name, p.last_name].filter(Boolean).join(' ').trim() || '—',
-          ]),
-        );
-      }
-
-      const claims: ClaimRow[] = (claimsData || []).map((c) => ({
-        id: c.id,
-        status: c.status,
-        message: c.message,
-        created_at: c.created_at,
-        requester_user_id: c.requester_user_id,
-        requester_name: profilesById[c.requester_user_id] ?? null,
-      }));
+      const profilesById: Record<string, string> = {};
+      const claims: ClaimRow[] = ((claimsData as any[]) || []).map((c) => {
+        const fullName =
+          [c.first_name, c.last_name].filter(Boolean).join(' ').trim() || null;
+        profilesById[c.requester_user_id] = fullName ?? '—';
+        return {
+          id: c.id,
+          status: c.status,
+          message: c.message,
+          created_at: c.created_at,
+          requester_user_id: c.requester_user_id,
+          requester_name: fullName,
+          email: c.email ?? null,
+          phone: c.phone ?? null,
+          job_title: c.job_title ?? null,
+          company: c.company ?? null,
+        };
+      });
 
       // Demandes de modification en attente
       const { data: changesData } = await supabase
         .from('event_change_requests')
-        .select('id, status, created_at, requester_user_id, changed_fields, proposed_changes, previous_values')
+        .select('id, status, created_at, requester_user_id, changed_fields, proposed_changes, previous_values, review_note, reviewed_at')
         .eq('event_id', salonId)
-        .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
       const changeUserIds = [...new Set((changesData || []).map((c) => c.requester_user_id))];
@@ -184,6 +182,8 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
         changed_fields: (c.changed_fields as string[]) || [],
         proposed_changes: (c.proposed_changes as Record<string, any>) || {},
         previous_values: (c.previous_values as Record<string, any>) || {},
+        review_note: (c as any).review_note ?? null,
+        reviewed_at: (c as any).reviewed_at ?? null,
       }));
 
       return { event, ownerName, claims, changeRequests };
@@ -346,6 +346,34 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
                       >
                         <div className="min-w-0">
                           <p className="font-medium text-sm">{c.requester_name || '—'}</p>
+                          <div className="mt-1 grid gap-1 text-xs text-muted-foreground">
+                            {c.email && (
+                              <span className="flex items-center gap-1.5">
+                                <Mail className="h-3.5 w-3.5 shrink-0" />
+                                <a href={`mailto:${c.email}`} className="hover:text-primary underline-offset-2 hover:underline break-all">
+                                  {c.email}
+                                </a>
+                              </span>
+                            )}
+                            {c.phone && (
+                              <span className="flex items-center gap-1.5">
+                                <Phone className="h-3.5 w-3.5 shrink-0" />
+                                <a href={`tel:${c.phone}`} className="hover:text-primary">{c.phone}</a>
+                              </span>
+                            )}
+                            {c.job_title && (
+                              <span className="flex items-center gap-1.5">
+                                <Briefcase className="h-3.5 w-3.5 shrink-0" />
+                                {c.job_title}
+                              </span>
+                            )}
+                            {c.company && (
+                              <span className="flex items-center gap-1.5">
+                                <Building2 className="h-3.5 w-3.5 shrink-0" />
+                                {c.company}
+                              </span>
+                            )}
+                          </div>
                           {c.message && (
                             <p className="text-sm text-foreground/70 mt-1 italic">« {c.message} »</p>
                           )}
@@ -393,23 +421,29 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <PencilLine className="h-4 w-4" />
-                Modifications proposées
+                Modifications proposées (historique)
               </CardTitle>
             </CardHeader>
             <CardContent>
               {data.changeRequests.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-6">
-                  Aucune modification en attente pour ce salon.
+                  Aucune demande de modification pour ce salon.
                 </p>
               ) : (
                 <div className="space-y-4">
-                  {data.changeRequests.map((cr) => (
+                  {data.changeRequests.map((cr) => {
+                    const meta = statusMeta[cr.status] ?? {
+                      label: cr.status,
+                      className: 'bg-muted text-muted-foreground',
+                    };
+                    const isPending = cr.status === 'pending';
+                    return (
                     <div key={cr.id} className="border rounded-lg p-4 space-y-4">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <p className="font-medium text-sm">{cr.requester_name || '—'}</p>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs bg-amber-100 text-amber-800 border-amber-300">
-                            En attente
+                          <Badge variant="outline" className={`text-xs ${meta.className}`}>
+                            {meta.label}
                           </Badge>
                           <span className="text-xs text-muted-foreground">
                             {new Date(cr.created_at).toLocaleDateString('fr-FR')}
@@ -479,39 +513,53 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
                         })}
                       </div>
 
-                      <Textarea
-                        placeholder="Note (optionnelle, transmise en cas de refus)"
-                        value={notes[cr.id] ?? ''}
-                        onChange={(e) => setNotes((prev) => ({ ...prev, [cr.id]: e.target.value }))}
-                        rows={2}
-                        className="text-sm"
-                      />
+                      {isPending ? (
+                        <>
+                          <Textarea
+                            placeholder="Note (optionnelle, transmise à l'organisateur en cas de refus)"
+                            value={notes[cr.id] ?? ''}
+                            onChange={(e) => setNotes((prev) => ({ ...prev, [cr.id]: e.target.value }))}
+                            rows={2}
+                            className="text-sm"
+                          />
 
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => changeMutation.mutate({ requestId: cr.id, action: 'approve' })}
-                          disabled={changeMutation.isPending}
-                          className="flex items-center gap-1"
-                        >
-                          <Check className="h-4 w-4" />
-                          Valider
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            changeMutation.mutate({ requestId: cr.id, action: 'reject', note: notes[cr.id]?.trim() || undefined })
-                          }
-                          disabled={changeMutation.isPending}
-                          className="flex items-center gap-1"
-                        >
-                          <X className="h-4 w-4" />
-                          Refuser
-                        </Button>
-                      </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => changeMutation.mutate({ requestId: cr.id, action: 'approve' })}
+                              disabled={changeMutation.isPending}
+                              className="flex items-center gap-1"
+                            >
+                              <Check className="h-4 w-4" />
+                              Valider
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                changeMutation.mutate({ requestId: cr.id, action: 'reject', note: notes[cr.id]?.trim() || undefined })
+                              }
+                              disabled={changeMutation.isPending}
+                              className="flex items-center gap-1"
+                            >
+                              <X className="h-4 w-4" />
+                              Refuser
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          {cr.reviewed_at && (
+                            <p>Traitée le {new Date(cr.reviewed_at).toLocaleDateString('fr-FR')}</p>
+                          )}
+                          {cr.review_note && (
+                            <p className="italic text-foreground/70">Note envoyée : « {cr.review_note} »</p>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>

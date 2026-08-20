@@ -127,7 +127,7 @@ async function notifyAdminsInApp(admin: any, params: { eventName: string; reques
 }
 
 // Notif à l'organisateur après décision. Ne lève JAMAIS.
-async function notifyOrganizer(admin: any, params: { userId: string; eventName: string; approved: boolean }): Promise<void> {
+async function notifyOrganizer(admin: any, params: { userId: string; eventName: string; approved: boolean; note?: string | null }): Promise<void> {
   try {
     const row = {
       user_id: params.userId,
@@ -136,7 +136,7 @@ async function notifyOrganizer(admin: any, params: { userId: string; eventName: 
       title: params.approved ? 'Modifications validées' : 'Modifications refusées',
       message: params.approved
         ? `Vos modifications pour le salon ${params.eventName} ont été validées et sont désormais en ligne.`
-        : `Vos modifications proposées pour le salon ${params.eventName} n'ont pas été retenues.`,
+        : `Vos modifications proposées pour le salon ${params.eventName} n'ont pas été retenues.${params.note ? ` Motif : ${params.note}` : ''}`,
       icon: params.approved ? '✅' : '❌',
       link_url: null,
       read: false,
@@ -145,6 +145,58 @@ async function notifyOrganizer(admin: any, params: { userId: string; eventName: 
     if (error) throw error
   } catch (err) {
     console.error('[event-change] notif organisateur échouée (non-bloquant):', err)
+  }
+}
+
+// Email à l'organisateur après décision (Resend). Ne lève JAMAIS.
+async function sendOrganizerDecisionEmail(
+  admin: any,
+  params: { userId: string; eventName: string; eventSlug?: string | null; approved: boolean; note?: string | null },
+): Promise<void> {
+  try {
+    const { data: userRes, error: userErr } = await admin.auth.admin.getUserById(params.userId)
+    if (userErr) throw userErr
+    const email = userRes?.user?.email
+    if (!email) {
+      console.warn('[event-change] pas d\'email pour l\'organisateur, email ignoré')
+      return
+    }
+
+    const safeEvent = escapeHtml(params.eventName)
+    const subject = params.approved
+      ? `Vos modifications ont été validées — ${params.eventName}`
+      : `Vos modifications n'ont pas été retenues — ${params.eventName}`
+
+    const blocks = [
+      heading(params.approved ? 'Modifications validées' : 'Modifications refusées'),
+      paragraph(
+        params.approved
+          ? `Bonne nouvelle : les modifications que vous avez proposées pour la fiche du salon <strong>${safeEvent}</strong> ont été validées. Elles sont désormais en ligne.`
+          : `Les modifications que vous avez proposées pour la fiche du salon <strong>${safeEvent}</strong> n'ont pas été retenues par notre équipe.`,
+      ),
+    ]
+    if (!params.approved && params.note) {
+      blocks.push(paragraph(`<strong>Note de l'équipe Lotexpo :</strong><br/>${escapeHtml(params.note)}`))
+      blocks.push(paragraph(`Vous pouvez corriger votre demande et la soumettre à nouveau depuis votre espace organisateur.`))
+    }
+
+    const href = params.eventSlug
+      ? `https://lotexpo.com/events/${params.eventSlug}/gerer`
+      : 'https://lotexpo.com'
+
+    const html = renderEmailShell({
+      title: subject,
+      preheader: params.approved
+        ? `Vos modifications pour ${params.eventName} sont en ligne.`
+        : `Vos modifications pour ${params.eventName} n'ont pas été retenues.`,
+      bodyBlocks: blocks,
+      cta: { label: 'Ouvrir mon espace organisateur', href },
+    })
+
+    const { id } = await sendResendEmail({ to: [email], subject, html })
+    console.log(`[event-change] email organisateur envoyé (${id})`)
+  } catch (err) {
+    console.error('[event-change] email organisateur échoué (non-bloquant):', err)
   }
 }
 
@@ -269,7 +321,7 @@ Deno.serve(async (req) => {
         .maybeSingle()
       if (!cr) return json({ error: 'CHANGE_NOT_FOUND', message: 'Demande de modification introuvable.' }, 404)
 
-      const { data: ev } = await admin.from('events').select('nom_event').eq('id', cr.event_id).maybeSingle()
+      const { data: ev } = await admin.from('events').select('nom_event, slug').eq('id', cr.event_id).maybeSingle()
       const eventName = ev?.nom_event ?? 'ce salon'
 
       if (action === 'approve') {
@@ -282,6 +334,12 @@ Deno.serve(async (req) => {
           return json({ error: 'APPROVE_FAILED', message: rpcErr.message }, 400)
         }
         await notifyOrganizer(admin, { userId: cr.requester_user_id, eventName, approved: true })
+        await sendOrganizerDecisionEmail(admin, {
+          userId: cr.requester_user_id,
+          eventName,
+          eventSlug: ev?.slug ?? null,
+          approved: true,
+        })
         return json({ success: true, event_id: cr.event_id, status: 'approved' })
       } else {
         const note = typeof body?.note === 'string' ? body.note.slice(0, 2000) : null
@@ -294,7 +352,14 @@ Deno.serve(async (req) => {
           console.error('[event-change] reject rpc erreur:', rpcErr)
           return json({ error: 'REJECT_FAILED', message: rpcErr.message }, 400)
         }
-        await notifyOrganizer(admin, { userId: cr.requester_user_id, eventName, approved: false })
+        await notifyOrganizer(admin, { userId: cr.requester_user_id, eventName, approved: false, note })
+        await sendOrganizerDecisionEmail(admin, {
+          userId: cr.requester_user_id,
+          eventName,
+          eventSlug: ev?.slug ?? null,
+          approved: false,
+          note,
+        })
         return json({ success: true, event_id: cr.event_id, status: 'rejected' })
       }
     }
