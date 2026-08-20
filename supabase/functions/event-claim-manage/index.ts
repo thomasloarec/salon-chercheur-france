@@ -285,7 +285,7 @@ Deno.serve(async (req) => {
         .maybeSingle()
       if (!claim) return json({ error: 'CLAIM_NOT_FOUND', message: 'Demande introuvable.' }, 404)
 
-      const { data: ev } = await admin.from('events').select('nom_event').eq('id', claim.event_id).maybeSingle()
+      const { data: ev } = await admin.from('events').select('nom_event, slug').eq('id', claim.event_id).maybeSingle()
       const eventName = ev?.nom_event ?? 'ce salon'
 
       if (action === 'approve') {
@@ -298,6 +298,12 @@ Deno.serve(async (req) => {
           return json({ error: 'APPROVE_FAILED', message: rpcErr.message }, 400)
         }
         await notifyRequester(admin, { userId: claim.requester_user_id, eventName, approved: true })
+        await sendRequesterDecisionEmail(admin, {
+          userId: claim.requester_user_id,
+          eventName,
+          eventSlug: ev?.slug ?? null,
+          approved: true,
+        })
         return json({ success: true, event_id: claim.event_id, status: 'approved' })
       } else {
         const { error: rpcErr } = await admin.rpc('admin_reject_event_claim', {
@@ -309,6 +315,12 @@ Deno.serve(async (req) => {
           return json({ error: 'REJECT_FAILED', message: rpcErr.message }, 400)
         }
         await notifyRequester(admin, { userId: claim.requester_user_id, eventName, approved: false })
+        await sendRequesterDecisionEmail(admin, {
+          userId: claim.requester_user_id,
+          eventName,
+          eventSlug: ev?.slug ?? null,
+          approved: false,
+        })
         return json({ success: true, event_id: claim.event_id, status: 'rejected' })
       }
     }
