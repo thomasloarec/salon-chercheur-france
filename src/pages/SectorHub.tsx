@@ -170,22 +170,22 @@ const SectorHub = () => {
               <h2 className="section-rule heading-display text-2xl font-semibold text-foreground mb-6">
                 Salons {hub.sectorLabel} à venir
               </h2>
-              <div className="space-y-10">
+              <div>
                 {groupedUpcoming.map(({ monthLabel, events: monthEvents }) => (
-                  <div key={monthLabel}>
-                    <MonthSeparator label={monthLabel} count={monthEvents.length} className="mb-6" />
+                  <section key={monthLabel} className="mb-10">
+                    <MonthSeparator label={monthLabel} count={monthEvents.length} stickyTop="4rem" />
                     <div className="flex flex-col">
                       {monthEvents.map(e => (
                         <EventCard
                           key={e.id}
                           event={e}
-                          view="grid"
+                          view="list"
                           exhibitorCount={statsMap?.[e.id]?.exhibitor_count}
                           noveltyCount={statsMap?.[e.id]?.novelty_count}
                         />
                       ))}
                     </div>
-                  </div>
+                  </section>
                 ))}
               </div>
             </section>
@@ -213,7 +213,7 @@ const SectorHub = () => {
                   <EventCard
                     key={e.id}
                     event={e}
-                    view="grid"
+                    view="list"
                     exhibitorCount={statsMap?.[e.id]?.exhibitor_count}
                     noveltyCount={statsMap?.[e.id]?.novelty_count}
                   />
@@ -275,6 +275,7 @@ const SectorHub = () => {
               </div>
             </section>
           )}
+          </div>
         </div>
       </main>
 
