@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import StatsStrip from '@/components/common/StatsStrip';
 import {
   getEventTemporalState,
   getEventDurationDays,
@@ -116,45 +116,13 @@ export const EventStatsStrip = ({ event, exhibitorCount, noveltyCount }: EventSt
     return pool.slice(0, MAX_TILES);
   }, [event, exhibitorCount, noveltyCount]);
 
-  if (stats.length < MIN_TILES) return null;
-
-  const columns = stats.length;
-
   return (
-    <section
-      aria-label="Chiffres clés de l'événement"
-      className={cn(
-        // Lot 11 — seul encadrement conservé : la boîte porte du sens, elle
-        // regroupe des mesures. Allégée : bordure fine, rayon modéré, zéro ombre.
-        'mx-auto w-full max-w-[1280px] rounded-xl border border-border bg-background px-4 py-4 sm:px-10 sm:py-6',
-      )}
-    >
-      <div
-        className="grid grid-cols-2 gap-y-4 gap-x-4 sm:[grid-template-columns:var(--stats-cols)]"
-        style={{ ['--stats-cols' as string]: `repeat(${columns}, minmax(0, 1fr))` } as React.CSSProperties}
-      >
-        {stats.map((stat, index) => (
-          <div
-            key={stat.key}
-            className={cn(
-              'flex min-h-[64px] flex-col items-center justify-center gap-1 text-center',
-              // 3 tuiles sur mobile : la dernière occupe toute la largeur, jamais orpheline étirée
-              columns === 3 && index === 2 && 'col-span-2 sm:col-span-1',
-              index > 0 && 'sm:border-l sm:border-border',
-            )}
-          >
-            <span className="heading-display text-2xl leading-tight text-foreground sm:text-[32px]">
-              {stat.value}
-            </span>
-            <span className="text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
-              {stat.label}
-            </span>
-          </div>
-        ))}
-      </div>
-    </section>
+    <StatsStrip
+      tiles={stats}
+      minTiles={MIN_TILES}
+      ariaLabel="Chiffres clés de l'événement"
+    />
   );
-
 };
 
 export default EventStatsStrip;

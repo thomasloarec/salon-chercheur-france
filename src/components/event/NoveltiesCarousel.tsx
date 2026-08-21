@@ -1,9 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import NoveltyEventCard from '@/components/novelty/NoveltyEventCard';
 import type { Novelty } from '@/hooks/useNovelties';
 import type { Event } from '@/types/event';
+
+/** Lot 15 — cadence du défilement automatique (décision produit du 20/08/2026). */
+const AUTOPLAY_INTERVAL_MS = 7000;
 
 interface NoveltiesCarouselProps {
   novelties: Novelty[];
@@ -89,13 +92,53 @@ export default function NoveltiesCarousel({
     [index, count, scrollToIndex],
   );
 
+  // ── Défilement automatique (lot 15) ────────────────────────────────────
+  // Autorisé UNIQUEMENT ici, jamais sur les autres carousels du site.
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+  const autoplayEligible = hasControls && !prefersReducedMotion;
+  /** Arrêt définitif : le visiteur a pris la main (flèche, dot, swipe). */
+  const [stopped, setStopped] = useState(false);
+  /** Pause du bouton de contrôle (WCAG 2.2.2). */
+  const [userPaused, setUserPaused] = useState(false);
+  /** Pauses temporaires : survol, focus clavier, onglet masqué. */
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [tabHidden, setTabHidden] = useState(
+    typeof document !== 'undefined' ? document.hidden : false,
+  );
+
+  useEffect(() => {
+    const onVisibility = () => setTabHidden(document.hidden);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, []);
+
+  const stopAutoplay = useCallback(() => setStopped(true), []);
+
+  const playing = autoplayEligible && !stopped && !userPaused && !hovered && !focused && !tabHidden;
+
+  useEffect(() => {
+    if (!playing) return;
+    // Pas de rattrapage accéléré : un simple intervalle, remis à zéro à chaque
+    // reprise, avance d'une slide à la fois.
+    const timer = window.setInterval(() => {
+      scrollToIndex((index + 1) % count);
+    }, AUTOPLAY_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, [playing, index, count, scrollToIndex]);
+
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (!hasControls) return;
     if (e.key === 'ArrowLeft') {
       e.preventDefault();
+      stopAutoplay();
       go(-1);
     } else if (e.key === 'ArrowRight') {
       e.preventDefault();
+      stopAutoplay();
       go(1);
     }
   };
@@ -126,13 +169,23 @@ export default function NoveltiesCarousel({
       role="group"
       aria-roledescription="carrousel"
       aria-label={`Nouveautés du salon (${count})`}
+      aria-live="off"
       tabIndex={0}
       onKeyDown={onKeyDown}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocusCapture={() => setFocused(true)}
+      onBlurCapture={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false);
+      }}
     >
       <div className="relative">
         <div
           ref={trackRef}
           onScroll={onScroll}
+          onPointerDown={stopAutoplay}
+          onTouchStart={stopAutoplay}
+          onWheel={stopAutoplay}
           className={cn(
             'flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-1',
             'motion-reduce:scroll-auto',
@@ -163,7 +216,10 @@ export default function NoveltiesCarousel({
       <div className="flex items-center justify-center gap-4">
         <button
           type="button"
-          onClick={() => go(-1)}
+          onClick={() => {
+            stopAutoplay();
+            go(-1);
+          }}
           aria-label="Nouveauté précédente"
           className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted"
         >
@@ -178,7 +234,10 @@ export default function NoveltiesCarousel({
               role="tab"
               aria-selected={i === index}
               aria-label={`Nouveauté ${i + 1} sur ${count}`}
-              onClick={() => scrollToIndex(i)}
+              onClick={() => {
+                stopAutoplay();
+                scrollToIndex(i);
+              }}
               className={cn(
                 'h-2 rounded-full transition-all duration-200 motion-reduce:transition-none',
                 i === index ? 'w-6 bg-primary' : 'w-2 bg-border hover:bg-muted-foreground/40',
@@ -189,12 +248,32 @@ export default function NoveltiesCarousel({
 
         <button
           type="button"
-          onClick={() => go(1)}
+          onClick={() => {
+            stopAutoplay();
+            go(1);
+          }}
           aria-label="Nouveauté suivante"
           className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
+
+        {/* WCAG 2.2.2 — contrôle de pause visible dès que l'autoplay est actif */}
+        {autoplayEligible && !stopped && (
+          <button
+            type="button"
+            onClick={() => setUserPaused((p) => !p)}
+            aria-label={
+              userPaused
+                ? 'Reprendre le défilement automatique des nouveautés'
+                : 'Mettre en pause le défilement automatique des nouveautés'
+            }
+            aria-pressed={userPaused}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            {userPaused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
+          </button>
+        )}
       </div>
 
       {/* Liens crawlables vers toutes les nouveautés (SEO). */}
