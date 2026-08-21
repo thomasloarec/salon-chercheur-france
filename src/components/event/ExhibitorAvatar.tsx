@@ -60,6 +60,7 @@ export const ExhibitorAvatar: React.FC<ExhibitorAvatarProps> = ({
   website,
   className,
   textClassName,
+  imageClassName,
 }) => {
   const resolved = getExhibitorLogoUrl(logoUrl, website);
   const [failed, setFailed] = useState(false);
@@ -96,7 +97,7 @@ export const ExhibitorAvatar: React.FC<ExhibitorAvatarProps> = ({
           decoding="async"
           width={64}
           height={64}
-          className="absolute inset-0 h-full w-full object-contain p-1"
+          className={cn('absolute inset-0 h-full w-full object-contain p-1', imageClassName)}
           onError={() => setFailed(true)}
           onLoad={(e) => {
             const img = e.currentTarget;
