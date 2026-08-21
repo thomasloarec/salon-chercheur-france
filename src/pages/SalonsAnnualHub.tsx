@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
+import { useEventCardStats } from '@/hooks/useEventCardStats';
 import { Loader2, Calendar, MapPin, Briefcase, ArrowRight, ChevronDown, Clock } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
