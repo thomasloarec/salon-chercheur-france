@@ -41,7 +41,7 @@ export const StatsStrip = ({ tiles, ariaLabel, className, minTiles = 2 }: StatsS
       <div
         className={cn(
           'grid gap-y-4 gap-x-4 sm:[grid-template-columns:var(--stats-cols)]',
-          columns > 2 ? 'grid-cols-2' : `grid-cols-${columns}`,
+          columns === 1 ? 'grid-cols-1' : 'grid-cols-2',
         )}
         style={{ ['--stats-cols' as string]: `repeat(${columns}, minmax(0, 1fr))` } as React.CSSProperties}
       >
