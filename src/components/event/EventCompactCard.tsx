@@ -11,6 +11,10 @@ export interface CompactEventCardProps {
   ville?: string | null;
   imageUrl?: string | null;
   badge?: string | null;
+  /** Badge secteur (variante 'row' uniquement) : nom du secteur partagé. */
+  sectorBadge?: string | null;
+  /** Infobulle du badge secteur (ex. second secteur partagé). */
+  sectorBadgeTitle?: string | null;
   /** 'row' : vignette à gauche (dense). 'tile' : image en haut (rangée pleine largeur). */
   variant?: 'row' | 'tile';
   className?: string;
@@ -33,6 +37,8 @@ export const EventCompactCard = ({
   ville,
   imageUrl,
   badge,
+  sectorBadge,
+  sectorBadgeTitle,
   variant = 'row',
   className,
 }: CompactEventCardProps) => {
@@ -79,6 +85,14 @@ export const EventCompactCard = ({
               </span>
             )}
           </p>
+          {sectorBadge && (
+            <span
+              title={sectorBadgeTitle ?? undefined}
+              className="mt-1.5 inline-flex max-w-full items-center truncate rounded-full border border-primary/20 bg-violet-soft px-2 py-0.5 text-[11px] font-medium tracking-[0.02em] text-primary"
+            >
+              {sectorBadge}
+            </span>
+          )}
         </div>
       </Link>
     );
