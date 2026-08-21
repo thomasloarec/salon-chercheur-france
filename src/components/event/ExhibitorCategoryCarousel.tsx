@@ -130,59 +130,15 @@ export const ExhibitorCategoryCarousel: React.FC<Props> = ({
               </div>
             ))
           : rows.map((row) => (
-              <div
+              <ExhibitorCarouselCard
                 key={row.id_exposant}
-                className={cn(
-                  cardWidth,
-                  'snap-start rounded-xl border bg-card transition-[border-color,box-shadow,transform] duration-200 hover:border-primary/50 hover:-translate-y-0.5 hover:shadow-sm motion-reduce:transition-none motion-reduce:hover:translate-y-0',
-                )}
-              >
-                <button
-                  type="button"
-                  onClick={() => onSelect(row)}
-                  className="flex w-full flex-col items-start gap-3 p-3 text-left"
-                >
-                  <ExhibitorAvatar
-                    name={row.display_name}
-                    logoUrl={row.logo_url}
-                    website={row.website}
-                    className="h-12 w-12"
-                  />
-                  <div className="min-w-0 w-full">
-                    <div className="flex items-start gap-1">
-                      <span className="line-clamp-2 text-sm font-medium text-foreground" title={row.display_name}>
-                        {row.display_name}
-                      </span>
-                      {row.is_verified && (
-                        <BadgeCheck className="mt-0.5 h-3.5 w-3.5 flex-none text-primary" aria-label="Exposant vérifié" />
-                      )}
-                    </div>
-                    {row.stand && (
-                      <p
-                        className="mt-1 flex items-center gap-1 truncate text-xs text-muted-foreground"
-                        title={`Stand ${normalizeStandNumber(row.stand)}`}
-                      >
-                        <MapPin className="h-3 w-3 flex-none" />
-                        <span className="truncate">Stand {formatStandShort(row.stand)}</span>
-                      </p>
-                    )}
-                  </div>
-                </button>
-                {row.public_slug && (
-                  <div className="px-3 pb-2.5">
-                    <ExhibitorFullProfileCTA
-                      publicSlug={row.public_slug}
-                      seoIndexable={row.seo_indexable ?? true}
-                      isTest={false}
-                      openInNewTab
-                      variant="link"
-                      surface="event_exhibitor_list"
-                      eventSlug={eventSlug}
-                    />
-                  </div>
-                )}
-              </div>
+                row={row}
+                className={cardWidth}
+                eventSlug={eventSlug}
+                onSelect={onSelect}
+              />
             ))}
+
 
         {hasMore && !isLoading && (
           <div className={cn(cardWidth, 'flex items-center justify-center')}>
