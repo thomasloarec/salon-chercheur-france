@@ -24,11 +24,14 @@ export interface CategoryExhibitorRow {
   logo_url: string | null;
   website: string | null;
   stand: string | null;
+  /** Extrait nettoyé (≤140 c.) : ai_summary → description → exposant_description. */
+  tagline: string | null;
   public_slug: string | null;
   seo_indexable: boolean | null;
   is_verified: boolean | null;
   total_count: number;
 }
+
 
 /** Borne serveur : p_limit est plafonné à 50 côté SQL. */
 export const CATEGORY_PAGE_SIZE = 50;

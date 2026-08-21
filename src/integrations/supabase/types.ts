@@ -11146,6 +11146,7 @@ export type Database = {
           public_slug: string
           seo_indexable: boolean
           stand: string
+          tagline: string
           total_count: number
           website: string
         }[]

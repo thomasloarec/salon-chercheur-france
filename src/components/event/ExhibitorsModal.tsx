@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useDebounce } from '@/hooks/useDebounce';
-import { normalizeStandNumber } from '@/utils/standUtils';
+import { formatStandShort, normalizeStandNumber } from '@/utils/standUtils';
 import {
   useEventCategories,
   CATEGORY_PAGE_SIZE,
@@ -73,48 +73,66 @@ async function fetchGroupPage(
   return (data || []) as CategoryExhibitorRow[];
 }
 
-/** Ligne compacte : visuel 36px, nom, stand, lien fiche si public_slug. */
+/**
+ * Lot 16 — carte aérée : visuel 40 px, nom sur deux lignes maximum,
+ * stand au format court, descriptif sur une seule ligne quand il existe.
+ */
 const ExhibitorRow: React.FC<{
   name: string;
   stand?: string | null;
+  tagline?: string | null;
   logoUrl?: string | null;
   website?: string | null;
   publicSlug?: string | null;
   onClick: () => void;
-}> = ({ name, stand, logoUrl, website, publicSlug, onClick }) => (
-  <div className="group flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-muted/60">
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
-    >
-      <ExhibitorAvatar
-        name={name}
-        logoUrl={logoUrl || undefined}
-        website={website || undefined}
-        className="h-9 w-9 flex-none"
-        textClassName="text-[11px]"
-      />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-foreground">{name}</span>
-        {stand && (
-          <span className="block truncate text-xs text-muted-foreground">
-            Stand {normalizeStandNumber(stand)}
-          </span>
-        )}
-      </span>
-    </button>
-    {publicSlug && (
-      <Link
-        to={`/exposants/${publicSlug}`}
-        className="flex-none rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-primary focus:opacity-100 group-hover:opacity-100"
-        aria-label={`Voir la fiche complète de ${name}`}
+}> = ({ name, stand, tagline, logoUrl, website, publicSlug, onClick }) => {
+  const shortStand = formatStandShort(stand);
+  return (
+    <div className="group flex items-start gap-2 rounded-lg px-2 py-2.5 transition-colors hover:bg-muted/60">
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex min-w-0 flex-1 items-start gap-3 text-left"
       >
-        <ExternalLink className="h-3.5 w-3.5" />
-      </Link>
-    )}
-  </div>
-);
+        <ExhibitorAvatar
+          name={name}
+          logoUrl={logoUrl || undefined}
+          website={website || undefined}
+          className="h-10 w-10 flex-none"
+          textClassName="text-xs"
+        />
+        <span className="min-w-0 flex-1">
+          <span className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
+            {name}
+          </span>
+          {shortStand && (
+            <span
+              className="mt-0.5 block truncate text-xs text-muted-foreground"
+              title={`Stand ${normalizeStandNumber(stand)}`}
+            >
+              Stand {shortStand}
+            </span>
+          )}
+          {tagline && (
+            <span className="mt-0.5 block truncate text-xs text-muted-foreground/90">
+              {tagline}
+            </span>
+          )}
+        </span>
+      </button>
+      {publicSlug && (
+        <Link
+          to={`/exposants/${publicSlug}`}
+          className="mt-1 flex-none rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-primary focus:opacity-100 group-hover:opacity-100"
+          aria-label={`Voir la fiche complète de ${name}`}
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+        </Link>
+      )}
+    </div>
+  );
+};
+
 
 export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
   open,
@@ -133,8 +151,12 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
 
   const total = totalCount ?? exhibitors.length;
 
-  // ── Groupes : catégories nommées (count desc) puis « Autres exposants »
-  const { groups, navEntries } = useMemo(() => {
+  // ── Groupes
+  // « Tous les exposants » regroupe les catégories fournies puis un bucket
+  // « Autres exposants » (singletons + non catégorisés) pour rester lisible.
+  // La colonne de navigation, elle, expose CHAQUE catégorie nommée : lot 9,
+  // une catégorie à un seul exposant doit s'afficher pour elle-même.
+  const { allGroups, navGroups, navEntries } = useMemo(() => {
     const rows = categories || [];
     const named = rows
       .filter((r) => r.category_id)
@@ -145,16 +167,17 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
     const uncategorized = rows.find((r) => !r.category_id)?.exhibitor_count ?? 0;
     const othersCount = singletons.reduce((s, r) => s + r.exhibitor_count, 0) + uncategorized;
 
-    const list: Group[] = retained.map((r) => ({
+    const toGroup = (r: (typeof named)[number]): Group => ({
       key: r.category_id as string,
       label: r.label,
       categoryIds: [r.category_id as string],
       includeUncategorized: false,
       count: r.exhibitor_count,
-    }));
+    });
 
+    const overview: Group[] = retained.map(toGroup);
     if (othersCount > 0) {
-      list.push({
+      overview.push({
         key: OTHERS_KEY,
         label: 'Autres exposants',
         categoryIds: singletons.map((r) => r.category_id as string),
@@ -163,18 +186,33 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
       });
     }
 
+    const nav: Group[] = named.map(toGroup);
+    if (uncategorized > 0) {
+      nav.push({
+        key: OTHERS_KEY,
+        label: 'Autres exposants',
+        categoryIds: [],
+        includeUncategorized: true,
+        count: uncategorized,
+      });
+    }
+
     return {
-      groups: list,
+      allGroups: overview,
+      navGroups: nav,
       navEntries: [
         { key: ALL_KEY, label: 'Tous les exposants', count: total },
-        ...list.map((g) => ({ key: g.key, label: g.label, count: g.count })),
+        ...nav.map((g) => ({ key: g.key, label: g.label, count: g.count })),
       ],
     };
   }, [categories, total]);
 
+  const groups = allGroups;
+
   const activeGroups = useMemo(
-    () => (activeKey === ALL_KEY ? groups : groups.filter((g) => g.key === activeKey)),
-    [groups, activeKey],
+    () => (activeKey === ALL_KEY ? allGroups : navGroups.filter((g) => g.key === activeKey)),
+    [allGroups, navGroups, activeKey],
+
   );
 
   // ── Chargement progressif, groupe par groupe, page par page
@@ -201,6 +239,16 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
     }
   }, [open, resetProgressive]);
 
+  /**
+   * Lot 16 — l'ordre alphabétique n'est pas rompu côté client : la RPC trie
+   * d'abord par richesse (logo, site, fiche publique) puis par nom. Une page
+   * de 50 est donc une tranche « riche » du groupe, et le tri local ne peut
+   * pas deviner les noms encore absents. On complète donc un groupe en
+   * chaînant ses pages (jusqu'à 200 lignes) avant de rendre la main au
+   * défilement, ce qui supprime les sauts de A à M puis retour à B.
+   */
+  const EAGER_ROWS = 200;
+
   const loadMore = useCallback(async () => {
     if (!eventId || fetching || doneRef.current) return;
     const group = activeGroups[cursor];
@@ -210,10 +258,16 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
     }
     setFetching(true);
     try {
-      const offset = (loaded[group.key] || []).length;
-      const rows = await fetchGroupPage(eventId, group, offset);
-      setLoaded((prev) => ({ ...prev, [group.key]: [...(prev[group.key] || []), ...rows] }));
-      const reachedEnd = rows.length < CATEGORY_PAGE_SIZE || offset + rows.length >= group.count;
+      let offset = (loaded[group.key] || []).length;
+      let fetchedNow = 0;
+      let reachedEnd = false;
+      while (!reachedEnd && fetchedNow < EAGER_ROWS) {
+        const rows = await fetchGroupPage(eventId, group, offset);
+        setLoaded((prev) => ({ ...prev, [group.key]: [...(prev[group.key] || []), ...rows] }));
+        offset += rows.length;
+        fetchedNow += rows.length;
+        reachedEnd = rows.length < CATEGORY_PAGE_SIZE || offset >= group.count;
+      }
       if (reachedEnd) {
         if (cursor + 1 >= activeGroups.length) doneRef.current = true;
         else setCursor((c) => c + 1);
@@ -224,6 +278,7 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
       setFetching(false);
     }
   }, [eventId, fetching, activeGroups, cursor, loaded]);
+
 
   const isSearching = debouncedSearch.trim().length >= 2;
 
@@ -370,12 +425,13 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
                     : 'Aucun exposant à afficher.'}
                 </p>
               ) : (
-                <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
                   {flatList.map((ex) => (
                     <ExhibitorRow
                       key={ex.id_exposant}
                       name={getDisplayName(ex)}
                       stand={ex.stand_exposant}
+                      tagline={ex.exposant_description}
                       logoUrl={ex.logo_url}
                       website={ex.website_exposant}
                       publicSlug={ex.public_slug}
@@ -399,12 +455,13 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
                           {group.label} ({group.count})
                         </h3>
                       )}
-                      <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
                         {sorted.map((row) => (
                           <ExhibitorRow
                             key={row.id_exposant}
                             name={row.display_name}
                             stand={row.stand}
+                            tagline={row.tagline}
                             logoUrl={row.logo_url}
                             website={row.website}
                             publicSlug={row.public_slug}
