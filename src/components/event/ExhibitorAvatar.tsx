@@ -9,6 +9,8 @@ interface ExhibitorAvatarProps {
   className?: string;
   /** Taille du texte de repli */
   textClassName?: string;
+  /** Lot 18 — habillage de l'image (padding) pour les grandes tailles */
+  imageClassName?: string;
 }
 
 /**
