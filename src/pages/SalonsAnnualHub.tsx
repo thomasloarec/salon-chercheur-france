@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
+import { useEventCardStats } from '@/hooks/useEventCardStats';
 import { Loader2, Calendar, MapPin, Briefcase, ArrowRight, ChevronDown, Clock } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -41,6 +43,14 @@ function toEvent(e: CanonicalEvent): Event {
 
 const SalonsAnnualHub = () => {
   const { data, isLoading } = useAnnualHub(YEAR);
+
+  // Compteurs publics (exposants + nouveautés) : même source que /salons,
+  // /ville/* et /secteur/*. Uniquement pour les cartes de la section #prochains.
+  const featuredIds = useMemo(
+    () => (data?.featured ?? []).map(e => e.id),
+    [data?.featured]
+  );
+  const { data: annualStatsMap } = useEventCardStats(featuredIds);
 
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
@@ -249,7 +259,13 @@ const SalonsAnnualHub = () => {
                   </div>
                   <div className="flex flex-col border-t border-border/60">
                     {data.featured.map(e => (
-                      <EventCard key={e.id} event={toEvent(e)} view="grid" />
+                      <EventCard
+                        key={e.id}
+                        event={toEvent(e)}
+                        view="list"
+                        exhibitorCount={annualStatsMap?.[e.id]?.exhibitor_count}
+                        noveltyCount={annualStatsMap?.[e.id]?.novelty_count}
+                      />
                     ))}
                   </div>
                 </section>
