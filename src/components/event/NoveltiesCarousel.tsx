@@ -92,13 +92,53 @@ export default function NoveltiesCarousel({
     [index, count, scrollToIndex],
   );
 
+  // ── Défilement automatique (lot 15) ────────────────────────────────────
+  // Autorisé UNIQUEMENT ici, jamais sur les autres carousels du site.
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+  const autoplayEligible = hasControls && !prefersReducedMotion;
+  /** Arrêt définitif : le visiteur a pris la main (flèche, dot, swipe). */
+  const [stopped, setStopped] = useState(false);
+  /** Pause du bouton de contrôle (WCAG 2.2.2). */
+  const [userPaused, setUserPaused] = useState(false);
+  /** Pauses temporaires : survol, focus clavier, onglet masqué. */
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [tabHidden, setTabHidden] = useState(
+    typeof document !== 'undefined' ? document.hidden : false,
+  );
+
+  useEffect(() => {
+    const onVisibility = () => setTabHidden(document.hidden);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, []);
+
+  const stopAutoplay = useCallback(() => setStopped(true), []);
+
+  const playing = autoplayEligible && !stopped && !userPaused && !hovered && !focused && !tabHidden;
+
+  useEffect(() => {
+    if (!playing) return;
+    // Pas de rattrapage accéléré : un simple intervalle, remis à zéro à chaque
+    // reprise, avance d'une slide à la fois.
+    const timer = window.setInterval(() => {
+      scrollToIndex((index + 1) % count);
+    }, AUTOPLAY_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, [playing, index, count, scrollToIndex]);
+
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (!hasControls) return;
     if (e.key === 'ArrowLeft') {
       e.preventDefault();
+      stopAutoplay();
       go(-1);
     } else if (e.key === 'ArrowRight') {
       e.preventDefault();
+      stopAutoplay();
       go(1);
     }
   };
