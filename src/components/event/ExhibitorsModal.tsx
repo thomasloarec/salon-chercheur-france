@@ -388,12 +388,13 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
                     : 'Aucun exposant à afficher.'}
                 </p>
               ) : (
-                <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
                   {flatList.map((ex) => (
                     <ExhibitorRow
                       key={ex.id_exposant}
                       name={getDisplayName(ex)}
                       stand={ex.stand_exposant}
+                      tagline={ex.exposant_description}
                       logoUrl={ex.logo_url}
                       website={ex.website_exposant}
                       publicSlug={ex.public_slug}
@@ -417,12 +418,13 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
                           {group.label} ({group.count})
                         </h3>
                       )}
-                      <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
                         {sorted.map((row) => (
                           <ExhibitorRow
                             key={row.id_exposant}
                             name={row.display_name}
                             stand={row.stand}
+                            tagline={row.tagline}
                             logoUrl={row.logo_url}
                             website={row.website}
                             publicSlug={row.public_slug}
