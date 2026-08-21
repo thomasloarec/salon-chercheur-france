@@ -37,27 +37,10 @@ const WidgetShell: React.FC<{ children: React.ReactNode; reveal?: boolean }> = (
   reveal,
 }) => (
   <section
-    className="relative flex min-h-[340px] w-full flex-col overflow-hidden rounded-2xl bg-surface-inverse text-inverse ring-1 ring-inset ring-primary/40"
+    className="relative flex min-h-[340px] w-full flex-col overflow-hidden rounded-2xl text-inverse ring-1 ring-inset ring-primary/40"
+    style={{ backgroundColor: 'hsl(var(--lx-navy-deep))' }}
     aria-label="Radar CRM"
   >
-    <div
-      aria-hidden
-      className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.28]"
-      style={{ backgroundImage: 'url(/home-texture-plexus.jpg)' }}
-    />
-    <div
-      aria-hidden
-      className="pointer-events-none absolute inset-0"
-      style={{
-        background:
-          'radial-gradient(85% 65% at 50% 30%, transparent, hsl(var(--surface-inverse) / 0.9))',
-      }}
-    />
-    {/* Marqueur d'identité : halo violet discret en tête de bloc. */}
-    <div
-      aria-hidden
-      className="pointer-events-none absolute -top-16 left-1/2 h-32 w-56 -translate-x-1/2 rounded-full bg-primary/25 blur-3xl"
-    />
 
     <div className="relative flex items-center gap-2 px-4 pb-3 pt-4">
       <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-inverse-primary/20 ring-1 ring-inverse-primary/40">

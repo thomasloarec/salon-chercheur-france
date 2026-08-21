@@ -54,10 +54,7 @@ export const RelatedEvents = ({ event, limit = 4, excludeIds = [] }: RelatedEven
     return null;
   };
 
-  const title =
-    currentSectors.length === 1
-      ? `Les autres événements en ${currentSectors[0]}`
-      : 'Vous pourriez également être intéressé par';
+  const title = 'Vous pourriez également être intéressé par';
 
   return (
     <section className="min-w-0">

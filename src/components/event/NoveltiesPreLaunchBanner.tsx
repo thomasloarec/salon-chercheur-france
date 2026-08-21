@@ -4,7 +4,7 @@ import { fr } from 'date-fns/locale';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DarkTexturePanel from '@/components/event/DarkTexturePanel';
-import NoveltyPublishSteps from '@/components/novelty/NoveltyPublishSteps';
+import NoveltyBenefits from '@/components/novelty/NoveltyBenefits';
 
 interface NoveltiesPreLaunchBannerProps {
   eventDate: string;
@@ -41,7 +41,7 @@ export function NoveltiesPreLaunchBanner({
 
   return (
     <DarkTexturePanel className="w-full">
-      <div className="mx-auto flex w-full max-w-3xl flex-col items-start gap-6 px-6 py-12 sm:px-10 sm:py-14">
+      <div className="mx-auto flex w-full max-w-4xl flex-col items-start gap-6 px-6 py-12 sm:px-10 sm:py-14">
         <span className="text-xs font-medium uppercase tracking-[0.14em] text-inverse/70">
           Espace exposants
         </span>
@@ -50,9 +50,14 @@ export function NoveltiesPreLaunchBanner({
           Les nouveautés ouvrent le {openLabel}
         </h2>
 
+        <p className="text-base leading-relaxed text-inverse/85 sm:text-lg">
+          Préparez dès maintenant ce que vous présenterez : les visiteurs consultent
+          cette page bien avant l'ouverture.
+        </p>
+
         <p className="text-base font-medium leading-snug text-inverse sm:text-lg">{proof}</p>
 
-        <NoveltyPublishSteps className="mt-1" />
+        <NoveltyBenefits className="mt-1" />
 
         {onNotifyMe && (
           <Button onClick={onNotifyMe} size="lg" className="gap-2">

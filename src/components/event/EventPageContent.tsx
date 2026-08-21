@@ -337,7 +337,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
           {/* ═══ Bande 3 — texture sombre : bandeau Parcours IA.
               Rendue uniquement quand le bandeau l'est : jamais de bande vide. */}
           {canPrepareVisit && (
-            <EventBand tone="dark-texture" space="md">
+            <EventBand tone="dark-photo" space="md">
               <EventAiBanner
                 canPrepareVisit={canPrepareVisit}
                 onPrepareVisit={() => setPrepareVisitOpen(true)}
@@ -353,7 +353,12 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
           </EventBand>
 
           {/* ═══ Bande 5 — blanc : blocs bas de page ═══ */}
-          <EventBand tone="white" space="md" innerClassName="space-y-8 md:space-y-10 lg:space-y-12">
+          <EventBand
+            tone="white"
+            space="none"
+            className="pb-8 pt-6 md:pb-10 md:pt-8 lg:pb-14 lg:pt-8"
+            innerClassName="flex flex-col gap-8 md:gap-10 lg:gap-12 [&>*]:min-w-0"
+          >
             {/* Autres éditions de ce salon (séries) */}
             <Reveal>
               <EventSeriesBlock event={event} onSeriesIds={handleSeriesIds} />

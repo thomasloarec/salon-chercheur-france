@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import AddNoveltyButton from '@/components/novelty/AddNoveltyButton';
-import NoveltyPublishSteps from '@/components/novelty/NoveltyPublishSteps';
+import NoveltyBenefits from '@/components/novelty/NoveltyBenefits';
 import DarkTexturePanel from '@/components/event/DarkTexturePanel';
 import type { Event } from '@/types/event';
 
@@ -42,18 +42,23 @@ export default function NoveltyExampleEmptyState({
 
   return (
     <DarkTexturePanel className={cn('w-full', className)}>
-      <div className="mx-auto flex w-full max-w-3xl flex-col items-start gap-6 px-6 py-12 sm:px-10 sm:py-14">
+      <div className="mx-auto flex w-full max-w-4xl flex-col items-start gap-6 px-6 py-12 sm:px-10 sm:py-14">
         <span className="text-xs font-medium uppercase tracking-[0.14em] text-inverse/70">
           Espace exposants
         </span>
 
         <h2 className="heading-display text-2xl leading-tight text-inverse sm:text-3xl">
-          La première nouveauté reste à publier
+          Soyez le premier à publier votre nouveauté
         </h2>
+
+        <p className="text-base leading-relaxed text-inverse/85 sm:text-lg">
+          Démarquez-vous avant l'ouverture et donnez aux visiteurs une raison concrète
+          d'inscrire votre stand à leur parcours.
+        </p>
 
         <p className="text-base font-medium leading-snug text-inverse sm:text-lg">{proof}</p>
 
-        <NoveltyPublishSteps className="mt-1" />
+        <NoveltyBenefits className="mt-1" />
 
         <AddNoveltyButton event={event} label="Publier ma nouveauté" size="lg" />
 
