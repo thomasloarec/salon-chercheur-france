@@ -36,12 +36,17 @@ export const SectorArticlesBlock = ({ event }: SectorArticlesBlockProps) => {
         {sectorLabel ? `À lire sur ${sectorLabel}` : 'À lire sur ce secteur'}
       </h2>
 
+      {/* Lot 15 — mobile (<768px) : carousel horizontal scroll-snap, ~1,2 carte
+          visible, aucun autoplay. Desktop inchangé. Avec un seul article, la
+          carte occupe toute la largeur : aucun défilement possible. */}
       <div
         className={cn(
-          'mt-4 grid gap-5',
-          count === 1 && 'max-w-md',
-          count === 2 && 'max-w-3xl sm:grid-cols-2',
-          count >= 3 && 'sm:grid-cols-2 lg:grid-cols-3',
+          'mt-4 -mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-2',
+          '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+          'md:mx-0 md:grid md:snap-none md:overflow-visible md:px-0 md:pb-0',
+          count === 1 && 'md:max-w-md',
+          count === 2 && 'md:max-w-3xl md:grid-cols-2',
+          count >= 3 && 'md:grid-cols-2 lg:grid-cols-3',
         )}
       >
         {articles.map((article) => (
