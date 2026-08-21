@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { formatStandShort, normalizeStandNumber } from '@/utils/standUtils';
 import ExhibitorAvatar from './ExhibitorAvatar';
-import ExhibitorFullProfileCTA from '@/components/exhibitor/ExhibitorFullProfileCTA';
+import useExhibitorLink from '@/hooks/useExhibitorLink';
 import {
   useCategoryExhibitors,
   CATEGORY_PAGE_SIZE,
