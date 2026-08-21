@@ -36,8 +36,10 @@ export default function NoveltiesSection({
   const cleanedRef = useRef(false);
 
   const { data, isLoading, error, refetch, isFetching } = useInfiniteNovelties({
+    // Lot 15 — ordre par défaut : la plus récemment publiée en premier.
+    // (auparavant 'awaited' : likes desc, commentaires desc, created_at desc)
     event_id: event.id,
-    sort: 'awaited',
+    sort: 'recent',
     pageSize: PAGE_SIZE,
     enabled: !!event.id,
   });
