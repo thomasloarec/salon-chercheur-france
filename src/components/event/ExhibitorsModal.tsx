@@ -353,14 +353,16 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
 
           {/* Liste dense */}
           <div className="min-w-0 flex-1 overflow-y-auto px-3 py-2">
-            {isSearching ? (
-              searchResults.length === 0 ? (
+            {isSearching || flatMode ? (
+              flatList.length === 0 ? (
                 <p className="py-10 text-center text-sm text-muted-foreground">
-                  Aucun exposant trouvé pour « {debouncedSearch.trim()} ».
+                  {isSearching
+                    ? `Aucun exposant trouvé pour « ${debouncedSearch.trim()} ».`
+                    : 'Aucun exposant à afficher.'}
                 </p>
               ) : (
                 <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {searchResults.map((ex) => (
+                  {flatList.map((ex) => (
                     <ExhibitorRow
                       key={ex.id_exposant}
                       name={getDisplayName(ex)}
