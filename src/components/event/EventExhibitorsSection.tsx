@@ -472,6 +472,8 @@ export const EventExhibitorsSection: React.FC<Props> = ({
           })) || []
         }
         loading={allExhibitors === null}
+        eventId={event.id}
+        totalCount={total}
         onSelect={async (ex) => {
           setShowAllModal(false);
           const fullEx = allExhibitors?.find((e) => e.id === ex.id_exposant);
