@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRelatedEvents } from '@/hooks/useRelatedEvents';
 import { getSectorUrl } from '@/lib/sectorUrl';
+import { convertSecteurToArray } from '@/utils/sectorUtils';
 import EventCompactCard from './EventCompactCard';
 import type { Event } from '@/types/event';
 
