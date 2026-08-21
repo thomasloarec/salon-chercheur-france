@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useDebounce } from '@/hooks/useDebounce';
-import { normalizeStandNumber } from '@/utils/standUtils';
+import { formatStandShort, normalizeStandNumber } from '@/utils/standUtils';
 import {
   useEventCategories,
   CATEGORY_PAGE_SIZE,
