@@ -239,6 +239,16 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
     }
   }, [open, resetProgressive]);
 
+  /**
+   * Lot 16 — l'ordre alphabétique n'est pas rompu côté client : la RPC trie
+   * d'abord par richesse (logo, site, fiche publique) puis par nom. Une page
+   * de 50 est donc une tranche « riche » du groupe, et le tri local ne peut
+   * pas deviner les noms encore absents. On complète donc un groupe en
+   * chaînant ses pages (jusqu'à 200 lignes) avant de rendre la main au
+   * défilement, ce qui supprime les sauts de A à M puis retour à B.
+   */
+  const EAGER_ROWS = 200;
+
   const loadMore = useCallback(async () => {
     if (!eventId || fetching || doneRef.current) return;
     const group = activeGroups[cursor];
@@ -248,10 +258,16 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
     }
     setFetching(true);
     try {
-      const offset = (loaded[group.key] || []).length;
-      const rows = await fetchGroupPage(eventId, group, offset);
-      setLoaded((prev) => ({ ...prev, [group.key]: [...(prev[group.key] || []), ...rows] }));
-      const reachedEnd = rows.length < CATEGORY_PAGE_SIZE || offset + rows.length >= group.count;
+      let offset = (loaded[group.key] || []).length;
+      let fetchedNow = 0;
+      let reachedEnd = false;
+      while (!reachedEnd && fetchedNow < EAGER_ROWS) {
+        const rows = await fetchGroupPage(eventId, group, offset);
+        setLoaded((prev) => ({ ...prev, [group.key]: [...(prev[group.key] || []), ...rows] }));
+        offset += rows.length;
+        fetchedNow += rows.length;
+        reachedEnd = rows.length < CATEGORY_PAGE_SIZE || offset >= group.count;
+      }
       if (reachedEnd) {
         if (cursor + 1 >= activeGroups.length) doneRef.current = true;
         else setCursor((c) => c + 1);
@@ -262,6 +278,7 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
       setFetching(false);
     }
   }, [eventId, fetching, activeGroups, cursor, loaded]);
+
 
   const isSearching = debouncedSearch.trim().length >= 2;
 
