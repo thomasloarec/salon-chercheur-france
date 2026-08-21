@@ -30,41 +30,59 @@ export const RelatedEvents = ({ event, limit = 4, excludeIds = [] }: RelatedEven
     return null;
   }
 
-  const sectorLabel =
-    event.secteur && Array.isArray(event.secteur) && event.secteur.length > 0
-      ? (event.secteur[0] as string)
-      : null;
+  // Secteurs du salon courant (source unique : colonne `secteur`).
+  const currentSectors = convertSecteurToArray(event.secteur as never);
+  const sectorLabel = currentSectors.length > 0 ? currentSectors[0] : null;
+
+  // `related_events` ne renvoie que shared_sectors_count (sectors = tableau vide).
+  // Le secteur partagé n'est donc déductible sans requête supplémentaire que
+  // lorsqu'il est univoque : 1 secteur courant, ou intersection = tous les secteurs courants.
+  const resolveSectorBadge = (sharedCount: number | null | undefined) => {
+    const shared = sharedCount ?? 0;
+    if (shared <= 0 || currentSectors.length === 0) return null;
+    if (currentSectors.length === 1) {
+      return { label: currentSectors[0], title: currentSectors[0] };
+    }
+    if (shared >= currentSectors.length) {
+      return {
+        label: `${currentSectors[0]} +${currentSectors.length - 1}`,
+        title: currentSectors.join(' · '),
+      };
+    }
+    // Ambiguïté : on ne sait pas lequel des secteurs est partagé → pas de badge.
+    return null;
+  };
+
+  const title =
+    currentSectors.length === 1
+      ? `Les autres événements en ${currentSectors[0]}`
+      : 'Vous pourriez également être intéressé par';
 
   return (
     <section className="min-w-0">
-      <h2 className="heading-display text-xl font-semibold text-foreground sm:text-2xl">
-        Vous pourriez également être intéressé par
-      </h2>
+      <h2 className="heading-display text-xl font-semibold text-foreground sm:text-2xl">{title}</h2>
 
-      <div className="mt-4 -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4">
+      <div className="mt-4 -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4">
         {isLoading
           ? Array.from({ length: limit }).map((_, i) => (
-              <Skeleton key={i} className="h-56 w-[78%] flex-none rounded-xl sm:w-auto" />
+              <Skeleton key={i} className="h-[96px] w-[78%] flex-none rounded-xl sm:w-auto" />
             ))
-          : relatedEvents?.map((relEvent) => (
-              <EventCompactCard
-                key={relEvent.id}
-                variant="tile"
-                slug={relEvent.slug}
-                name={relEvent.nom_event}
-                dateDebut={relEvent.date_debut}
-                ville={relEvent.ville}
-                imageUrl={relEvent.url_image}
-                badge={
-                  relEvent.shared_sectors_count && relEvent.shared_sectors_count > 0
-                    ? `${relEvent.shared_sectors_count} secteur${
-                        relEvent.shared_sectors_count > 1 ? 's' : ''
-                      } en commun`
-                    : null
-                }
-                className="w-[78%] flex-none snap-start sm:w-auto"
-              />
-            ))}
+          : relatedEvents?.map((relEvent) => {
+              const sectorBadge = resolveSectorBadge(relEvent.shared_sectors_count);
+              return (
+                <EventCompactCard
+                  key={relEvent.id}
+                  slug={relEvent.slug}
+                  name={relEvent.nom_event}
+                  dateDebut={relEvent.date_debut}
+                  ville={relEvent.ville}
+                  imageUrl={relEvent.url_image}
+                  sectorBadge={sectorBadge?.label ?? null}
+                  sectorBadgeTitle={sectorBadge?.title ?? null}
+                  className="w-[78%] flex-none snap-start sm:w-auto"
+                />
+              );
+            })}
       </div>
 
       {sectorLabel && (
