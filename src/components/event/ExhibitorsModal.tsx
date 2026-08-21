@@ -84,54 +84,68 @@ const ExhibitorRow: React.FC<{
   logoUrl?: string | null;
   website?: string | null;
   publicSlug?: string | null;
+  isTest?: boolean | null;
+  eventSlug?: string;
+  onCloseModal: () => void;
   onClick: () => void;
-}> = ({ name, stand, tagline, logoUrl, website, publicSlug, onClick }) => {
+}> = ({ name, stand, tagline, logoUrl, website, publicSlug, isTest, eventSlug, onCloseModal, onClick }) => {
   const shortStand = formatStandShort(stand);
-  return (
-    <div className="group flex items-start gap-2 rounded-lg px-2 py-2.5 transition-colors hover:bg-muted/60">
-      <button
-        type="button"
-        onClick={onClick}
-        className="flex min-w-0 flex-1 items-start gap-3 text-left"
-      >
-        <ExhibitorAvatar
-          name={name}
-          logoUrl={logoUrl || undefined}
-          website={website || undefined}
-          className="h-10 w-10 flex-none"
-          textClassName="text-xs"
-        />
-        <span className="min-w-0 flex-1">
-          <span className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
-            {name}
-          </span>
-          {shortStand && (
-            <span
-              className="mt-0.5 block truncate text-xs text-muted-foreground"
-              title={`Stand ${normalizeStandNumber(stand)}`}
-            >
-              Stand {shortStand}
-            </span>
-          )}
-          {tagline && (
-            <span className="mt-0.5 block truncate text-xs text-muted-foreground/90">
-              {tagline}
-            </span>
-          )}
+  const link = useExhibitorLink({
+    publicSlug,
+    isTest,
+    surface: 'event_exhibitor_list',
+    eventSlug,
+    onNavigate: onCloseModal,
+  });
+
+  const inner = (
+    <>
+      <ExhibitorAvatar
+        name={name}
+        logoUrl={logoUrl || undefined}
+        website={website || undefined}
+        className="h-10 w-10 flex-none"
+        textClassName="text-xs"
+      />
+      <span className="min-w-0 flex-1">
+        <span className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
+          {name}
         </span>
-      </button>
-      {publicSlug && (
-        <Link
-          to={`/exposants/${publicSlug}`}
-          className="mt-1 flex-none rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-primary focus:opacity-100 group-hover:opacity-100"
-          aria-label={`Voir la fiche complète de ${name}`}
-        >
-          <ExternalLink className="h-3.5 w-3.5" />
-        </Link>
-      )}
-    </div>
+        {shortStand && (
+          <span
+            className="mt-0.5 block truncate text-xs text-muted-foreground"
+            title={`Stand ${normalizeStandNumber(stand)}`}
+          >
+            Stand {shortStand}
+          </span>
+        )}
+        {tagline && (
+          <span className="mt-0.5 block truncate text-xs text-muted-foreground/90">
+            {tagline}
+          </span>
+        )}
+      </span>
+    </>
+  );
+
+  const rowClass =
+    'group flex w-full items-start gap-3 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-muted/60';
+
+  if (link) {
+    return (
+      <a href={link.href} onClick={link.onClick} className={rowClass}>
+        {inner}
+      </a>
+    );
+  }
+
+  return (
+    <button type="button" onClick={onClick} className={rowClass}>
+      {inner}
+    </button>
   );
 };
+
 
 
 export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
