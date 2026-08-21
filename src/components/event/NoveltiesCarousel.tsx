@@ -1,9 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import NoveltyEventCard from '@/components/novelty/NoveltyEventCard';
 import type { Novelty } from '@/hooks/useNovelties';
 import type { Event } from '@/types/event';
+
+/** Lot 15 — cadence du défilement automatique (décision produit du 20/08/2026). */
+const AUTOPLAY_INTERVAL_MS = 7000;
 
 interface NoveltiesCarouselProps {
   novelties: Novelty[];
