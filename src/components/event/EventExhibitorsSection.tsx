@@ -423,11 +423,15 @@ export const EventExhibitorsSection: React.FC<Props> = ({
             stand_exposant: ex.stand,
             website_exposant: ex.website_exposant || ex.website,
             logo_url: ex.logo_url,
+            public_slug: ex.public_slug ?? null,
+            is_test: ex.is_test ?? false,
           })) || []
         }
         loading={allExhibitors === null}
         eventId={event.id}
+        eventSlug={event.slug}
         totalCount={total}
+
         onSelect={async (ex) => {
           setShowAllModal(false);
           const fullEx = allExhibitors?.find((e) => e.id === ex.id_exposant);
