@@ -4,13 +4,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useExhibitorsByEvent } from '@/hooks/useExhibitorsByEvent';
 import { useEventCategories, type CategoryExhibitorRow } from '@/hooks/useEventCategories';
 import { fetchAllEventExhibitors } from '@/lib/fetchAllEventExhibitors';
 import { hydrateExhibitor } from '@/lib/hydrateExhibitor';
-import { normalizeStandNumber } from '@/utils/standUtils';
+import { formatStandShort, normalizeStandNumber } from '@/utils/standUtils';
 import { cn } from '@/lib/utils';
 import type { Event } from '@/types/event';
 import EventCategoryCards, {
@@ -80,8 +79,11 @@ const SearchResults: React.FC<{
               {ex.exhibitor_name || ex.name}
             </p>
             {(ex.stand_exposant || ex.stand) && (
-              <p className="text-xs text-muted-foreground">
-                Stand {normalizeStandNumber(ex.stand_exposant || ex.stand)}
+              <p
+                className="truncate text-xs text-muted-foreground"
+                title={`Stand ${normalizeStandNumber(ex.stand_exposant || ex.stand)}`}
+              >
+                Stand {formatStandShort(ex.stand_exposant || ex.stand)}
               </p>
             )}
           </div>
@@ -100,7 +102,6 @@ export const EventExhibitorsSection: React.FC<Props> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 300);
   const [activeKey, setActiveKey] = useState<string | null>(null);
-  const [allCategoriesOpen, setAllCategoriesOpen] = useState(false);
   const [showAllModal, setShowAllModal] = useState(false);
   const [allExhibitors, setAllExhibitors] = useState<any[] | null>(null);
   const [selectedExhibitor, setSelectedExhibitor] = useState<any | null>(null);
@@ -360,7 +361,7 @@ export const EventExhibitorsSection: React.FC<Props> = ({
                   onSelect={setActiveKey}
                   panelId="exposants-panel"
                   onShowAll={
-                    cards.length > VISIBLE_CARDS ? () => setAllCategoriesOpen(true) : undefined
+                    cards.length > VISIBLE_CARDS ? handleOpenModal : undefined
                   }
                   showAllCount={(categories || []).filter((c) => c.category_id).length}
                 />
@@ -411,53 +412,6 @@ export const EventExhibitorsSection: React.FC<Props> = ({
           </>
         )}
       </div>
-
-      {/* Toutes les catégories, singletons compris */}
-      <Sheet open={allCategoriesOpen} onOpenChange={setAllCategoriesOpen}>
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle className="heading-display">Toutes les catégories</SheetTitle>
-          </SheetHeader>
-          <div className="mt-4 space-y-1.5">
-            {(categories || [])
-              .filter((c) => c.category_id)
-              .map((c) => (
-                <button
-                  key={c.category_id}
-                  type="button"
-                  onClick={() => {
-                    // Lot 9 — même pour une catégorie à un seul exposant,
-                    // on affiche SA catégorie et non le bucket « Autres ».
-                    setActiveKey(c.category_id as string);
-                    setAllCategoriesOpen(false);
-                  }}
-                  className={cn(
-                    'flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-colors duration-200',
-                    activeKey === c.category_id ? 'border-primary bg-accent' : 'hover:bg-muted/50',
-                  )}
-                >
-                  <span className="min-w-0 flex-1 text-foreground">{c.label}</span>
-                  <span className="flex-none text-xs font-medium text-muted-foreground">
-                    {c.exhibitor_count}
-                  </span>
-                </button>
-              ))}
-            {uncategorizedCount > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveKey(hasCategoryNav ? OTHERS_KEY : activeKey);
-                  setAllCategoriesOpen(false);
-                }}
-                className="flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm hover:bg-muted/50"
-              >
-                <span className="text-foreground">Non catégorisés</span>
-                <span className="text-xs font-medium text-muted-foreground">{uncategorizedCount}</span>
-              </button>
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
 
       <ExhibitorsModal
         open={showAllModal}
