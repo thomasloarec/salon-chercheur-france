@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export type BandTone = 'light-texture' | 'white' | 'dark-texture' | 'soft';
+export type BandTone = 'light-texture' | 'white' | 'dark-texture' | 'dark-photo' | 'soft';
 export type BandSpace = 'sm' | 'md' | 'lg' | 'none';
 
 /**
@@ -41,7 +41,7 @@ export const EventBand: React.FC<EventBandProps> = ({
   innerClassName,
   children,
 }) => {
-  const isDark = tone === 'dark-texture';
+  const isDark = tone === 'dark-texture' || tone === 'dark-photo';
 
   return (
     <section
@@ -89,7 +89,7 @@ export const EventBand: React.FC<EventBandProps> = ({
 
 
 
-      {isDark && (
+      {tone === 'dark-texture' && (
         <>
           <div
             aria-hidden
@@ -102,6 +102,32 @@ export const EventBand: React.FC<EventBandProps> = ({
             style={{
               background:
                 'radial-gradient(80% 60% at 50% 40%, transparent, hsl(var(--surface-inverse) / 0.85))',
+            }}
+          />
+        </>
+      )}
+
+      {tone === 'dark-photo' && (
+        <>
+          {/* Illustration salons, identique au hero de /salons. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: 'url(/salons-hero.png)' }}
+          />
+          {/* Filigrane navy : garantit la lisibilité du texte blanc. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{ backgroundColor: 'hsl(var(--surface-inverse) / 0.78)' }}
+          />
+          {/* Fondu bas : raccord propre avec la bande claire suivante. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-16"
+            style={{
+              background:
+                'linear-gradient(180deg, transparent, hsl(var(--surface-inverse) / 0.35))',
             }}
           />
         </>
