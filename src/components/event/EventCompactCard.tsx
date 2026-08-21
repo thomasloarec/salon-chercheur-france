@@ -37,6 +37,8 @@ export const EventCompactCard = ({
   ville,
   imageUrl,
   badge,
+  sectorBadge,
+  sectorBadgeTitle,
   variant = 'row',
   className,
 }: CompactEventCardProps) => {
