@@ -23,6 +23,7 @@ interface Exhibitor {
   logo_url?: string;
   public_slug?: string | null;
   seo_indexable?: boolean | null;
+  is_test?: boolean | null;
   // Fields from participations_with_exhibitors view
   name_final?: string;
   legacy_name?: string;
@@ -452,6 +453,7 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
                       logoUrl={ex.logo_url}
                       website={ex.website_exposant}
                       publicSlug={ex.public_slug}
+                      isTest={ex.is_test}
                       eventSlug={eventSlug}
                       onCloseModal={() => onOpenChange(false)}
                       onClick={() => onSelect(ex)}
