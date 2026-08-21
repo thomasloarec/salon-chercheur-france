@@ -53,7 +53,12 @@ export const SectorArticlesBlock = ({ event }: SectorArticlesBlockProps) => {
           <Link
             key={article.id}
             to={`/blog/${article.slug}`}
-            className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow duration-200 hover:shadow-md"
+            className={cn(
+              'group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow duration-200 hover:shadow-md',
+              // mobile : ~1,2 carte visible pour suggérer le swipe
+              'w-[82%] flex-none snap-start md:w-auto md:flex-auto',
+              count === 1 && 'w-full',
+            )}
           >
             {article.header_image_url ? (
               <div className="aspect-[16/9] overflow-hidden bg-muted">
