@@ -61,7 +61,7 @@ export const Reveal: React.FC<RevealProps> = ({ children, className }) => {
     <div
       ref={ref}
       className={cn(
-        'transition-[opacity,transform] duration-[450ms] ease-out motion-reduce:transition-none',
+        'empty:hidden transition-[opacity,transform] duration-[450ms] ease-out motion-reduce:transition-none',
         shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-[10px]',
         className,
       )}
