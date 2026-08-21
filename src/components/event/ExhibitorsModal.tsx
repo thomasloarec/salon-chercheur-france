@@ -151,8 +151,12 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
 
   const total = totalCount ?? exhibitors.length;
 
-  // ── Groupes : catégories nommées (count desc) puis « Autres exposants »
-  const { groups, navEntries } = useMemo(() => {
+  // ── Groupes
+  // « Tous les exposants » regroupe les catégories fournies puis un bucket
+  // « Autres exposants » (singletons + non catégorisés) pour rester lisible.
+  // La colonne de navigation, elle, expose CHAQUE catégorie nommée : lot 9,
+  // une catégorie à un seul exposant doit s'afficher pour elle-même.
+  const { allGroups, navGroups, navEntries } = useMemo(() => {
     const rows = categories || [];
     const named = rows
       .filter((r) => r.category_id)
@@ -163,16 +167,17 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
     const uncategorized = rows.find((r) => !r.category_id)?.exhibitor_count ?? 0;
     const othersCount = singletons.reduce((s, r) => s + r.exhibitor_count, 0) + uncategorized;
 
-    const list: Group[] = retained.map((r) => ({
+    const toGroup = (r: (typeof named)[number]): Group => ({
       key: r.category_id as string,
       label: r.label,
       categoryIds: [r.category_id as string],
       includeUncategorized: false,
       count: r.exhibitor_count,
-    }));
+    });
 
+    const overview: Group[] = retained.map(toGroup);
     if (othersCount > 0) {
-      list.push({
+      overview.push({
         key: OTHERS_KEY,
         label: 'Autres exposants',
         categoryIds: singletons.map((r) => r.category_id as string),
@@ -181,18 +186,33 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
       });
     }
 
+    const nav: Group[] = named.map(toGroup);
+    if (uncategorized > 0) {
+      nav.push({
+        key: OTHERS_KEY,
+        label: 'Autres exposants',
+        categoryIds: [],
+        includeUncategorized: true,
+        count: uncategorized,
+      });
+    }
+
     return {
-      groups: list,
+      allGroups: overview,
+      navGroups: nav,
       navEntries: [
         { key: ALL_KEY, label: 'Tous les exposants', count: total },
-        ...list.map((g) => ({ key: g.key, label: g.label, count: g.count })),
+        ...nav.map((g) => ({ key: g.key, label: g.label, count: g.count })),
       ],
     };
   }, [categories, total]);
 
+  const groups = allGroups;
+
   const activeGroups = useMemo(
-    () => (activeKey === ALL_KEY ? groups : groups.filter((g) => g.key === activeKey)),
-    [groups, activeKey],
+    () => (activeKey === ALL_KEY ? allGroups : navGroups.filter((g) => g.key === activeKey)),
+    [allGroups, navGroups, activeKey],
+
   );
 
   // ── Chargement progressif, groupe par groupe, page par page
