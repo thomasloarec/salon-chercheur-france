@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Search, Loader2, ExternalLink } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -13,6 +12,7 @@ import {
   type CategoryExhibitorRow,
 } from '@/hooks/useEventCategories';
 import ExhibitorAvatar from './ExhibitorAvatar';
+import useExhibitorLink from '@/hooks/useExhibitorLink';
 
 interface Exhibitor {
   id_exposant: string;
@@ -36,6 +36,8 @@ interface ExhibitorsModalProps {
   loading?: boolean;
   onSelect: (exhibitor: Exhibitor) => void;
   eventId?: string | null;
+  /** Slug du salon — métadonnée de tracking uniquement. */
+  eventSlug?: string;
   /** Total affiché sur la page salon (source de vérité des compteurs). */
   totalCount?: number;
 }
@@ -155,6 +157,7 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
   loading = false,
   onSelect,
   eventId,
+  eventSlug,
   totalCount,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -449,6 +452,8 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
                       logoUrl={ex.logo_url}
                       website={ex.website_exposant}
                       publicSlug={ex.public_slug}
+                      eventSlug={eventSlug}
+                      onCloseModal={() => onOpenChange(false)}
                       onClick={() => onSelect(ex)}
                     />
                   ))}
@@ -479,6 +484,8 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
                             logoUrl={row.logo_url}
                             website={row.website}
                             publicSlug={row.public_slug}
+                            eventSlug={eventSlug}
+                            onCloseModal={() => onOpenChange(false)}
                             onClick={() => selectRpcRow(row)}
                           />
                         ))}
