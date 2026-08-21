@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { trackExhibitorEvent } from '@/lib/exhibitorTracking';
 import {
   FileText,
   Building2,
@@ -104,6 +105,7 @@ export default function NoveltyEventCard({
     exhibitor_id: novelty.exhibitor_id,
   });
 
+  const navigate = useNavigate();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [leadFormType, setLeadFormType] =
@@ -336,18 +338,30 @@ export default function NoveltyEventCard({
                   onClick={async (e) => {
                     e.stopPropagation();
                     if (!event) return;
-                    setShowExhibitorDialog(true);
-                    if (!exhibitorSlugInfo && novelty.exhibitor_id) {
+                    // Lot 17 — redirection vers la fiche exposant dès qu'elle
+                    // existe ; le dialog reste le repli. Le slug est résolu par
+                    // la requête déjà présente ici (aucune requête ajoutée).
+                    let info = exhibitorSlugInfo;
+                    if (!info && novelty.exhibitor_id) {
                       const maps = await fetchExhibitorPublicSlugs(
                         [novelty.exhibitor_id],
                         [novelty.exhibitor_id],
                       );
-                      const info = resolvePublicSlug(maps, {
+                      info = resolvePublicSlug(maps, {
                         exhibitorId: novelty.exhibitor_id,
                         legacyId: novelty.exhibitor_id,
                       });
                       if (info) setExhibitorSlugInfo(info);
                     }
+                    if (info?.public_slug && !info.is_test) {
+                      trackExhibitorEvent('full_profile_click', info.public_slug, {
+                        source_surface: 'novelty_card',
+                        public_slug: info.public_slug,
+                      });
+                      navigate(`/exposants/${info.public_slug}`);
+                      return;
+                    }
+                    setShowExhibitorDialog(true);
                   }}
                   disabled={!event}
                   className={cn(
