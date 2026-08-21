@@ -169,13 +169,23 @@ export default function NoveltiesCarousel({
       role="group"
       aria-roledescription="carrousel"
       aria-label={`Nouveautés du salon (${count})`}
+      aria-live="off"
       tabIndex={0}
       onKeyDown={onKeyDown}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocusCapture={() => setFocused(true)}
+      onBlurCapture={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false);
+      }}
     >
       <div className="relative">
         <div
           ref={trackRef}
           onScroll={onScroll}
+          onPointerDown={stopAutoplay}
+          onTouchStart={stopAutoplay}
+          onWheel={stopAutoplay}
           className={cn(
             'flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-1',
             'motion-reduce:scroll-auto',
@@ -206,7 +216,10 @@ export default function NoveltiesCarousel({
       <div className="flex items-center justify-center gap-4">
         <button
           type="button"
-          onClick={() => go(-1)}
+          onClick={() => {
+            stopAutoplay();
+            go(-1);
+          }}
           aria-label="Nouveauté précédente"
           className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted"
         >
@@ -221,7 +234,10 @@ export default function NoveltiesCarousel({
               role="tab"
               aria-selected={i === index}
               aria-label={`Nouveauté ${i + 1} sur ${count}`}
-              onClick={() => scrollToIndex(i)}
+              onClick={() => {
+                stopAutoplay();
+                scrollToIndex(i);
+              }}
               className={cn(
                 'h-2 rounded-full transition-all duration-200 motion-reduce:transition-none',
                 i === index ? 'w-6 bg-primary' : 'w-2 bg-border hover:bg-muted-foreground/40',
@@ -232,12 +248,32 @@ export default function NoveltiesCarousel({
 
         <button
           type="button"
-          onClick={() => go(1)}
+          onClick={() => {
+            stopAutoplay();
+            go(1);
+          }}
           aria-label="Nouveauté suivante"
           className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
+
+        {/* WCAG 2.2.2 — contrôle de pause visible dès que l'autoplay est actif */}
+        {autoplayEligible && !stopped && (
+          <button
+            type="button"
+            onClick={() => setUserPaused((p) => !p)}
+            aria-label={
+              userPaused
+                ? 'Reprendre le défilement automatique des nouveautés'
+                : 'Mettre en pause le défilement automatique des nouveautés'
+            }
+            aria-pressed={userPaused}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            {userPaused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
+          </button>
+        )}
       </div>
 
       {/* Liens crawlables vers toutes les nouveautés (SEO). */}
