@@ -266,6 +266,15 @@ export const ExhibitorsModal: React.FC<ExhibitorsModalProps> = ({
     : activeGroups.reduce((sum, g) => sum + (loaded[g.key]?.length || 0), 0);
 
   const hasCategories = groups.length > 0;
+  /** Repli (sidebar legacy, salon sans taxonomie) : liste plate alphabétique. */
+  const flatMode = !isSearching && !eventId ? true : !isSearching && !!categories && !hasCategories;
+  const flatList = useMemo(() => {
+    if (isSearching) return searchResults;
+    if (!flatMode) return [] as Exhibitor[];
+    return [...exhibitors].sort((a, b) =>
+      getDisplayName(a).localeCompare(getDisplayName(b), 'fr', { sensitivity: 'base' }),
+    );
+  }, [isSearching, searchResults, flatMode, exhibitors]);
 
   const selectRpcRow = (row: CategoryExhibitorRow) =>
     onSelect({
