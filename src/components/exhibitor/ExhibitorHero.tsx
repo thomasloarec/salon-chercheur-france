@@ -64,7 +64,7 @@ export default function ExhibitorHero({
             website={profile.website}
             className="h-24 w-24 flex-shrink-0 rounded-2xl shadow-sm hero-in"
             textClassName="text-[2.375rem] font-medium tracking-[0.01em]"
-            imageClassName="bg-white p-3"
+            imageClassName="p-3"
           />
 
           <div className="flex-1 min-w-0 sm:pb-1">
