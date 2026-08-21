@@ -126,7 +126,8 @@ const SectorHub = () => {
       <Header />
 
       <main className="py-8">
-        <div className="w-full px-6 mx-auto max-w-[1600px]">
+        <div className="w-full mx-auto max-w-[1600px]">
+          <div className="px-4 sm:px-6 lg:px-8">
 
           {/* Header */}
           <div className="mb-8">
