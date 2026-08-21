@@ -13,7 +13,7 @@ import type { PublicExhibitorProfile } from '@/hooks/useExhibitorProfile';
 import { useExhibitorProducts } from '@/hooks/useExhibitorProfile';
 import ExhibitorAlertButton from '@/components/exhibitor/ExhibitorAlertButton';
 import ExhibitorClaimCta from '@/components/exhibitor/ExhibitorClaimCta';
-import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
+import ExhibitorAvatar from '@/components/event/ExhibitorAvatar';
 import { trackExhibitorEvent } from '@/lib/exhibitorTracking';
 import { normalizeExternalUrl, normalizeLinkedInUrl } from '@/lib/urlUtils';
 import { cleanAiDescription, NO_DESCRIPTION_LABEL } from '@/lib/exhibitorDescription';
@@ -30,7 +30,6 @@ export default function ExhibitorHero({
 }) {
   const slug = profile.public_slug || '';
   const name = profile.display_name || profile.canonical_name || 'Exposant';
-  const logo = getExhibitorLogoUrl(profile.logo_url, profile.website);
   // Normalized external links — CTAs only render for valid, absolute URLs.
   const websiteUrl = normalizeExternalUrl(profile.website);
   const linkedinUrl = normalizeLinkedInUrl(profile.linkedin_url);
@@ -56,20 +55,17 @@ export default function ExhibitorHero({
       />
       <div className="relative max-w-6xl mx-auto px-4 py-10 sm:py-14">
         <div className="flex flex-col sm:flex-row sm:items-end gap-5">
-          {/* Logo / avatar fallback */}
-          <div className="w-24 h-24 rounded-2xl bg-white border shadow-sm flex items-center justify-center flex-shrink-0 overflow-hidden hero-in">
-            {logo ? (
-              <img
-                src={logo}
-                alt={`Logo ${name}`}
-                className="max-w-full max-h-full object-contain p-2"
-              />
-            ) : (
-              <span className="text-3xl font-bold text-muted-foreground">
-                {name.charAt(0).toUpperCase()}
-              </span>
-            )}
-          </div>
+          {/* Logo / favicon / monogramme — lot 18 : repli unifié ExhibitorAvatar.
+              Initiales à ~40 % du côté (38 px pour 96 px), Playfair, interlettrage
+              légèrement ouvert pour la grande taille. */}
+          <ExhibitorAvatar
+            name={name}
+            logoUrl={profile.logo_url}
+            website={profile.website}
+            className="h-24 w-24 flex-shrink-0 rounded-2xl shadow-sm hero-in"
+            textClassName="text-[2.375rem] font-medium tracking-[0.01em]"
+            imageClassName="p-3"
+          />
 
           <div className="flex-1 min-w-0 sm:pb-1">
             <div className="flex flex-wrap items-center gap-2 mb-2 hero-in" style={{ animationDelay: '80ms' }}>
