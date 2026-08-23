@@ -282,10 +282,10 @@ const ProgramSessionCard: React.FC<{
           </div>
           <p className="ml-3.5 text-[13px] text-foreground/80">
             {intervenants.map((sp, i) => (
-              <React.Fragment key={sp.id || sp.full_name || i}>
+              <span key={sp.id || sp.full_name || i} className="contents">
                 {i > 0 && ', '}
                 <span className="font-semibold text-foreground">{sp.full_name}</span>
-              </React.Fragment>
+              </span>
             ))}
             {intervenants.length === 1 && intervenants[0].job_title
               ? ` · ${intervenants[0].job_title}`
