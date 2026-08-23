@@ -164,34 +164,182 @@ const SpeakerAvatar: React.FC<{
   );
 };
 
-// ── Galerie d'intervenants (rail horizontal défilable) ──────────
+// ── Galerie d'intervenants (carrousel + accès à la liste complète) ──
+
+/** Au-delà de ce seuil, le carrousel n'affiche qu'un aperçu + « Voir tous ». */
+const GALLERY_CAP = 30;
 
 const ProgramSpeakerGallery: React.FC<{ speakers: ProgramSpeaker[] }> = ({ speakers }) => {
+  const railRef = useRef<HTMLDivElement>(null);
+  const [canPrev, setCanPrev] = useState(false);
+  const [canNext, setCanNext] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+
+  const updateArrows = () => {
+    const el = railRef.current;
+    if (!el) return;
+    setCanPrev(el.scrollLeft > 4);
+    setCanNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+
+  useEffect(() => {
+    updateArrows();
+    const onResize = () => updateArrows();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [speakers]);
+
+  // Garde après les Hooks pour respecter les règles de React.
   if (speakers.length < 3) return null;
+
+  const visible = speakers.slice(0, GALLERY_CAP);
+  const hasMore = speakers.length > GALLERY_CAP;
+
+  const scrollByPage = (dir: 1 | -1) => {
+    const el = railRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * el.clientWidth * 0.9, behavior: 'smooth' });
+  };
+
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? speakers.filter((s) => (s.full_name || '').toLowerCase().includes(q))
+    : speakers;
+
   return (
-    <div
-      className="mb-8 flex gap-[18px] overflow-x-auto pb-3 pt-1 [scroll-snap-type:x_mandatory]"
-      role="list"
-      aria-label="Intervenants"
-    >
-      {speakers.map((sp) => (
-        <div
-          key={sp.id || sp.full_name}
-          role="listitem"
-          className="w-[132px] flex-none text-center [scroll-snap-align:start]"
+    <div className="relative">
+      <button
+        type="button"
+        aria-label="Intervenants précédents"
+        onClick={() => scrollByPage(-1)}
+        className={cn(
+          'absolute left-0 top-[30px] z-10 hidden -translate-x-1/2 items-center justify-center rounded-full border border-border bg-background/95 p-2 shadow-md transition hover:bg-violet-soft md:flex',
+          canPrev ? 'opacity-100' : 'pointer-events-none opacity-0'
+        )}
+      >
+        <ChevronLeft className="h-5 w-5 text-foreground" />
+      </button>
+
+      <div
+        ref={railRef}
+        onScroll={updateArrows}
+        className="mb-0 flex gap-[18px] overflow-x-auto pb-3 pt-1 [scroll-snap-type:x_mandatory]"
+        role="list"
+        aria-label="Intervenants"
+      >
+        {visible.map((sp) => (
+          <div
+            key={sp.id || sp.full_name}
+            role="listitem"
+            className="w-[132px] flex-none text-center [scroll-snap-align:start]"
+          >
+            <SpeakerAvatar speaker={sp} className="mx-auto mb-2.5" />
+            <p className="text-sm font-semibold leading-tight">{sp.full_name}</p>
+            {sp.job_title && (
+              <p className="mt-0.5 text-[12.5px] leading-snug text-muted-foreground">
+                {sp.job_title}
+              </p>
+            )}
+            {sp.company && (
+              <p className="mt-0.5 text-xs font-semibold text-primary">{sp.company}</p>
+            )}
+          </div>
+        ))}
+
+        {hasMore && (
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label={`Voir les ${speakers.length} intervenants`}
+            className="flex w-[132px] flex-none flex-col items-center text-center [scroll-snap-align:start]"
+          >
+            <div className="relative mx-auto mb-2.5 flex h-24 w-24 flex-none items-center justify-center overflow-hidden rounded-full bg-violet-soft ring-1 ring-border">
+              <span className="heading-display text-3xl font-semibold leading-none text-primary">
+                +{speakers.length - visible.length}
+              </span>
+            </div>
+            <span className="text-sm font-semibold leading-tight">Voir tous</span>
+          </button>
+        )}
+      </div>
+
+      <button
+        type="button"
+        aria-label="Intervenants suivants"
+        onClick={() => scrollByPage(1)}
+        className={cn(
+          'absolute right-0 top-[30px] z-10 hidden translate-x-1/2 items-center justify-center rounded-full border border-border bg-background/95 p-2 shadow-md transition hover:bg-violet-soft md:flex',
+          canNext ? 'opacity-100' : 'pointer-events-none opacity-0'
+        )}
+      >
+        <ChevronRight className="h-5 w-5 text-foreground" />
+      </button>
+
+      {hasMore && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="mt-1 text-sm font-semibold text-primary underline-offset-4 hover:underline"
         >
-          <SpeakerAvatar speaker={sp} className="mx-auto mb-2.5" />
-          <p className="text-sm font-semibold leading-tight">{sp.full_name}</p>
-          {sp.job_title && (
-            <p className="mt-0.5 text-[12.5px] leading-snug text-muted-foreground">
-              {sp.job_title}
-            </p>
-          )}
-          {sp.company && (
-            <p className="mt-0.5 text-xs font-semibold text-primary">{sp.company}</p>
-          )}
-        </div>
-      ))}
+          Voir tous les {speakers.length} intervenants
+        </button>
+      )}
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-h-[85vh] max-w-2xl overflow-hidden p-0">
+          <DialogHeader className="px-5 pt-5">
+            <DialogTitle className="heading-display text-xl">
+              Intervenants ({speakers.length})
+            </DialogTitle>
+            <DialogDescription>
+              Liste complète des intervenants du programme, avec recherche par nom.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="px-5">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Rechercher un intervenant…"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+            />
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-5 pb-5">
+            {filtered.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                Aucun intervenant ne correspond à votre recherche.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {filtered.map((sp) => (
+                  <div
+                    key={sp.id || sp.full_name}
+                    className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
+                  >
+                    <SpeakerAvatar speaker={sp} size="sm" className="h-10 w-10 flex-none" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold leading-tight">
+                        {sp.full_name}
+                      </p>
+                      {sp.job_title && (
+                        <p className="truncate text-[12.5px] leading-snug text-muted-foreground">
+                          {sp.job_title}
+                        </p>
+                      )}
+                      {sp.company && (
+                        <p className="truncate text-xs font-semibold text-primary">{sp.company}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
