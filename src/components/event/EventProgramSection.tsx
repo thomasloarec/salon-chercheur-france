@@ -281,7 +281,7 @@ const ProgramSpeakerGallery: React.FC<{ speakers: ProgramSpeaker[] }> = ({ speak
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="mt-1 text-sm font-semibold text-primary underline-offset-4 hover:underline"
+          className="mt-5 text-sm font-semibold text-primary underline-offset-4 hover:underline"
         >
           Voir tous les {speakers.length} intervenants
         </button>
