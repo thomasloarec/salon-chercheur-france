@@ -281,8 +281,14 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               'pt-2 md:pt-3 lg:pt-4',
               // Sans section Nouveautés, la bande ne contient que la frise
               // (+ l'éventuel bandeau événement passé) : on renforce le
-              // padding bas pour éviter un rendu tronqué.
-              !capabilities.showNoveltiesSection && 'pb-10 md:pb-12 lg:pb-14',
+              // padding bas pour éviter un rendu tronqué, sauf si la section
+              // Programme suit immédiatement (même fond blanc : l'espace
+              // paraît alors excessif).
+              !capabilities.showNoveltiesSection && (
+                capabilities.showProgramSection && !capabilities.showExhibitorSection
+                  ? 'pb-4 md:pb-6 lg:pb-8'
+                  : 'pb-10 md:pb-12 lg:pb-14'
+              ),
             )}
           >
             <Reveal>
