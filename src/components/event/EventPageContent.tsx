@@ -361,7 +361,16 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 
           {/* ═══ Bande 2c — blanc : programme de l'événement (lot 4) ═══ */}
           {capabilities.showProgramSection && (
-            <EventBand tone="white" space="md">
+            <EventBand
+              tone="white"
+              space="md"
+              className={cn(
+                // Si la section Programme suit directement la frise de stats
+                // (sans section Exposants entre les deux), les deux bandes sont
+                // blanches : on réduit le padding haut pour éviter un trou.
+                !capabilities.showExhibitorSection && 'pt-4 md:pt-6 lg:pt-8',
+              )}
+            >
               <section id="programme" className="min-w-0">
                 <Reveal>
                   <EventProgramSection event={event} />
