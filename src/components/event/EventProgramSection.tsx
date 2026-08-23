@@ -196,8 +196,8 @@ const SpeakerAvatar: React.FC<{
 
 // ── Galerie d'intervenants (carrousel + accès à la liste complète) ──
 
-/** Au-delà de ce seuil, le carrousel n'affiche qu'un aperçu + « Voir tous ». */
-const GALLERY_CAP = 30;
+/** Au-delà de ce seuil : aperçu tronqué dans le carrousel + « Voir tous ». */
+const GALLERY_CAP = 12;
 
 const ProgramSpeakerGallery: React.FC<{ speakers: ProgramSpeaker[] }> = ({ speakers }) => {
   const railRef = useRef<HTMLDivElement>(null);
