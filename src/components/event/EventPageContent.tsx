@@ -353,6 +353,17 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             </EventBand>
           )}
 
+          {/* ═══ Bande 2c — blanc : programme de l'événement (lot 4) ═══ */}
+          {capabilities.showProgramSection && (
+            <EventBand tone="white" space="md">
+              <section id="programme" className="min-w-0">
+                <Reveal>
+                  <EventProgramSection event={event} />
+                </Reveal>
+              </section>
+            </EventBand>
+          )}
+
           {/* ═══ Bande 3 — texture sombre : bandeau Parcours IA.
               Rendue uniquement quand le bandeau l'est : jamais de bande vide. */}
           {canPrepareVisit && (
