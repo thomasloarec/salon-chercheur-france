@@ -281,14 +281,14 @@ const ProgramSpeakerGallery: React.FC<{ speakers: ProgramSpeaker[] }> = ({ speak
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="mt-1 text-sm font-semibold text-primary underline-offset-4 hover:underline"
+          className="mt-5 text-sm font-semibold text-primary underline-offset-4 hover:underline"
         >
           Voir tous les {speakers.length} intervenants
         </button>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[85vh] max-w-2xl overflow-hidden p-0">
+        <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col overflow-hidden p-0">
           <DialogHeader className="px-5 pt-5">
             <DialogTitle className="heading-display text-xl">
               Intervenants ({speakers.length})
