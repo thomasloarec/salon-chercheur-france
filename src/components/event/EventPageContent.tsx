@@ -281,8 +281,14 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               'pt-2 md:pt-3 lg:pt-4',
               // Sans section Nouveautés, la bande ne contient que la frise
               // (+ l'éventuel bandeau événement passé) : on renforce le
-              // padding bas pour éviter un rendu tronqué.
-              !capabilities.showNoveltiesSection && 'pb-10 md:pb-12 lg:pb-14',
+              // padding bas pour éviter un rendu tronqué, sauf si la section
+              // Programme suit immédiatement (même fond blanc : l'espace
+              // paraît alors excessif).
+              !capabilities.showNoveltiesSection && (
+                capabilities.showProgramSection && !capabilities.showExhibitorSection
+                  ? 'pb-4 md:pb-6 lg:pb-8'
+                  : 'pb-10 md:pb-12 lg:pb-14'
+              ),
             )}
           >
             <Reveal>
@@ -355,7 +361,16 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 
           {/* ═══ Bande 2c — blanc : programme de l'événement (lot 4) ═══ */}
           {capabilities.showProgramSection && (
-            <EventBand tone="white" space="md">
+            <EventBand
+              tone="white"
+              space="md"
+              className={cn(
+                // Si la section Programme suit directement la frise de stats
+                // (sans section Exposants entre les deux), les deux bandes sont
+                // blanches : on réduit le padding haut pour éviter un trou.
+                !capabilities.showExhibitorSection && 'pt-4 md:pt-6 lg:pt-8',
+              )}
+            >
               <section id="programme" className="min-w-0">
                 <Reveal>
                   <EventProgramSection event={event} />
