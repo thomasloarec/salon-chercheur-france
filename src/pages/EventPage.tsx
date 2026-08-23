@@ -162,6 +162,7 @@ const EventPage = () => {
           slug: eventData.slug,
           owner_user_id: eventData.owner_user_id ?? null,
           verified_at: eventData.verified_at ?? null,
+          has_exhibitors: eventData.has_exhibitors ?? true,
           sectors: [],
           is_favorite: isFavorite,
           // SEO enrichment fields

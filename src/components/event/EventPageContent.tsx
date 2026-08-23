@@ -30,6 +30,7 @@ import { Eye, Settings } from 'lucide-react';
 import { useExhibitorsByEvent } from '@/hooks/useExhibitorsByEvent';
 import { useEventCardStats } from '@/hooks/useEventCardStats';
 import { getEventCapabilities, PARCOURS_IA_MIN_EXHIBITORS } from '@/lib/eventCapabilities';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Event } from '@/types/event';
 
@@ -268,7 +269,17 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
           </EventBand>
 
           {/* ═══ Bande 2 — blanc : frise statistiques + nouveautés ═══ */}
-          <EventBand tone="white" space="sm" className="pt-2 md:pt-3 lg:pt-4">
+          <EventBand
+            tone="white"
+            space="sm"
+            className={cn(
+              'pt-2 md:pt-3 lg:pt-4',
+              // Sans section Nouveautés, la bande ne contient que la frise
+              // (+ l'éventuel bandeau événement passé) : on renforce le
+              // padding bas pour éviter un rendu tronqué.
+              !capabilities.showNoveltiesSection && 'pb-10 md:pb-12 lg:pb-14',
+            )}
+          >
             <Reveal>
               {/* Frise statistiques — présente aussi sur les événements passés */}
               <EventStatsStrip
@@ -294,18 +305,21 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               </div>
             )}
 
-            {/* Nouveautés en pleine largeur */}
-            <Reveal>
-              <section id="nouveautes" className="mt-8 min-w-0 md:mt-8 lg:mt-10">
-                <NoveltiesSection event={event} exhibitorCount={exhibitorCount} isEventPast={isEventPast} />
-              </section>
-            </Reveal>
+            {/* Nouveautés en pleine largeur — masquées si l'événement
+                n'accueille pas d'exposants (has_exhibitors = false). */}
+            {capabilities.showNoveltiesSection && (
+              <Reveal>
+                <section id="nouveautes" className="mt-8 min-w-0 md:mt-8 lg:mt-10">
+                  <NoveltiesSection event={event} exhibitorCount={exhibitorCount} isEventPast={isEventPast} />
+                </section>
+              </Reveal>
+            )}
 
 
           </EventBand>
 
           {/* ═══ Bande 2b — gris très clair : exposants + Radar CRM ═══ */}
-          {exhibitorCount > 0 && (
+          {capabilities.showExhibitorSection && (
             <EventBand tone="soft" space="md">
               <Reveal>
                 <div

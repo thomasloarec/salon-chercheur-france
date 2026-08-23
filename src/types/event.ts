@@ -47,6 +47,8 @@ export interface Event {
   suggested_keywords?: string[];
   // Accroche IA (event_ai.accroche) — affichée sur la carte
   accroche?: string;
+  // Lot 2 — l'événement accueille-t-il des exposants ? (false masque Nouveautés/Exposants)
+  has_exhibitors?: boolean | null;
 }
 
 // Export EventType for backwards compatibility
