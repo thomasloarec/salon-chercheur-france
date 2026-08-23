@@ -2769,6 +2769,233 @@ export type Database = {
           },
         ]
       }
+      event_program_session_speakers: {
+        Row: {
+          position: number
+          role: string
+          session_id: string
+          speaker_id: string
+        }
+        Insert: {
+          position?: number
+          role?: string
+          session_id: string
+          speaker_id: string
+        }
+        Update: {
+          position?: number
+          role?: string
+          session_id?: string
+          speaker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_program_session_speakers_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "event_program_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_program_session_speakers_speaker_id_fkey"
+            columns: ["speaker_id"]
+            isOneToOne: false
+            referencedRelation: "event_program_speakers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_program_sessions: {
+        Row: {
+          created_at: string
+          day_date: string | null
+          description: string | null
+          end_time: string | null
+          event_id: string
+          id: string
+          is_highlight: boolean
+          language: string | null
+          location: string | null
+          position: number
+          registration_url: string | null
+          session_type: string
+          source: string
+          start_time: string | null
+          status: string
+          title: string
+          track: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_date?: string | null
+          description?: string | null
+          end_time?: string | null
+          event_id: string
+          id?: string
+          is_highlight?: boolean
+          language?: string | null
+          location?: string | null
+          position?: number
+          registration_url?: string | null
+          session_type?: string
+          source?: string
+          start_time?: string | null
+          status?: string
+          title: string
+          track?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_date?: string | null
+          description?: string | null
+          end_time?: string | null
+          event_id?: string
+          id?: string
+          is_highlight?: boolean
+          language?: string | null
+          location?: string | null
+          position?: number
+          registration_url?: string | null
+          session_type?: string
+          source?: string
+          start_time?: string | null
+          status?: string
+          title?: string
+          track?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_program_sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "admin_events_exhibitor_coverage"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_program_sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_program_sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_program_sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_program_sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_program_sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_program_speakers: {
+        Row: {
+          bio: string | null
+          company: string | null
+          created_at: string
+          event_id: string
+          full_name: string
+          id: string
+          job_title: string | null
+          linkedin_url: string | null
+          photo_url: string | null
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          bio?: string | null
+          company?: string | null
+          created_at?: string
+          event_id: string
+          full_name: string
+          id?: string
+          job_title?: string | null
+          linkedin_url?: string | null
+          photo_url?: string | null
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          bio?: string | null
+          company?: string | null
+          created_at?: string
+          event_id?: string
+          full_name?: string
+          id?: string
+          job_title?: string | null
+          linkedin_url?: string | null
+          photo_url?: string | null
+          position?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_program_speakers_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "admin_events_exhibitor_coverage"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_program_speakers_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_program_speakers_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_program_speakers_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_program_speakers_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_program_speakers_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_recommendations: {
         Row: {
           categorie_sous_representee: boolean
@@ -11008,6 +11235,7 @@ export type Database = {
           novelty_count: number
         }[]
       }
+      get_event_program_count: { Args: { p_event_id: string }; Returns: number }
       get_event_scorecard: { Args: { p_event_id: string }; Returns: Json }
       get_exhibitor_ai_enrichment_stats: { Args: never; Returns: Json }
       get_exhibitor_completion: {
@@ -11176,6 +11404,26 @@ export type Database = {
           tagline: string
           total_count: number
           website: string
+        }[]
+      }
+      get_public_event_program: {
+        Args: { p_event_id: string }
+        Returns: {
+          day_date: string
+          description: string
+          end_time: string
+          is_highlight: boolean
+          language: string
+          location: string
+          registration_url: string
+          session_id: string
+          session_position: number
+          session_type: string
+          speakers: Json
+          start_time: string
+          status: string
+          title: string
+          track: string
         }[]
       }
       get_radar_action_stats: { Args: never; Returns: Json }
