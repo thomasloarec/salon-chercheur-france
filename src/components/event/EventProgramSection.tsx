@@ -8,6 +8,7 @@ import {
 import { getMonogram } from '@/components/event/ExhibitorAvatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { Event } from '@/types/event';
 
 /**
