@@ -125,7 +125,11 @@ Deno.serve(async (req) => {
           ville: eventImport.ville,
           pays: eventImport.pays || 'France',
           location: eventImport.location,
-          is_b2b: eventImport.is_b2b || false
+          is_b2b: eventImport.is_b2b || false,
+          // Lot 2 : décision « accueille des exposants » persistée en staging,
+          // transmise à la RPC (repli true côté SQL si absente, prise en compte
+          // uniquement à la première publication d'un événement).
+          has_exhibitors: eventImport.has_exhibitors ?? true
         }
       });
 

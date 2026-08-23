@@ -5,6 +5,7 @@ import { ExposantAirtableCorrections } from '@/components/admin/ExposantAirtable
 import { ExposantReviewQueue } from '@/components/admin/ExposantReviewQueue';
 import { PendingEventsImport } from '@/components/admin/PendingEventsImport';
 import AirtableAntiDuplicateCheck from '@/components/admin/AirtableAntiDuplicateCheck';
+import { ExhibitorVisibilitySuggestions } from '@/components/admin/ExhibitorVisibilitySuggestions';
 import AdminAllEvents from '@/components/admin/AdminAllEvents';
 import { DuplicateEventsPanel } from '@/components/admin/DuplicateEventsPanel';
 import { Card, CardContent } from '@/components/ui/card';
@@ -41,6 +42,7 @@ const AdminEventsPage = () => {
 
       <PendingEventsImport />
       <DuplicateEventsPanel />
+      <ExhibitorVisibilitySuggestions />
       <AirtableAntiDuplicateCheck />
       <AdminAllEvents />
     </div>
