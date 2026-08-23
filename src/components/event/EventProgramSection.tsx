@@ -55,7 +55,7 @@ function sessionTypeLabel(type: string | null): string {
 function normalizeRole(role: string | null): string {
   return (role ?? 'intervenant')
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim();
 }
