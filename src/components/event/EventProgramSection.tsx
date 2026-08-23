@@ -53,6 +53,36 @@ function sessionTypeLabel(type: string | null): string {
   return SESSION_TYPE_LABELS[type] ?? 'Au programme';
 }
 
+/** Nombre maximum de filtres affichés (lisibilité). */
+const MAX_FILTERS = 8;
+
+/**
+ * Catégories sans valeur de navigation (pauses, repas, cérémonies, temps
+ * de questions, posters, networking). Exclues des filtres.
+ */
+const FILTER_NOISE_TOKENS = [
+  'pause', 'break', 'coffee', 'cafe', 'lunch', 'dejeuner', 'cocktail',
+  'networking', 'reseau', 'ceremony', 'ceremonie', 'opening', 'closing',
+  'ouverture', 'cloture', 'welcome', 'accueil', 'registration', 'inscription',
+  'q&a', 'q & a', 'questions', 'poster', 'remise de prix', 'remise des prix',
+  'award',
+];
+
+function stripAccentsLower(s: string): string {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+/** Une catégorie « bruit » (non substantielle) ne devient pas un filtre. */
+function isNoiseCategory(label: string): boolean {
+  const n = stripAccentsLower(label);
+  return FILTER_NOISE_TOKENS.some((t) => n.includes(stripAccentsLower(t)));
+}
+
+/** Raccourcit l'affichage d'un track en retirant un suffixe « session ». */
+function prettifyTrack(label: string): string {
+  return label.replace(/\s+session$/i, '').trim() || label;
+}
+
 function normalizeRole(role: string | null): string {
   return (role ?? 'intervenant')
     .normalize('NFD')
@@ -209,7 +239,7 @@ const ProgramSpeakerGallery: React.FC<{ speakers: ProgramSpeaker[] }> = ({ speak
     : speakers;
 
   return (
-    <div className="relative">
+    <div className="relative mb-10">
       <button
         type="button"
         aria-label="Intervenants précédents"
@@ -567,8 +597,7 @@ interface EventProgramSectionProps {
 const EventProgramSection: React.FC<EventProgramSectionProps> = ({ event }) => {
   const { data: sessions, isLoading, isError } = useEventProgram(event.id);
   const [activeDay, setActiveDay] = useState<string | null>(null);
-  const [typeFilter, setTypeFilter] = useState<string | null>(null);
-  const [trackFilter, setTrackFilter] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   const all = useMemo(() => sessions ?? [], [sessions]);
   const speakers = useMemo(() => uniqueSpeakers(all), [all]);
@@ -586,6 +615,42 @@ const EventProgramSection: React.FC<EventProgramSectionProps> = ({ event }) => {
 
   const effectiveDay = activeDay ?? days[0] ?? null;
 
+  const { filterAxis, filterOptions } = useMemo(() => {
+    const tally = (key: (s: ProgramSession) => string | null) => {
+      const m = new Map<string, number>();
+      for (const s of all) {
+        const k = key(s);
+        if (k) m.set(k, (m.get(k) ?? 0) + 1);
+      }
+      return m;
+    };
+
+    // Axe 1 : thématiques (track), hors catégories « bruit ».
+    const tracks = tally((s) =>
+      s.track && !isNoiseCategory(s.track) ? s.track : null
+    );
+    if (tracks.size >= 2) {
+      const options = [...tracks.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, MAX_FILTERS)
+        .map(([value, count]) => ({ value, label: prettifyTrack(value), count }));
+      return { filterAxis: 'track' as const, filterOptions: options };
+    }
+
+    // Axe 2 : type de session substantiel (hors networking / « au programme »).
+    const types = tally((s) => {
+      const t = s.session_type ?? 'autre';
+      return t === 'networking' || t === 'autre' ? null : t;
+    });
+    const options = [...types.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, MAX_FILTERS)
+      .map(([value, count]) => ({ value, label: sessionTypeLabel(value), count }));
+    return { filterAxis: 'type' as const, filterOptions: options };
+  }, [all]);
+
+  const showFilters = all.length > 8 && filterOptions.length >= 2;
+
   const visibleSessions = useMemo(() => {
     let list = all;
     if (showTabs) {
@@ -594,20 +659,15 @@ const EventProgramSection: React.FC<EventProgramSectionProps> = ({ event }) => {
           ? all.filter((s) => !s.day_date)
           : all.filter((s) => s.day_date === effectiveDay);
     }
-    if (typeFilter) list = list.filter((s) => (s.session_type ?? 'autre') === typeFilter);
-    if (trackFilter) list = list.filter((s) => s.track === trackFilter);
+    if (activeFilter) {
+      list = list.filter((s) =>
+        filterAxis === 'track'
+          ? s.track === activeFilter
+          : (s.session_type ?? 'autre') === activeFilter
+      );
+    }
     return list;
-  }, [all, showTabs, effectiveDay, typeFilter, trackFilter]);
-
-  const typeOptions = useMemo(
-    () => [...new Set(all.map((s) => s.session_type ?? 'autre'))],
-    [all]
-  );
-  const trackOptions = useMemo(
-    () => [...new Set(all.map((s) => s.track).filter((t): t is string => !!t))],
-    [all]
-  );
-  const showFilters = all.length > 8 && (typeOptions.length > 1 || trackOptions.length > 1);
+  }, [all, showTabs, effectiveDay, activeFilter, filterAxis]);
 
   const subtitle = useMemo(() => {
     const parts: string[] = [];
@@ -686,40 +746,22 @@ const EventProgramSection: React.FC<EventProgramSectionProps> = ({ event }) => {
 
       {showFilters && (
         <div className="mb-5 flex flex-wrap gap-2">
-          {typeOptions.length > 1 &&
-            typeOptions.map((type) => (
-              <button
-                key={type}
-                type="button"
-                aria-pressed={typeFilter === type}
-                onClick={() => setTypeFilter((cur) => (cur === type ? null : type))}
-                className={cn(
-                  'rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors',
-                  typeFilter === type
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground'
-                )}
-              >
-                {sessionTypeLabel(type)}
-              </button>
-            ))}
-          {trackOptions.length > 1 &&
-            trackOptions.map((track) => (
-              <button
-                key={track}
-                type="button"
-                aria-pressed={trackFilter === track}
-                onClick={() => setTrackFilter((cur) => (cur === track ? null : track))}
-                className={cn(
-                  'rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors',
-                  trackFilter === track
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground'
-                )}
-              >
-                {track}
-              </button>
-            ))}
+          {filterOptions.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              aria-pressed={activeFilter === opt.value}
+              onClick={() => setActiveFilter((cur) => (cur === opt.value ? null : opt.value))}
+              className={cn(
+                'rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors',
+                activeFilter === opt.value
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground'
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
       )}
 
