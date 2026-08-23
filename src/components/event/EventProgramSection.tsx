@@ -225,7 +225,7 @@ const ProgramSpeakerGallery: React.FC<{ speakers: ProgramSpeaker[] }> = ({ speak
       <div
         ref={railRef}
         onScroll={updateArrows}
-        className="mb-0 flex gap-[18px] overflow-x-auto pb-3 pt-1 [scroll-snap-type:x_mandatory]"
+        className="mb-0 flex gap-[18px] overflow-x-auto pb-3 pt-1 [scroll-snap-type:x_mandatory] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         role="list"
         aria-label="Intervenants"
       >
