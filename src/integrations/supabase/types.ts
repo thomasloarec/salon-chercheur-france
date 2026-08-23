@@ -3144,6 +3144,9 @@ export type Database = {
           exhibitors_confirmed_by: string | null
           exhibitors_confirmed_complete: boolean
           faq_json: Json | null
+          has_exhibitors: boolean
+          has_exhibitors_set_at: string | null
+          has_exhibitors_set_by: string | null
           id: string
           id_event: string
           is_b2b: boolean
@@ -3210,6 +3213,9 @@ export type Database = {
           exhibitors_confirmed_by?: string | null
           exhibitors_confirmed_complete?: boolean
           faq_json?: Json | null
+          has_exhibitors?: boolean
+          has_exhibitors_set_at?: string | null
+          has_exhibitors_set_by?: string | null
           id?: string
           id_event: string
           is_b2b?: boolean
@@ -3276,6 +3282,9 @@ export type Database = {
           exhibitors_confirmed_by?: string | null
           exhibitors_confirmed_complete?: boolean
           faq_json?: Json | null
+          has_exhibitors?: boolean
+          has_exhibitors_set_at?: string | null
+          has_exhibitors_set_by?: string | null
           id?: string
           id_event?: string
           is_b2b?: boolean
@@ -8291,6 +8300,7 @@ export type Database = {
           duplicate_check_reason: string | null
           duplicate_check_score: number | null
           duplicate_check_status: string | null
+          has_exhibitors: boolean
           id: string | null
           id_event: string
           is_b2b: boolean | null
@@ -8321,6 +8331,7 @@ export type Database = {
           duplicate_check_reason?: string | null
           duplicate_check_score?: number | null
           duplicate_check_status?: string | null
+          has_exhibitors?: boolean
           id?: string | null
           id_event: string
           is_b2b?: boolean | null
@@ -8351,6 +8362,7 @@ export type Database = {
           duplicate_check_reason?: string | null
           duplicate_check_score?: number | null
           duplicate_check_status?: string | null
+          has_exhibitors?: boolean
           id?: string | null
           id_event?: string
           is_b2b?: boolean | null
@@ -10312,6 +10324,21 @@ export type Database = {
           status: string
         }[]
       }
+      admin_list_events_without_exhibitors: {
+        Args: never
+        Returns: {
+          date_debut: string
+          has_exhibitors: boolean
+          id: string
+          is_upcoming: boolean
+          nom_event: string
+          novelty_count: number
+          slug: string
+          suggestion_forte: boolean
+          type_event: string
+          ville: string
+        }[]
+      }
       admin_list_radar_account_members: {
         Args: { p_account_id: string }
         Returns: {
@@ -11841,6 +11868,10 @@ export type Database = {
       }
       seo_test_hash_protection: { Args: never; Returns: Json }
       set_active_radar_space: { Args: { p_account_id: string }; Returns: Json }
+      set_event_exhibitor_visibility: {
+        Args: { p_enabled: boolean; p_event_id: string }
+        Returns: boolean
+      }
       set_exhibitor_alert: {
         Args: {
           p_enabled: boolean
