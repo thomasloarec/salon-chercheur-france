@@ -15,6 +15,7 @@ import { EventStatsStrip } from '@/components/event/EventStatsStrip';
 import EventAiBanner from '@/components/event/EventAiBanner';
 import EventInfoBlocks from '@/components/event/EventInfoBlocks';
 import EventBand from '@/components/event/EventBand';
+import EventProgramSection from '@/components/event/EventProgramSection';
 import { Reveal } from '@/components/ui/reveal';
 
 import EventExhibitorsSection from '@/components/event/EventExhibitorsSection';
@@ -29,6 +30,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, Settings } from 'lucide-react';
 import { useExhibitorsByEvent } from '@/hooks/useExhibitorsByEvent';
 import { useEventCardStats } from '@/hooks/useEventCardStats';
+import { useEventProgramCount } from '@/hooks/useEventProgram';
 import { getEventCapabilities, PARCOURS_IA_MIN_EXHIBITORS } from '@/lib/eventCapabilities';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
