@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +26,9 @@ const OrganizerSalonPage: React.FC = () => {
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<'salon' | 'exposants' | 'activation' | 'widget'>('salon');
+  const queryClient = useQueryClient();
+  const [exhibitorOverride, setExhibitorOverride] = useState<boolean | null>(null);
+  const [savingExhibitorVisibility, setSavingExhibitorVisibility] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,6 +59,39 @@ const OrganizerSalonPage: React.FC = () => {
       navigate(`/events/${event?.slug || slug}`, { replace: true });
     }
   }, [authLoading, loading, user, event, slug, navigate]);
+
+  // Visibilité des sections exposants/nouveautés : décision immédiate, hors
+  // circuit de validation admin (RPC dédiée, lot 2). Repli à true : seul un
+  // false explicite masque les sections.
+  const hasExhibitors = exhibitorOverride ?? (event?.has_exhibitors !== false);
+
+  const handleExhibitorVisibilityChange = async (value: boolean) => {
+    if (!event || savingExhibitorVisibility) return;
+    const previous = hasExhibitors;
+    setExhibitorOverride(value); // optimistic
+    setSavingExhibitorVisibility(true);
+    try {
+      const { error } = await supabase.rpc('set_event_exhibitor_visibility', {
+        p_event_id: event.id,
+        p_enabled: value,
+      });
+      if (error) throw error;
+      setEvent((prev) => (prev ? { ...prev, has_exhibitors: value } : prev));
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['event-scorecard', event.id] });
+      toast.success(
+        value
+          ? 'Sections Nouveautés et Exposants réactivées sur votre page publique.'
+          : 'Sections Nouveautés et Exposants masquées de votre page publique.',
+      );
+    } catch (err) {
+      console.error('Erreur set_event_exhibitor_visibility:', err);
+      setExhibitorOverride(previous); // rollback
+      toast.error("La modification n'a pas pu être appliquée. Réessayez.");
+    } finally {
+      setSavingExhibitorVisibility(false);
+    }
+  };
 
   const { data: scorecardData } = useEventScorecard(event?.id, !!event);
   const c = (scorecardData as any)?.completude;
@@ -179,9 +218,37 @@ const OrganizerSalonPage: React.FC = () => {
               <p className="text-sm text-muted-foreground">{active.description}</p>
             </div>
             {activeSection === 'salon' && (
-              <Card className="p-6">
-                <OrganizerEventEditForm event={event} />
-              </Card>
+              <>
+                <Card className="p-6">
+                  <OrganizerEventEditForm event={event} />
+                </Card>
+
+                {/* Visibilité exposants : appliquée immédiatement, sans validation. */}
+                <Card className="p-6 mt-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1.5">
+                      <p className="text-sm font-medium text-foreground">
+                        Cet événement accueille des exposants
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Décochez si votre événement ne mobilise pas d'exposants (congrès, conférence).
+                        Les sections Nouveautés et Exposants seront masquées de votre page publique.
+                        Vous pouvez réactiver à tout moment.
+                      </p>
+                      <p className="text-xs text-muted-foreground italic">
+                        Cette modification est appliquée immédiatement, sans validation.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={hasExhibitors}
+                      onCheckedChange={handleExhibitorVisibilityChange}
+                      disabled={savingExhibitorVisibility}
+                      aria-label="Cet événement accueille des exposants"
+                      className="shrink-0"
+                    />
+                  </div>
+                </Card>
+              </>
             )}
             {activeSection === 'exposants' && <SeoScorecard eventId={event.id} />}
             {activeSection === 'activation' && (
