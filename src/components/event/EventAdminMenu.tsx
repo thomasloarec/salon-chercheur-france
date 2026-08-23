@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { Trash2, Edit, EyeOff, Eye, Settings, Upload } from 'lucide-react';
+import { Trash2, Edit, EyeOff, Eye, Settings, Upload, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -44,6 +44,7 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
   const [showPublishDialog, setShowPublishDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isTogglingExhibitors, setIsTogglingExhibitors] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -186,6 +187,39 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
     }
   };
 
+  // Bascule de la section exposants — n'importe quel événement publié,
+  // sans revendication (lot 2). Repli à true : seul un false explicite masque.
+  const hasExhibitors = event.has_exhibitors !== false;
+
+  const handleToggleExhibitorSection = async () => {
+    const next = !hasExhibitors;
+    setIsTogglingExhibitors(true);
+    try {
+      const { error } = await supabase.rpc('set_event_exhibitor_visibility', {
+        p_event_id: event.id,
+        p_enabled: next,
+      });
+      if (error) throw error;
+      toast({
+        title: next ? 'Section exposants activée' : 'Section exposants désactivée',
+        description: next
+          ? 'Les sections Nouveautés et Exposants sont de nouveau visibles.'
+          : 'Les sections Nouveautés et Exposants sont masquées de la page publique.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      onEventUpdated({ ...event, has_exhibitors: next });
+    } catch (error) {
+      console.error('Error toggling exhibitor section:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de modifier la section exposants.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsTogglingExhibitors(false);
+    }
+  };
+
   const handleDeleteEvent = async () => {
     setIsDeleting(true);
     try {
@@ -316,7 +350,18 @@ export const EventAdminMenu = ({ event, isAdmin, onEventUpdated, onEventDeleted 
               </TooltipProvider>
             )}
             
-            <DropdownMenuItem 
+            {/* Bascule section exposants — événements publiés uniquement */}
+            {!isPendingEvent && (
+              <DropdownMenuItem
+                onClick={handleToggleExhibitorSection}
+                disabled={isTogglingExhibitors}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Section exposants : {hasExhibitors ? 'activée' : 'désactivée'}
+              </DropdownMenuItem>
+            )}
+
+            <DropdownMenuItem
               onClick={() => setShowDeleteDialog(true)}
               className="text-destructive focus:text-destructive"
             >

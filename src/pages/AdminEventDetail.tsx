@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +12,7 @@ import { formatAddress } from '@/utils/formatAddress';
 import type { Event } from '@/types/event';
 import { AdminEventWrapper } from '@/components/admin/AdminEventWrapper';
 import { EventPageContent } from '@/components/event/EventPageContent';
+import { Switch } from '@/components/ui/switch';
 
 const transformEventData = (data: any, source: 'events' | 'staging_events_import'): Event => {
   const isImport = source === 'staging_events_import';
@@ -42,6 +43,7 @@ const transformEventData = (data: any, source: 'events' | 'staging_events_import
     rue: data.rue,
     code_postal: data.code_postal,
     visible: isImport ? false : (data.visible ?? true),
+    has_exhibitors: data.has_exhibitors ?? true,
     slug: isImport ? `pending-${data.id}` : (data.slug || `event-${data.id}`),
     sectors: [],
     is_favorite: false
@@ -55,6 +57,7 @@ const AdminEventDetail = () => {
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [togglingExhibitors, setTogglingExhibitors] = useState(false);
 
   
   const { data: event, isLoading, error } = useQuery({
@@ -90,6 +93,42 @@ const AdminEventDetail = () => {
     refetchOnWindowFocus: true,
   });
 
+
+  // Bascule section exposants — effet immédiat, sans validation (lot 2).
+  const handleToggleExhibitorSection = async (value: boolean) => {
+    if (!event || togglingExhibitors) return;
+    const previous = event.has_exhibitors !== false;
+    // Mise à jour optimiste du cache local
+    queryClient.setQueryData(['admin-event-detail', id], (old: Event | undefined) =>
+      old ? { ...old, has_exhibitors: value } : old,
+    );
+    setTogglingExhibitors(true);
+    try {
+      const { error } = await supabase.rpc('set_event_exhibitor_visibility', {
+        p_event_id: event.id,
+        p_enabled: value,
+      });
+      if (error) throw error;
+      toast({
+        title: value ? 'Section exposants activée' : 'Section exposants désactivée',
+        description: 'Les sections Nouveautés et Exposants ont été mises à jour sur la page publique.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+    } catch (err) {
+      console.error('Error toggling exhibitor visibility:', err);
+      // Rollback
+      queryClient.setQueryData(['admin-event-detail', id], (old: Event | undefined) =>
+        old ? { ...old, has_exhibitors: previous } : old,
+      );
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de modifier la section exposants.',
+        variant: 'destructive',
+      });
+    } finally {
+      setTogglingExhibitors(false);
+    }
+  };
 
   const handleEventUpdated = (refreshedEvent: Event, slugChanged?: boolean) => {
     console.log('Event updated in admin:', refreshedEvent);
@@ -143,6 +182,28 @@ const AdminEventDetail = () => {
 
   return (
     <AdminEventWrapper>
+      {/* Bascule section exposants — événements publiés uniquement
+          (le staging n'a pas d'UUID dans events, la bascule se fait à la publication). */}
+      {!event.slug?.startsWith('pending-') && (
+        <div className="bg-muted border-b border-border">
+          <div className="mx-auto flex w-full max-w-[1280px] items-center justify-between gap-4 px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                Section exposants : {event.has_exhibitors !== false ? 'activée' : 'désactivée'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Masque les sections Nouveautés et Exposants de la page publique. Effet immédiat, sans validation.
+              </p>
+            </div>
+            <Switch
+              checked={event.has_exhibitors !== false}
+              onCheckedChange={handleToggleExhibitorSection}
+              disabled={togglingExhibitors}
+              aria-label="Section exposants activée"
+            />
+          </div>
+        </div>
+      )}
       <EventPageContent
         event={event}
         isPreview={true}

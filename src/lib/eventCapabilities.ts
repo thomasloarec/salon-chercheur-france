@@ -131,6 +131,7 @@ interface CapabilityEvent {
   date_debut?: string | null;
   date_fin?: string | null;
   affluence?: string | number | null;
+  has_exhibitors?: boolean | null;
 }
 
 export interface EventCapabilities {
@@ -140,6 +141,7 @@ export interface EventCapabilities {
   canPublishNovelty: boolean;
   showRadarCrm: boolean;
   showExhibitorSection: boolean;
+  showNoveltiesSection: boolean;
   durationDays: number | null;
   affluenceValue: number | null;
 }
@@ -156,13 +158,19 @@ export function getEventCapabilities(
   const start = toDayString(event.date_debut);
   const isPreLaunch = start ? diffCalendarDays(todayString(), start) > NOVELTY_OPEN_DAYS_BEFORE : false;
 
+  // Repli à true : un événement dont le flag n'est pas encore chargé
+  // se comporte exactement comme aujourd'hui. Aucune régression possible.
+  // Seul un false explicite masque les sections.
+  const hasExhibitors = event.has_exhibitors !== false;
+
   return {
     temporalState,
     isPast: past,
-    canPrepareVisit: exhibitorCount >= PARCOURS_IA_MIN_EXHIBITORS && !past,
-    canPublishNovelty: !past && !isPreLaunch,
-    showRadarCrm: exhibitorCount > 0 && !past,
-    showExhibitorSection: exhibitorCount > 0,
+    canPrepareVisit: hasExhibitors && exhibitorCount >= PARCOURS_IA_MIN_EXHIBITORS && !past,
+    canPublishNovelty: hasExhibitors && !past && !isPreLaunch,
+    showRadarCrm: hasExhibitors && exhibitorCount > 0 && !past,
+    showExhibitorSection: hasExhibitors && exhibitorCount > 0,
+    showNoveltiesSection: hasExhibitors,
     durationDays: getEventDurationDays(event.date_debut, event.date_fin),
     affluenceValue: parseAffluence(event.affluence ?? null),
   };
