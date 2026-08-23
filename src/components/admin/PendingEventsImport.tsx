@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, Trash2 } from 'lucide-react';
 import { getEventTypeLabel } from '@/constants/eventTypes';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,6 +47,7 @@ interface EventImport {
   ville: string | null;
   rue: string | null;
   code_postal?: string | null;
+  has_exhibitors?: boolean | null;
 }
 
 export function PendingEventsImport() {
@@ -53,6 +55,7 @@ export function PendingEventsImport() {
   const queryClient = useQueryClient();
   const [publishingId, setPublishingId] = useState<string | null>(null);
   const [deletingAll, setDeletingAll] = useState(false);
+  const [updatingExhibitorsId, setUpdatingExhibitorsId] = useState<string | null>(null);
 
   // Fetch events from staging (approved)
   const { data: stagingEvents, isLoading: loadingStaging } = useQuery({
@@ -114,6 +117,7 @@ export function PendingEventsImport() {
       code_postal: e.code_postal,
       created_at: e.created_at || '',
       updated_at: e.updated_at,
+      has_exhibitors: (e as any).has_exhibitors ?? true,
       source: 'events' as const,
     }));
     
@@ -158,7 +162,12 @@ export function PendingEventsImport() {
         // Event is in staging, use the edge function
         console.log('📤 Appel edge function publish-pending avec id_event:', eventImport.id_event);
         const { data, error } = await supabase.functions.invoke('publish-pending', {
-          body: { id_event: eventImport.id_event }
+          body: {
+            id_event: eventImport.id_event,
+            // Décision « accueille des exposants » prise à la case à cocher.
+            // Prise en compte uniquement à la première publication d'un événement.
+            has_exhibitors: eventImport.has_exhibitors !== false,
+          }
         });
 
         if (error) {
@@ -193,6 +202,42 @@ export function PendingEventsImport() {
       });
     } finally {
       setPublishingId(null);
+    }
+  };
+
+  // Case « accueille des exposants » (événements staging uniquement) :
+  // persistée dans staging_events_import.has_exhibitors et transmise à
+  // publish-pending lors de la première publication.
+  const handleHasExhibitorsChange = async (
+    eventImport: (typeof allPendingEvents)[number],
+    value: boolean,
+  ) => {
+    if (eventImport.source !== 'staging') return;
+    const previous = eventImport.has_exhibitors !== false;
+    setUpdatingExhibitorsId(eventImport.id);
+    // Optimistic
+    queryClient.setQueryData(['events-import-pending-staging'], (old: EventImport[] | undefined) =>
+      old?.map((e) => (e.id === eventImport.id ? { ...e, has_exhibitors: value } : e)),
+    );
+    try {
+      const { error } = await supabase
+        .from('staging_events_import')
+        .update({ has_exhibitors: value })
+        .eq('id', eventImport.id);
+      if (error) throw error;
+    } catch (error) {
+      console.error('Erreur maj has_exhibitors staging:', error);
+      // Rollback
+      queryClient.setQueryData(['events-import-pending-staging'], (old: EventImport[] | undefined) =>
+        old?.map((e) => (e.id === eventImport.id ? { ...e, has_exhibitors: previous } : e)),
+      );
+      toast({
+        title: 'Erreur',
+        description: "Impossible d'enregistrer le choix pour cet événement.",
+        variant: 'destructive',
+      });
+    } finally {
+      setUpdatingExhibitorsId(null);
     }
   };
 
@@ -333,10 +378,29 @@ export function PendingEventsImport() {
         </div>
       </CardHeader>
       <CardContent>
-        <EventGrid 
-          events={eventsForGrid} 
+        <EventGrid
+          events={eventsForGrid}
           adminPreview={true}
           onPublish={publishPendingEvent}
+          renderCardExtra={(ev) => {
+            const source = allPendingEvents.find((e) => e.id === ev.id);
+            // Uniquement les événements staging : pour un événement déjà
+            // publié puis masqué, la première publication a déjà eu lieu et
+            // la clé has_exhibitors serait ignorée volontairement.
+            if (!source || source.source !== 'staging') return null;
+            const checked = source.has_exhibitors !== false;
+            return (
+              <label className="flex items-center gap-2 rounded-md border border-border bg-muted px-2.5 py-2 text-xs text-foreground cursor-pointer">
+                <Checkbox
+                  checked={checked}
+                  disabled={updatingExhibitorsId === source.id || publishingId === source.id}
+                  onCheckedChange={(v) => handleHasExhibitorsChange(source, v === true)}
+                  aria-label={`${source.nom_event || 'Événement'} accueille des exposants`}
+                />
+                Cet événement accueille des exposants
+              </label>
+            );
+          }}
         />
       </CardContent>
     </Card>
