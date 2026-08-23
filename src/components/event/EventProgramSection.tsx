@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Calendar, Clock, ExternalLink, Languages, MapPin } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Clock, ExternalLink, Languages, MapPin } from 'lucide-react';
 import {
   useEventProgram,
   type ProgramSession,
