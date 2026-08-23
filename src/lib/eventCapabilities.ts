@@ -142,6 +142,7 @@ export interface EventCapabilities {
   showRadarCrm: boolean;
   showExhibitorSection: boolean;
   showNoveltiesSection: boolean;
+  showProgramSection: boolean;
   durationDays: number | null;
   affluenceValue: number | null;
 }
@@ -149,6 +150,7 @@ export interface EventCapabilities {
 export function getEventCapabilities(
   event: CapabilityEvent,
   exhibitorCount: number,
+  programSessionCount = 0,
 ): EventCapabilities {
   const temporalState = getEventTemporalState(event.date_debut, event.date_fin);
   const past = temporalState === 'termine';
@@ -171,6 +173,10 @@ export function getEventCapabilities(
     showRadarCrm: hasExhibitors && exhibitorCount > 0 && !past,
     showExhibitorSection: hasExhibitors && exhibitorCount > 0,
     showNoveltiesSection: hasExhibitors,
+    // La section Programme ne dépend ni du flag has_exhibitors ni du nombre
+    // d'exposants : un congrès peut n'avoir qu'un programme, et inversement.
+    // Repli à 0 par défaut → masquée tant que le compteur n'est pas chargé.
+    showProgramSection: programSessionCount > 0,
     durationDays: getEventDurationDays(event.date_debut, event.date_fin),
     affluenceValue: parseAffluence(event.affluence ?? null),
   };
