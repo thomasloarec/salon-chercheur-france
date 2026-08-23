@@ -95,10 +95,13 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 
   const exhibitorCount = stats?.exhibitor_count ?? exhibitorsFallback?.total ?? 0;
   const noveltyCount = stats?.novelty_count ?? noveltyFallback ?? 0;
+  // Lot 4 : le compteur de sessions pilote l'affichage de la section Programme
+  // (règle showProgramSection dans eventCapabilities).
+  const { data: programSessionCount } = useEventProgramCount(event.id);
 
   const capabilities = useMemo(
-    () => getEventCapabilities(event, exhibitorCount),
-    [event, exhibitorCount],
+    () => getEventCapabilities(event, exhibitorCount, programSessionCount ?? 0),
+    [event, exhibitorCount, programSessionCount],
   );
   const isEventPast = capabilities.isPast;
   const canPrepareVisit = capabilities.canPrepareVisit;
