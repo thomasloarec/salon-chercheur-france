@@ -15,6 +15,7 @@ import { EventStatsStrip } from '@/components/event/EventStatsStrip';
 import EventAiBanner from '@/components/event/EventAiBanner';
 import EventInfoBlocks from '@/components/event/EventInfoBlocks';
 import EventBand from '@/components/event/EventBand';
+import EventProgramSection from '@/components/event/EventProgramSection';
 import { Reveal } from '@/components/ui/reveal';
 
 import EventExhibitorsSection from '@/components/event/EventExhibitorsSection';
@@ -29,6 +30,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, Settings } from 'lucide-react';
 import { useExhibitorsByEvent } from '@/hooks/useExhibitorsByEvent';
 import { useEventCardStats } from '@/hooks/useEventCardStats';
+import { useEventProgramCount } from '@/hooks/useEventProgram';
 import { getEventCapabilities, PARCOURS_IA_MIN_EXHIBITORS } from '@/lib/eventCapabilities';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -93,10 +95,13 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
 
   const exhibitorCount = stats?.exhibitor_count ?? exhibitorsFallback?.total ?? 0;
   const noveltyCount = stats?.novelty_count ?? noveltyFallback ?? 0;
+  // Lot 4 : le compteur de sessions pilote l'affichage de la section Programme
+  // (règle showProgramSection dans eventCapabilities).
+  const { data: programSessionCount } = useEventProgramCount(event.id);
 
   const capabilities = useMemo(
-    () => getEventCapabilities(event, exhibitorCount),
-    [event, exhibitorCount],
+    () => getEventCapabilities(event, exhibitorCount, programSessionCount ?? 0),
+    [event, exhibitorCount, programSessionCount],
   );
   const isEventPast = capabilities.isPast;
   const canPrepareVisit = capabilities.canPrepareVisit;
@@ -345,6 +350,17 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
                   </section>
                 </div>
               </Reveal>
+            </EventBand>
+          )}
+
+          {/* ═══ Bande 2c — blanc : programme de l'événement (lot 4) ═══ */}
+          {capabilities.showProgramSection && (
+            <EventBand tone="white" space="md">
+              <section id="programme" className="min-w-0">
+                <Reveal>
+                  <EventProgramSection event={event} />
+                </Reveal>
+              </section>
             </EventBand>
           )}
 
