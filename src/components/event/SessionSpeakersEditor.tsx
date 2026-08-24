@@ -72,6 +72,58 @@ function Avatar({ url, name, className = '' }: { url?: string | null; name: stri
   );
 }
 
+const SortableSpeakerRow: React.FC<{
+  sp: AttachedSpeaker;
+  onRole: (id: string, role: string) => void;
+  onDetach: (id: string) => void;
+}> = ({ sp, onRole, onDetach }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: sp.speaker_id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-3 rounded-md border border-border p-2"
+    >
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="touch-none text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+        aria-label="Déplacer"
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <Avatar url={sp.photo_url} name={sp.full_name} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{sp.full_name}</p>
+        {(sp.job_title || sp.company) && (
+          <p className="truncate text-xs text-muted-foreground">
+            {[sp.job_title, sp.company].filter(Boolean).join(' · ')}
+          </p>
+        )}
+      </div>
+      <Select value={sp.role} onValueChange={(r) => onRole(sp.speaker_id, r)}>
+        <SelectTrigger className="h-8 w-[9.5rem] text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {ROLES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+        </SelectContent>
+      </Select>
+      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => onDetach(sp.speaker_id)} aria-label="Retirer">
+        <Trash2 className="h-4 w-4 text-muted-foreground" />
+      </Button>
+    </div>
+  );
+};
+
 const SessionSpeakersEditor: React.FC<{
   eventId: string;
   value: AttachedSpeaker[];
