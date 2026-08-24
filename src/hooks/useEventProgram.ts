@@ -69,3 +69,24 @@ export function useEventProgramCount(eventId?: string | null) {
     },
   });
 }
+
+/**
+ * Lot 5a — Lecture du programme pour l'espace organisateur (édition).
+ * Consomme get_event_program_admin : renvoie TOUS les statuts (brouillons
+ * inclus) au propriétaire de l'événement ou à un admin. staleTime 0 pour
+ * refléter immédiatement les modifications après mutation.
+ */
+export function useEventProgramAdmin(eventId?: string | null) {
+  return useQuery({
+    queryKey: ['event-program-admin', eventId],
+    enabled: !!eventId,
+    staleTime: 0,
+    queryFn: async (): Promise<ProgramSession[]> => {
+      const { data, error } = await supabase.rpc('get_event_program_admin', {
+        p_event_id: eventId as string,
+      });
+      if (error) throw error;
+      return (data ?? []) as unknown as ProgramSession[];
+    },
+  });
+}

@@ -10,22 +10,25 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Sparkles, Building2, Users, Megaphone, Code } from 'lucide-react';
+import { ExternalLink, Sparkles, Building2, Users, Megaphone, Code, CalendarClock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import OrganizerEventEditForm from '@/components/event/OrganizerEventEditForm';
 import SeoScorecard from '@/components/event/SeoScorecard';
 import OrganizerActivationKit from '@/components/event/OrganizerActivationKit';
 import OrganizerEmbedWidget from '@/components/event/OrganizerEmbedWidget';
 import { useEventScorecard } from '@/hooks/useEventScorecard';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
+import OrganizerProgramManager from '@/components/event/OrganizerProgramManager';
 import type { Event } from '@/types/event';
 
 const OrganizerSalonPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<'salon' | 'exposants' | 'activation' | 'widget'>('salon');
+  const [activeSection, setActiveSection] = useState<'salon' | 'programme' | 'exposants' | 'activation' | 'widget'>('salon');
   const queryClient = useQueryClient();
   const [exhibitorOverride, setExhibitorOverride] = useState<boolean | null>(null);
   const [savingExhibitorVisibility, setSavingExhibitorVisibility] = useState(false);
@@ -53,12 +56,13 @@ const OrganizerSalonPage: React.FC = () => {
   }, [slug]);
 
   useEffect(() => {
-    if (authLoading || loading) return;
+    if (authLoading || loading || adminLoading) return;
     if (!event) return;
-    if (!user || !event.owner_user_id || user.id !== event.owner_user_id) {
+    const canManage = !!user && (isAdmin || user.id === event.owner_user_id);
+    if (!canManage) {
       navigate(`/events/${event?.slug || slug}`, { replace: true });
     }
-  }, [authLoading, loading, user, event, slug, navigate]);
+  }, [authLoading, loading, adminLoading, user, isAdmin, event, slug, navigate]);
 
   // Visibilité des sections exposants/nouveautés : décision immédiate, hors
   // circuit de validation admin (RPC dédiée, lot 2). Repli à true : seul un
@@ -98,7 +102,7 @@ const OrganizerSalonPage: React.FC = () => {
   const exposants = c?.exposants_references ?? 0;
   const pct = Math.max(0, Math.min(100, Number(c?.pct_enrichies ?? 0)));
 
-  if (loading || authLoading) {
+  if (loading || authLoading || adminLoading) {
     return (
       <MainLayout title="Gérer mon salon">
         <div className="max-w-4xl mx-auto py-8 space-y-6">
@@ -110,9 +114,9 @@ const OrganizerSalonPage: React.FC = () => {
   }
 
   if (!event) return null;
-  if (!user || user.id !== event.owner_user_id) return null;
+  if (!user || (!isAdmin && user.id !== event.owner_user_id)) return null;
 
-  type SectionKey = 'salon' | 'exposants' | 'activation' | 'widget';
+  type SectionKey = 'salon' | 'programme' | 'exposants' | 'activation' | 'widget';
   const sections: {
     key: SectionKey;
     label: string;
@@ -126,6 +130,14 @@ const OrganizerSalonPage: React.FC = () => {
       icon: Building2,
       title: 'Votre salon',
       description: 'Modifiez les informations principales. Vos changements seront soumis pour validation.',
+    },
+    {
+      key: 'programme',
+      label: 'Programme',
+      icon: CalendarClock,
+      title: 'Programme',
+      description:
+        'Créez et organisez les sessions de votre événement. Chaque session peut être publiée ou gardée en brouillon.',
     },
     {
       key: 'exposants',
@@ -250,6 +262,7 @@ const OrganizerSalonPage: React.FC = () => {
                 </Card>
               </>
             )}
+            {activeSection === 'programme' && <OrganizerProgramManager eventId={event.id} />}
             {activeSection === 'exposants' && <SeoScorecard eventId={event.id} />}
             {activeSection === 'activation' && (
               <OrganizerActivationKit
