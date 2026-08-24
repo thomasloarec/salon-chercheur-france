@@ -87,6 +87,7 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
     queryClient.invalidateQueries({ queryKey: ['event-program-admin', eventId] });
     queryClient.invalidateQueries({ queryKey: ['event-program', eventId] });
     queryClient.invalidateQueries({ queryKey: ['event-program-count', eventId] });
+    queryClient.invalidateQueries({ queryKey: ['event-speakers-admin', eventId] });
   };
 
   const openCreate = () => {
