@@ -366,7 +366,7 @@ const Home = () => {
 
           <div className="flex flex-col">
             {SOLUTION_BLOCKS.map((b, i) => (
-              <SolutionRow key={b.title} block={b} reversed={i % 2 === 1} />
+              <SolutionRow key={b.title} block={b} reversed={i % 2 === 1} muted={i % 2 === 0} />
             ))}
           </div>
         </section>
