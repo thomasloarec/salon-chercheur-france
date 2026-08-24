@@ -71,6 +71,7 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [formSpeakers, setFormSpeakers] = useState<AttachedSpeaker[]>([]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, ProgramSession[]>();
