@@ -19,7 +19,7 @@ import {
   SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy,
   useSortable, arrayMove,
 } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities;
+import { CSS } from '@dnd-kit/utilities';
 
 export interface AttachedSpeaker {
   speaker_id: string;
