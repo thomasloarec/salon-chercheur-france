@@ -5,6 +5,7 @@ import {
   Search, ArrowRight, Sparkles, Users, Store, Building2, Info,
   RefreshCw, Route, Radar, Rocket, Eye, MapPin, CalendarDays,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -365,7 +366,7 @@ const Home = () => {
 
           <div className="flex flex-col">
             {SOLUTION_BLOCKS.map((b, i) => (
-              <SolutionRow key={b.title} block={b} reversed={i % 2 === 1} />
+              <SolutionRow key={b.title} block={b} reversed={i % 2 === 1} muted={i % 2 === 0} />
             ))}
           </div>
         </section>
@@ -492,8 +493,8 @@ interface SolutionBlock {
   visual: React.ReactNode;
 }
 
-const SolutionRow = ({ block, reversed }: { block: SolutionBlock; reversed: boolean }) => (
-  <Reveal className="w-full">
+const SolutionRow = ({ block, reversed, muted }: { block: SolutionBlock; reversed: boolean; muted?: boolean }) => (
+  <Reveal className={cn('w-full', muted && 'bg-muted/40')}>
     <div className="max-w-[1180px] mx-auto px-7 py-14 grid grid-cols-1 lg:grid-cols-2 gap-y-[38px] lg:gap-y-0 lg:gap-x-[74px] items-center">
       {/* Texte : toujours en premier dans le DOM (mobile => au-dessus partout) */}
       <div className={reversed ? 'lg:order-last' : ''}>
@@ -775,21 +776,6 @@ const SOLUTION_BLOCKS: SolutionBlock[] = [
     visual: <ParcoursMock />,
   },
   {
-    actor: 'Pour les commerciaux',
-    title: 'Arrivez avec un plan de visite, pas une liste de stands',
-    body: (
-      <>
-        Croisez votre fichier clients avec les exposants d'un salon. L'IA génère votre mission :{' '}
-        <strong className="text-primary font-semibold">qui rencontrer, pourquoi, et les 3 questions à poser</strong>{' '}
-        sur chaque stand.
-      </>
-    ),
-    ecoNote:
-      'Un visiteur préparé, c\u2019est un visiteur qui achète, exactement la valeur qui fait vivre exposants et salons.',
-    cta: { label: 'Découvrir Radar CRM', to: '/radar-crm' },
-    visual: <RadarMock />,
-  },
-  {
     actor: 'Pour les exposants',
     title: "Soyez découvert avant même l'ouverture des portes",
     body: (
@@ -803,6 +789,21 @@ const SOLUTION_BLOCKS: SolutionBlock[] = [
       'Pour les visiteurs : savoir quoi voir et pourquoi. Pour les salons : un contenu vivant qui donne envie de venir.',
     cta: { label: 'Publier une nouveauté', to: '/publier-nouveaute' },
     visual: <NoveltyMock />,
+  },
+  {
+    actor: 'Pour les commerciaux',
+    title: 'Arrivez avec un plan de visite, pas une liste de stands',
+    body: (
+      <>
+        Croisez votre fichier clients avec les exposants d'un salon. L'IA génère votre mission :{' '}
+        <strong className="text-primary font-semibold">qui rencontrer, pourquoi, et les 3 questions à poser</strong>{' '}
+        sur chaque stand.
+      </>
+    ),
+    ecoNote:
+      'Un visiteur préparé, c\u2019est un visiteur qui achète, exactement la valeur qui fait vivre exposants et salons.',
+    cta: { label: 'Découvrir Radar CRM', to: '/radar-crm' },
+    visual: <RadarMock />,
   },
   {
     actor: 'Le moteur',
