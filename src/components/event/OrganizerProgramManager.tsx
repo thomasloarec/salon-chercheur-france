@@ -18,7 +18,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, MapPin, Clock, Star, Users } from 'lucide-react';
+import { Plus, Pencil, Copy, Trash2, MapPin, Clock, Star, Users } from 'lucide-react';
 
 const SESSION_TYPES: { value: string; label: string }[] = [
   { value: 'conference', label: 'Conférence' },
@@ -72,6 +72,7 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [formSpeakers, setFormSpeakers] = useState<AttachedSpeaker[]>([]);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
 
   const grouped = useMemo(() => {
     const map = new Map<string, ProgramSession[]>();
@@ -172,6 +173,51 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
     }
   };
 
+  const duplicate = async (s: ProgramSession) => {
+    if (duplicatingId) return;
+    setDuplicatingId(s.session_id);
+    try {
+      const { data: res, error } = await supabase.functions.invoke('event-program-manage', {
+        body: {
+          action: 'session.create',
+          event_id: eventId,
+          data: {
+            title: `${s.title ?? 'Session'} (copie)`,
+            session_type: s.session_type,
+            day_date: s.day_date,
+            start_time: s.start_time,
+            end_time: s.end_time,
+            location: s.location,
+            track: s.track,
+            registration_url: s.registration_url,
+            description: s.description,
+            is_highlight: s.is_highlight,
+            status: 'draft',
+          },
+        },
+      });
+      if (error) throw error;
+      if (res?.error) throw new Error(res.message || res.error);
+
+      const speakers = (s.speakers ?? []).map((sp: any, i: number) => ({
+        speaker_id: sp.id, role: sp.role || 'intervenant', position: i,
+      }));
+      if (res?.id && speakers.length > 0) {
+        const { data: spRes, error: spErr } = await supabase.functions.invoke('event-program-manage', {
+          body: { action: 'session.set_speakers', event_id: eventId, session_id: res.id, speakers },
+        });
+        if (spErr) throw spErr;
+        if (spRes?.error) throw new Error(spRes.message || spRes.error);
+      }
+      toast.success('Session dupliquée (en brouillon).');
+      refresh();
+    } catch (e: any) {
+      toast.error(e?.message || "La session n'a pas pu être dupliquée.");
+    } finally {
+      setDuplicatingId(null);
+    }
+  };
+
   const remove = async (s: ProgramSession) => {
     if (deletingId) return;
     if (!window.confirm(`Supprimer la session « ${s.title ?? ''} » ? Cette action est définitive.`)) return;
@@ -267,6 +313,14 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
                         <div className="flex items-center gap-1 shrink-0">
                           <Button variant="ghost" size="icon" onClick={() => openEdit(s)} aria-label="Éditer">
                             <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost" size="icon"
+                            onClick={() => duplicate(s)}
+                            disabled={duplicatingId === s.session_id}
+                            aria-label="Dupliquer"
+                          >
+                            <Copy className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost" size="icon"
