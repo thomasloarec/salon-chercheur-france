@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useEventProgramAdmin, type ProgramSession } from '@/hooks/useEventProgram';
+import SessionSpeakersEditor, { type AttachedSpeaker } from '@/components/event/SessionSpeakersEditor';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
