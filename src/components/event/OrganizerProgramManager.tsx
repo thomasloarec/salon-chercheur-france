@@ -370,6 +370,8 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
             </div>
 
+            <SessionSpeakersEditor eventId={eventId} value={formSpeakers} onChange={setFormSpeakers} />
+
             <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-3">
               <div className="space-y-0.5">
                 <Label htmlFor="pm-hl">Temps fort</Label>
