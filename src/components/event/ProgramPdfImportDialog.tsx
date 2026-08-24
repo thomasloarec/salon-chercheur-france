@@ -36,6 +36,28 @@ const IMPORT_STEPS = [
   "Finalisation de l'analyse…",
 ];
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Interroge le statut de l'import toutes les 3 s jusqu'à extraction ou échec (max ~3 min). */
+async function pollImport(id: string): Promise<ImportResult> {
+  for (let i = 0; i < 60; i++) {
+    await sleep(3000);
+    const { data, error } = await supabase.rpc('get_program_import_admin', { p_import_id: id });
+    if (error) continue;
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) continue;
+    if (row.status === 'extracted') {
+      if (!row.result) throw new Error('Aperçu indisponible.');
+      return row.result as ImportResult;
+    }
+    if (row.status === 'failed') {
+      throw new Error(row.error || "L'extraction a échoué.");
+    }
+    // statut 'extracting' : on continue d'attendre
+  }
+  throw new Error("L'analyse prend trop de temps. Réessayez avec un PDF plus court ou découpé.");
+}
+
 const ProgramPdfImportDialog: React.FC<{
   eventId: string;
   open: boolean;
@@ -99,13 +121,10 @@ const ProgramPdfImportDialog: React.FC<{
       const id = res.import_id as string;
       setImportId(id);
 
-      const { data: imp, error: impErr } = await supabase.rpc('get_program_import_admin', { p_import_id: id });
-      if (impErr) throw impErr;
-      const row = Array.isArray(imp) ? imp[0] : imp;
-      if (!row?.result) throw new Error('Aperçu indisponible.');
+      const result = await pollImport(id);
       stopProgress();
       setProgress(100);
-      setResult(row.result as ImportResult);
+      setResult(result);
       setPhase('preview');
     } catch (e: any) {
       stopProgress();
