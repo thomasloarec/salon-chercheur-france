@@ -8801,6 +8801,94 @@ export type Database = {
         }
         Relationships: []
       }
+      staging_program_imports: {
+        Row: {
+          applied_at: string | null
+          created_at: string
+          created_by: string | null
+          error: string | null
+          event_id: string
+          id: string
+          model: string | null
+          original_filename: string | null
+          pdf_path: string | null
+          result: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          applied_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          event_id: string
+          id?: string
+          model?: string | null
+          original_filename?: string | null
+          pdf_path?: string | null
+          result?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          applied_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          event_id?: string
+          id?: string
+          model?: string | null
+          original_filename?: string | null
+          pdf_path?: string | null
+          result?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staging_program_imports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "admin_events_exhibitor_coverage"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staging_program_imports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "staging_program_imports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "staging_program_imports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staging_program_imports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staging_program_imports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sub_sectors: {
         Row: {
           created_at: string
@@ -10890,6 +10978,7 @@ export type Database = {
           variantes_appliquees: number
         }[]
       }
+      apply_program_import: { Args: { p_import_id: string }; Returns: Json }
       apply_radar_mission_strategy: {
         Args: {
           p_ai_meta: Json
@@ -11408,6 +11497,20 @@ export type Database = {
       }
       get_or_create_my_radar_account: { Args: never; Returns: string }
       get_outreach_pipeline_stats: { Args: never; Returns: Json }
+      get_program_import_admin: {
+        Args: { p_import_id: string }
+        Returns: {
+          applied_at: string
+          created_at: string
+          error: string
+          event_id: string
+          id: string
+          model: string
+          original_filename: string
+          result: Json
+          status: string
+        }[]
+      }
       get_public_event_categories: {
         Args: { p_event_id: string }
         Returns: {
