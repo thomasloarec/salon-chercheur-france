@@ -93,6 +93,7 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
   const openCreate = () => {
     setEditingId(null);
     setForm(EMPTY_FORM);
+    setFormSpeakers([]);
     setDialogOpen(true);
   };
   const openEdit = (s: ProgramSession) => {
@@ -110,6 +111,16 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
       is_highlight: !!s.is_highlight,
       status: s.status ?? 'draft',
     });
+    setFormSpeakers(
+      (s.speakers ?? []).map((sp: any) => ({
+        speaker_id: sp.id,
+        full_name: sp.full_name,
+        job_title: sp.job_title,
+        company: sp.company,
+        photo_url: sp.photo_url,
+        role: sp.role || 'intervenant',
+      }))
+    );
     setDialogOpen(true);
   };
 
