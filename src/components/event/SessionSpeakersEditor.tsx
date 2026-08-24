@@ -167,6 +167,19 @@ const SessionSpeakersEditor: React.FC<{
   const setRole = (id: string, role: string) =>
     onChange(value.map((v) => (v.speaker_id === id ? { ...v, role } : v)));
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const handleDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIndex = value.findIndex((v) => v.speaker_id === active.id);
+    const newIndex = value.findIndex((v) => v.speaker_id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    onChange(arrayMove(value, oldIndex, newIndex));
+  };
+
   const handleFile = async (file?: File | null) => {
     if (!file || uploading) return;
     if (!file.type.startsWith('image/')) { toast.error('Choisissez un fichier image.'); return; }
