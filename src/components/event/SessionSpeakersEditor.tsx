@@ -89,7 +89,7 @@ const SortableSpeakerRow: React.FC<{
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-3 rounded-md border border-border p-2"
+      className="grid min-w-0 grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-2 rounded-md border border-border p-2 sm:flex sm:gap-3"
     >
       <button
         type="button"
@@ -110,14 +110,14 @@ const SortableSpeakerRow: React.FC<{
         )}
       </div>
       <Select value={sp.role} onValueChange={(r) => onRole(sp.speaker_id, r)}>
-        <SelectTrigger className="h-8 w-[9.5rem] text-xs">
+        <SelectTrigger className="col-span-3 col-start-2 h-8 min-w-0 w-full text-xs sm:col-auto sm:w-[9.5rem]">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
           {ROLES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
         </SelectContent>
       </Select>
-      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => onDetach(sp.speaker_id)} aria-label="Retirer">
+      <Button variant="ghost" size="icon" className="col-start-4 row-start-1 h-8 w-8 shrink-0 sm:col-auto sm:row-auto" onClick={() => onDetach(sp.speaker_id)} aria-label="Retirer">
         <Trash2 className="h-4 w-4 text-muted-foreground" />
       </Button>
     </div>
@@ -235,7 +235,7 @@ const SessionSpeakersEditor: React.FC<{
   };
 
   return (
-    <div className="space-y-3 rounded-lg border border-border p-4">
+    <div className="min-w-0 space-y-3 rounded-lg border border-border p-3 sm:p-4">
       <div className="flex items-center justify-between gap-3">
         <h4 className="text-sm font-semibold">Intervenants</h4>
         <span className="text-xs text-muted-foreground">{value.length} rattaché{value.length > 1 ? 's' : ''}</span>
@@ -258,8 +258,8 @@ const SessionSpeakersEditor: React.FC<{
           <UserPlus className="mr-1.5 h-4 w-4" /> Ajouter un intervenant
         </Button>
       ) : (
-        <div className="space-y-3 rounded-md border border-border p-3">
-          <div className="flex items-center gap-2">
+        <div className="min-w-0 space-y-3 rounded-md border border-border p-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <Button type="button" variant={mode === 'existing' ? 'default' : 'outline'} size="sm" onClick={() => setMode('existing')}>
               Existant
             </Button>
@@ -317,7 +317,7 @@ const SessionSpeakersEditor: React.FC<{
               </div>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="min-w-0 space-y-3">
               <div className="flex items-center gap-3">
                 <Avatar url={newSpeaker.photo_url} name={newSpeaker.full_name || '?'} />
                 <div className="flex-1">
@@ -338,7 +338,7 @@ const SessionSpeakersEditor: React.FC<{
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="min-w-0 space-y-1.5">
                 <Label htmlFor="sp-name">Nom complet *</Label>
                 <Input
                   id="sp-name"
@@ -348,8 +348,8 @@ const SessionSpeakersEditor: React.FC<{
                 />
               </div>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
+              <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="min-w-0 space-y-1.5">
                   <Label htmlFor="sp-job">Fonction</Label>
                   <Input
                     id="sp-job"
@@ -358,7 +358,7 @@ const SessionSpeakersEditor: React.FC<{
                     placeholder="Directrice marketing"
                   />
                 </div>
-                <div className="space-y-1.5">
+                <div className="min-w-0 space-y-1.5">
                   <Label htmlFor="sp-company">Entreprise</Label>
                   <Input
                     id="sp-company"
@@ -369,7 +369,7 @@ const SessionSpeakersEditor: React.FC<{
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="min-w-0 space-y-1.5">
                 <Label htmlFor="sp-linkedin">LinkedIn</Label>
                 <Input
                   id="sp-linkedin"

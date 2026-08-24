@@ -342,22 +342,22 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto overflow-x-hidden sm:max-w-lg">
-          <DialogHeader>
+        <DialogContent className="box-border min-w-0 max-w-[calc(100vw-2rem)] overflow-y-auto overflow-x-hidden px-4 sm:max-w-lg sm:px-6">
+          <DialogHeader className="min-w-0">
             <DialogTitle>{editingId ? 'Modifier la session' : 'Ajouter une session'}</DialogTitle>
             <DialogDescription className="sr-only">Formulaire de session du programme</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="space-y-1.5">
+          <div className="min-w-0 space-y-4">
+            <div className="min-w-0 space-y-1.5">
               <Label htmlFor="pm-title">Titre *</Label>
               <Input id="pm-title" value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                 placeholder="Titre de la session" />
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
+            <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="min-w-0 space-y-1.5">
                 <Label>Type</Label>
                 <Select value={form.session_type} onValueChange={(v) => setForm((f) => ({ ...f, session_type: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -366,7 +366,7 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
+              <div className="min-w-0 space-y-1.5">
                 <Label>Statut</Label>
                 <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -378,32 +378,32 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="space-y-1.5">
+            <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="min-w-0 space-y-1.5">
                 <Label htmlFor="pm-day">Jour</Label>
                 <Input id="pm-day" type="date" value={form.day_date}
                   onChange={(e) => setForm((f) => ({ ...f, day_date: e.target.value }))} />
               </div>
-              <div className="space-y-1.5">
+              <div className="min-w-0 space-y-1.5">
                 <Label htmlFor="pm-start">Début</Label>
                 <Input id="pm-start" type="time" value={form.start_time}
                   onChange={(e) => setForm((f) => ({ ...f, start_time: e.target.value }))} />
               </div>
-              <div className="space-y-1.5">
+              <div className="min-w-0 space-y-1.5">
                 <Label htmlFor="pm-end">Fin</Label>
                 <Input id="pm-end" type="time" value={form.end_time}
                   onChange={(e) => setForm((f) => ({ ...f, end_time: e.target.value }))} />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
+            <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="min-w-0 space-y-1.5">
                 <Label htmlFor="pm-loc">Lieu</Label>
                 <Input id="pm-loc" value={form.location}
                   onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
                   placeholder="Salle, amphi…" />
               </div>
-              <div className="space-y-1.5">
+              <div className="min-w-0 space-y-1.5">
                 <Label htmlFor="pm-track">Catégorie</Label>
                 <Input id="pm-track" value={form.track}
                   onChange={(e) => setForm((f) => ({ ...f, track: e.target.value }))}
@@ -411,14 +411,14 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="min-w-0 space-y-1.5">
               <Label htmlFor="pm-url">Lien d'inscription</Label>
               <Input id="pm-url" type="url" value={form.registration_url}
                 onChange={(e) => setForm((f) => ({ ...f, registration_url: e.target.value }))}
                 placeholder="https://…" />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="min-w-0 space-y-1.5">
               <Label htmlFor="pm-desc">Description</Label>
               <Textarea id="pm-desc" rows={3} value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
