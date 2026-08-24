@@ -372,7 +372,7 @@ const Home = () => {
         </section>
 
         {/* ============================= PROCHAINS SALONS ============================= */}
-        <section className="bg-secondary/30 border-t border-border">
+        <section className="bg-background border-t border-border">
           <div className="max-w-6xl mx-auto px-6 py-20">
             <div className="flex items-end justify-between gap-4 mb-10">
               <Reveal>
