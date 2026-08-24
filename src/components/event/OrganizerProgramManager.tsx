@@ -18,7 +18,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, MapPin, Clock, Star, Users } from 'lucide-react';
+import { Plus, Pencil, Copy, Trash2, MapPin, Clock, Star, Users } from 'lucide-react';
 
 const SESSION_TYPES: { value: string; label: string }[] = [
   { value: 'conference', label: 'Conférence' },
@@ -72,6 +72,7 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [formSpeakers, setFormSpeakers] = useState<AttachedSpeaker[]>([]);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
 
   const grouped = useMemo(() => {
     const map = new Map<string, ProgramSession[]>();

@@ -10,7 +10,16 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { getMonogram } from '@/components/event/ExhibitorAvatar';
-import { Plus, Search, Trash2, UserPlus, X, Loader2 } from 'lucide-react';
+import { GripVertical, Plus, Search, Trash2, UserPlus, X, Loader2 } from 'lucide-react';
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor,
+  useSensor, useSensors, type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy,
+  useSortable, arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities;
 
 export interface AttachedSpeaker {
   speaker_id: string;
