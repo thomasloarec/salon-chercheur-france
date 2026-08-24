@@ -242,32 +242,15 @@ const SessionSpeakersEditor: React.FC<{
       </div>
 
       {value.length > 0 && (
-        <div className="space-y-2">
-          {value.map((sp) => (
-            <div key={sp.speaker_id} className="flex items-center gap-3 rounded-md border border-border p-2">
-              <Avatar url={sp.photo_url} name={sp.full_name} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{sp.full_name}</p>
-                {(sp.job_title || sp.company) && (
-                  <p className="truncate text-xs text-muted-foreground">
-                    {[sp.job_title, sp.company].filter(Boolean).join(' · ')}
-                  </p>
-                )}
-              </div>
-              <Select value={sp.role} onValueChange={(r) => setRole(sp.speaker_id, r)}>
-                <SelectTrigger className="h-8 w-[9.5rem] text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ROLES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => detach(sp.speaker_id)} aria-label="Retirer">
-                <Trash2 className="h-4 w-4 text-muted-foreground" />
-              </Button>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={value.map((v) => v.speaker_id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-2">
+              {value.map((sp) => (
+                <SortableSpeakerRow key={sp.speaker_id} sp={sp} onRole={setRole} onDetach={detach} />
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       {!adding ? (
