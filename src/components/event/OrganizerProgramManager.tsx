@@ -147,6 +147,21 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
       const { data: res, error } = await supabase.functions.invoke('event-program-manage', { body });
       if (error) throw error;
       if (res?.error) throw new Error(res.message || res.error);
+
+      const sessionId = editingId ?? res?.id;
+      if (sessionId) {
+        const { data: spRes, error: spErr } = await supabase.functions.invoke('event-program-manage', {
+          body: {
+            action: 'session.set_speakers',
+            event_id: eventId,
+            session_id: sessionId,
+            speakers: formSpeakers.map((s, i) => ({ speaker_id: s.speaker_id, role: s.role, position: i })),
+          },
+        });
+        if (spErr) throw spErr;
+        if (spRes?.error) throw new Error(spRes.message || spRes.error);
+      }
+
       toast.success(editingId ? 'Session mise à jour.' : 'Session ajoutée.');
       setDialogOpen(false);
       refresh();
