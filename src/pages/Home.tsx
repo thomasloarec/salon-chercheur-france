@@ -492,8 +492,8 @@ interface SolutionBlock {
   visual: React.ReactNode;
 }
 
-const SolutionRow = ({ block, reversed }: { block: SolutionBlock; reversed: boolean }) => (
-  <Reveal className="w-full">
+const SolutionRow = ({ block, reversed, muted }: { block: SolutionBlock; reversed: boolean; muted?: boolean }) => (
+  <Reveal className={cn('w-full', muted && 'bg-muted/40')}>
     <div className="max-w-[1180px] mx-auto px-7 py-14 grid grid-cols-1 lg:grid-cols-2 gap-y-[38px] lg:gap-y-0 lg:gap-x-[74px] items-center">
       {/* Texte : toujours en premier dans le DOM (mobile => au-dessus partout) */}
       <div className={reversed ? 'lg:order-last' : ''}>
