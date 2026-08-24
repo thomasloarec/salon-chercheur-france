@@ -342,7 +342,7 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto overflow-x-hidden sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{editingId ? 'Modifier la session' : 'Ajouter une session'}</DialogTitle>
             <DialogDescription className="sr-only">Formulaire de session du programme</DialogDescription>
@@ -356,7 +356,7 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
                 placeholder="Titre de la session" />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>Type</Label>
                 <Select value={form.session_type} onValueChange={(v) => setForm((f) => ({ ...f, session_type: v }))}>
@@ -378,7 +378,7 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="space-y-1.5">
                 <Label htmlFor="pm-day">Jour</Label>
                 <Input id="pm-day" type="date" value={form.day_date}
@@ -396,7 +396,7 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="pm-loc">Lieu</Label>
                 <Input id="pm-loc" value={form.location}
