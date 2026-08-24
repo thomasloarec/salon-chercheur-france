@@ -54,7 +54,7 @@ interface RevealProps {
  */
 export const Reveal: React.FC<RevealProps> = ({ children, className }) => {
   const reduced = usePrefersReducedMotion();
-  const [ref, inView] = useInView<HTMLDivElement>(0.12);
+  const [ref, inView] = useInView<HTMLDivElement>(0);
   const shown = reduced || inView;
 
   return (
