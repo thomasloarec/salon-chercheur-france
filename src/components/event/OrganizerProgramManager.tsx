@@ -75,6 +75,7 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
   const [formSpeakers, setFormSpeakers] = useState<AttachedSpeaker[]>([]);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [publishing, setPublishing] = useState(false);
 
   const grouped = useMemo(() => {
     const map = new Map<string, ProgramSession[]>();
@@ -249,6 +250,22 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
     );
   }
 
+  const draftCount = (sessions ?? []).filter((s) => s.status === 'draft').length;
+  const publishAll = async () => {
+    if (publishing || draftCount === 0) return;
+    if (!window.confirm(`Publier les ${draftCount} session${draftCount > 1 ? 's' : ''} en brouillon ? Elles deviendront visibles publiquement.`)) return;
+    setPublishing(true);
+    try {
+      const { data, error } = await supabase.rpc('publish_event_program_sessions', { p_event_id: eventId });
+      if (error) throw error;
+      toast.success(`${data ?? 0} session(s) publiée(s).`);
+      refresh();
+    } catch (e: any) {
+      toast.error(e?.message || 'La publication a échoué.');
+    } finally {
+      setPublishing(false);
+    }
+  };
   const total = sessions?.length ?? 0;
 
   return (
@@ -268,6 +285,17 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
       </div>
 
       <ProgramPdfImportDialog eventId={eventId} open={importOpen} onOpenChange={setImportOpen} />
+
+      {draftCount > 0 && (
+        <div className="flex flex-col gap-2 rounded-lg border border-warning/40 bg-warning-surface p-3 text-warning-foreground sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm">
+            <strong>{draftCount}</strong> session{draftCount > 1 ? 's' : ''} en brouillon, non visible{draftCount > 1 ? 's' : ''} publiquement.
+          </p>
+          <Button size="sm" onClick={publishAll} disabled={publishing} className="shrink-0">
+            {publishing ? 'Publication…' : `Tout publier (${draftCount})`}
+          </Button>
+        </div>
+      )}
 
       {total === 0 ? (
         <Card className="p-8 text-center text-sm text-muted-foreground">

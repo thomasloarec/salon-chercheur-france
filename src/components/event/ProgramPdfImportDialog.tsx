@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -8,6 +8,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import { FileUp, Loader2, CheckCircle2, AlertTriangle, Clock, Calendar } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 
 type Phase = 'select' | 'extracting' | 'preview' | 'applying' | 'error';
 
@@ -26,6 +27,15 @@ const CHAMP_LABELS: Record<string, string> = {
 const champLabel = (c: string) => CHAMP_LABELS[c] ?? c;
 const hhmm = (t?: string | null) => (t ? String(t).slice(0, 5) : null);
 
+const IMPORT_STEPS = [
+  'Envoi du document…',
+  "Lecture du PDF par l'IA…",
+  'Identification des sessions…',
+  'Extraction des intervenants…',
+  'Structuration du programme…',
+  "Finalisation de l'analyse…",
+];
+
 const ProgramPdfImportDialog: React.FC<{
   eventId: string;
   open: boolean;
@@ -37,11 +47,33 @@ const ProgramPdfImportDialog: React.FC<{
   const [importId, setImportId] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [stepIdx, setStepIdx] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const tickRef = useRef(0);
+
+  const stopProgress = () => {
+    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+  };
+  const startProgress = () => {
+    stopProgress();
+    tickRef.current = 0;
+    setProgress(6);
+    setStepIdx(0);
+    intervalRef.current = setInterval(() => {
+      tickRef.current += 1;
+      setProgress((p) => Math.min(92, p + Math.max(1, Math.round((92 - p) * 0.09))));
+      if (tickRef.current % 6 === 0) setStepIdx((i) => Math.min(IMPORT_STEPS.length - 1, i + 1));
+    }, 800);
+  };
+  useEffect(() => () => stopProgress(), []);
 
   const reset = () => {
+    stopProgress();
     setPhase('select'); setFile(null); setImportId(null); setResult(null); setErrorMsg(null);
+    setProgress(0); setStepIdx(0);
   };
-  const close = () => { onOpenChange(false); setTimeout(reset, 200); };
+  const close = () => { stopProgress(); onOpenChange(false); setTimeout(reset, 200); };
 
   const pickFile = (f?: File | null) => {
     if (!f) return;
@@ -52,7 +84,7 @@ const ProgramPdfImportDialog: React.FC<{
 
   const runExtraction = async () => {
     if (!file) return;
-    setPhase('extracting'); setErrorMsg(null);
+    setPhase('extracting'); setErrorMsg(null); startProgress();
     try {
       const path = `${eventId}/${crypto.randomUUID()}.pdf`;
       const up = await supabase.storage.from('program-imports').upload(path, file, { contentType: 'application/pdf' });
@@ -71,9 +103,12 @@ const ProgramPdfImportDialog: React.FC<{
       if (impErr) throw impErr;
       const row = Array.isArray(imp) ? imp[0] : imp;
       if (!row?.result) throw new Error('Aperçu indisponible.');
+      stopProgress();
+      setProgress(100);
       setResult(row.result as ImportResult);
       setPhase('preview');
     } catch (e: any) {
+      stopProgress();
       setErrorMsg(e?.message || "L'extraction a échoué.");
       setPhase('error');
     }
@@ -131,10 +166,15 @@ const ProgramPdfImportDialog: React.FC<{
         )}
 
         {phase === 'extracting' && (
-          <div className="flex flex-col items-center gap-3 py-10 text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm font-medium">Extraction en cours…</p>
-            <p className="text-xs text-muted-foreground">L'IA lit le PDF, cela prend généralement moins d'une minute.</p>
+          <div className="space-y-4 py-6">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" />
+              <p className="text-sm font-medium">{IMPORT_STEPS[stepIdx]}</p>
+            </div>
+            <Progress value={progress} />
+            <p className="text-center text-xs text-muted-foreground">
+              L'analyse d'un programme complet prend généralement moins d'une minute.
+            </p>
           </div>
         )}
 
