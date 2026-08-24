@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useEventProgramAdmin, type ProgramSession } from '@/hooks/useEventProgram';
+import SessionSpeakersEditor, { type AttachedSpeaker } from '@/components/event/SessionSpeakersEditor';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -70,6 +71,7 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [formSpeakers, setFormSpeakers] = useState<AttachedSpeaker[]>([]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, ProgramSession[]>();
@@ -85,11 +87,13 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
     queryClient.invalidateQueries({ queryKey: ['event-program-admin', eventId] });
     queryClient.invalidateQueries({ queryKey: ['event-program', eventId] });
     queryClient.invalidateQueries({ queryKey: ['event-program-count', eventId] });
+    queryClient.invalidateQueries({ queryKey: ['event-speakers-admin', eventId] });
   };
 
   const openCreate = () => {
     setEditingId(null);
     setForm(EMPTY_FORM);
+    setFormSpeakers([]);
     setDialogOpen(true);
   };
   const openEdit = (s: ProgramSession) => {
@@ -107,6 +111,16 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
       is_highlight: !!s.is_highlight,
       status: s.status ?? 'draft',
     });
+    setFormSpeakers(
+      (s.speakers ?? []).map((sp: any) => ({
+        speaker_id: sp.id,
+        full_name: sp.full_name,
+        job_title: sp.job_title,
+        company: sp.company,
+        photo_url: sp.photo_url,
+        role: sp.role || 'intervenant',
+      }))
+    );
     setDialogOpen(true);
   };
 
@@ -133,6 +147,21 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
       const { data: res, error } = await supabase.functions.invoke('event-program-manage', { body });
       if (error) throw error;
       if (res?.error) throw new Error(res.message || res.error);
+
+      const sessionId = editingId ?? res?.id;
+      if (sessionId) {
+        const { data: spRes, error: spErr } = await supabase.functions.invoke('event-program-manage', {
+          body: {
+            action: 'session.set_speakers',
+            event_id: eventId,
+            session_id: sessionId,
+            speakers: formSpeakers.map((s, i) => ({ speaker_id: s.speaker_id, role: s.role, position: i })),
+          },
+        });
+        if (spErr) throw spErr;
+        if (spRes?.error) throw new Error(spRes.message || spRes.error);
+      }
+
       toast.success(editingId ? 'Session mise à jour.' : 'Session ajoutée.');
       setDialogOpen(false);
       refresh();
@@ -340,6 +369,8 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
               <Textarea id="pm-desc" rows={3} value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
             </div>
+
+            <SessionSpeakersEditor eventId={eventId} value={formSpeakers} onChange={setFormSpeakers} />
 
             <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-3">
               <div className="space-y-0.5">
