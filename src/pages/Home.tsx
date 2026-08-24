@@ -5,6 +5,7 @@ import {
   Search, ArrowRight, Sparkles, Users, Store, Building2, Info,
   RefreshCw, Route, Radar, Rocket, Eye, MapPin, CalendarDays,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
