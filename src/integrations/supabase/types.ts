@@ -11977,6 +11977,10 @@ export type Database = {
         Args: { p_loser_identity_id: string; p_winner_identity_id: string }
         Returns: Json
       }
+      publish_event_program_sessions: {
+        Args: { p_event_id: string }
+        Returns: number
+      }
       publish_pending_event_atomic: {
         Args: { p_event_data: Json; p_id_event: string }
         Returns: Json
