@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useEventProgramAdmin, type ProgramSession } from '@/hooks/useEventProgram';
 import SessionSpeakersEditor, { type AttachedSpeaker } from '@/components/event/SessionSpeakersEditor';
+import ProgramPdfImportDialog from '@/components/event/ProgramPdfImportDialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +19,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog';
-import { Plus, Pencil, Copy, Trash2, MapPin, Clock, Star, Users } from 'lucide-react';
+import { Plus, Pencil, Copy, Trash2, MapPin, Clock, Star, Users, FileUp } from 'lucide-react';
 
 const SESSION_TYPES: { value: string; label: string }[] = [
   { value: 'conference', label: 'Conférence' },
@@ -73,6 +74,7 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [formSpeakers, setFormSpeakers] = useState<AttachedSpeaker[]>([]);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const grouped = useMemo(() => {
     const map = new Map<string, ProgramSession[]>();
@@ -251,14 +253,21 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground">
           {total === 0 ? 'Aucune session pour le moment.' : `${total} session${total > 1 ? 's' : ''} au programme.`}
         </p>
-        <Button onClick={openCreate} size="sm">
-          <Plus className="h-4 w-4 mr-1.5" /> Ajouter une session
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+            <FileUp className="h-4 w-4 mr-1.5" /> Importer un PDF
+          </Button>
+          <Button onClick={openCreate} size="sm">
+            <Plus className="h-4 w-4 mr-1.5" /> Ajouter une session
+          </Button>
+        </div>
       </div>
+
+      <ProgramPdfImportDialog eventId={eventId} open={importOpen} onOpenChange={setImportOpen} />
 
       {total === 0 ? (
         <Card className="p-8 text-center text-sm text-muted-foreground">
