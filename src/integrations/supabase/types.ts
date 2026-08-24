@@ -11235,6 +11235,26 @@ export type Database = {
           novelty_count: number
         }[]
       }
+      get_event_program_admin: {
+        Args: { p_event_id: string }
+        Returns: {
+          day_date: string
+          description: string
+          end_time: string
+          is_highlight: boolean
+          language: string
+          location: string
+          registration_url: string
+          session_id: string
+          session_position: number
+          session_type: string
+          speakers: Json
+          start_time: string
+          status: string
+          title: string
+          track: string
+        }[]
+      }
       get_event_program_count: { Args: { p_event_id: string }; Returns: number }
       get_event_scorecard: { Args: { p_event_id: string }; Returns: Json }
       get_exhibitor_ai_enrichment_stats: { Args: never; Returns: Json }
