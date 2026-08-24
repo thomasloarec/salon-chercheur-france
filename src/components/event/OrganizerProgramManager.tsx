@@ -341,10 +341,18 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
             </div>
 
-            <div className="flex items-center justify-between">
-              <Label htmlFor="pm-hl">Temps fort</Label>
+            <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="pm-hl">Temps fort</Label>
+                <p className="text-xs text-muted-foreground">
+                  Met la session en avant sur la page publique : fond coloré et bordure
+                  distinctive. À réserver aux moments marquants (keynote, cérémonie,
+                  session phare). Optionnel : laissez désactivé pour une session standard.
+                </p>
+              </div>
               <Switch id="pm-hl" checked={form.is_highlight}
-                onCheckedChange={(v) => setForm((f) => ({ ...f, is_highlight: v }))} />
+                onCheckedChange={(v) => setForm((f) => ({ ...f, is_highlight: v }))}
+                className="mt-1 shrink-0" />
             </div>
           </div>
 

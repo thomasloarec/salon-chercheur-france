@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, Clock, ExternalLink, Languages, MapPin } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Clock, ExternalLink, EyeOff, Languages, MapPin } from 'lucide-react';
 import {
   useEventProgram,
   type ProgramSession,
@@ -397,18 +397,26 @@ const ProgramSessionCard: React.FC<{
           : 'border-border bg-card hover:border-primary/30 hover:shadow-[0_6px_22px_hsl(var(--primary)/0.10)]'
       )}
     >
-      <span
-        className={cn(
-          'inline-block rounded-full px-2.5 py-1 text-[11.5px] font-bold uppercase tracking-wide',
-          altBadge
-            ? 'bg-info/10 text-info'
-            : session.is_highlight
-              ? 'bg-card text-primary'
-              : 'bg-violet-soft text-primary'
+      <div className="flex flex-wrap items-center gap-2">
+        <span
+          className={cn(
+            'inline-block rounded-full px-2.5 py-1 text-[11.5px] font-bold uppercase tracking-wide',
+            altBadge
+              ? 'bg-info/10 text-info'
+              : session.is_highlight
+                ? 'bg-card text-primary'
+                : 'bg-violet-soft text-primary'
+          )}
+        >
+          {sessionTypeLabel(session.session_type)}
+        </span>
+        {session.status === 'draft' && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-warning/40 bg-warning-surface px-2.5 py-1 text-[11.5px] font-bold uppercase tracking-wide text-warning-foreground">
+            <EyeOff className="h-3 w-3" />
+            Brouillon
+          </span>
         )}
-      >
-        {sessionTypeLabel(session.session_type)}
-      </span>
+      </div>
 
       <h3 className="heading-display mb-1.5 mt-2.5 text-lg font-semibold leading-snug">
         {session.title}
@@ -681,6 +689,8 @@ const EventProgramSection: React.FC<EventProgramSectionProps> = ({ event }) => {
     return s.charAt(0).toUpperCase() + s.slice(1) + '.';
   }, [days, all.length, speakers.length]);
 
+  const hasDrafts = all.some((s) => s.status === 'draft');
+
   if (isLoading) {
     return (
       <div aria-busy="true" aria-label="Chargement du programme">
@@ -702,6 +712,17 @@ const EventProgramSection: React.FC<EventProgramSectionProps> = ({ event }) => {
         <h2 className="heading-display text-2xl md:text-3xl">Programme</h2>
       </div>
       <p className="mb-8 text-muted-foreground">{subtitle}</p>
+
+      {hasDrafts && (
+        <div className="mb-6 flex items-start gap-2.5 rounded-lg border border-warning/40 bg-warning-surface px-4 py-3 text-sm text-warning-foreground">
+          <EyeOff className="mt-0.5 h-4 w-4 shrink-0" />
+          <p>
+            Les sessions marquées <strong>Brouillon</strong> ne sont visibles que par vous
+            (organisateur ou administrateur). Elles restent masquées sur la page publique
+            tant que vous ne les avez pas publiées.
+          </p>
+        </div>
+      )}
 
       <ProgramSpeakerGallery speakers={speakers} />
 
