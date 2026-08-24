@@ -776,21 +776,6 @@ const SOLUTION_BLOCKS: SolutionBlock[] = [
     visual: <ParcoursMock />,
   },
   {
-    actor: 'Pour les commerciaux',
-    title: 'Arrivez avec un plan de visite, pas une liste de stands',
-    body: (
-      <>
-        Croisez votre fichier clients avec les exposants d'un salon. L'IA génère votre mission :{' '}
-        <strong className="text-primary font-semibold">qui rencontrer, pourquoi, et les 3 questions à poser</strong>{' '}
-        sur chaque stand.
-      </>
-    ),
-    ecoNote:
-      'Un visiteur préparé, c\u2019est un visiteur qui achète, exactement la valeur qui fait vivre exposants et salons.',
-    cta: { label: 'Découvrir Radar CRM', to: '/radar-crm' },
-    visual: <RadarMock />,
-  },
-  {
     actor: 'Pour les exposants',
     title: "Soyez découvert avant même l'ouverture des portes",
     body: (
@@ -804,6 +789,21 @@ const SOLUTION_BLOCKS: SolutionBlock[] = [
       'Pour les visiteurs : savoir quoi voir et pourquoi. Pour les salons : un contenu vivant qui donne envie de venir.',
     cta: { label: 'Publier une nouveauté', to: '/publier-nouveaute' },
     visual: <NoveltyMock />,
+  },
+  {
+    actor: 'Pour les commerciaux',
+    title: 'Arrivez avec un plan de visite, pas une liste de stands',
+    body: (
+      <>
+        Croisez votre fichier clients avec les exposants d'un salon. L'IA génère votre mission :{' '}
+        <strong className="text-primary font-semibold">qui rencontrer, pourquoi, et les 3 questions à poser</strong>{' '}
+        sur chaque stand.
+      </>
+    ),
+    ecoNote:
+      'Un visiteur préparé, c\u2019est un visiteur qui achète, exactement la valeur qui fait vivre exposants et salons.',
+    cta: { label: 'Découvrir Radar CRM', to: '/radar-crm' },
+    visual: <RadarMock />,
   },
   {
     actor: 'Le moteur',
