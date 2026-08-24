@@ -316,6 +316,14 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
                           </Button>
                           <Button
                             variant="ghost" size="icon"
+                            onClick={() => duplicate(s)}
+                            disabled={duplicatingId === s.session_id}
+                            aria-label="Dupliquer"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost" size="icon"
                             onClick={() => remove(s)}
                             disabled={deletingId === s.session_id}
                             aria-label="Supprimer"
