@@ -11212,6 +11212,7 @@ export type Database = {
           status: string
         }[]
       }
+      detect_exposant_domain_duplicates: { Args: never; Returns: number }
       embed_pending_events: {
         Args: { p_max_batches?: number }
         Returns: number
