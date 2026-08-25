@@ -255,7 +255,7 @@ function commonHead(canonical, title, desc, ogImage) {
 }
 
 // ---------- builders ----------
-function buildEvent(ev, exhibitors, novelties) {
+function buildEvent(ev, exhibitors, novelties, program) {
   const year = ev.date_debut ? new Date(ev.date_debut).getFullYear() : new Date().getFullYear();
   const city = ev.ville || 'France';
   const title = truncate(`${ev.nom_event} ${year} | Salon professionnel à ${city} – Lotexpo`, 70);
@@ -288,6 +288,26 @@ function buildEvent(ev, exhibitors, novelties) {
     image: ev.url_image || undefined,
     url: canonical,
   };
+  // Lot 4 SEO : chaque session du programme devient un sous-evenement structure
+  // (Event.subEvent) avec ses intervenants en performer/Person. Cap a 100 pour
+  // borner la taille du JSON-LD sur les gros congres.
+  if (Array.isArray(program) && program.length > 0) {
+    eventSchema.subEvent = program.slice(0, 100).map((s) => {
+      const sub = { '@type': 'Event', name: s.title || 'Session' };
+      const day = s.day_date ? String(s.day_date).slice(0, 10) : null;
+      if (day) {
+        sub.startDate = s.start_time ? `${day}T${String(s.start_time).slice(0, 8)}` : day;
+        if (s.end_time) sub.endDate = `${day}T${String(s.end_time).slice(0, 8)}`;
+      }
+      if (s.location) sub.location = { '@type': 'Place', name: s.location };
+      const performers = (Array.isArray(s.speakers) ? s.speakers : [])
+        .map((p) => p && p.full_name)
+        .filter(Boolean)
+        .map((n) => ({ '@type': 'Person', name: n }));
+      if (performers.length > 0) sub.performer = performers;
+      return sub;
+    });
+  }
   const breadcrumb = {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
     itemListElement: [
@@ -322,6 +342,26 @@ function buildEvent(ev, exhibitors, novelties) {
       </section>`
     : '';
 
+  // Lot 4 SEO : bloc programme statique (titres de sessions, dates, intervenants).
+  // Meme modele que exhibitorsBlock / noveltiesBlock : jamais de section vide.
+  const speakerNames = new Set();
+  for (const s of (Array.isArray(program) ? program : [])) {
+    for (const p of (Array.isArray(s.speakers) ? s.speakers : [])) {
+      if (p && p.full_name) speakerNames.add(p.full_name);
+    }
+  }
+  const programBlock = (Array.isArray(program) && program.length > 0)
+    ? `<section><h2>Programme de ${escapeHtml(ev.nom_event)}</h2>
+        <p>Le programme compte ${program.length} session${program.length > 1 ? 's' : ''}${speakerNames.size > 0 ? ` et ${speakerNames.size} intervenant${speakerNames.size > 1 ? 's' : ''}` : ''}.</p>
+        <ul>${program.slice(0, 100).map((s) => {
+          const spk = (Array.isArray(s.speakers) ? s.speakers : [])
+            .map((p) => p && p.full_name).filter(Boolean).slice(0, 4).join(', ');
+          const when = s.day_date ? fmtDateRange(s.day_date, null) : '';
+          return `<li>${escapeHtml(s.title || 'Session')}${when ? ' – ' + escapeHtml(when) : ''}${spk ? ' – ' + escapeHtml(spk) : ''}</li>`;
+        }).join('')}</ul>
+      </section>`
+    : '';
+
   const body = `<div id="seo-prerender" class="seo-prerender-fallback">
     <h1>${escapeHtml(ev.nom_event)} ${escapeHtml(String(year))} – ${escapeHtml(city)}</h1>
     ${bodyDesc ? `<p>${escapeHtml(bodyDesc)}</p>` : ''}
@@ -330,6 +370,7 @@ function buildEvent(ev, exhibitors, novelties) {
     ${citySlug ? `<p><a href="/ville/${encodeURIComponent(citySlug)}">Voir les salons professionnels à ${escapeHtml(ev.ville)}</a></p>` : ''}
     ${exhibitorsBlock}
     ${noveltiesBlock}
+    ${programBlock}
   </div>`;
   return { title, description, canonical, headExtra, body };
 }
@@ -1002,6 +1043,25 @@ async function main() {
     }
   }
 
+  // 2e. Programme (lot 4) : pre-filtre des events ayant au moins une session
+  // publiee. event_program_sessions est en RLS admin/service_role (lecture
+  // publique via RPC seulement), donc le pre-filtre passe par la service key.
+  // On appelle ensuite la RPC publique get_public_event_program uniquement pour
+  // ces quelques events (pas de N+1 sur les ~350 salons).
+  const eventsWithProgram = new Set();
+  if (SUPABASE_SERVICE_KEY) {
+    try {
+      const progRows = await sbPaged('event_program_sessions?status=eq.published&select=event_id', 1000, SUPABASE_SERVICE_KEY);
+      for (const r of progRows) if (r && r.event_id) eventsWithProgram.add(r.event_id);
+      console.log(`[prerender] events with published programme: ${eventsWithProgram.size}`);
+    } catch (e) {
+      console.warn('[prerender] WARN: programme prefilter errored (non-blocking):', e.message);
+    }
+  } else {
+    console.warn('[prerender] SERVICE key missing → programme NOT prerendered (RLS blocks anon SELECT on sessions).');
+  }
+  stats.eventsWithProgram = 0;
+
   // 3. generate each event page (sequential to limit concurrent fetches)
   for (const ev of events) {
     if (!ev.slug) continue;
@@ -1015,11 +1075,21 @@ async function main() {
           slug: resolveSlug(p.exhibitor_id, p.id_exposant),
         })).filter((p) => p.name && p.name.trim().length > 1);
       }
-      const built = buildEvent(ev, exhibitors, novsByEvent.get(ev.slug) || []);
+      let program = [];
+      if (eventsWithProgram.has(ev.id)) {
+        try {
+          const prog = await sbRpc('get_public_event_program', { p_event_id: ev.id });
+          if (Array.isArray(prog)) program = prog;
+        } catch (e) {
+          console.warn('[prerender] programme fetch failed', ev.slug, e.message);
+        }
+      }
+      const built = buildEvent(ev, exhibitors, novsByEvent.get(ev.slug) || [], program);
       const html = applyToShell(baseTemplate, built);
       await writeRoute(`/events/${ev.slug}`, html);
       stats.events++;
       if (exhibitors.length > 0) stats.eventsWithExh++;
+      if (program.length > 0) stats.eventsWithProgram++;
     } catch (e) {
       errors++; console.warn('[prerender] event failed', ev.slug, e.message);
     }
