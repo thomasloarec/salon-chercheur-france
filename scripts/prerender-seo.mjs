@@ -258,7 +258,17 @@ function commonHead(canonical, title, desc, ogImage) {
 function buildEvent(ev, exhibitors, novelties, program) {
   const year = ev.date_debut ? new Date(ev.date_debut).getFullYear() : new Date().getFullYear();
   const city = ev.ville || 'France';
-  const title = truncate(`${ev.nom_event} ${year} | Salon professionnel à ${city} – Lotexpo`, 70);
+  // Title aligne sur SEOHead.tsx (source unique de formule) : dedup de l'annee
+  // si elle est deja dans le nom, prefixe [Termine] pour les events passes,
+  // coupe dure a 60 (pas d'ellipse) pour que la version statique soit identique
+  // a la version reinjectee par react-helmet apres hydratation.
+  const nameHasYear = new RegExp(`\\b${year}\\b`).test(ev.nom_event || '');
+  const namePart = nameHasYear ? ev.nom_event : `${ev.nom_event} ${year}`;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const endStr = (ev.date_fin || ev.date_debut || '').slice(0, 10);
+  const isPast = endStr ? endStr < todayStr : false;
+  const baseTitle = `${namePart} | Salon professionnel à ${city} – Lotexpo`.slice(0, 60);
+  const title = isPast ? `[Terminé] ${baseTitle}`.slice(0, 60) : baseTitle;
   // Description publiable : description_enrichie UNIQUEMENT si statut='valide'
   const enrichedValid =
     ev.enrichissement_statut === 'valide' && ev.description_enrichie
@@ -283,11 +293,30 @@ function buildEvent(ev, exhibitors, novelties, program) {
     eventStatus: 'https://schema.org/EventScheduled',
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
     location: { '@type': 'Place', name: ev.nom_lieu || ev.ville || 'France',
-      address: { '@type': 'PostalAddress', addressLocality: ev.ville, addressCountry: 'FR' } },
+      address: { '@type': 'PostalAddress',
+        streetAddress: ev.rue || undefined,
+        addressLocality: ev.ville,
+        postalCode: ev.code_postal || undefined,
+        addressCountry: ev.pays || 'FR' } },
     description: cleanDesc ? truncate(cleanDesc, 500) : description,
     image: ev.url_image || undefined,
     url: canonical,
   };
+  // Offer uniquement si le tarif est reellement informatif (meme filtre que
+  // isTarifDisplayable cote app : on exclut "Voir site", "non communique"...).
+  // NB : le caractere tiret cadratin dans tarifBlocked est une VALEUR de donnee
+  // possible dans events.tarif (repliquee a l'identique de eventCapabilities.ts),
+  // pas de la prose.
+  const tarifNorm = String(ev.tarif || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  const tarifBlocked = new Set(['', 'non communique', 'nc', 'n/a', 'na', 'a venir', 'inconnu', '-', '—']);
+  if (ev.tarif && !tarifNorm.startsWith('voir ') && !tarifBlocked.has(tarifNorm)) {
+    eventSchema.offers = {
+      '@type': 'Offer',
+      description: String(ev.tarif),
+      url: ev.url_site_officiel || canonical,
+      availability: 'https://schema.org/InStock',
+    };
+  }
   // Lot 4 SEO : chaque session du programme devient un sous-evenement structure
   // (Event.subEvent) avec ses intervenants en performer/Person. Cap a 100 pour
   // borner la taille du JSON-LD sur les gros congres.
@@ -937,7 +966,7 @@ async function main() {
   stats.noveltiesIndexable = 0;
 
   // 2. fetch events
-  const eventFields = 'id,slug,nom_event,ville,nom_lieu,date_debut,date_fin,secteur,description_event,description_enrichie,enrichissement_statut,meta_description_gen,url_image,updated_at,url_site_officiel,visible,is_test';
+  const eventFields = 'id,slug,nom_event,ville,nom_lieu,date_debut,date_fin,secteur,description_event,description_enrichie,enrichissement_statut,meta_description_gen,url_image,updated_at,url_site_officiel,rue,code_postal,pays,tarif,visible,is_test';
   const events = await sbPaged(`events?visible=eq.true&is_test=eq.false&slug=not.is.null&select=${eventFields}&order=date_debut.desc`);
   console.log(`[prerender] events fetched: ${events.length}`);
 
