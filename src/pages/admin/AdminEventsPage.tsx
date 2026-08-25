@@ -20,7 +20,7 @@ const AdminEventsPage = () => {
       <AirtableImport />
       <ImportErrorsPanel />
 
-      <ExposantAirtableCorrections />
+      
       <ExposantReviewQueue />
 
       <Card>
