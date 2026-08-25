@@ -40,60 +40,6 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
   // Canonical URL
   const canonicalUrl = `https://lotexpo.com/events/${event.slug}`;
 
-  // Enhanced JSON-LD Event schema
-  const eventSchema = {
-    "@context": "https://schema.org",
-    "@type": "Event",
-    "name": event.nom_event,
-    "startDate": event.date_debut,
-    "endDate": event.date_fin,
-    "location": {
-      "@type": "Place",
-      "name": event.nom_lieu || event.ville,
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": event.rue || undefined,
-        "addressLocality": event.ville,
-        "postalCode": event.code_postal || undefined,
-        "addressCountry": event.country || "France"
-      }
-    },
-    "description": event.description_event || description,
-    "url": canonicalUrl,
-    "image": event.url_image,
-    "eventStatus": "https://schema.org/EventScheduled",
-    "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-    "organizer": {
-      "@type": "Organization",
-      "name": event.nom_lieu || "Organisateur",
-      "url": event.url_site_officiel || undefined
-    },
-    "offers": event.tarif ? {
-      "@type": "Offer",
-      "description": event.tarif,
-      "url": event.url_site_officiel || canonicalUrl,
-      "availability": "https://schema.org/InStock"
-    } : undefined
-  };
-
-  // Breadcrumb schema
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": "Salons", "item": "https://lotexpo.com" },
-      { "@type": "ListItem", "position": 2, "name": "Salons professionnels", "item": "https://lotexpo.com/events" },
-      { "@type": "ListItem", "position": 3, "name": event.nom_event, "item": canonicalUrl }
-    ]
-  };
-
-  // WebSite schema for consistent site name
-  const websiteSchema = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "Lotexpo",
-    "url": "https://lotexpo.com"
-  };
 
   return (
     <Helmet>
@@ -120,16 +66,12 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
       <meta name="twitter:description" content={description} />
       {event.url_image && <meta name="twitter:image" content={event.url_image} />}
       
-      {/* Structured Data */}
-      <script type="application/ld+json">
-        {JSON.stringify(websiteSchema)}
-      </script>
-      <script type="application/ld+json">
-        {JSON.stringify(eventSchema)}
-      </script>
-      <script type="application/ld+json">
-        {JSON.stringify(breadcrumbSchema)}
-      </script>
+      {/* JSON-LD retire volontairement : source unique = prerender (Event +
+          BreadcrumbList via buildEvent) et shell index.html (WebSite +
+          Organization). react-helmet ne peut pas dedupliquer les scripts JSON-LD
+          statiques du prerender, donc les emettre ici creait des doublons
+          Event / Breadcrumb / WebSite dans le DOM rendu. Title, meta, canonical,
+          og et twitter restent geres ici. */}
     </Helmet>
   );
 };
