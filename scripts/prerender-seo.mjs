@@ -307,7 +307,7 @@ function buildEvent(ev, exhibitors, novelties, program) {
   // NB : le caractere tiret cadratin dans tarifBlocked est une VALEUR de donnee
   // possible dans events.tarif (repliquee a l'identique de eventCapabilities.ts),
   // pas de la prose.
-  const tarifNorm = String(ev.tarif || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  const tarifNorm = String(ev.tarif || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   const tarifBlocked = new Set(['', 'non communique', 'nc', 'n/a', 'na', 'a venir', 'inconnu', '-', '—']);
   if (ev.tarif && !tarifNorm.startsWith('voir ') && !tarifBlocked.has(tarifNorm)) {
     eventSchema.offers = {
