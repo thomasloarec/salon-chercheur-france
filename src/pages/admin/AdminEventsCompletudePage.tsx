@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +13,13 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { ExternalLink, EyeOff, RotateCcw, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -32,6 +39,8 @@ type CoverageRow = {
   exhibitor_sourcing_ignored: boolean;
   exhibitor_sourcing_ignored_at: string | null;
   nb_exposants: number;
+  has_exhibitors: boolean;
+  novelty_count: number;
   bucket: 'todo' | 'has_exhibitors' | 'ignored';
 };
 
