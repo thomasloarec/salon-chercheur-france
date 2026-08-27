@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +13,13 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { ExternalLink, EyeOff, RotateCcw, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -32,6 +39,8 @@ type CoverageRow = {
   exhibitor_sourcing_ignored: boolean;
   exhibitor_sourcing_ignored_at: string | null;
   nb_exposants: number;
+  has_exhibitors: boolean;
+  novelty_count: number;
   bucket: 'todo' | 'has_exhibitors' | 'ignored';
 };
 
@@ -56,11 +65,15 @@ function CoverageTable({
   isLoading,
   emptyLabel,
   renderActions,
+  updatingVisibilityId,
+  onToggleVisibility,
 }: {
   rows: CoverageRow[];
   isLoading: boolean;
   emptyLabel: string;
   renderActions: (row: CoverageRow) => React.ReactNode;
+  updatingVisibilityId: string | null;
+  onToggleVisibility: (row: CoverageRow, value: boolean) => void;
 }) {
   if (isLoading) {
     return (
@@ -85,6 +98,7 @@ function CoverageTable({
           <TableRow>
             <TableHead>Événement</TableHead>
             <TableHead>Début</TableHead>
+            <TableHead>Section exposants (page salon)</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -106,6 +120,37 @@ function CoverageTable({
                 {formatDate(row.date_debut)}
               </TableCell>
               <TableCell>
+                <div className="inline-flex items-center gap-2">
+                  <Switch
+                    checked={row.has_exhibitors !== false}
+                    onCheckedChange={(v) => onToggleVisibility(row, v)}
+                    disabled={updatingVisibilityId === row.id}
+                    aria-label={`Section exposants (page salon) pour ${row.nom_event}`}
+                  />
+                  <span className="text-sm">
+                    {row.has_exhibitors !== false ? 'Affichée' : 'Masquée'}
+                  </span>
+                  {row.novelty_count > 0 && (
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex" role="img" aria-label="Avertissement">
+                            <AlertTriangle className="h-4 w-4 text-destructive" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="max-w-xs">
+                          <p>
+                            {row.novelty_count} nouveauté{row.novelty_count > 1 ? 's' : ''} publiée
+                            {row.novelty_count > 1 ? 's' : ''} : masquer la section les retirera aussi
+                            de la page publique.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
+              </TableCell>
+              <TableCell>
                 <div className="flex flex-wrap items-center gap-2">
                   {renderActions(row)}
                 </div>
@@ -120,6 +165,7 @@ function CoverageTable({
 
 const AdminEventsCompletudePage = () => {
   const queryClient = useQueryClient();
+  const [updatingVisibilityId, setUpdatingVisibilityId] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['admin-events-exhibitor-coverage'],
@@ -164,6 +210,45 @@ const AdminEventsCompletudePage = () => {
     });
     await queryClient.invalidateQueries({ queryKey: ['admin-events-exhibitor-coverage'] });
     await queryClient.invalidateQueries({ queryKey: ['admin-pending-counts'] });
+  };
+
+  const toggleVisibility = async (row: CoverageRow, value: boolean) => {
+    const previous = row.has_exhibitors;
+    setUpdatingVisibilityId(row.id);
+    // Mise a jour optimiste (bascule unitaire et deliberee)
+    queryClient.setQueryData(
+      ['admin-events-exhibitor-coverage'],
+      (old: CoverageRow[] | undefined) =>
+        old?.map((r) => (r.id === row.id ? { ...r, has_exhibitors: value } : r)),
+    );
+    const { error } = await supabase.rpc(
+      'set_event_exhibitor_visibility' as any,
+      { p_event_id: row.id, p_enabled: value } as any,
+    );
+    if (error) {
+      // Rollback
+      queryClient.setQueryData(
+        ['admin-events-exhibitor-coverage'],
+        (old: CoverageRow[] | undefined) =>
+          old?.map((r) => (r.id === row.id ? { ...r, has_exhibitors: previous } : r)),
+      );
+      toast({
+        title: 'Échec',
+        description: error.message,
+        variant: 'destructive',
+      });
+      setUpdatingVisibilityId(null);
+      return;
+    }
+    toast({
+      title: value
+        ? `Section exposants réaffichée pour « ${row.nom_event} »`
+        : `Section exposants masquée pour « ${row.nom_event} »`,
+    });
+    // La visibilite impacte la page publique : rafraichir le cache events.
+    // On NE rafraichit PAS la liste de couverture (le bucket ne change pas).
+    await queryClient.invalidateQueries({ queryKey: ['events'] });
+    setUpdatingVisibilityId(null);
   };
 
   const renderLinks = (row: CoverageRow) => {
@@ -251,6 +336,8 @@ const AdminEventsCompletudePage = () => {
             rows={todo}
             isLoading={isLoading}
             emptyLabel="Tous les événements publiés ont des exposants ou sont ignorés."
+            updatingVisibilityId={updatingVisibilityId}
+            onToggleVisibility={toggleVisibility}
             renderActions={(row) => (
               <>
                 {renderLinks(row)}
@@ -272,6 +359,8 @@ const AdminEventsCompletudePage = () => {
             rows={has}
             isLoading={isLoading}
             emptyLabel="Aucun événement publié avec des exposants listés."
+            updatingVisibilityId={updatingVisibilityId}
+            onToggleVisibility={toggleVisibility}
             renderActions={(row) => (
               <>
                 <Badge variant="secondary" className="h-7">
@@ -288,6 +377,8 @@ const AdminEventsCompletudePage = () => {
             rows={ignored}
             isLoading={isLoading}
             emptyLabel="Aucun événement ignoré."
+            updatingVisibilityId={updatingVisibilityId}
+            onToggleVisibility={toggleVisibility}
             renderActions={(row) => (
               <>
                 {renderLinks(row)}
