@@ -9506,9 +9506,11 @@ export type Database = {
           date_fin: string | null
           exhibitor_sourcing_ignored: boolean | null
           exhibitor_sourcing_ignored_at: string | null
+          has_exhibitors: boolean | null
           id: string | null
           nb_exposants: number | null
           nom_event: string | null
+          novelty_count: number | null
           salon_priorite: number | null
           slug: string | null
           status_event: string | null
