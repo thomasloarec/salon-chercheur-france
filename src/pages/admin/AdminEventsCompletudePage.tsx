@@ -165,6 +165,7 @@ function CoverageTable({
 
 const AdminEventsCompletudePage = () => {
   const queryClient = useQueryClient();
+  const [updatingVisibilityId, setUpdatingVisibilityId] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['admin-events-exhibitor-coverage'],
@@ -209,6 +210,45 @@ const AdminEventsCompletudePage = () => {
     });
     await queryClient.invalidateQueries({ queryKey: ['admin-events-exhibitor-coverage'] });
     await queryClient.invalidateQueries({ queryKey: ['admin-pending-counts'] });
+  };
+
+  const toggleVisibility = async (row: CoverageRow, value: boolean) => {
+    const previous = row.has_exhibitors;
+    setUpdatingVisibilityId(row.id);
+    // Mise a jour optimiste (bascule unitaire et deliberee)
+    queryClient.setQueryData(
+      ['admin-events-exhibitor-coverage'],
+      (old: CoverageRow[] | undefined) =>
+        old?.map((r) => (r.id === row.id ? { ...r, has_exhibitors: value } : r)),
+    );
+    const { error } = await supabase.rpc(
+      'set_event_exhibitor_visibility' as any,
+      { p_event_id: row.id, p_enabled: value } as any,
+    );
+    if (error) {
+      // Rollback
+      queryClient.setQueryData(
+        ['admin-events-exhibitor-coverage'],
+        (old: CoverageRow[] | undefined) =>
+          old?.map((r) => (r.id === row.id ? { ...r, has_exhibitors: previous } : r)),
+      );
+      toast({
+        title: 'Échec',
+        description: error.message,
+        variant: 'destructive',
+      });
+      setUpdatingVisibilityId(null);
+      return;
+    }
+    toast({
+      title: value
+        ? `Section exposants réaffichée pour « ${row.nom_event} »`
+        : `Section exposants masquée pour « ${row.nom_event} »`,
+    });
+    // La visibilite impacte la page publique : rafraichir le cache events.
+    // On NE rafraichit PAS la liste de couverture (le bucket ne change pas).
+    await queryClient.invalidateQueries({ queryKey: ['events'] });
+    setUpdatingVisibilityId(null);
   };
 
   const renderLinks = (row: CoverageRow) => {
@@ -296,6 +336,8 @@ const AdminEventsCompletudePage = () => {
             rows={todo}
             isLoading={isLoading}
             emptyLabel="Tous les événements publiés ont des exposants ou sont ignorés."
+            updatingVisibilityId={updatingVisibilityId}
+            onToggleVisibility={toggleVisibility}
             renderActions={(row) => (
               <>
                 {renderLinks(row)}
@@ -317,6 +359,8 @@ const AdminEventsCompletudePage = () => {
             rows={has}
             isLoading={isLoading}
             emptyLabel="Aucun événement publié avec des exposants listés."
+            updatingVisibilityId={updatingVisibilityId}
+            onToggleVisibility={toggleVisibility}
             renderActions={(row) => (
               <>
                 <Badge variant="secondary" className="h-7">
@@ -333,6 +377,8 @@ const AdminEventsCompletudePage = () => {
             rows={ignored}
             isLoading={isLoading}
             emptyLabel="Aucun événement ignoré."
+            updatingVisibilityId={updatingVisibilityId}
+            onToggleVisibility={toggleVisibility}
             renderActions={(row) => (
               <>
                 {renderLinks(row)}
