@@ -65,11 +65,15 @@ function CoverageTable({
   isLoading,
   emptyLabel,
   renderActions,
+  updatingVisibilityId,
+  onToggleVisibility,
 }: {
   rows: CoverageRow[];
   isLoading: boolean;
   emptyLabel: string;
   renderActions: (row: CoverageRow) => React.ReactNode;
+  updatingVisibilityId: string | null;
+  onToggleVisibility: (row: CoverageRow, value: boolean) => void;
 }) {
   if (isLoading) {
     return (
@@ -94,6 +98,7 @@ function CoverageTable({
           <TableRow>
             <TableHead>Événement</TableHead>
             <TableHead>Début</TableHead>
+            <TableHead>Section exposants (page salon)</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -113,6 +118,37 @@ function CoverageTable({
               </TableCell>
               <TableCell className="whitespace-nowrap">
                 {formatDate(row.date_debut)}
+              </TableCell>
+              <TableCell>
+                <div className="inline-flex items-center gap-2">
+                  <Switch
+                    checked={row.has_exhibitors !== false}
+                    onCheckedChange={(v) => onToggleVisibility(row, v)}
+                    disabled={updatingVisibilityId === row.id}
+                    aria-label={`Section exposants (page salon) pour ${row.nom_event}`}
+                  />
+                  <span className="text-sm">
+                    {row.has_exhibitors !== false ? 'Affichée' : 'Masquée'}
+                  </span>
+                  {row.novelty_count > 0 && (
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex" role="img" aria-label="Avertissement">
+                            <AlertTriangle className="h-4 w-4 text-destructive" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="max-w-xs">
+                          <p>
+                            {row.novelty_count} nouveauté{row.novelty_count > 1 ? 's' : ''} publiée
+                            {row.novelty_count > 1 ? 's' : ''} : masquer la section les retirera aussi
+                            de la page publique.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
               </TableCell>
               <TableCell>
                 <div className="flex flex-wrap items-center gap-2">
