@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
-import { FileUp, Loader2, CheckCircle2, AlertTriangle, Clock, Calendar } from 'lucide-react';
+import { FileUp, Loader2, CheckCircle2, AlertTriangle, Clock, Calendar, Info } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
 type Phase = 'select' | 'extracting' | 'preview' | 'applying' | 'error';
@@ -169,6 +169,12 @@ const ProgramPdfImportDialog: React.FC<{
 
         {phase === 'select' && (
           <div className="space-y-4">
+            <div className="flex items-start gap-2 rounded-lg border border-border/60 bg-muted/40 p-3 text-sm text-muted-foreground">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <p>
+                Si votre programme fait plus de <strong className="text-foreground">10 pages</strong>, importez-le en <strong className="text-foreground">plusieurs PDF segmentés par journée</strong>, l'un après l'autre.
+              </p>
+            </div>
             <input id="pdf-file" type="file" accept="application/pdf" className="hidden"
               onChange={(e) => pickFile(e.target.files?.[0])} />
             <label htmlFor="pdf-file"
