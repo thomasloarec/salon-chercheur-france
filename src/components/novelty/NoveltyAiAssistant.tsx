@@ -1,10 +1,32 @@
-import React, { useState } from 'react';
-import { Check, Loader2, Sparkles, Lightbulb } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Check, Loader2, Sparkles, Lightbulb, FileUp, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 
 const VIOLET = '#6b51ff';
+
+const KIND_LABELS: Record<string, string> = {
+  product_photo: 'Photo produit',
+  ambiance: 'Ambiance',
+  diagram: 'Schéma',
+  logo: 'Logo',
+  badge: 'Certification',
+  portrait: 'Portrait',
+  screenshot: 'Capture',
+  decor: 'Décoratif',
+  unknown: 'Autre',
+};
+
+interface Candidate {
+  id: string;
+  url: string;
+  kind: string;
+  width: number | null;
+  height: number | null;
+  selected: boolean;
+}
+
 
 export interface NoveltyAngle {
   id: string;
@@ -80,6 +102,135 @@ export default function NoveltyAiAssistant({
   const [pause, setPause] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [angles, setAngles] = useState<NoveltyAngle[]>([]);
+
+  // --- Import PDF (Lot 6a) ---
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfPhase, setPdfPhase] = useState<'idle' | 'upload' | 'extraction' | 'done' | 'error'>('idle');
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [pdfNotice, setPdfNotice] = useState<string | null>(null);
+  const [sourceDocId, setSourceDocId] = useState<string | null>(null);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [maxSelectionWarning, setMaxSelectionWarning] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const authHeaders = async (): Promise<Record<string, string>> => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token || null;
+    return {
+      'Content-Type': 'application/json',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    };
+  };
+
+  const handlePdf = async (file: File) => {
+    if (file.type !== 'application/pdf') {
+      setPdfError('Seuls les fichiers PDF sont acceptés.');
+      setPdfPhase('error');
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      setPdfError('Le PDF ne doit pas dépasser 20 Mo.');
+      setPdfPhase('error');
+      return;
+    }
+    setPdfError(null);
+    setPdfNotice(null);
+    setCandidates([]);
+    setSourceDocId(null);
+    setPdfFile(file);
+
+    try {
+      setPdfPhase('upload');
+      const path = `pdf-import/${crypto.randomUUID()}.pdf`;
+      const up = await supabase.storage.from('novelty-resources').upload(path, file, {
+        contentType: 'application/pdf',
+      });
+      if (up.error) throw new Error(up.error.message);
+
+      setPdfPhase('extraction');
+      const headers = await authHeaders();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/novelty-pdf-extract`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ storage_path: path, exhibitor_id: exhibitorId, event_id: eventId }),
+        },
+      );
+      const json: any = await res.json().catch(() => null);
+      const documentId = json?.document_id;
+      if (!res.ok || !documentId) throw new Error(json?.error || 'extraction_failed');
+
+      const { data: docRow } = await supabase
+        .from('novelty_source_documents')
+        .select('extracted_text, image_candidate_count, status')
+        .eq('id', documentId)
+        .single();
+
+      const text = (docRow?.extracted_text || '').trim();
+      if (text) {
+        setMatiere(text);
+      } else {
+        setPdfNotice(
+          "On n'a pas pu lire assez de texte dans ce PDF. Décrivez votre nouveauté dans la zone ci-dessus, on s'occupe du reste.",
+        );
+      }
+
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/novelty-images-qualify`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ document_id: documentId }),
+      }).catch(() => null);
+
+      const { data: rows } = await supabase
+        .from('novelty_source_images')
+        .select('id, storage_bucket, storage_path, width, height, kind, selected')
+        .eq('source_document_id', documentId)
+        .order('selected', { ascending: false })
+        .order('score', { ascending: false });
+
+      const list: Candidate[] = [];
+      for (const row of rows || []) {
+        const { data: signed } = await supabase.storage
+          .from(row.storage_bucket)
+          .createSignedUrl(row.storage_path, 3600);
+        if (!signed?.signedUrl) continue;
+        list.push({
+          id: row.id,
+          url: signed.signedUrl,
+          kind: row.kind || 'unknown',
+          width: row.width,
+          height: row.height,
+          selected: !!row.selected,
+        });
+      }
+      setCandidates(list);
+      setSourceDocId(documentId);
+      setPdfPhase('done');
+    } catch (e) {
+      console.error('[novelty-pdf]', e);
+      setPdfError("Le PDF n'a pas pu être traité. Vous pouvez décrire votre nouveauté à la main.");
+      setPdfPhase('error');
+    }
+  };
+
+  const toggleCandidate = (id: string) => {
+    setCandidates((prev) => {
+      const target = prev.find((c) => c.id === id);
+      if (!target) return prev;
+      if (!target.selected && prev.filter((c) => c.selected).length >= 3) {
+        setMaxSelectionWarning(true);
+        window.setTimeout(() => setMaxSelectionWarning(false), 2500);
+        return prev;
+      }
+      setMaxSelectionWarning(false);
+      return prev.map((c) => (c.id === id ? { ...c, selected: !c.selected } : c));
+    });
+  };
+
+  const pdfBusy = pdfPhase === 'upload' || pdfPhase === 'extraction';
+
   const call = async (body: Record<string, unknown>) => {
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token || null;
@@ -212,7 +363,100 @@ export default function NoveltyAiAssistant({
         </div>
       </div>
 
+      {/* Import PDF */}
+      <div className="mt-4">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => !pdfBusy && fileInputRef.current?.click()}
+          onKeyDown={(e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && !pdfBusy) fileInputRef.current?.click();
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            const f = e.dataTransfer.files?.[0];
+            if (f && !pdfBusy) handlePdf(f);
+          }}
+          className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed px-3 py-4 text-center transition-colors ${
+            pdfBusy ? 'cursor-wait opacity-70' : ''
+          }`}
+          style={{
+            borderColor: VIOLET,
+            backgroundColor: dragOver ? `${VIOLET}1f` : 'transparent',
+          }}
+        >
+          <FileUp className="h-4 w-4" style={{ color: VIOLET }} />
+          <p className="mt-1.5 text-xs font-medium" style={{ color: VIOLET }}>
+            Ou importez un PDF (plaquette, présentation) et on s'occupe du reste
+          </p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">PDF uniquement, 20 Mo maximum</p>
+          {pdfFile && !pdfBusy && (
+            <span className="mt-2 inline-flex max-w-full items-center gap-1 truncate rounded-full bg-background px-2 py-0.5 text-[11px] text-muted-foreground">
+              <span className="truncate">{pdfFile.name}</span>
+              <X
+                className="h-3 w-3 shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPdfFile(null);
+                  setCandidates([]);
+                  setSourceDocId(null);
+                  setPdfPhase('idle');
+                  setPdfError(null);
+                  setPdfNotice(null);
+                }}
+              />
+            </span>
+          )}
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = '';
+            if (f) handlePdf(f);
+          }}
+        />
+
+        {pdfBusy && (
+          <div
+            className="mt-3 rounded-lg border bg-background/70 p-3 text-xs"
+            style={{ borderColor: `${VIOLET}33` }}
+          >
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: VIOLET }} />
+              <span>
+                {pdfPhase === 'upload' ? 'Envoi du PDF…' : 'Traitement du PDF en cours, cela peut prendre jusqu\u2019à une minute'}
+              </span>
+            </div>
+            <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-full w-1/3 animate-pulse rounded-full" style={{ backgroundColor: VIOLET }} />
+            </div>
+          </div>
+        )}
+
+        {pdfError && !pdfBusy && (
+          <p className="mt-3 rounded-lg border bg-background/70 p-3 text-xs text-muted-foreground">
+            {pdfError}
+          </p>
+        )}
+        {pdfNotice && !pdfBusy && (
+          <p className="mt-3 rounded-lg border bg-background/70 p-3 text-xs text-muted-foreground">
+            {pdfNotice}
+          </p>
+        )}
+      </div>
+
       {/* Matière */}
+
       <div className="mt-4 space-y-2">
         <Textarea
           value={matiere}
@@ -237,6 +481,56 @@ export default function NoveltyAiAssistant({
           Trouver les meilleurs angles
         </Button>
       </div>
+
+      {/* Galerie de candidats issus du PDF */}
+      {pdfPhase === 'done' && candidates.length === 0 && (
+        <p className="mt-4 rounded-lg border bg-background/70 p-3 text-xs text-muted-foreground">
+          Aucune image exploitable trouvée dans ce PDF. Vous pourrez ajouter vos propres images à
+          l'étape suivante.
+        </p>
+      )}
+
+      {candidates.length > 0 && (
+        <div className="mt-5">
+          <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: VIOLET }}>
+            Images trouvées dans le PDF
+          </h3>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {candidates.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => toggleCandidate(c.id)}
+                className="group relative overflow-hidden rounded-lg border bg-background text-left"
+                style={{ borderColor: c.selected ? VIOLET : `${VIOLET}33` }}
+              >
+                <img
+                  src={c.url}
+                  alt={KIND_LABELS[c.kind] || 'Image extraite du PDF'}
+                  loading="lazy"
+                  className="h-24 w-full object-cover"
+                />
+                <span
+                  className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded border bg-background"
+                  style={{ borderColor: VIOLET, backgroundColor: c.selected ? VIOLET : undefined }}
+                >
+                  {c.selected && <Check className="h-3 w-3 text-white" />}
+                </span>
+                <span className="block truncate px-2 py-1 text-[11px] text-muted-foreground">
+                  {KIND_LABELS[c.kind] || 'Autre'}
+                </span>
+              </button>
+            ))}
+          </div>
+          {maxSelectionWarning && (
+            <p className="mt-2 text-[11px]" style={{ color: VIOLET }}>
+              3 images maximum
+            </p>
+          )}
+        </div>
+      )}
+
+
 
       {/* Chargement honnête */}
       {busy && (
