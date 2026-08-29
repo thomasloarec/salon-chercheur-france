@@ -153,6 +153,14 @@ export default function NoveltyAiAssistant({
   const fileCacheRef = useRef<Map<string, File>>(new Map());
   const resultsRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (angles.length > 0) {
+      requestAnimationFrame(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  }, [angles.length]);
+
   /** Télécharge + redimensionne les candidats cochés (avec cache par id). */
   const buildSelectedFiles = async (list: Candidate[]): Promise<File[]> => {
     const out: File[] = [];
