@@ -50,7 +50,41 @@ interface Props {
   currentType?: string;
   canvasHasContent: boolean;
   onApplyAngle: (angle: NoveltyAngle) => void;
+  onApplyImages?: (files: File[]) => void;
+  onApplyBrochure?: (file: File) => void;
 }
+
+const MAX_IMAGE_SIDE = 1600;
+
+/** Redimensionne une image côté navigateur (max 1600px, JPEG 0.82). */
+async function resizeImage(file: File): Promise<File> {
+  try {
+    const bitmapUrl = URL.createObjectURL(file);
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = bitmapUrl;
+    });
+    const ratio = Math.min(1, MAX_IMAGE_SIDE / Math.max(img.width, img.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(img.width * ratio);
+    canvas.height = Math.round(img.height * ratio);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('no_ctx');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(bitmapUrl);
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, 'image/jpeg', 0.82),
+    );
+    if (!blob) throw new Error('no_blob');
+    const name = file.name.replace(/\.[^.]+$/, '') || 'image';
+    return new File([blob], `${name}.jpg`, { type: 'image/jpeg' });
+  } catch {
+    return file;
+  }
+}
+
 
 type Phase = 'idle' | 'analyse' | 'generation';
 
