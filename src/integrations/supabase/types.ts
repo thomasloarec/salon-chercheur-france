@@ -6282,6 +6282,245 @@ export type Database = {
           },
         ]
       }
+      novelty_source_documents: {
+        Row: {
+          created_at: string
+          created_by: string
+          error_code: string | null
+          event_id: string | null
+          exhibitor_id: string | null
+          expires_at: string
+          extracted_text: string | null
+          extraction_ms: number | null
+          file_size_bytes: number | null
+          id: string
+          image_candidate_count: number
+          novelty_id: string | null
+          original_filename: string | null
+          page_count: number | null
+          status: string
+          storage_bucket: string
+          storage_path: string
+          text_char_count: number | null
+          text_source: string
+          text_truncated: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          error_code?: string | null
+          event_id?: string | null
+          exhibitor_id?: string | null
+          expires_at?: string
+          extracted_text?: string | null
+          extraction_ms?: number | null
+          file_size_bytes?: number | null
+          id?: string
+          image_candidate_count?: number
+          novelty_id?: string | null
+          original_filename?: string | null
+          page_count?: number | null
+          status?: string
+          storage_bucket?: string
+          storage_path: string
+          text_char_count?: number | null
+          text_source?: string
+          text_truncated?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          error_code?: string | null
+          event_id?: string | null
+          exhibitor_id?: string | null
+          expires_at?: string
+          extracted_text?: string | null
+          extraction_ms?: number | null
+          file_size_bytes?: number | null
+          id?: string
+          image_candidate_count?: number
+          novelty_id?: string | null
+          original_filename?: string | null
+          page_count?: number | null
+          status?: string
+          storage_bucket?: string
+          storage_path?: string
+          text_char_count?: number | null
+          text_source?: string
+          text_truncated?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "novelty_source_documents_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "admin_events_exhibitor_coverage"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_source_documents_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "novelty_source_documents_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "novelty_source_documents_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_source_documents_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_source_documents_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_source_documents_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "novelty_source_documents_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_source_documents_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_source_documents_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
+          {
+            foreignKeyName: "novelty_source_documents_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "novelties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_source_documents_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "public_novelties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_source_documents_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "v_novelty_visit_signals"
+            referencedColumns: ["novelty_id"]
+          },
+        ]
+      }
+      novelty_source_images: {
+        Row: {
+          byte_size: number | null
+          created_at: string
+          height: number | null
+          id: string
+          kind: string
+          page_number: number | null
+          pdf_xref: number | null
+          phash: string | null
+          position: number | null
+          published_url: string | null
+          score: number | null
+          selected: boolean
+          source_document_id: string
+          source_filter: string | null
+          storage_bucket: string
+          storage_path: string
+          width: number | null
+        }
+        Insert: {
+          byte_size?: number | null
+          created_at?: string
+          height?: number | null
+          id?: string
+          kind?: string
+          page_number?: number | null
+          pdf_xref?: number | null
+          phash?: string | null
+          position?: number | null
+          published_url?: string | null
+          score?: number | null
+          selected?: boolean
+          source_document_id: string
+          source_filter?: string | null
+          storage_bucket?: string
+          storage_path: string
+          width?: number | null
+        }
+        Update: {
+          byte_size?: number | null
+          created_at?: string
+          height?: number | null
+          id?: string
+          kind?: string
+          page_number?: number | null
+          pdf_xref?: number | null
+          phash?: string | null
+          position?: number | null
+          published_url?: string | null
+          score?: number | null
+          selected?: boolean
+          source_document_id?: string
+          source_filter?: string | null
+          storage_bucket?: string
+          storage_path?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "novelty_source_images_source_document_id_fkey"
+            columns: ["source_document_id"]
+            isOneToOne: false
+            referencedRelation: "novelty_source_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_source_images_source_document_id_fkey"
+            columns: ["source_document_id"]
+            isOneToOne: false
+            referencedRelation: "v_novelty_sources_purgeable"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       novelty_stats: {
         Row: {
           novelty_id: string
@@ -10368,6 +10607,55 @@ export type Database = {
           raw_label: string | null
         }
         Relationships: []
+      }
+      v_novelty_sources_purgeable: {
+        Row: {
+          expires_at: string | null
+          id: string | null
+          novelty_id: string | null
+          status: string | null
+          storage_bucket: string | null
+          storage_path: string | null
+        }
+        Insert: {
+          expires_at?: string | null
+          id?: string | null
+          novelty_id?: string | null
+          status?: string | null
+          storage_bucket?: string | null
+          storage_path?: string | null
+        }
+        Update: {
+          expires_at?: string | null
+          id?: string | null
+          novelty_id?: string | null
+          status?: string | null
+          storage_bucket?: string | null
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "novelty_source_documents_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "novelties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_source_documents_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "public_novelties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_source_documents_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "v_novelty_visit_signals"
+            referencedColumns: ["novelty_id"]
+          },
+        ]
       }
       v_novelty_visit_signals: {
         Row: {
