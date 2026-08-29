@@ -275,6 +275,9 @@ export default function NoveltyAiAssistant({
       setCandidates(list);
       setSourceDocId(documentId);
       setPdfPhase('done');
+      onApplyBrochure?.(file);
+      void pushSelection(list);
+
     } catch (e) {
       console.error('[novelty-pdf]', e);
       setPdfError("Le PDF n'a pas pu être traité. Vous pouvez décrire votre nouveauté à la main.");
