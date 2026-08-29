@@ -654,7 +654,7 @@ export default function NoveltyAiAssistant({
 
       {/* Angles */}
       {angles.length > 0 && !busy && (
-        <div className="mt-5 space-y-3">
+        <div ref={resultsRef} className="mt-5 space-y-3">
           <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: VIOLET }}>
             {angles.length} angle{angles.length > 1 ? 's' : ''} proposé
             {angles.length > 1 ? 's' : ''}
