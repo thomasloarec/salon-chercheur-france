@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Check, Loader2, Sparkles, Lightbulb, FileUp, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -151,6 +151,15 @@ export default function NoveltyAiAssistant({
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileCacheRef = useRef<Map<string, File>>(new Map());
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (angles.length > 0) {
+      requestAnimationFrame(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  }, [angles.length]);
 
   /** Télécharge + redimensionne les candidats cochés (avec cache par id). */
   const buildSelectedFiles = async (list: Candidate[]): Promise<File[]> => {
@@ -645,7 +654,7 @@ export default function NoveltyAiAssistant({
 
       {/* Angles */}
       {angles.length > 0 && !busy && (
-        <div className="mt-5 space-y-3">
+        <div ref={resultsRef} className="mt-5 space-y-3">
           <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: VIOLET }}>
             {angles.length} angle{angles.length > 1 ? 's' : ''} proposé
             {angles.length > 1 ? 's' : ''}
