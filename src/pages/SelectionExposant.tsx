@@ -206,6 +206,7 @@ function SelectionInner({
             id: selectedExhibitor.id,
             name: selectedExhibitor.name,
             website: selectedExhibitor.website || null,
+            description: null as string | null,
             needs_participation: selectedExhibitor.needs_participation === true,
             legacy_id_exposant: null as string | null,
           }
@@ -213,6 +214,7 @@ function SelectionInner({
             id: null as string | null,
             name: selectedExhibitor?.name || newExhibitorData.name,
             website: selectedExhibitor?.website || newExhibitorData.website || null,
+            description: newExhibitorData.description?.trim() || null,
             needs_participation: false,
             // fiche legacy : id non-UUID sélectionné, ou match legacy confirmé
             legacy_id_exposant:
