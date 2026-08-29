@@ -228,7 +228,9 @@ export default function NoveltyAiAssistant({
     setPdfNotice(null);
     setCandidates([]);
     setSourceDocId(null);
+    autoRunKeyRef.current = null;
     setPdfFile(file);
+
 
     try {
       setPdfPhase('upload');
