@@ -295,9 +295,12 @@ export default function NoveltyAiAssistant({
         return prev;
       }
       setMaxSelectionWarning(false);
-      return prev.map((c) => (c.id === id ? { ...c, selected: !c.selected } : c));
+      const next = prev.map((c) => (c.id === id ? { ...c, selected: !c.selected } : c));
+      void pushSelection(next);
+      return next;
     });
   };
+
 
   const pdfBusy = pdfPhase === 'upload' || pdfPhase === 'extraction';
 
