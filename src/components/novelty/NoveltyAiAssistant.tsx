@@ -363,7 +363,100 @@ export default function NoveltyAiAssistant({
         </div>
       </div>
 
+      {/* Import PDF */}
+      <div className="mt-4">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => !pdfBusy && fileInputRef.current?.click()}
+          onKeyDown={(e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && !pdfBusy) fileInputRef.current?.click();
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            const f = e.dataTransfer.files?.[0];
+            if (f && !pdfBusy) handlePdf(f);
+          }}
+          className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed px-3 py-4 text-center transition-colors ${
+            pdfBusy ? 'cursor-wait opacity-70' : ''
+          }`}
+          style={{
+            borderColor: VIOLET,
+            backgroundColor: dragOver ? `${VIOLET}1f` : 'transparent',
+          }}
+        >
+          <FileUp className="h-4 w-4" style={{ color: VIOLET }} />
+          <p className="mt-1.5 text-xs font-medium" style={{ color: VIOLET }}>
+            Ou importez un PDF (plaquette, présentation) et on s'occupe du reste
+          </p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">PDF uniquement, 20 Mo maximum</p>
+          {pdfFile && !pdfBusy && (
+            <span className="mt-2 inline-flex max-w-full items-center gap-1 truncate rounded-full bg-background px-2 py-0.5 text-[11px] text-muted-foreground">
+              <span className="truncate">{pdfFile.name}</span>
+              <X
+                className="h-3 w-3 shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPdfFile(null);
+                  setCandidates([]);
+                  setSourceDocId(null);
+                  setPdfPhase('idle');
+                  setPdfError(null);
+                  setPdfNotice(null);
+                }}
+              />
+            </span>
+          )}
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = '';
+            if (f) handlePdf(f);
+          }}
+        />
+
+        {pdfBusy && (
+          <div
+            className="mt-3 rounded-lg border bg-background/70 p-3 text-xs"
+            style={{ borderColor: `${VIOLET}33` }}
+          >
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: VIOLET }} />
+              <span>
+                {pdfPhase === 'upload' ? 'Envoi du PDF…' : 'Traitement du PDF en cours, cela peut prendre jusqu\u2019à une minute'}
+              </span>
+            </div>
+            <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-full w-1/3 animate-pulse rounded-full" style={{ backgroundColor: VIOLET }} />
+            </div>
+          </div>
+        )}
+
+        {pdfError && !pdfBusy && (
+          <p className="mt-3 rounded-lg border bg-background/70 p-3 text-xs text-muted-foreground">
+            {pdfError}
+          </p>
+        )}
+        {pdfNotice && !pdfBusy && (
+          <p className="mt-3 rounded-lg border bg-background/70 p-3 text-xs text-muted-foreground">
+            {pdfNotice}
+          </p>
+        )}
+      </div>
+
       {/* Matière */}
+
       <div className="mt-4 space-y-2">
         <Textarea
           value={matiere}
