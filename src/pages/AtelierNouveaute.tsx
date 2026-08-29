@@ -561,6 +561,9 @@ export default function AtelierNouveaute() {
           currentType={type || undefined}
           canvasHasContent={canvasHasContent}
           onApplyAngle={applyAngle}
+          onApplyImages={applyImages}
+          onApplyBrochure={applyBrochure}
+
         />
       )}
 
