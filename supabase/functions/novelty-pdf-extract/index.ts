@@ -126,9 +126,13 @@ Deno.serve(async (req: Request) => {
   try { body = await req.json(); } catch { return jsonResp({ error: 'invalid_json' }, 400); }
   const storage_path = typeof body?.storage_path === 'string' ? body.storage_path : '';
   if (!storage_path) return jsonResp({ error: 'storage_path_requis' }, 400);
-  const original_filename = typeof body?.original_filename === 'string' ? body.original_filename : null;
-  const exhibitor_id = typeof body?.exhibitor_id === 'string' ? body.exhibitor_id : null;
-  const event_id = typeof body?.event_id === 'string' ? body.event_id : null;
+  const original_filename = typeof body?.original_filename === 'string' && body.original_filename.trim() !== ''
+    ? body.original_filename : null;
+  const asUuid = (v: unknown) =>
+    typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.trim())
+      ? v.trim() : null;
+  const exhibitor_id = asUuid(body?.exhibitor_id);
+  const event_id = asUuid(body?.event_id);
 
   // --- Auth : JWT utilisateur (ou service_role + created_by) ---
   const authHeader = req.headers.get('Authorization');
