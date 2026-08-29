@@ -151,6 +151,7 @@ export default function NoveltyAiAssistant({
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileCacheRef = useRef<Map<string, File>>(new Map());
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   /** Télécharge + redimensionne les candidats cochés (avec cache par id). */
   const buildSelectedFiles = async (list: Candidate[]): Promise<File[]> => {
