@@ -50,7 +50,41 @@ interface Props {
   currentType?: string;
   canvasHasContent: boolean;
   onApplyAngle: (angle: NoveltyAngle) => void;
+  onApplyImages?: (files: File[]) => void;
+  onApplyBrochure?: (file: File) => void;
 }
+
+const MAX_IMAGE_SIDE = 1600;
+
+/** Redimensionne une image côté navigateur (max 1600px, JPEG 0.82). */
+async function resizeImage(file: File): Promise<File> {
+  try {
+    const bitmapUrl = URL.createObjectURL(file);
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = bitmapUrl;
+    });
+    const ratio = Math.min(1, MAX_IMAGE_SIDE / Math.max(img.width, img.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(img.width * ratio);
+    canvas.height = Math.round(img.height * ratio);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('no_ctx');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(bitmapUrl);
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, 'image/jpeg', 0.82),
+    );
+    if (!blob) throw new Error('no_blob');
+    const name = file.name.replace(/\.[^.]+$/, '') || 'image';
+    return new File([blob], `${name}.jpg`, { type: 'image/jpeg' });
+  } catch {
+    return file;
+  }
+}
+
 
 type Phase = 'idle' | 'analyse' | 'generation';
 
@@ -95,6 +129,9 @@ export default function NoveltyAiAssistant({
   currentType,
   canvasHasContent,
   onApplyAngle,
+  onApplyImages,
+  onApplyBrochure,
+
 }: Props) {
   const [matiere, setMatiere] = useState('');
   const [phase, setPhase] = useState<Phase>('idle');
@@ -113,6 +150,36 @@ export default function NoveltyAiAssistant({
   const [maxSelectionWarning, setMaxSelectionWarning] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileCacheRef = useRef<Map<string, File>>(new Map());
+
+  /** Télécharge + redimensionne les candidats cochés (avec cache par id). */
+  const buildSelectedFiles = async (list: Candidate[]): Promise<File[]> => {
+    const out: File[] = [];
+    for (const c of list.filter((x) => x.selected).slice(0, 3)) {
+      const cached = fileCacheRef.current.get(c.id);
+      if (cached) {
+        out.push(cached);
+        continue;
+      }
+      try {
+        const blob = await (await fetch(c.url)).blob();
+        const raw = new File([blob], `${c.id}.jpg`, { type: blob.type || 'image/jpeg' });
+        const resized = await resizeImage(raw);
+        fileCacheRef.current.set(c.id, resized);
+        out.push(resized);
+      } catch (e) {
+        console.error('[novelty-pdf] image', e);
+      }
+    }
+    return out;
+  };
+
+  const pushSelection = async (list: Candidate[]) => {
+    if (!onApplyImages) return;
+    const files = await buildSelectedFiles(list);
+    onApplyImages(files);
+  };
+
 
   const authHeaders = async (): Promise<Record<string, string>> => {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -208,6 +275,9 @@ export default function NoveltyAiAssistant({
       setCandidates(list);
       setSourceDocId(documentId);
       setPdfPhase('done');
+      onApplyBrochure?.(file);
+      void pushSelection(list);
+
     } catch (e) {
       console.error('[novelty-pdf]', e);
       setPdfError("Le PDF n'a pas pu être traité. Vous pouvez décrire votre nouveauté à la main.");
@@ -225,9 +295,12 @@ export default function NoveltyAiAssistant({
         return prev;
       }
       setMaxSelectionWarning(false);
-      return prev.map((c) => (c.id === id ? { ...c, selected: !c.selected } : c));
+      const next = prev.map((c) => (c.id === id ? { ...c, selected: !c.selected } : c));
+      void pushSelection(next);
+      return next;
     });
   };
+
 
   const pdfBusy = pdfPhase === 'upload' || pdfPhase === 'extraction';
 

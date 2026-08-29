@@ -190,7 +190,19 @@ export default function AtelierNouveaute() {
     [title, type, reason, reason2, reason3, summary, images, exhibitor, event, resolvedExhibitor],
   );
 
+  const applyImages = (files: File[]) => {
+    setImages((prev) => {
+      prev.forEach((i) => URL.revokeObjectURL(i.previewUrl));
+      return files
+        .slice(0, MAX_IMAGES)
+        .map((file) => ({ file, previewUrl: URL.createObjectURL(file) }));
+    });
+  };
+
+  const applyBrochure = (file: File) => setBrochure(file);
+
   const handleImages = (files: FileList | null) => {
+
     if (!files) return;
     const next: PickedImage[] = [];
     for (const file of Array.from(files)) {
@@ -549,6 +561,9 @@ export default function AtelierNouveaute() {
           currentType={type || undefined}
           canvasHasContent={canvasHasContent}
           onApplyAngle={applyAngle}
+          onApplyImages={applyImages}
+          onApplyBrochure={applyBrochure}
+
         />
       )}
 
