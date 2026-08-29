@@ -43,6 +43,7 @@ export function buildAnthropicHeaders(apiKey: string): HeadersInit {
   // NOTE: do NOT add `anthropic-beta: context-1m-2025-08-07` — that beta
   // was retired by Anthropic. Requests including it on Sonnet 4 / 4.5 fail
   // for prompts > 200K tokens. Keep this header set minimal.
+  // PDF `document` blocks (base64) are GA on this endpoint and need no beta.
   return {
     'x-api-key': apiKey,
     'anthropic-version': ANTHROPIC_VERSION,
@@ -60,6 +61,13 @@ export interface AnthropicCallOptions {
   signal?: AbortSignal;
   /** Logical caller name, surfaced in logs only. */
   caller?: string;
+  /**
+   * Multimodal content blocks (e.g. a PDF `document` block for the vision
+   * fallback). When provided, it is sent as the user message content INSTEAD
+   * of `userMessage`. Fully backward-compatible: existing callers pass only
+   * `userMessage` (a string) and are unaffected.
+   */
+  content?: Array<Record<string, unknown>>;
 }
 
 export interface AnthropicCallResult {
@@ -99,7 +107,7 @@ export async function callAnthropic(opts: AnthropicCallOptions): Promise<Anthrop
       body: JSON.stringify({
         model,
         max_tokens: opts.maxTokens,
-        messages: [{ role: 'user', content: opts.userMessage }],
+        messages: [{ role: 'user', content: opts.content ?? opts.userMessage }],
         ...(opts.system ? { system: opts.system } : {}),
       }),
       signal: opts.signal,
