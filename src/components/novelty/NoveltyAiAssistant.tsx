@@ -482,6 +482,56 @@ export default function NoveltyAiAssistant({
         </Button>
       </div>
 
+      {/* Galerie de candidats issus du PDF */}
+      {pdfPhase === 'done' && candidates.length === 0 && (
+        <p className="mt-4 rounded-lg border bg-background/70 p-3 text-xs text-muted-foreground">
+          Aucune image exploitable trouvée dans ce PDF. Vous pourrez ajouter vos propres images à
+          l'étape suivante.
+        </p>
+      )}
+
+      {candidates.length > 0 && (
+        <div className="mt-5">
+          <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: VIOLET }}>
+            Images trouvées dans le PDF
+          </h3>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {candidates.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => toggleCandidate(c.id)}
+                className="group relative overflow-hidden rounded-lg border bg-background text-left"
+                style={{ borderColor: c.selected ? VIOLET : `${VIOLET}33` }}
+              >
+                <img
+                  src={c.url}
+                  alt={KIND_LABELS[c.kind] || 'Image extraite du PDF'}
+                  loading="lazy"
+                  className="h-24 w-full object-cover"
+                />
+                <span
+                  className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded border bg-background"
+                  style={{ borderColor: VIOLET, backgroundColor: c.selected ? VIOLET : undefined }}
+                >
+                  {c.selected && <Check className="h-3 w-3 text-white" />}
+                </span>
+                <span className="block truncate px-2 py-1 text-[11px] text-muted-foreground">
+                  {KIND_LABELS[c.kind] || 'Autre'}
+                </span>
+              </button>
+            ))}
+          </div>
+          {maxSelectionWarning && (
+            <p className="mt-2 text-[11px]" style={{ color: VIOLET }}>
+              3 images maximum
+            </p>
+          )}
+        </div>
+      )}
+
+
+
       {/* Chargement honnête */}
       {busy && (
         <div className="mt-4 rounded-lg border bg-background/70 p-3" style={{ borderColor: `${VIOLET}33` }}>
