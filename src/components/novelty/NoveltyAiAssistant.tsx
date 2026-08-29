@@ -427,6 +427,10 @@ export default function NoveltyAiAssistant({
     }
   };
 
+  lancerRef.current = lancer;
+
+
+
   const appliquer = (angle: NoveltyAngle) => {
     if (canvasHasContent) {
       const ok = window.confirm('Remplacer votre texte actuel par cet angle ?');
