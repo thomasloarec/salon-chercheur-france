@@ -102,6 +102,135 @@ export default function NoveltyAiAssistant({
   const [pause, setPause] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [angles, setAngles] = useState<NoveltyAngle[]>([]);
+
+  // --- Import PDF (Lot 6a) ---
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfPhase, setPdfPhase] = useState<'idle' | 'upload' | 'extraction' | 'done' | 'error'>('idle');
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [pdfNotice, setPdfNotice] = useState<string | null>(null);
+  const [sourceDocId, setSourceDocId] = useState<string | null>(null);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [maxSelectionWarning, setMaxSelectionWarning] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const authHeaders = async (): Promise<Record<string, string>> => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token || null;
+    return {
+      'Content-Type': 'application/json',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    };
+  };
+
+  const handlePdf = async (file: File) => {
+    if (file.type !== 'application/pdf') {
+      setPdfError('Seuls les fichiers PDF sont acceptés.');
+      setPdfPhase('error');
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      setPdfError('Le PDF ne doit pas dépasser 20 Mo.');
+      setPdfPhase('error');
+      return;
+    }
+    setPdfError(null);
+    setPdfNotice(null);
+    setCandidates([]);
+    setSourceDocId(null);
+    setPdfFile(file);
+
+    try {
+      setPdfPhase('upload');
+      const path = `pdf-import/${crypto.randomUUID()}.pdf`;
+      const up = await supabase.storage.from('novelty-resources').upload(path, file, {
+        contentType: 'application/pdf',
+      });
+      if (up.error) throw new Error(up.error.message);
+
+      setPdfPhase('extraction');
+      const headers = await authHeaders();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/novelty-pdf-extract`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ storage_path: path, exhibitor_id: exhibitorId, event_id: eventId }),
+        },
+      );
+      const json: any = await res.json().catch(() => null);
+      const documentId = json?.document_id;
+      if (!res.ok || !documentId) throw new Error(json?.error || 'extraction_failed');
+
+      const { data: docRow } = await supabase
+        .from('novelty_source_documents')
+        .select('extracted_text, image_candidate_count, status')
+        .eq('id', documentId)
+        .single();
+
+      const text = (docRow?.extracted_text || '').trim();
+      if (text) {
+        setMatiere(text);
+      } else {
+        setPdfNotice(
+          "On n'a pas pu lire assez de texte dans ce PDF. Décrivez votre nouveauté dans la zone ci-dessus, on s'occupe du reste.",
+        );
+      }
+
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/novelty-images-qualify`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ document_id: documentId }),
+      }).catch(() => null);
+
+      const { data: rows } = await supabase
+        .from('novelty_source_images')
+        .select('id, storage_bucket, storage_path, width, height, kind, selected')
+        .eq('source_document_id', documentId)
+        .order('selected', { ascending: false })
+        .order('score', { ascending: false });
+
+      const list: Candidate[] = [];
+      for (const row of rows || []) {
+        const { data: signed } = await supabase.storage
+          .from(row.storage_bucket)
+          .createSignedUrl(row.storage_path, 3600);
+        if (!signed?.signedUrl) continue;
+        list.push({
+          id: row.id,
+          url: signed.signedUrl,
+          kind: row.kind || 'unknown',
+          width: row.width,
+          height: row.height,
+          selected: !!row.selected,
+        });
+      }
+      setCandidates(list);
+      setSourceDocId(documentId);
+      setPdfPhase('done');
+    } catch (e) {
+      console.error('[novelty-pdf]', e);
+      setPdfError("Le PDF n'a pas pu être traité. Vous pouvez décrire votre nouveauté à la main.");
+      setPdfPhase('error');
+    }
+  };
+
+  const toggleCandidate = (id: string) => {
+    setCandidates((prev) => {
+      const target = prev.find((c) => c.id === id);
+      if (!target) return prev;
+      if (!target.selected && prev.filter((c) => c.selected).length >= 3) {
+        setMaxSelectionWarning(true);
+        window.setTimeout(() => setMaxSelectionWarning(false), 2500);
+        return prev;
+      }
+      setMaxSelectionWarning(false);
+      return prev.map((c) => (c.id === id ? { ...c, selected: !c.selected } : c));
+    });
+  };
+
+  const pdfBusy = pdfPhase === 'upload' || pdfPhase === 'extraction';
+
   const call = async (body: Record<string, unknown>) => {
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token || null;
