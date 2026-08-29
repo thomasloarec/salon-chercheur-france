@@ -528,7 +528,7 @@ export default function NoveltyAiAssistant({
           }}
         />
 
-        {pdfBusy && (
+        {(pdfBusy || busy) && (
           <div
             className="mt-3 rounded-lg border bg-background/70 p-3 text-xs"
             style={{ borderColor: `${VIOLET}33` }}
@@ -536,7 +536,13 @@ export default function NoveltyAiAssistant({
             <div className="flex items-center gap-2">
               <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: VIOLET }} />
               <span>
-                {pdfPhase === 'upload' ? 'Envoi du PDF…' : 'Traitement du PDF en cours, cela peut prendre jusqu\u2019à une minute'}
+                {pdfPhase === 'upload'
+                  ? 'Envoi du PDF…'
+                  : pdfPhase === 'extraction'
+                    ? 'Lecture du PDF et analyse des images, cela peut prendre jusqu\u2019à une minute'
+                    : phase === 'analyse'
+                      ? 'Analyse de votre matière…'
+                      : 'Recherche des meilleurs angles…'}
               </span>
             </div>
             <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
@@ -544,6 +550,7 @@ export default function NoveltyAiAssistant({
             </div>
           </div>
         )}
+
 
         {pdfError && !pdfBusy && (
           <p className="mt-3 rounded-lg border bg-background/70 p-3 text-xs text-muted-foreground">
