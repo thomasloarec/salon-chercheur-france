@@ -129,6 +129,9 @@ export default function NoveltyAiAssistant({
   currentType,
   canvasHasContent,
   onApplyAngle,
+  onApplyImages,
+  onApplyBrochure,
+
 }: Props) {
   const [matiere, setMatiere] = useState('');
   const [phase, setPhase] = useState<Phase>('idle');
