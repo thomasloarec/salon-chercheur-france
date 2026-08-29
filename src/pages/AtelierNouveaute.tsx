@@ -51,6 +51,7 @@ interface ResolvedExhibitorState {
   id: string | null;
   name: string;
   website: string | null;
+  description: string | null;
   needs_participation: boolean;
   legacy_id_exposant: string | null;
 }
@@ -133,6 +134,7 @@ export default function AtelierNouveaute() {
         action: 'create',
         name: resolvedExhibitor.name,
         website: resolvedExhibitor.website || null,
+        description: resolvedExhibitor.description || null,
         event_id: eventId,
         ...(resolvedExhibitor.legacy_id_exposant
           ? { legacy_id_exposant: resolvedExhibitor.legacy_id_exposant }
