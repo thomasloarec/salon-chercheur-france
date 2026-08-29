@@ -150,6 +150,36 @@ export default function NoveltyAiAssistant({
   const [maxSelectionWarning, setMaxSelectionWarning] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileCacheRef = useRef<Map<string, File>>(new Map());
+
+  /** Télécharge + redimensionne les candidats cochés (avec cache par id). */
+  const buildSelectedFiles = async (list: Candidate[]): Promise<File[]> => {
+    const out: File[] = [];
+    for (const c of list.filter((x) => x.selected).slice(0, 3)) {
+      const cached = fileCacheRef.current.get(c.id);
+      if (cached) {
+        out.push(cached);
+        continue;
+      }
+      try {
+        const blob = await (await fetch(c.url)).blob();
+        const raw = new File([blob], `${c.id}.jpg`, { type: blob.type || 'image/jpeg' });
+        const resized = await resizeImage(raw);
+        fileCacheRef.current.set(c.id, resized);
+        out.push(resized);
+      } catch (e) {
+        console.error('[novelty-pdf] image', e);
+      }
+    }
+    return out;
+  };
+
+  const pushSelection = async (list: Candidate[]) => {
+    if (!onApplyImages) return;
+    const files = await buildSelectedFiles(list);
+    onApplyImages(files);
+  };
+
 
   const authHeaders = async (): Promise<Record<string, string>> => {
     const { data: sessionData } = await supabase.auth.getSession();
