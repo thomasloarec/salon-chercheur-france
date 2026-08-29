@@ -204,3 +204,8 @@ verify_jwt = false
 # It only emails admin@lotexpo.com; no data is read or returned.
 verify_jwt = false
 
+[functions.novelty-images-qualify]
+# Auth enforced in code: service_role Bearer OR user JWT + ownership check.
+# Manual validation keeps the gate consistent with other novelty pipeline functions.
+verify_jwt = false
+
