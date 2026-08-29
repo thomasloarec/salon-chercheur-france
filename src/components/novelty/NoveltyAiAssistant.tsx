@@ -152,6 +152,8 @@ export default function NoveltyAiAssistant({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileCacheRef = useRef<Map<string, File>>(new Map());
   const resultsRef = useRef<HTMLDivElement>(null);
+  const lancerRef = useRef<(() => Promise<void>) | null>(null);
+  const autoRunKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (angles.length > 0) {
@@ -160,6 +162,18 @@ export default function NoveltyAiAssistant({
       });
     }
   }, [angles.length]);
+
+  // Enchaînement automatique : dès que l'import PDF est terminé avec du texte
+  // exploitable, on lance la génération d'angles (une seule fois par import).
+  useEffect(() => {
+    if (pdfPhase !== 'done') return;
+    if (matiere.trim().length < 10) return;
+    const key = sourceDocId || 'pdf';
+    if (autoRunKeyRef.current === key) return;
+    autoRunKeyRef.current = key;
+    void lancerRef.current?.();
+  }, [pdfPhase, matiere, sourceDocId]);
+
 
   /** Télécharge + redimensionne les candidats cochés (avec cache par id). */
   const buildSelectedFiles = async (list: Candidate[]): Promise<File[]> => {
