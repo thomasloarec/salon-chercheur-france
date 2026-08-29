@@ -152,6 +152,8 @@ export default function NoveltyAiAssistant({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileCacheRef = useRef<Map<string, File>>(new Map());
   const resultsRef = useRef<HTMLDivElement>(null);
+  const lancerRef = useRef<(() => Promise<void>) | null>(null);
+  const autoRunKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (angles.length > 0) {
@@ -160,6 +162,18 @@ export default function NoveltyAiAssistant({
       });
     }
   }, [angles.length]);
+
+  // Enchaînement automatique : dès que l'import PDF est terminé avec du texte
+  // exploitable, on lance la génération d'angles (une seule fois par import).
+  useEffect(() => {
+    if (pdfPhase !== 'done') return;
+    if (matiere.trim().length < 10) return;
+    const key = sourceDocId || 'pdf';
+    if (autoRunKeyRef.current === key) return;
+    autoRunKeyRef.current = key;
+    void lancerRef.current?.();
+  }, [pdfPhase, matiere, sourceDocId]);
+
 
   /** Télécharge + redimensionne les candidats cochés (avec cache par id). */
   const buildSelectedFiles = async (list: Candidate[]): Promise<File[]> => {
@@ -214,7 +228,9 @@ export default function NoveltyAiAssistant({
     setPdfNotice(null);
     setCandidates([]);
     setSourceDocId(null);
+    autoRunKeyRef.current = null;
     setPdfFile(file);
+
 
     try {
       setPdfPhase('upload');
@@ -411,6 +427,10 @@ export default function NoveltyAiAssistant({
     }
   };
 
+  lancerRef.current = lancer;
+
+
+
   const appliquer = (angle: NoveltyAngle) => {
     if (canvasHasContent) {
       const ok = window.confirm('Remplacer votre texte actuel par cet angle ?');
@@ -508,7 +528,7 @@ export default function NoveltyAiAssistant({
           }}
         />
 
-        {pdfBusy && (
+        {(pdfBusy || busy) && (
           <div
             className="mt-3 rounded-lg border bg-background/70 p-3 text-xs"
             style={{ borderColor: `${VIOLET}33` }}
@@ -516,7 +536,13 @@ export default function NoveltyAiAssistant({
             <div className="flex items-center gap-2">
               <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: VIOLET }} />
               <span>
-                {pdfPhase === 'upload' ? 'Envoi du PDF…' : 'Traitement du PDF en cours, cela peut prendre jusqu\u2019à une minute'}
+                {pdfPhase === 'upload'
+                  ? 'Envoi du PDF…'
+                  : pdfPhase === 'extraction'
+                    ? 'Lecture du PDF et analyse des images, cela peut prendre jusqu\u2019à une minute'
+                    : phase === 'analyse'
+                      ? 'Analyse de votre matière…'
+                      : 'Recherche des meilleurs angles…'}
               </span>
             </div>
             <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
@@ -524,6 +550,7 @@ export default function NoveltyAiAssistant({
             </div>
           </div>
         )}
+
 
         {pdfError && !pdfBusy && (
           <p className="mt-3 rounded-lg border bg-background/70 p-3 text-xs text-muted-foreground">
