@@ -1,10 +1,32 @@
-import React, { useState } from 'react';
-import { Check, Loader2, Sparkles, Lightbulb } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Check, Loader2, Sparkles, Lightbulb, FileUp, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 
 const VIOLET = '#6b51ff';
+
+const KIND_LABELS: Record<string, string> = {
+  product_photo: 'Photo produit',
+  ambiance: 'Ambiance',
+  diagram: 'Schéma',
+  logo: 'Logo',
+  badge: 'Certification',
+  portrait: 'Portrait',
+  screenshot: 'Capture',
+  decor: 'Décoratif',
+  unknown: 'Autre',
+};
+
+interface Candidate {
+  id: string;
+  url: string;
+  kind: string;
+  width: number | null;
+  height: number | null;
+  selected: boolean;
+}
+
 
 export interface NoveltyAngle {
   id: string;
