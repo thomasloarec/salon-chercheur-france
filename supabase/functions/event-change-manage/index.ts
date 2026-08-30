@@ -38,6 +38,7 @@ const EDITABLE_FIELDS = [
   'tarif',
   'url_image',
   'description_event',
+  'meta_description_gen',
 ] as const
 
 function escapeHtml(input: string): string {
@@ -235,7 +236,7 @@ Deno.serve(async (req) => {
 
       const { data: ev } = await admin
         .from('events')
-        .select('id, nom_event, date_debut, date_fin, secteur, affluence, tarif, url_image, description_event, description_enrichie, enrichissement_statut, owner_user_id, visible, is_test')
+        .select('id, nom_event, date_debut, date_fin, secteur, affluence, tarif, url_image, description_event, meta_description_gen, description_enrichie, enrichissement_statut, owner_user_id, visible, is_test')
         .eq('id', eventId)
         .maybeSingle()
       if (!ev) return json({ error: 'EVENT_NOT_FOUND', message: 'Salon introuvable.' }, 404)
@@ -266,6 +267,9 @@ Deno.serve(async (req) => {
       }
       if (changedFields.length === 0)
         return json({ error: 'NO_VALID_CHANGES', message: 'Aucune modification valide à enregistrer.' }, 400)
+
+      if (typeof proposed.meta_description_gen === 'string' && proposed.meta_description_gen.length > 160)
+        return json({ error: 'META_TOO_LONG', message: 'La phrase de présentation ne doit pas dépasser 160 caractères.' }, 400)
 
       // V1 : une seule demande en attente par organisateur/salon -> on remplace la précédente
       await admin
