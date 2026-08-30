@@ -23,7 +23,7 @@ import { convertSecteurToString } from '@/utils/sectorUtils';
 import { useSectors } from '@/hooks/useSectors';
 import type { Event } from '@/types/event';
 import type { Sector } from '@/types/sector';
-import { Check, AlertTriangle, Info } from 'lucide-react';
+import { AlertTriangle, Info } from 'lucide-react';
 
 const EVENT_TYPES = [
   { value: 'salon', label: 'Salon' },
@@ -251,9 +251,8 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
     }
   };
 
-  // Meta description length helpers
+  // Meta description length helper
   const metaLen = seoMetaDescription.length;
-  const metaStatus = metaLen === 0 ? 'empty' : metaLen < 140 ? 'short' : metaLen <= 155 ? 'good' : 'long';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -709,34 +708,25 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
                   )}
                 </div>
 
-                {/* Meta description */}
+                {/* Phrase de présentation */}
                 <div>
-                  <Label htmlFor="seo-meta">Meta description</Label>
+                  <Label htmlFor="seo-meta">Phrase de présentation</Label>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Affichée sous le titre du salon et sur la page Salons. 160 caractères maximum.
+                  </p>
                   <Textarea
                     id="seo-meta"
                     value={seoMetaDescription}
                     onChange={(e) => setSeoMetaDescription(e.target.value)}
-                    placeholder="Description SEO de l'événement (140-155 caractères recommandés)"
-                    rows={3}
+                    placeholder="Phrase de présentation de l'événement"
+                    rows={2}
+                    maxLength={160}
                     className="mt-1"
                   />
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-muted-foreground">
-                      {metaLen} caractère{metaLen !== 1 ? 's' : ''}
+                  <div className="flex items-center justify-end mt-1">
+                    <span className={`text-xs ${metaLen >= 160 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                      {metaLen}/160
                     </span>
-                    {metaLen > 0 && (
-                      <span className={`text-xs flex items-center gap-1 ${
-                        metaStatus === 'good'
-                          ? 'text-info'
-                          : metaStatus === 'short'
-                            ? 'text-warning-foreground'
-                            : 'text-destructive'
-                      }`}>
-                        {metaStatus === 'good' && <><Check className="h-3 w-3" /> Longueur idéale</>}
-                        {metaStatus === 'short' && <><AlertTriangle className="h-3 w-3" /> Trop court (cible : 140-155)</>}
-                        {metaStatus === 'long' && <><AlertTriangle className="h-3 w-3" /> Trop long (cible : 140-155)</>}
-                      </span>
-                    )}
                   </div>
                 </div>
 
