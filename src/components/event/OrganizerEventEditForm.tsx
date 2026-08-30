@@ -390,14 +390,14 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
       </div>
 
       <div>
-        <Label htmlFor="org-meta-description">Phrase de présentation</Label>
+        <Label htmlFor="org-accroche">Phrase de présentation</Label>
         <p className="text-xs text-muted-foreground mt-1 mb-1.5">
-          Affichée sous le titre du salon et sur la page Salons. 160 caractères maximum.
+          Idéalement 130 caractères, 160 maximum. Affichée sous le titre du salon et sur la page Salons.
         </p>
         <Textarea
-          id="org-meta-description"
+          id="org-accroche"
           value={formData.accroche}
-          onChange={(e) => setFormData((p) => ({ ...p, meta_description_gen: e.target.value }))}
+          onChange={(e) => setFormData((p) => ({ ...p, accroche: e.target.value }))}
           rows={2}
           maxLength={160}
           className="mt-1"
@@ -406,10 +406,10 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
         <div className="flex items-center justify-end mt-1">
           <span
             className={`text-xs ${
-              (formData.accroche || '').length >= 160 ? 'text-destructive' : 'text-muted-foreground'
+              (formData.accroche || '').length > 130 ? 'text-amber-600' : 'text-muted-foreground'
             }`}
           >
-            {(formData.accroche || '').length}/160
+            {(formData.accroche || '').length}/130
           </span>
         </div>
       </div>
