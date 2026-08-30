@@ -79,6 +79,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
   // SEO fields
   const [seoSlug, setSeoSlug] = useState('');
   const [seoMetaDescription, setSeoMetaDescription] = useState('');
+  const [accroche, setAccroche] = useState('');
   const [slugError, setSlugError] = useState('');
   const [slugChecking, setSlugChecking] = useState(false);
 
@@ -200,6 +201,19 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
     setSeoSlug(event.slug || '');
     setSeoMetaDescription(event.meta_description_gen || '');
     setSlugError('');
+
+    // Phrase de présentation (event_ai.accroche)
+    let cancelled = false;
+    setAccroche('');
+    (async () => {
+      const { data } = await supabase
+        .from('event_ai')
+        .select('accroche')
+        .eq('event_id', event.id)
+        .maybeSingle();
+      if (!cancelled) setAccroche((data?.accroche as string | null) ?? '');
+    })();
+    return () => { cancelled = true; };
   }, [event, open]);
 
   // Handler pour la sélection de secteurs avec limite à 3
@@ -379,6 +393,21 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       }
 
       if (error) throw error;
+
+      // Upsert de la phrase de présentation (event_ai.accroche)
+      const { error: accrocheError } = await supabase
+        .from('event_ai')
+        .upsert(
+          { event_id: event.id, accroche: accroche || null, updated_at: new Date().toISOString() },
+          { onConflict: 'event_id' },
+        );
+      if (accrocheError) {
+        toast({
+          title: "Phrase de présentation non enregistrée",
+          description: accrocheError.message,
+          variant: "destructive",
+        });
+      }
 
       toast({
         title: "Événement mis à jour",
@@ -708,17 +737,17 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
                   )}
                 </div>
 
-                {/* Phrase de présentation */}
+                {/* Méta description SEO */}
                 <div>
-                  <Label htmlFor="seo-meta">Phrase de présentation</Label>
+                  <Label htmlFor="seo-meta">Méta description (SEO)</Label>
                   <p className="text-xs text-muted-foreground mb-1">
-                    Affichée sous le titre du salon et sur la page Salons. 160 caractères maximum.
+                    Balise meta description pour le référencement. 150 à 160 caractères conseillés.
                   </p>
                   <Textarea
                     id="seo-meta"
                     value={seoMetaDescription}
                     onChange={(e) => setSeoMetaDescription(e.target.value)}
-                    placeholder="Phrase de présentation de l'événement"
+                    placeholder="Méta description de l'événement"
                     rows={2}
                     maxLength={160}
                     className="mt-1"
@@ -726,6 +755,28 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
                   <div className="flex items-center justify-end mt-1">
                     <span className={`text-xs ${metaLen >= 160 ? 'text-destructive' : 'text-muted-foreground'}`}>
                       {metaLen}/160
+                    </span>
+                  </div>
+                </div>
+
+                {/* Phrase de présentation (event_ai.accroche) */}
+                <div>
+                  <Label htmlFor="event-accroche">Phrase de présentation</Label>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Idéalement 130 caractères, 160 maximum. Affichée sous le titre du salon et sur la page Salons.
+                  </p>
+                  <Textarea
+                    id="event-accroche"
+                    value={accroche}
+                    onChange={(e) => setAccroche(e.target.value)}
+                    placeholder="Phrase courte de présentation du salon..."
+                    rows={2}
+                    maxLength={160}
+                    className="mt-1"
+                  />
+                  <div className="flex items-center justify-end mt-1">
+                    <span className={`text-xs ${(accroche || '').length > 130 ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                      {(accroche || '').length}/130
                     </span>
                   </div>
                 </div>
