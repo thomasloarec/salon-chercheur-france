@@ -47,7 +47,7 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
     tarif: '',
     url_image: '',
     description_event: '',
-    meta_description_gen: '',
+    accroche: '',
   });
   const [selectedSectorIds, setSelectedSectorIds] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -62,7 +62,7 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
     tarif: string;
     url_image: string;
     description_event: string;
-    meta_description_gen: string;
+    accroche: string;
     secteurNames: string[];
   } | null>(null);
 
@@ -100,7 +100,7 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
       tarif: event.tarif || '',
       url_image: event.url_image || '',
       description_event: resolvedDescription,
-      meta_description_gen: event.meta_description_gen || '',
+      accroche: (event as any).accroche || '',
       secteurNames: allSectors.filter((s) => matchedIds.includes(s.id)).map((s) => s.name),
     };
 
@@ -112,7 +112,7 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
       tarif: initial.tarif,
       url_image: initial.url_image,
       description_event: initial.description_event,
-      meta_description_gen: initial.meta_description_gen,
+      accroche: initial.accroche,
     });
     setSelectedSectorIds(matchedIds);
     initialRef.current = initial;
@@ -173,8 +173,8 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
     if (formData.description_event !== initial.description_event) {
       changes.description_event = formData.description_event;
     }
-    if (formData.meta_description_gen !== initial.meta_description_gen) {
-      changes.meta_description_gen = formData.meta_description_gen;
+    if (formData.accroche !== initial.accroche) {
+      changes.accroche = formData.accroche;
     }
     const selectedNames = allSectors
       .filter((s) => selectedSectorIds.includes(s.id))
@@ -210,7 +210,7 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
           tarif: formData.tarif,
           url_image: formData.url_image,
           description_event: formData.description_event,
-          meta_description_gen: formData.meta_description_gen,
+          accroche: formData.accroche,
           secteurNames: selectedNames,
         };
         setFormData((p) => ({ ...p, nom_event: p.nom_event.trim() }));
@@ -396,7 +396,7 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
         </p>
         <Textarea
           id="org-meta-description"
-          value={formData.meta_description_gen}
+          value={formData.accroche}
           onChange={(e) => setFormData((p) => ({ ...p, meta_description_gen: e.target.value }))}
           rows={2}
           maxLength={160}
@@ -406,10 +406,10 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
         <div className="flex items-center justify-end mt-1">
           <span
             className={`text-xs ${
-              (formData.meta_description_gen || '').length >= 160 ? 'text-destructive' : 'text-muted-foreground'
+              (formData.accroche || '').length >= 160 ? 'text-destructive' : 'text-muted-foreground'
             }`}
           >
-            {(formData.meta_description_gen || '').length}/160
+            {(formData.accroche || '').length}/160
           </span>
         </div>
       </div>
