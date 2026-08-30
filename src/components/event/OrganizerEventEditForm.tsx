@@ -117,6 +117,23 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
     setSelectedSectorIds(matchedIds);
     initialRef.current = initial;
     setSubmittedOk(false);
+
+    // L'accroche vit dans event_ai : on la charge et on recale la baseline.
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('event_ai')
+        .select('accroche')
+        .eq('event_id', event.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const accroche = (data?.accroche as string | null) ?? initial.accroche ?? '';
+      setFormData((p) => ({ ...p, accroche }));
+      if (initialRef.current) initialRef.current.accroche = accroche;
+    })();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [event.id, sectorsReady]);
 
