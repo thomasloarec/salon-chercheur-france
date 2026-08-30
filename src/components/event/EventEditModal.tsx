@@ -79,6 +79,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
   // SEO fields
   const [seoSlug, setSeoSlug] = useState('');
   const [seoMetaDescription, setSeoMetaDescription] = useState('');
+  const [accroche, setAccroche] = useState('');
   const [slugError, setSlugError] = useState('');
   const [slugChecking, setSlugChecking] = useState(false);
 
@@ -200,6 +201,19 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
     setSeoSlug(event.slug || '');
     setSeoMetaDescription(event.meta_description_gen || '');
     setSlugError('');
+
+    // Phrase de présentation (event_ai.accroche)
+    let cancelled = false;
+    setAccroche('');
+    (async () => {
+      const { data } = await supabase
+        .from('event_ai')
+        .select('accroche')
+        .eq('event_id', event.id)
+        .maybeSingle();
+      if (!cancelled) setAccroche((data?.accroche as string | null) ?? '');
+    })();
+    return () => { cancelled = true; };
   }, [event, open]);
 
   // Handler pour la sélection de secteurs avec limite à 3
@@ -379,6 +393,21 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       }
 
       if (error) throw error;
+
+      // Upsert de la phrase de présentation (event_ai.accroche)
+      const { error: accrocheError } = await supabase
+        .from('event_ai')
+        .upsert(
+          { event_id: event.id, accroche: accroche || null, updated_at: new Date().toISOString() },
+          { onConflict: 'event_id' },
+        );
+      if (accrocheError) {
+        toast({
+          title: "Phrase de présentation non enregistrée",
+          description: accrocheError.message,
+          variant: "destructive",
+        });
+      }
 
       toast({
         title: "Événement mis à jour",
