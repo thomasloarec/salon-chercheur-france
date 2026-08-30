@@ -708,17 +708,17 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
                   )}
                 </div>
 
-                {/* Phrase de présentation */}
+                {/* Méta description SEO */}
                 <div>
-                  <Label htmlFor="seo-meta">Phrase de présentation</Label>
+                  <Label htmlFor="seo-meta">Méta description (SEO)</Label>
                   <p className="text-xs text-muted-foreground mb-1">
-                    Affichée sous le titre du salon et sur la page Salons. 160 caractères maximum.
+                    Balise meta description pour le référencement. 150 à 160 caractères conseillés.
                   </p>
                   <Textarea
                     id="seo-meta"
                     value={seoMetaDescription}
                     onChange={(e) => setSeoMetaDescription(e.target.value)}
-                    placeholder="Phrase de présentation de l'événement"
+                    placeholder="Méta description de l'événement"
                     rows={2}
                     maxLength={160}
                     className="mt-1"
@@ -726,6 +726,28 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
                   <div className="flex items-center justify-end mt-1">
                     <span className={`text-xs ${metaLen >= 160 ? 'text-destructive' : 'text-muted-foreground'}`}>
                       {metaLen}/160
+                    </span>
+                  </div>
+                </div>
+
+                {/* Phrase de présentation (event_ai.accroche) */}
+                <div>
+                  <Label htmlFor="event-accroche">Phrase de présentation</Label>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Idéalement 130 caractères, 160 maximum. Affichée sous le titre du salon et sur la page Salons.
+                  </p>
+                  <Textarea
+                    id="event-accroche"
+                    value={accroche}
+                    onChange={(e) => setAccroche(e.target.value)}
+                    placeholder="Phrase courte de présentation du salon..."
+                    rows={2}
+                    maxLength={160}
+                    className="mt-1"
+                  />
+                  <div className="flex items-center justify-end mt-1">
+                    <span className={`text-xs ${(accroche || '').length > 130 ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                      {(accroche || '').length}/130
                     </span>
                   </div>
                 </div>
