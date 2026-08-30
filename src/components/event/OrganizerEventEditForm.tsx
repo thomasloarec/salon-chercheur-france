@@ -47,6 +47,7 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
     tarif: '',
     url_image: '',
     description_event: '',
+    meta_description_gen: '',
   });
   const [selectedSectorIds, setSelectedSectorIds] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -61,6 +62,7 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
     tarif: string;
     url_image: string;
     description_event: string;
+    meta_description_gen: string;
     secteurNames: string[];
   } | null>(null);
 
@@ -98,6 +100,7 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
       tarif: event.tarif || '',
       url_image: event.url_image || '',
       description_event: resolvedDescription,
+      meta_description_gen: event.meta_description_gen || '',
       secteurNames: allSectors.filter((s) => matchedIds.includes(s.id)).map((s) => s.name),
     };
 
@@ -109,6 +112,7 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
       tarif: initial.tarif,
       url_image: initial.url_image,
       description_event: initial.description_event,
+      meta_description_gen: initial.meta_description_gen,
     });
     setSelectedSectorIds(matchedIds);
     initialRef.current = initial;
@@ -169,6 +173,9 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
     if (formData.description_event !== initial.description_event) {
       changes.description_event = formData.description_event;
     }
+    if (formData.meta_description_gen !== initial.meta_description_gen) {
+      changes.meta_description_gen = formData.meta_description_gen;
+    }
     const selectedNames = allSectors
       .filter((s) => selectedSectorIds.includes(s.id))
       .map((s) => s.name);
@@ -203,6 +210,7 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
           tarif: formData.tarif,
           url_image: formData.url_image,
           description_event: formData.description_event,
+          meta_description_gen: formData.meta_description_gen,
           secteurNames: selectedNames,
         };
         setFormData((p) => ({ ...p, nom_event: p.nom_event.trim() }));
@@ -379,6 +387,31 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
             </p>
           </div>
         )}
+      </div>
+
+      <div>
+        <Label htmlFor="org-meta-description">Phrase de présentation</Label>
+        <p className="text-xs text-muted-foreground mt-1 mb-1.5">
+          Affichée sous le titre du salon et sur la page Salons. 160 caractères maximum.
+        </p>
+        <Textarea
+          id="org-meta-description"
+          value={formData.meta_description_gen}
+          onChange={(e) => setFormData((p) => ({ ...p, meta_description_gen: e.target.value }))}
+          rows={2}
+          maxLength={160}
+          className="mt-1"
+          placeholder="Phrase courte de présentation du salon..."
+        />
+        <div className="flex items-center justify-end mt-1">
+          <span
+            className={`text-xs ${
+              (formData.meta_description_gen || '').length >= 160 ? 'text-destructive' : 'text-muted-foreground'
+            }`}
+          >
+            {(formData.meta_description_gen || '').length}/160
+          </span>
+        </div>
       </div>
 
       {!hasChanges && (
