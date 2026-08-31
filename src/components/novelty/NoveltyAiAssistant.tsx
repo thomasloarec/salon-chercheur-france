@@ -145,6 +145,8 @@ export default function NoveltyAiAssistant({
   const [pdfPhase, setPdfPhase] = useState<'idle' | 'upload' | 'extraction' | 'done' | 'error'>('idle');
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [pdfNotice, setPdfNotice] = useState<string | null>(null);
+  // Vrai depuis le début d'un import PDF jusqu'à la fin de la séquence automatique.
+  const [pdfSequence, setPdfSequence] = useState(false);
   const [sourceDocId, setSourceDocId] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [maxSelectionWarning, setMaxSelectionWarning] = useState(false);
@@ -171,7 +173,13 @@ export default function NoveltyAiAssistant({
     const key = sourceDocId || 'pdf';
     if (autoRunKeyRef.current === key) return;
     autoRunKeyRef.current = key;
-    void lancerRef.current?.();
+    void (async () => {
+      try {
+        await lancerRef.current?.();
+      } finally {
+        setPdfSequence(false);
+      }
+    })();
   }, [pdfPhase, matiere, sourceDocId]);
 
 
@@ -229,8 +237,9 @@ export default function NoveltyAiAssistant({
     setCandidates([]);
     setSourceDocId(null);
     autoRunKeyRef.current = null;
+    setPdfSequence(true);
+    setMatiere('');
     setPdfFile(file);
-
 
     try {
       setPdfPhase('upload');
@@ -265,8 +274,9 @@ export default function NoveltyAiAssistant({
         setMatiere(text);
       } else {
         setPdfNotice(
-          "On n'a pas pu lire assez de texte dans ce PDF. Décrivez votre nouveauté dans la zone ci-dessus, on s'occupe du reste.",
+          "Ce PDF ne contient pas de texte exploitable. Décrivez votre nouveauté dans la zone ci-dessous, ou importez un autre PDF.",
         );
+        setPdfSequence(false);
       }
 
       await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/novelty-images-qualify`, {
@@ -307,6 +317,7 @@ export default function NoveltyAiAssistant({
       console.error('[novelty-pdf]', e);
       setPdfError("Le PDF n'a pas pu être traité. Vous pouvez décrire votre nouveauté à la main.");
       setPdfPhase('error');
+      setPdfSequence(false);
     }
   };
 
@@ -327,7 +338,7 @@ export default function NoveltyAiAssistant({
   };
 
 
-  const pdfBusy = pdfPhase === 'upload' || pdfPhase === 'extraction';
+  const pdfBusy = pdfSequence || pdfPhase === 'upload' || pdfPhase === 'extraction';
 
   const call = async (body: Record<string, unknown>) => {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -482,7 +493,7 @@ export default function NoveltyAiAssistant({
         <Button
           type="button"
           onClick={lancer}
-          disabled={busy || matiere.trim().length < 10}
+          disabled={busy || pdfBusy || matiere.trim().length < 10}
           className="w-full text-white hover:opacity-90"
           style={{ backgroundColor: VIOLET }}
         >

@@ -29,7 +29,7 @@ const CANDIDATES_BUCKET = 'novelty-resources'; // privé jusqu'au consentement
 const TRANSCRIBE_PROMPT =
   "Transcris fidèlement tout le texte visible de ce document commercial, dans l'ordre de lecture naturel. " +
   "Ne résume pas, ne commente pas, n'ajoute rien qui ne soit écrit dans le document. " +
-  "Restitue uniquement le texte tel qu'il apparaît.";
+  "Restitue uniquement le texte tel qu'il apparaît. Si le document ne contient aucun texte lisible ou exploitable (page blanche, image sans texte), réponds EXACTEMENT et UNIQUEMENT par le mot-clé : AUCUN_TEXTE, sans aucune autre phrase et sans décrire l'absence de texte.";
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -200,12 +200,14 @@ Deno.serve(async (req: Request) => {
       truncated = sel.truncated;
     } else if ((pageCount ?? 999) <= VISION_MAX_PAGES && fileSize <= VISION_MAX_BYTES) {
       const vis = await visionExtractText(bytes);
-      if (vis && vis.trim().length > 0) {
+      const visTrim = (vis ?? '').trim();
+      const aucunTexte = visTrim === '' || /^AUCUN_TEXTE[\s.!]*$/i.test(visTrim);
+      if (!aucunTexte) {
         textSource = 'vision';
-        const sel = selectText(vis);
+        const sel = selectText(visTrim);
         extractedText = sel.text;
         truncated = sel.truncated;
-        rawChars = vis.trim().length;
+        rawChars = visTrim.length;
       }
     }
   } catch (e) {
