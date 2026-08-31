@@ -3340,6 +3340,269 @@ export type Database = {
           },
         ]
       }
+      event_update_activity_log: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          event_id: string
+          event_update_id: string
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          event_id: string
+          event_update_id: string
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          event_id?: string
+          event_update_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_update_activity_log_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "admin_events_exhibitor_coverage"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_update_activity_log_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_update_activity_log_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_update_activity_log_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_update_activity_log_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_update_activity_log_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_update_activity_log_event_update_id_fkey"
+            columns: ["event_update_id"]
+            isOneToOne: false
+            referencedRelation: "event_updates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_update_stats_daily: {
+        Row: {
+          created_at: string
+          cta_clicks: number
+          event_id: string
+          event_update_id: string
+          feed_opens: number
+          id: string
+          impressions: number
+          stat_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cta_clicks?: number
+          event_id: string
+          event_update_id: string
+          feed_opens?: number
+          id?: string
+          impressions?: number
+          stat_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cta_clicks?: number
+          event_id?: string
+          event_update_id?: string
+          feed_opens?: number
+          id?: string
+          impressions?: number
+          stat_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_update_stats_daily_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "admin_events_exhibitor_coverage"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_update_stats_daily_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_update_stats_daily_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_update_stats_daily_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_update_stats_daily_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_update_stats_daily_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_update_stats_daily_event_update_id_fkey"
+            columns: ["event_update_id"]
+            isOneToOne: false
+            referencedRelation: "event_updates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_updates: {
+        Row: {
+          archived_at: string | null
+          category: string
+          created_at: string
+          created_by_user_id: string | null
+          cta_label: string | null
+          cta_type: string
+          cta_url: string | null
+          event_id: string
+          expires_at: string | null
+          id: string
+          last_edited_by_user_id: string | null
+          message: string
+          published_at: string | null
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          category?: string
+          created_at?: string
+          created_by_user_id?: string | null
+          cta_label?: string | null
+          cta_type?: string
+          cta_url?: string | null
+          event_id: string
+          expires_at?: string | null
+          id?: string
+          last_edited_by_user_id?: string | null
+          message: string
+          published_at?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          category?: string
+          created_at?: string
+          created_by_user_id?: string | null
+          cta_label?: string | null
+          cta_type?: string
+          cta_url?: string | null
+          event_id?: string
+          expires_at?: string | null
+          id?: string
+          last_edited_by_user_id?: string | null
+          message?: string
+          published_at?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_updates_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "admin_events_exhibitor_coverage"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_updates_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_updates_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_updates_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_updates_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_updates_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           affluence: string | null
@@ -11615,6 +11878,27 @@ export type Database = {
           novelty_count: number
         }[]
       }
+      get_event_feed_admin: {
+        Args: { p_event_id: string }
+        Returns: {
+          archived_at: string
+          category: string
+          created_at: string
+          cta_clicks: number
+          cta_label: string
+          cta_type: string
+          cta_url: string
+          expires_at: string
+          feed_opens: number
+          impressions: number
+          is_expired: boolean
+          message: string
+          published_at: string
+          status: string
+          update_id: string
+          updated_at: string
+        }[]
+      }
       get_event_program_admin: {
         Args: { p_event_id: string }
         Returns: {
@@ -11831,6 +12115,20 @@ export type Database = {
           tagline: string
           total_count: number
           website: string
+        }[]
+      }
+      get_public_event_feed: {
+        Args: { p_event_id: string }
+        Returns: {
+          category: string
+          cta_label: string
+          cta_type: string
+          cta_url: string
+          expires_at: string
+          message: string
+          published_at: string
+          total_active: number
+          update_id: string
         }[]
       }
       get_public_event_program: {
@@ -12659,6 +12957,10 @@ export type Database = {
       taxo_current_version: { Args: never; Returns: number }
       taxo_similarity_threshold: { Args: never; Returns: number }
       toggle_favorite: { Args: { p_event: string }; Returns: undefined }
+      track_event_update: {
+        Args: { p_event_type: string; p_event_update_id: string }
+        Returns: boolean
+      }
       track_exhibitor_event: {
         Args: { p_event_type: string; p_metadata?: Json; p_public_slug: string }
         Returns: boolean
