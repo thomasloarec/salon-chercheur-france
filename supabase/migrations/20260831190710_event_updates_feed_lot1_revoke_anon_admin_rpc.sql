@@ -1,0 +1,25 @@
+-- ============================================================================
+-- LE FIL DU SALON — Lot 1, correctif de securite
+--
+-- Applique en production le 31/08/2026 via MCP Supabase.
+-- Version enregistree : 20260831190710
+--
+-- Detecte par le post-check des execute_roles de la migration 20260831190641 :
+-- get_event_feed_admin, qui expose brouillons, annonces archivees et
+-- statistiques, restait executable par anon.
+--
+-- Cause : Supabase applique des ALTER DEFAULT PRIVILEGES qui accordent EXECUTE
+-- NOMINATIVEMENT aux roles anon et authenticated a la creation de toute
+-- fonction. Un REVOKE ... FROM PUBLIC ne retire pas un grant nominatif : il
+-- faut cibler le role explicitement.
+--
+-- REGLE DE PROJET : toute nouvelle RPC non publique doit s'accompagner d'un
+-- revoke ... from anon explicite, et la verification des execute_roles doit
+-- faire partie des post-checks systematiques.
+--
+-- La fonction est deja gardee en interne par is_event_owner() OR is_admin() :
+-- ce revoke est la defense en profondeur. Un appelant anonyme ne doit meme pas
+-- pouvoir declencher son execution.
+-- ============================================================================
+
+revoke all on function public.get_event_feed_admin(uuid) from anon;
