@@ -1,12 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from '@/components/ui/sheet';
-import { Megaphone, ArrowUpRight, Settings2 } from 'lucide-react';
+import { Megaphone, ArrowUpRight } from 'lucide-react';
 import ClaimSalonBanner from '@/components/event/ClaimSalonBanner';
 import { INTERNAL_CTA, categoryLabel } from '@/lib/eventFeed';
 import { useEventFeedPublic, type FeedUpdatePublic } from '@/hooks/useEventFeed';
@@ -58,7 +57,7 @@ const CtaButton: React.FC<{ cta: ResolvedCta; onClick: () => void; size?: 'sm' |
   cta, onClick, size = 'sm',
 }) =>
   cta.external ? (
-    <Button asChild size={size} variant="outline" className="shrink-0">
+    <Button asChild size={size} className="shrink-0">
       {/* noopener noreferrer obligatoire : lien externe fourni par un tiers */}
       <a href={cta.href} target="_blank" rel="noopener noreferrer" onClick={onClick}>
         {cta.label}
@@ -66,7 +65,7 @@ const CtaButton: React.FC<{ cta: ResolvedCta; onClick: () => void; size?: 'sm' |
       </a>
     </Button>
   ) : (
-    <Button asChild size={size} variant="outline" className="shrink-0">
+    <Button asChild size={size} className="shrink-0">
       <a href={cta.href} onClick={onClick}>{cta.label}</a>
     </Button>
   );
@@ -116,36 +115,44 @@ const EventFeedBanner: React.FC<Props> = ({ event, capabilities }) => {
 
   return (
     <>
-      <div className="mx-auto w-full max-w-[1280px] rounded-xl border border-border bg-muted/40 px-4 py-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-        <span className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground shrink-0">
-          <Megaphone className="h-3.5 w-3.5" />
-          Le fil du salon
-        </span>
+      {/*
+        Structure sur deux lignes. Le message occupe sa propre ligne : en file
+        horizontale derrière l'étiquette et la pastille, il était le troisième
+        élément lu alors qu'il est le seul contenu réel.
 
-        {isNew && (
-          <Badge variant="default" className="shrink-0 text-[10px] px-1.5 py-0">
-            Nouveau
-          </Badge>
-        )}
+        Pas de lien « Gérer » ici : le bouton « Gérer mon salon » existe déjà en
+        haut de la page pour le propriétaire (EventPageContent).
+      */}
+      <div className="mx-auto w-full max-w-[1280px] rounded-lg border border-border border-l-[3px] border-l-primary bg-card px-4 py-3.5 sm:px-5">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-primary">
+            <Megaphone className="h-3.5 w-3.5" />
+            Le fil du salon
+          </span>
+          {isNew && (
+            <Badge variant="default" className="text-[10px] px-1.5 py-0 leading-4">
+              Nouveau
+            </Badge>
+          )}
+        </div>
 
-        <span className="min-w-0 flex-1 text-foreground break-words">{top.message}</span>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+          <p className="min-w-0 flex-1 basis-60 text-base font-medium leading-snug text-foreground break-words">
+            {top.message}
+          </p>
 
-        {cta && <CtaButton cta={cta} onClick={() => trackFeedEvent(top.update_id, 'cta_click')} />}
+          <div className="flex items-center gap-2 shrink-0">
+            {cta && (
+              <CtaButton cta={cta} onClick={() => trackFeedEvent(top.update_id, 'cta_click')} />
+            )}
 
-        {totalActive > 1 && (
-          <Button variant="ghost" size="sm" className="shrink-0" onClick={openSheet}>
-            Voir les {totalActive} annonces
-          </Button>
-        )}
-
-        {isOwner && (
-          <Button asChild variant="ghost" size="sm" className="shrink-0">
-            <Link to={`/events/${event.slug || event.id}/gerer`}>
-              <Settings2 className="h-3.5 w-3.5 mr-1.5" />
-              Gérer
-            </Link>
-          </Button>
-        )}
+            {totalActive > 1 && (
+              <Button variant="ghost" size="sm" onClick={openSheet}>
+                Voir les {totalActive} annonces
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
