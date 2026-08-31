@@ -29,7 +29,7 @@ const OrganizerSalonPage: React.FC = () => {
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<'salon' | 'programme' | 'exposants' | 'activation' | 'widget'>('salon');
+  const [activeSection, setActiveSection] = useState<'salon' | 'fil' | 'programme' | 'exposants' | 'activation' | 'widget'>('salon');
   const queryClient = useQueryClient();
   const [exhibitorOverride, setExhibitorOverride] = useState<boolean | null>(null);
   const [savingExhibitorVisibility, setSavingExhibitorVisibility] = useState(false);
@@ -117,7 +117,7 @@ const OrganizerSalonPage: React.FC = () => {
   if (!event) return null;
   if (!user || (!isAdmin && user.id !== event.owner_user_id)) return null;
 
-  type SectionKey = 'salon' | 'programme' | 'exposants' | 'activation' | 'widget';
+  type SectionKey = 'salon' | 'fil' | 'programme' | 'exposants' | 'activation' | 'widget';
   const sections: {
     key: SectionKey;
     label: string;
