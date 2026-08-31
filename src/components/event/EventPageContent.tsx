@@ -20,6 +20,7 @@ import { Reveal } from '@/components/ui/reveal';
 
 import EventExhibitorsSection from '@/components/event/EventExhibitorsSection';
 import ClaimSalonBanner from '@/components/event/ClaimSalonBanner';
+import EventFeedBanner from '@/components/event/EventFeedBanner';
 import EventRadarCrmWidget from '@/components/event/EventRadarCrmWidget';
 import { SEOHead } from '@/components/event/SEOHead';
 import { EventAdminMenu } from '@/components/event/EventAdminMenu';
@@ -265,9 +266,9 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
               onPrepareVisit={() => setPrepareVisitOpen(true)}
             />
 
-            {/* Bandeau discret : revendication de la page salon par l'organisateur */}
+            {/* Zone unique : Fil du salon si annonce active, sinon revendication */}
             <div className="mt-2">
-              <ClaimSalonBanner event={event} />
+              <EventFeedBanner event={event} capabilities={capabilities} />
             </div>
 
 
