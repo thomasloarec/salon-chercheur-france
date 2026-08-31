@@ -237,8 +237,9 @@ export default function NoveltyAiAssistant({
     setCandidates([]);
     setSourceDocId(null);
     autoRunKeyRef.current = null;
+    setPdfSequence(true);
+    setMatiere('');
     setPdfFile(file);
-
 
     try {
       setPdfPhase('upload');
@@ -337,7 +338,7 @@ export default function NoveltyAiAssistant({
   };
 
 
-  const pdfBusy = pdfPhase === 'upload' || pdfPhase === 'extraction';
+  const pdfBusy = pdfSequence || pdfPhase === 'upload' || pdfPhase === 'extraction';
 
   const call = async (body: Record<string, unknown>) => {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -492,7 +493,7 @@ export default function NoveltyAiAssistant({
         <Button
           type="button"
           onClick={lancer}
-          disabled={busy || matiere.trim().length < 10}
+          disabled={busy || pdfBusy || matiere.trim().length < 10}
           className="w-full text-white hover:opacity-90"
           style={{ backgroundColor: VIOLET }}
         >
