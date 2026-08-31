@@ -465,6 +465,32 @@ export default function NoveltyAiAssistant({
         </div>
       </div>
 
+      {/* Matière */}
+      <div className="mt-4 space-y-2">
+        <Textarea
+          value={matiere}
+          onChange={(e) => setMatiere(e.target.value)}
+          disabled={busy}
+          rows={5}
+          placeholder="Décrivez votre nouveauté en vrac"
+          className="resize-y bg-background text-sm"
+        />
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          L'assistant ne remplace pas vos mots, il révèle pourquoi votre nouveauté mérite une
+          visite.
+        </p>
+        <Button
+          type="button"
+          onClick={lancer}
+          disabled={busy || matiere.trim().length < 10}
+          className="w-full text-white hover:opacity-90"
+          style={{ backgroundColor: VIOLET }}
+        >
+          {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Trouver les meilleurs angles
+        </Button>
+      </div>
+
       {/* Import PDF */}
       <div className="mt-4">
         <div
@@ -551,7 +577,6 @@ export default function NoveltyAiAssistant({
           </div>
         )}
 
-
         {pdfError && !pdfBusy && (
           <p className="mt-3 rounded-lg border bg-background/70 p-3 text-xs text-muted-foreground">
             {pdfError}
@@ -562,33 +587,6 @@ export default function NoveltyAiAssistant({
             {pdfNotice}
           </p>
         )}
-      </div>
-
-      {/* Matière */}
-
-      <div className="mt-4 space-y-2">
-        <Textarea
-          value={matiere}
-          onChange={(e) => setMatiere(e.target.value)}
-          disabled={busy}
-          rows={5}
-          placeholder="Décrivez votre nouveauté en vrac"
-          className="resize-y bg-background text-sm"
-        />
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
-          L'assistant ne remplace pas vos mots, il révèle pourquoi votre nouveauté mérite une
-          visite.
-        </p>
-        <Button
-          type="button"
-          onClick={lancer}
-          disabled={busy || matiere.trim().length < 10}
-          className="w-full text-white hover:opacity-90"
-          style={{ backgroundColor: VIOLET }}
-        >
-          {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Trouver les meilleurs angles
-        </Button>
       </div>
 
       {/* Galerie de candidats issus du PDF */}
