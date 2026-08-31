@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Sparkles, Building2, Users, Megaphone, Code, CalendarClock } from 'lucide-react';
+import { ExternalLink, Sparkles, Building2, Users, Megaphone, Code, CalendarClock, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import OrganizerEventEditForm from '@/components/event/OrganizerEventEditForm';
 import SeoScorecard from '@/components/event/SeoScorecard';
@@ -19,6 +19,7 @@ import OrganizerEmbedWidget from '@/components/event/OrganizerEmbedWidget';
 import { useEventScorecard } from '@/hooks/useEventScorecard';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import OrganizerProgramManager from '@/components/event/OrganizerProgramManager';
+import OrganizerFeedManager from '@/components/event/OrganizerFeedManager';
 import type { Event } from '@/types/event';
 
 const OrganizerSalonPage: React.FC = () => {
@@ -130,6 +131,14 @@ const OrganizerSalonPage: React.FC = () => {
       icon: Building2,
       title: 'Votre salon',
       description: 'Modifiez les informations principales. Vos changements seront soumis pour validation.',
+    },
+    {
+      key: 'fil',
+      label: 'Le Fil',
+      icon: Radio,
+      title: 'Le Fil du salon',
+      description:
+        'Publiez une actualité courte, affichée en haut de votre page salon. Une phrase suffit.',
     },
     {
       key: 'programme',
@@ -261,6 +270,9 @@ const OrganizerSalonPage: React.FC = () => {
                   </div>
                 </Card>
               </>
+            )}
+            {activeSection === 'fil' && (
+              <OrganizerFeedManager eventId={event.id} eventDateFin={event.date_fin} />
             )}
             {activeSection === 'programme' && <OrganizerProgramManager eventId={event.id} />}
             {activeSection === 'exposants' && <SeoScorecard eventId={event.id} />}
