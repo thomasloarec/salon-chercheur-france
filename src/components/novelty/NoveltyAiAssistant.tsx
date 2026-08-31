@@ -273,8 +273,9 @@ export default function NoveltyAiAssistant({
         setMatiere(text);
       } else {
         setPdfNotice(
-          "On n'a pas pu lire assez de texte dans ce PDF. Décrivez votre nouveauté dans la zone ci-dessus, on s'occupe du reste.",
+          "Ce PDF ne contient pas de texte exploitable. Décrivez votre nouveauté dans la zone ci-dessous, ou importez un autre PDF.",
         );
+        setPdfSequence(false);
       }
 
       await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/novelty-images-qualify`, {
@@ -315,6 +316,7 @@ export default function NoveltyAiAssistant({
       console.error('[novelty-pdf]', e);
       setPdfError("Le PDF n'a pas pu être traité. Vous pouvez décrire votre nouveauté à la main.");
       setPdfPhase('error');
+      setPdfSequence(false);
     }
   };
 
