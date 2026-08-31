@@ -145,6 +145,8 @@ export default function NoveltyAiAssistant({
   const [pdfPhase, setPdfPhase] = useState<'idle' | 'upload' | 'extraction' | 'done' | 'error'>('idle');
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [pdfNotice, setPdfNotice] = useState<string | null>(null);
+  // Vrai depuis le début d'un import PDF jusqu'à la fin de la séquence automatique.
+  const [pdfSequence, setPdfSequence] = useState(false);
   const [sourceDocId, setSourceDocId] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [maxSelectionWarning, setMaxSelectionWarning] = useState(false);
@@ -171,7 +173,13 @@ export default function NoveltyAiAssistant({
     const key = sourceDocId || 'pdf';
     if (autoRunKeyRef.current === key) return;
     autoRunKeyRef.current = key;
-    void lancerRef.current?.();
+    void (async () => {
+      try {
+        await lancerRef.current?.();
+      } finally {
+        setPdfSequence(false);
+      }
+    })();
   }, [pdfPhase, matiere, sourceDocId]);
 
 
