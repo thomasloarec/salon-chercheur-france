@@ -138,7 +138,7 @@ const OrganizerSalonPage: React.FC = () => {
       icon: Radio,
       title: 'Le Fil du salon',
       description:
-        'Publiez une actualité courte, affichée en haut de votre page salon. Une phrase suffit.',
+        'Annoncez ce qui vient de changer sur votre salon : un intervenant confirmé, le programme mis en ligne, une date qui approche...',
     },
     {
       key: 'programme',
