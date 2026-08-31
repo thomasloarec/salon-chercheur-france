@@ -267,7 +267,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
             />
 
             {/* Zone unique : Fil du salon si annonce active, sinon revendication */}
-            <div className="mt-2">
+            <div className="mt-6">
               <EventFeedBanner event={event} capabilities={capabilities} />
             </div>
 

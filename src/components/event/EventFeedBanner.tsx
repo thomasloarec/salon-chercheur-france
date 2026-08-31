@@ -1,12 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from '@/components/ui/sheet';
-import { Megaphone, ArrowUpRight, Settings2 } from 'lucide-react';
+import { Megaphone, ArrowUpRight } from 'lucide-react';
 import ClaimSalonBanner from '@/components/event/ClaimSalonBanner';
 import { INTERNAL_CTA, categoryLabel } from '@/lib/eventFeed';
 import { useEventFeedPublic, type FeedUpdatePublic } from '@/hooks/useEventFeed';
