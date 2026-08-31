@@ -131,3 +131,45 @@ export function useEventFeedActions(eventId: string) {
     },
   };
 }
+
+/* -------------------------------------------------------------------------
+ * Lecture publique
+ * ---------------------------------------------------------------------- */
+
+export interface FeedUpdatePublic {
+  update_id: string;
+  message: string;
+  category: string;
+  cta_type: string;
+  cta_label: string | null;
+  cta_url: string | null;
+  published_at: string;
+  expires_at: string | null;
+  total_active: number;
+}
+
+/**
+ * Annonces actives d'un salon, plus récente en tête.
+ *
+ * Un seul aller-retour : la RPC renvoie aussi total_active, calculé avant le
+ * LIMIT. Le panneau latéral réutilise ce même jeu de données et ne déclenche
+ * aucune requête supplémentaire — les annonces expirées ne sont jamais
+ * exposées publiquement, il n'y a donc pas d'historique à charger.
+ *
+ * La RPC applique elle-même les gardes (salon visible, non test, non terminé,
+ * annonce publiée et non expirée). Le front ne refait pas ces filtres.
+ */
+export function useEventFeedPublic(eventId?: string | null) {
+  return useQuery({
+    queryKey: ['event-feed-public', eventId],
+    enabled: !!eventId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<FeedUpdatePublic[]> => {
+      const { data, error } = await (supabase.rpc as any)('get_public_event_feed', {
+        p_event_id: eventId as string,
+      });
+      if (error) throw error;
+      return (data ?? []) as FeedUpdatePublic[];
+    },
+  });
+}
