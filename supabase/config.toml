@@ -121,6 +121,12 @@ verify_jwt = false
 # that never reveal whether a campaign exists.
 verify_jwt = false
 
+[functions.outreach-unsubscribe]
+# Endpoint public : le destinataire clique depuis sa boîte mail, non authentifié.
+# La sécurité est assurée en code : contrôle UUID, allow-list de séquences,
+# et redirection identique quel que soit le résultat (aucune fuite d'information).
+verify_jwt = false
+
 [functions.widget-embed]
 # Public endpoint: rendered inside a third-party iframe that sends NO
 # Authorization header. JWT verification MUST stay disabled or the iframe
