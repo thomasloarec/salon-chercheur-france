@@ -12944,6 +12944,23 @@ export type Database = {
       }
       get_or_create_my_radar_account: { Args: never; Returns: string }
       get_outreach_pipeline_stats: { Args: never; Returns: Json }
+      get_prerender_exhibitor_profiles: {
+        Args: { p_after?: string; p_limit?: number }
+        Returns: {
+          ai_summary: string
+          canonical_name: string
+          description: string
+          display_name: string
+          exhibitor_id: string
+          is_test: boolean
+          legacy_exposant_id: string
+          linkedin_url: string
+          logo_url: string
+          public_slug: string
+          seo_indexable: boolean
+          website: string
+        }[]
+      }
       get_program_import_admin: {
         Args: { p_import_id: string }
         Returns: {
