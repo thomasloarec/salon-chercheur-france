@@ -5,7 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, CalendarDays, ExternalLink, Check, X, User, ArrowRight, PencilLine, Download, FileText, Mail, Phone, Briefcase, Building2 } from 'lucide-react';
+import { ArrowLeft, CalendarDays, ExternalLink, Check, X, User, ArrowRight, PencilLine, Download, FileText, Mail, Phone, Briefcase, Building2, Megaphone, ShieldBan, ShieldCheck } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
+  AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Link } from 'react-router-dom';
 import VerifiedBadge from '@/components/exhibitor/VerifiedBadge';
 import { supabase } from '@/integrations/supabase/client';
@@ -322,6 +328,8 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
               )}
             </CardContent>
           </Card>
+
+          <OrganizerOutreachCard salonId={salonId} />
 
           <Card>
             <CardHeader>
