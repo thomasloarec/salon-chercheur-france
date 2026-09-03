@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, CalendarDays, ExternalLink, Check, X, User, ArrowRight, PencilLine, Download, FileText, Mail, Phone, Briefcase, Building2, Megaphone, ShieldBan, ShieldCheck } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, CalendarDays, ExternalLink, Check, X, User, ArrowRight, PencilLine, Download, FileText, Mail, MailX, Phone, Briefcase, Building2, Megaphone, ShieldBan, ShieldCheck } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
