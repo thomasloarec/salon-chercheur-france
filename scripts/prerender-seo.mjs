@@ -985,22 +985,46 @@ async function main() {
   const profileFields = 'public_slug,display_name,canonical_name,description,ai_summary,website,logo_url,linkedin_url,exhibitor_id,legacy_exposant_id,seo_indexable,is_test';
   // Bulk read goes through the materialized view (indexed on public_slug,
   // ~119ms/page vs ~9.4s on the live view, which caused statement timeouts).
-  // The MV is service_role-only; the plain view stays the source of truth for
-  // the app's unit reads. Refresh it once so the build ships fresh data.
+  // The MV is service_role-only; without a service key we read the SAME MV
+  // through the SECURITY DEFINER RPC get_prerender_exhibitor_profiles (keyset
+  // pagination on public_slug) instead of the slow live view, which timed out
+  // (Postgres 57014 → HTTP 500) on every page.
   let profilesSource = 'public_exhibitor_profiles_mv';
-  let profilesKey = SUPABASE_SERVICE_KEY;
+  const profilesKey = SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY;
   if (!SUPABASE_SERVICE_KEY) {
-    console.warn('[prerender] SUPABASE_SERVICE_ROLE_KEY missing → falling back to the slow live view');
-    profilesSource = 'public_exhibitor_profiles';
-    profilesKey = SUPABASE_ANON_KEY;
+    console.warn('[prerender] SUPABASE_SERVICE_ROLE_KEY missing → reading the MV via get_prerender_exhibitor_profiles (no refresh)');
+    profilesSource = 'rpc:get_prerender_exhibitor_profiles';
   } else {
     const tRefresh = Date.now();
     const refreshed = await sbRpc('refresh_public_exhibitor_profiles_mv', {}, SUPABASE_SERVICE_KEY);
     console.log(`[prerender] MV refreshed in ${Date.now() - tRefresh}ms:`, JSON.stringify(refreshed));
   }
   const tProfiles = Date.now();
-  const profiles = (await sbPaged(`${profilesSource}?is_test=eq.false&public_slug=not.is.null&select=${profileFields}&order=public_slug.asc`, 1000, profilesKey))
-    .filter((p) => p.public_slug && String(p.public_slug).trim());
+  let rawProfiles;
+  if (SUPABASE_SERVICE_KEY) {
+    rawProfiles = await sbPaged(
+      `${profilesSource}?is_test=eq.false&public_slug=not.is.null&select=${profileFields}&order=public_slug.asc`,
+      1000,
+      profilesKey,
+    );
+  } else {
+    // Keyset pagination through the RPC: each call returns at most 1000 rows
+    // ordered by public_slug, starting strictly after the last slug seen.
+    rawProfiles = [];
+    let after = '';
+    for (;;) {
+      const page = await sbRpc(
+        'get_prerender_exhibitor_profiles',
+        { p_after: after, p_limit: 1000 },
+        SUPABASE_ANON_KEY,
+      );
+      if (!Array.isArray(page) || page.length === 0) break;
+      rawProfiles.push(...page);
+      after = page[page.length - 1].public_slug;
+      if (page.length < 1000) break;
+    }
+  }
+  const profiles = rawProfiles.filter((p) => p.public_slug && String(p.public_slug).trim());
   console.log(`[prerender] exhibitor profiles fetched: ${profiles.length} from ${profilesSource} in ${Date.now() - tProfiles}ms`);
   const MIN_PROFILES = 1000;
   if (profiles.length < MIN_PROFILES) {
