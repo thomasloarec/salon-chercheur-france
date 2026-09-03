@@ -30,6 +30,27 @@ interface Props {
 const AdminSalonsList = ({ onSelectSalon }: Props) => {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
+  const [emailMissingOnly, setEmailMissingOnly] = useState(false);
+
+  const { data: missingCount } = useQuery({
+    queryKey: ['admin-salons-email-missing-count'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc('admin_count_salons_email_missing');
+      if (error) throw error;
+      return (data as number) ?? 0;
+    },
+  });
+
+  const { data: missingIds } = useQuery({
+    queryKey: ['admin-salons-email-missing-ids'],
+    enabled: emailMissingOnly,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('v_admin_salons_email_missing').select('event_id');
+      if (error) throw error;
+      return new Set<string>((data ?? []).map((r: any) => r.event_id));
+    },
+  });
 
   const { data: salons, isLoading, refetch } = useQuery({
     queryKey: ['admin-salons', debouncedSearch],
