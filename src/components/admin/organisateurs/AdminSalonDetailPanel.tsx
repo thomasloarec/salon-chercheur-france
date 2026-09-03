@@ -738,6 +738,7 @@ function OrganizerOutreachCard({ salonId }: { salonId: string }) {
           ? ` — ses ${res.salons_resolus} salons sont résolus.` : '.'}`,
       });
       setManualEmail('');
+      setEditingEmail(false);
       queryClient.invalidateQueries({ queryKey: ['organizer-outreach-state', salonId] });
       queryClient.invalidateQueries({ queryKey: ['admin-salons-email-missing-count'] });
       queryClient.invalidateQueries({ queryKey: ['admin-salons-email-missing-ids'] });
