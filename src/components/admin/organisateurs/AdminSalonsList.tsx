@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, CalendarDays, RefreshCw, ExternalLink } from 'lucide-react';
+import { Search, CalendarDays, RefreshCw, ExternalLink, MailX } from 'lucide-react';
 import VerifiedBadge from '@/components/exhibitor/VerifiedBadge';
 import { supabase } from '@/integrations/supabase/client';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -30,6 +30,27 @@ interface Props {
 const AdminSalonsList = ({ onSelectSalon }: Props) => {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
+  const [emailMissingOnly, setEmailMissingOnly] = useState(false);
+
+  const { data: missingCount } = useQuery({
+    queryKey: ['admin-salons-email-missing-count'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc('admin_count_salons_email_missing');
+      if (error) throw error;
+      return (data as number) ?? 0;
+    },
+  });
+
+  const { data: missingIds } = useQuery({
+    queryKey: ['admin-salons-email-missing-ids'],
+    enabled: emailMissingOnly,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('v_admin_salons_email_missing').select('event_id');
+      if (error) throw error;
+      return new Set<string>((data ?? []).map((r: any) => r.event_id));
+    },
+  });
 
   const { data: salons, isLoading, refetch } = useQuery({
     queryKey: ['admin-salons', debouncedSearch],
@@ -129,6 +150,10 @@ const AdminSalonsList = ({ onSelectSalon }: Props) => {
     },
   });
 
+  const displayedSalons = (emailMissingOnly && missingIds)
+    ? (salons ?? []).filter((s) => missingIds.has(s.id))
+    : (salons ?? []);
+
   return (
     <Card>
       <CardHeader>
@@ -136,7 +161,7 @@ const AdminSalonsList = ({ onSelectSalon }: Props) => {
           <CardTitle className="flex items-center gap-2">
             <CalendarDays className="h-5 w-5" />
             Salons
-            {salons && <Badge variant="secondary" className="ml-2">{salons.length}</Badge>}
+            {salons && <Badge variant="secondary" className="ml-2">{displayedSalons.length}</Badge>}
           </CardTitle>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw className="h-4 w-4 mr-2" />
@@ -145,25 +170,39 @@ const AdminSalonsList = ({ onSelectSalon }: Props) => {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher un salon par nom..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher un salon par nom..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Button
+            variant={emailMissingOnly ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setEmailMissingOnly((v) => !v)}
+            className="gap-2 shrink-0"
+          >
+            <MailX className="h-4 w-4" />
+            Emails manquants
+            {typeof missingCount === 'number' && missingCount > 0 && (
+              <Badge variant="secondary" className="ml-1">{missingCount}</Badge>
+            )}
+          </Button>
         </div>
 
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
             <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        ) : !salons?.length ? (
+        ) : !displayedSalons.length ? (
           <div className="text-center py-12 text-muted-foreground">Aucun salon trouvé</div>
         ) : (
           <div className="rounded-md border divide-y">
-            {salons.map((s) => (
+            {displayedSalons.map((s) => (
               <button
                 key={s.id}
                 onClick={() => onSelectSalon(s.id)}

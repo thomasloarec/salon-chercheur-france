@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, CalendarDays, ExternalLink, Check, X, User, ArrowRight, PencilLine, Download, FileText, Mail, Phone, Briefcase, Building2, Megaphone, ShieldBan, ShieldCheck } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, CalendarDays, ExternalLink, Check, X, User, ArrowRight, PencilLine, Download, FileText, Mail, MailX, Phone, Briefcase, Building2, Megaphone, ShieldBan, ShieldCheck } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -641,6 +642,9 @@ interface OrganizerOutreachState {
   next_send_at?: string | null;
   stop_reason?: string | null;
   has_contact?: boolean;
+  hunter_status?: string | null;
+  contact_email?: string | null;
+  salon_no_email?: boolean;
 }
 
 const claimStatusLabel: Record<string, { label: string; className: string }> = {
@@ -658,6 +662,8 @@ function OrganizerOutreachCard({ salonId }: { salonId: string }) {
   const queryClient = useQueryClient();
   const [reason, setReason] = React.useState('');
   const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [manualEmail, setManualEmail] = React.useState('');
+
 
   const { data: state, isLoading } = useQuery({
     queryKey: ['organizer-outreach-state', salonId],
@@ -705,6 +711,58 @@ function OrganizerOutreachCard({ salonId }: { salonId: string }) {
       toast({ title: 'Erreur', description: "La requête a échoué.", variant: 'destructive' });
     },
   });
+
+  const emailMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const { data, error } = await (supabase as any).rpc('admin_set_salon_manual_email', {
+        p_event_id: salonId, p_email: email,
+      });
+      if (error) throw error;
+      return data as { ok: boolean; salons_resolus?: number; reason?: string };
+    },
+    onSuccess: (res) => {
+      if (!res?.ok) {
+        toast({
+          title: 'Email non enregistré',
+          description: res?.reason === 'invalid_email' ? 'Adresse email invalide.'
+            : res?.reason === 'no_campaign' ? 'Aucune campagne rattachée à ce salon.'
+            : "L'enregistrement a échoué.",
+          variant: 'destructive',
+        });
+        return;
+      }
+      toast({
+        title: 'Email enregistré',
+        description: `Contact défini pour l'organisateur${(res.salons_resolus ?? 0) > 1
+          ? ` — ses ${res.salons_resolus} salons sont résolus.` : '.'}`,
+      });
+      setManualEmail('');
+      queryClient.invalidateQueries({ queryKey: ['organizer-outreach-state', salonId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-salons-email-missing-count'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-salons-email-missing-ids'] });
+    },
+    onError: () => toast({ title: 'Erreur', description: "La requête a échoué.", variant: 'destructive' }),
+  });
+
+  const noEmailMutation = useMutation({
+    mutationFn: async (clear: boolean) => {
+      const rpc = clear ? 'admin_clear_salon_triage' : 'admin_set_salon_no_email';
+      const params = clear ? { p_event_id: salonId } : { p_event_id: salonId, p_note: null };
+      const { data, error } = await (supabase as any).rpc(rpc, params);
+      if (error) throw error;
+      return data as { ok: boolean };
+    },
+    onSuccess: (_res, clear) => {
+      toast({
+        title: clear ? 'Salon remis dans la file' : "Salon classé « pas d'email »",
+      });
+      queryClient.invalidateQueries({ queryKey: ['organizer-outreach-state', salonId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-salons-email-missing-count'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-salons-email-missing-ids'] });
+    },
+    onError: () => toast({ title: 'Erreur', description: "La requête a échoué.", variant: 'destructive' }),
+  });
+
 
   if (isLoading) {
     return (
@@ -851,6 +909,62 @@ function OrganizerOutreachCard({ salonId }: { salonId: string }) {
             </AlertDialogContent>
           </AlertDialog>
         </div>
+
+        {!state.has_contact && state.hunter_status !== 'ready' && (
+          <div className="rounded-lg border p-3 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Mail className="h-4 w-4 text-amber-600" />
+              Aucun contact trouvé automatiquement
+            </div>
+
+            {state.salon_no_email ? (
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs text-muted-foreground">
+                  Ce salon est classé « pas d'email ». Il n'apparaît plus dans la file de traitement.
+                </p>
+                <Button variant="outline" size="sm"
+                  onClick={() => noEmailMutation.mutate(true)}
+                  disabled={noEmailMutation.isPending}>
+                  Remettre dans la file
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">
+                    Saisir l'email de contact (vaut pour tout l'organisateur)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="email"
+                      value={manualEmail}
+                      onChange={(e) => setManualEmail(e.target.value)}
+                      placeholder="contact@exemple.fr"
+                    />
+                    <Button size="sm"
+                      onClick={() => emailMutation.mutate(manualEmail)}
+                      disabled={emailMutation.isPending || !manualEmail.trim()}>
+                      <Check className="h-4 w-4 mr-1" />
+                      Enregistrer
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-3 pt-1">
+                  <p className="text-xs text-muted-foreground">
+                    Aucun email à trouver pour ce salon ?
+                  </p>
+                  <Button variant="ghost" size="sm"
+                    onClick={() => noEmailMutation.mutate(false)}
+                    disabled={noEmailMutation.isPending}
+                    className="text-muted-foreground">
+                    <MailX className="h-4 w-4 mr-1" />
+                    Classer « pas d'email »
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
