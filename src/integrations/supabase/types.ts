@@ -6882,6 +6882,63 @@ export type Database = {
           },
         ]
       }
+      organizer_domains: {
+        Row: {
+          created_at: string
+          domain: string
+          id: string
+          organizer_id: string
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          id?: string
+          organizer_id: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          id?: string
+          organizer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizer_domains_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "organizers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizer_domains_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "v_eligibles_revendication_organisateur"
+            referencedColumns: ["organizer_id"]
+          },
+          {
+            foreignKeyName: "organizer_domains_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_campaigns_missing"
+            referencedColumns: ["organizer_id"]
+          },
+          {
+            foreignKeyName: "organizer_domains_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizers_a_enrichir"
+            referencedColumns: ["organizer_id"]
+          },
+          {
+            foreignKeyName: "organizer_domains_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizers_summary"
+            referencedColumns: ["organizer_id"]
+          },
+        ]
+      }
       organizer_exhibitor_imports: {
         Row: {
           created_at: string
@@ -6951,6 +7008,259 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      organizer_non_groupable_domains: {
+        Row: {
+          created_at: string
+          domain: string
+          reason: string
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          reason: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          reason?: string
+        }
+        Relationships: []
+      }
+      organizer_outreach_campaigns: {
+        Row: {
+          activation_status: string
+          activation_step: number
+          claim_status: string
+          claim_step: number
+          claimed_at: string | null
+          contact_email: string | null
+          created_at: string
+          hunter_status: string
+          id: string
+          last_sent_at: string | null
+          next_send_at: string | null
+          opt_out: boolean
+          organizer_id: string
+          reply_status: string
+          stop_note: string | null
+          stop_reason: string | null
+          stopped_at: string | null
+          stopped_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          activation_status?: string
+          activation_step?: number
+          claim_status?: string
+          claim_step?: number
+          claimed_at?: string | null
+          contact_email?: string | null
+          created_at?: string
+          hunter_status?: string
+          id?: string
+          last_sent_at?: string | null
+          next_send_at?: string | null
+          opt_out?: boolean
+          organizer_id: string
+          reply_status?: string
+          stop_note?: string | null
+          stop_reason?: string | null
+          stopped_at?: string | null
+          stopped_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activation_status?: string
+          activation_step?: number
+          claim_status?: string
+          claim_step?: number
+          claimed_at?: string | null
+          contact_email?: string | null
+          created_at?: string
+          hunter_status?: string
+          id?: string
+          last_sent_at?: string | null
+          next_send_at?: string | null
+          opt_out?: boolean
+          organizer_id?: string
+          reply_status?: string
+          stop_note?: string | null
+          stop_reason?: string | null
+          stopped_at?: string | null
+          stopped_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizer_outreach_campaigns_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: true
+            referencedRelation: "organizers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizer_outreach_campaigns_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: true
+            referencedRelation: "v_eligibles_revendication_organisateur"
+            referencedColumns: ["organizer_id"]
+          },
+          {
+            foreignKeyName: "organizer_outreach_campaigns_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_campaigns_missing"
+            referencedColumns: ["organizer_id"]
+          },
+          {
+            foreignKeyName: "organizer_outreach_campaigns_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizers_a_enrichir"
+            referencedColumns: ["organizer_id"]
+          },
+          {
+            foreignKeyName: "organizer_outreach_campaigns_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizers_summary"
+            referencedColumns: ["organizer_id"]
+          },
+        ]
+      }
+      organizer_outreach_contacts: {
+        Row: {
+          contact_email: string
+          contact_status: string
+          created_at: string
+          department_guess: string | null
+          email_sent_count: number
+          first_name: string | null
+          full_name: string | null
+          hunter_confidence: number | null
+          hunter_score: number | null
+          id: string
+          is_primary: boolean
+          job_title: string | null
+          last_name: string | null
+          last_reply_at: string | null
+          last_sent_at: string | null
+          organizer_outreach_campaign_id: string
+          source: string
+          tier: string
+          tier_rank: number
+          updated_at: string
+        }
+        Insert: {
+          contact_email: string
+          contact_status?: string
+          created_at?: string
+          department_guess?: string | null
+          email_sent_count?: number
+          first_name?: string | null
+          full_name?: string | null
+          hunter_confidence?: number | null
+          hunter_score?: number | null
+          id?: string
+          is_primary?: boolean
+          job_title?: string | null
+          last_name?: string | null
+          last_reply_at?: string | null
+          last_sent_at?: string | null
+          organizer_outreach_campaign_id: string
+          source?: string
+          tier?: string
+          tier_rank?: number
+          updated_at?: string
+        }
+        Update: {
+          contact_email?: string
+          contact_status?: string
+          created_at?: string
+          department_guess?: string | null
+          email_sent_count?: number
+          first_name?: string | null
+          full_name?: string | null
+          hunter_confidence?: number | null
+          hunter_score?: number | null
+          id?: string
+          is_primary?: boolean
+          job_title?: string | null
+          last_name?: string | null
+          last_reply_at?: string | null
+          last_sent_at?: string | null
+          organizer_outreach_campaign_id?: string
+          source?: string
+          tier?: string
+          tier_rank?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizer_outreach_contacts_organizer_outreach_campaign_id_fkey"
+            columns: ["organizer_outreach_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "organizer_outreach_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizer_outreach_contacts_organizer_outreach_campaign_id_fkey"
+            columns: ["organizer_outreach_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_eligibles_revendication_organisateur"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "organizer_outreach_contacts_organizer_outreach_campaign_id_fkey"
+            columns: ["organizer_outreach_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizers_a_enrichir"
+            referencedColumns: ["campaign_id"]
+          },
+        ]
+      }
+      organizers: {
+        Row: {
+          blocked_at: string | null
+          blocked_by: string | null
+          blocked_reason: string | null
+          created_at: string
+          id: string
+          name: string
+          note: string | null
+          outreach_blocked: boolean
+          primary_domain: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          blocked_at?: string | null
+          blocked_by?: string | null
+          blocked_reason?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          note?: string | null
+          outreach_blocked?: boolean
+          primary_domain: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          blocked_at?: string | null
+          blocked_by?: string | null
+          blocked_reason?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          note?: string | null
+          outreach_blocked?: boolean
+          primary_domain?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
       }
       outreach_campaigns: {
         Row: {
@@ -7298,6 +7608,7 @@ export type Database = {
           event_id: string | null
           event_name: string | null
           id: string
+          organizer_campaign_id: string | null
           sequence_type: string
           user_agent: string | null
         }
@@ -7309,6 +7620,7 @@ export type Database = {
           event_id?: string | null
           event_name?: string | null
           id?: string
+          organizer_campaign_id?: string | null
           sequence_type?: string
           user_agent?: string | null
         }
@@ -7320,6 +7632,7 @@ export type Database = {
           event_id?: string | null
           event_name?: string | null
           id?: string
+          organizer_campaign_id?: string | null
           sequence_type?: string
           user_agent?: string | null
         }
@@ -7414,6 +7727,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_unsubscribe_events_organizer_campaign_id_fkey"
+            columns: ["organizer_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "organizer_outreach_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_unsubscribe_events_organizer_campaign_id_fkey"
+            columns: ["organizer_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_eligibles_revendication_organisateur"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "outreach_unsubscribe_events_organizer_campaign_id_fkey"
+            columns: ["organizer_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizers_a_enrichir"
+            referencedColumns: ["campaign_id"]
           },
         ]
       }
@@ -10734,6 +11068,25 @@ export type Database = {
         }
         Relationships: []
       }
+      v_eligibles_revendication_organisateur: {
+        Row: {
+          campaign_id: string | null
+          claim_step: number | null
+          contact_email: string | null
+          contact_tier: string | null
+          domain: string | null
+          first_name: string | null
+          nb_salons_a_venir: number | null
+          next_event_date: string | null
+          next_event_id: string | null
+          next_event_name: string | null
+          next_event_slug: string | null
+          next_send_at: string | null
+          organizer_id: string | null
+          organizer_name: string | null
+        }
+        Relationships: []
+      }
       v_events_outreach_eligible: {
         Row: {
           date_debut: string | null
@@ -11007,6 +11360,40 @@ export type Database = {
           },
         ]
       }
+      v_organizer_campaigns_missing: {
+        Row: {
+          organizer_id: string | null
+        }
+        Relationships: []
+      }
+      v_organizers_a_enrichir: {
+        Row: {
+          campaign_id: string | null
+          domain: string | null
+          nb_salons_a_venir: number | null
+          next_event_date: string | null
+          next_event_name: string | null
+          organizer_id: string | null
+          organizer_name: string | null
+        }
+        Relationships: []
+      }
+      v_organizers_summary: {
+        Row: {
+          nb_salons_a_venir: number | null
+          nb_salons_revendiques: number | null
+          nb_salons_total: number | null
+          next_event_date: string | null
+          next_event_id: string | null
+          next_event_name: string | null
+          next_event_slug: string | null
+          organizer_id: string | null
+          organizer_name: string | null
+          outreach_blocked: boolean | null
+          primary_domain: string | null
+        }
+        Relationships: []
+      }
       v_outreach_campaigns_missing: {
         Row: {
           company_name: string | null
@@ -11147,6 +11534,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_get_organizer_detail: {
+        Args: { p_organizer_id: string }
+        Returns: Json
+      }
       admin_hard_delete_exhibitor: {
         Args: {
           p_confirm?: string
@@ -11207,6 +11598,31 @@ export type Database = {
           ville: string
         }[]
       }
+      admin_list_organizers: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_only_blocked?: boolean
+          p_search?: string
+        }
+        Returns: {
+          campaign_id: string
+          claim_status: string
+          claim_step: number
+          hunter_status: string
+          last_sent_at: string
+          nb_domaines: number
+          nb_salons_a_venir: number
+          nb_salons_revendiques: number
+          nb_salons_total: number
+          next_event_date: string
+          organizer_id: string
+          organizer_name: string
+          outreach_blocked: boolean
+          primary_domain: string
+          total_count: number
+        }[]
+      }
       admin_list_radar_account_members: {
         Args: { p_account_id: string }
         Returns: {
@@ -11232,6 +11648,10 @@ export type Database = {
           plan: string
           trial_ends_at: string
         }[]
+      }
+      admin_merge_organizers: {
+        Args: { p_source_id: string; p_target_id: string }
+        Returns: Json
       }
       admin_normalize_website: { Args: { p_raw: string }; Returns: Json }
       admin_preview_exhibitor_identity_reconciliation: {
@@ -11504,6 +11924,10 @@ export type Database = {
         Args: { p_event_id: string; p_ignored: boolean }
         Returns: boolean
       }
+      admin_set_organizer_outreach_block: {
+        Args: { p_blocked: boolean; p_event_id: string; p_reason?: string }
+        Returns: Json
+      }
       admin_set_radar_paid_seats: {
         Args: { p_account_id: string; p_paid_seats: number }
         Returns: Json
@@ -11521,6 +11945,10 @@ export type Database = {
           p_reason?: string
           p_source?: string
         }
+        Returns: Json
+      }
+      admin_update_organizer: {
+        Args: { p_name?: string; p_note?: string; p_organizer_id: string }
         Returns: Json
       }
       apply_exposant_merge_plan: {
@@ -11682,6 +12110,7 @@ export type Database = {
         Args: { p_email: string; p_event_id: string }
         Returns: Json
       }
+      create_missing_organizer_campaigns: { Args: never; Returns: Json }
       create_missing_outreach_campaigns: { Args: never; Returns: Json }
       create_novelty_atomic: {
         Args: {
@@ -11898,6 +12327,10 @@ export type Database = {
           update_id: string
           updated_at: string
         }[]
+      }
+      get_event_organizer_outreach_state: {
+        Args: { p_event_id: string }
+        Returns: Json
       }
       get_event_program_admin: {
         Args: { p_event_id: string }
@@ -12215,6 +12648,14 @@ export type Database = {
       get_user_id_by_email: { Args: { p_email: string }; Returns: string }
       has_active_owner: { Args: { _exhibitor_id: string }; Returns: boolean }
       has_radar_access: { Args: { p_user_id?: string }; Returns: boolean }
+      has_recent_exhibitor_send: {
+        Args: { _days?: number; _email: string }
+        Returns: boolean
+      }
+      has_recent_organizer_send: {
+        Args: { _days?: number; _email: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -12552,6 +12993,7 @@ export type Database = {
         Args: { p_event_id: string; p_exhibitor_id: string }
         Returns: Json
       }
+      organizer_root_domain: { Args: { _domain: string }; Returns: string }
       outreach_unsubscribe: {
         Args: {
           p_campaign_id: string
@@ -12934,6 +13376,7 @@ export type Database = {
           skipped_ambiguous: number
         }[]
       }
+      sync_organizers_from_events: { Args: never; Returns: Json }
       taxo_build_all: {
         Args: { p_max_n?: number; p_version?: number }
         Returns: {
@@ -13066,12 +13509,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -13095,11 +13538,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -13120,11 +13563,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -13145,11 +13588,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -13162,11 +13605,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

@@ -5,7 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, CalendarDays, ExternalLink, Check, X, User, ArrowRight, PencilLine, Download, FileText, Mail, Phone, Briefcase, Building2 } from 'lucide-react';
+import { ArrowLeft, CalendarDays, ExternalLink, Check, X, User, ArrowRight, PencilLine, Download, FileText, Mail, Phone, Briefcase, Building2, Megaphone, ShieldBan, ShieldCheck } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
+  AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Link } from 'react-router-dom';
 import VerifiedBadge from '@/components/exhibitor/VerifiedBadge';
 import { supabase } from '@/integrations/supabase/client';
@@ -323,6 +329,8 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
             </CardContent>
           </Card>
 
+          <OrganizerOutreachCard salonId={salonId} />
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Demandes de revendication</CardTitle>
@@ -612,5 +620,240 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
     </div>
   );
 };
+
+// ---------------------------------------------------------------------------
+// Bloc « Campagne organisateur » : état de la campagne d'emailing de
+// l'organisateur du salon + interrupteur de blocage (portée = tous ses salons).
+// ---------------------------------------------------------------------------
+interface OrganizerOutreachState {
+  organizer_id: string | null;
+  organizer_name?: string;
+  primary_domain?: string;
+  outreach_blocked?: boolean;
+  blocked_reason?: string | null;
+  blocked_at?: string | null;
+  nb_salons_total?: number;
+  nb_salons_a_venir?: number;
+  campaign_id?: string | null;
+  claim_status?: string | null;
+  claim_step?: number | null;
+  last_sent_at?: string | null;
+  next_send_at?: string | null;
+  stop_reason?: string | null;
+  has_contact?: boolean;
+}
+
+const claimStatusLabel: Record<string, { label: string; className: string }> = {
+  pending:                { label: 'À contacter',    className: 'bg-blue-50 text-blue-700 border-blue-200' },
+  active:                 { label: 'Séquence en cours', className: 'bg-amber-50 text-amber-700 border-amber-200' },
+  claimed:                { label: 'Revendiqué',     className: 'bg-green-50 text-green-700 border-green-200' },
+  completed:              { label: 'Séquence terminée', className: 'bg-muted text-muted-foreground' },
+  stopped:                { label: 'Bloqué',         className: 'bg-red-50 text-red-700 border-red-200' },
+  opted_out:              { label: 'Désinscrit',     className: 'bg-red-50 text-red-700 border-red-200' },
+  blocked_invalid_email:  { label: 'Email invalide', className: 'bg-muted text-muted-foreground' },
+};
+
+function OrganizerOutreachCard({ salonId }: { salonId: string }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [reason, setReason] = React.useState('');
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+
+  const { data: state, isLoading } = useQuery({
+    queryKey: ['organizer-outreach-state', salonId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc(
+        'get_event_organizer_outreach_state',
+        { p_event_id: salonId },
+      );
+      if (error) throw error;
+      return data as OrganizerOutreachState;
+    },
+  });
+
+  const mutation = useMutation({
+    mutationFn: async (blocked: boolean) => {
+      const { data, error } = await (supabase as any).rpc(
+        'admin_set_organizer_outreach_block',
+        { p_event_id: salonId, p_blocked: blocked, p_reason: reason || null },
+      );
+      if (error) throw error;
+      return data as { ok: boolean; salons_impactes?: number; reason?: string };
+    },
+    onSuccess: (res, blocked) => {
+      if (!res?.ok) {
+        toast({
+          title: 'Action impossible',
+          description: res?.reason === 'organizer_not_found'
+            ? "Aucun organisateur rattaché à ce salon."
+            : "L'action n'a pas abouti.",
+          variant: 'destructive',
+        });
+        return;
+      }
+      toast({
+        title: blocked ? 'Campagne bloquée' : 'Campagne débloquée',
+        description: blocked
+          ? `${res.salons_impactes ?? 0} salon(s) de cet organisateur ne recevront plus d'emails.`
+          : `L'organisateur redevient contactable.`,
+      });
+      setReason('');
+      setDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['organizer-outreach-state', salonId] });
+    },
+    onError: () => {
+      toast({ title: 'Erreur', description: "La requête a échoué.", variant: 'destructive' });
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Megaphone className="h-4 w-4" />
+            Campagne organisateur
+          </CardTitle>
+        </CardHeader>
+        <CardContent><Skeleton className="h-16 w-full" /></CardContent>
+      </Card>
+    );
+  }
+
+  // Salon sans organisateur rattaché (cas théorique : domaine absent)
+  if (!state || !state.organizer_id) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Megaphone className="h-4 w-4" />
+            Campagne organisateur
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground text-center py-4">
+            Aucun organisateur rattaché à ce salon.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const blocked = !!state.outreach_blocked;
+  const nbTotal = state.nb_salons_total ?? 0;
+  const nbAVenir = state.nb_salons_a_venir ?? 0;
+  const statusMetaOutreach = state.claim_status ? claimStatusLabel[state.claim_status] : undefined;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <Megaphone className="h-4 w-4" />
+          Campagne organisateur
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="text-sm space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Organisateur :</span>
+            <span className="font-medium">{state.organizer_name || state.primary_domain}</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {nbTotal} salon(s) référencé(s){nbAVenir > 0 ? `, dont ${nbAVenir} à venir` : ''}.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {statusMetaOutreach && (
+            <Badge variant="outline" className={statusMetaOutreach.className}>{statusMetaOutreach.label}</Badge>
+          )}
+          {typeof state.claim_step === 'number' && state.claim_step > 0 && (
+            <Badge variant="outline" className="bg-muted text-muted-foreground">
+              {state.claim_step} email(s) envoyé(s)
+            </Badge>
+          )}
+          {state.last_sent_at && (
+            <span className="text-xs text-muted-foreground">
+              Dernier envoi : {new Date(state.last_sent_at).toLocaleDateString('fr-FR')}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              {blocked
+                ? <ShieldBan className="h-4 w-4 text-red-600" />
+                : <ShieldCheck className="h-4 w-4 text-green-600" />}
+              {blocked ? 'Emails bloqués' : 'Emails autorisés'}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {blocked
+                ? (state.blocked_reason || 'Cet organisateur ne reçoit aucun email.')
+                : 'Bloquer coupe les emails pour TOUS les salons de cet organisateur.'}
+            </p>
+          </div>
+
+          <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <AlertDialogTrigger asChild>
+              <div>
+                <Switch checked={blocked} disabled={mutation.isPending} />
+              </div>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {blocked ? 'Débloquer cet organisateur ?' : 'Bloquer cet organisateur ?'}
+                </AlertDialogTitle>
+                <AlertDialogDescription asChild>
+                  <div className="space-y-2">
+                    {blocked ? (
+                      <span>
+                        L'organisateur <strong>{state.organizer_name || state.primary_domain}</strong> redeviendra
+                        contactable. Les campagnes que tu avais arrêtées manuellement reprendront ;
+                        une désinscription d'un destinataire n'est jamais réactivée.
+                      </span>
+                    ) : (
+                      <span>
+                        Cette action coupe les emails pour <strong>l'ensemble des {nbTotal} salon(s)</strong> de
+                        <strong> {state.organizer_name || state.primary_domain}</strong>, pas seulement ce salon.
+                        Utilise-la si l'organisateur a demandé à ne plus être contacté.
+                      </span>
+                    )}
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+
+              {!blocked && (
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Motif (optionnel)</label>
+                  <Textarea
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="Ex. : l'organisateur a demandé par email de ne plus être contacté"
+                    rows={2}
+                  />
+                </div>
+              )}
+
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={mutation.isPending}>Annuler</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(e) => { e.preventDefault(); mutation.mutate(!blocked); }}
+                  disabled={mutation.isPending}
+                  className={blocked ? '' : 'bg-red-600 hover:bg-red-700'}
+                >
+                  {mutation.isPending
+                    ? '...'
+                    : blocked ? 'Débloquer' : `Bloquer les ${nbTotal} salon(s)`}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default AdminSalonDetailPanel;
