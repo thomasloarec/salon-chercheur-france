@@ -663,6 +663,7 @@ function OrganizerOutreachCard({ salonId }: { salonId: string }) {
   const [reason, setReason] = React.useState('');
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [manualEmail, setManualEmail] = React.useState('');
+  const [editingEmail, setEditingEmail] = React.useState(false);
 
 
   const { data: state, isLoading } = useQuery({
