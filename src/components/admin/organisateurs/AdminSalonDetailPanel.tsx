@@ -642,6 +642,9 @@ interface OrganizerOutreachState {
   next_send_at?: string | null;
   stop_reason?: string | null;
   has_contact?: boolean;
+  hunter_status?: string | null;
+  contact_email?: string | null;
+  salon_no_email?: boolean;
 }
 
 const claimStatusLabel: Record<string, { label: string; className: string }> = {
