@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarDays, Inbox } from 'lucide-react';
+import { CalendarDays, Inbox, Building2 } from 'lucide-react';
 import AdminSalonsList from '@/components/admin/organisateurs/AdminSalonsList';
 import AdminSalonClaimsList from '@/components/admin/organisateurs/AdminSalonClaimsList';
 import AdminSalonDetailPanel from '@/components/admin/organisateurs/AdminSalonDetailPanel';
+import AdminOrganizersList from '@/components/admin/organisateurs/AdminOrganizersList';
 
 const AdminOrganisateurs = () => {
   const [selectedSalonId, setSelectedSalonId] = useState<string | null>(null);
@@ -36,6 +37,10 @@ const AdminOrganisateurs = () => {
             <Inbox className="h-4 w-4" />
             Demandes en attente
           </TabsTrigger>
+          <TabsTrigger value="organizers" className="gap-2">
+            <Building2 className="h-4 w-4" />
+            Organisateurs
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="salons">
@@ -44,6 +49,10 @@ const AdminOrganisateurs = () => {
 
         <TabsContent value="claims">
           <AdminSalonClaimsList onSelectSalon={setSelectedSalonId} />
+        </TabsContent>
+
+        <TabsContent value="organizers">
+          <AdminOrganizersList />
         </TabsContent>
       </Tabs>
     </div>
