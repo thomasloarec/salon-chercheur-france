@@ -712,6 +712,58 @@ function OrganizerOutreachCard({ salonId }: { salonId: string }) {
     },
   });
 
+  const emailMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const { data, error } = await (supabase as any).rpc('admin_set_salon_manual_email', {
+        p_event_id: salonId, p_email: email,
+      });
+      if (error) throw error;
+      return data as { ok: boolean; salons_resolus?: number; reason?: string };
+    },
+    onSuccess: (res) => {
+      if (!res?.ok) {
+        toast({
+          title: 'Email non enregistré',
+          description: res?.reason === 'invalid_email' ? 'Adresse email invalide.'
+            : res?.reason === 'no_campaign' ? 'Aucune campagne rattachée à ce salon.'
+            : "L'enregistrement a échoué.",
+          variant: 'destructive',
+        });
+        return;
+      }
+      toast({
+        title: 'Email enregistré',
+        description: `Contact défini pour l'organisateur${(res.salons_resolus ?? 0) > 1
+          ? ` — ses ${res.salons_resolus} salons sont résolus.` : '.'}`,
+      });
+      setManualEmail('');
+      queryClient.invalidateQueries({ queryKey: ['organizer-outreach-state', salonId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-salons-email-missing-count'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-salons-email-missing-ids'] });
+    },
+    onError: () => toast({ title: 'Erreur', description: "La requête a échoué.", variant: 'destructive' }),
+  });
+
+  const noEmailMutation = useMutation({
+    mutationFn: async (clear: boolean) => {
+      const rpc = clear ? 'admin_clear_salon_triage' : 'admin_set_salon_no_email';
+      const params = clear ? { p_event_id: salonId } : { p_event_id: salonId, p_note: null };
+      const { data, error } = await (supabase as any).rpc(rpc, params);
+      if (error) throw error;
+      return data as { ok: boolean };
+    },
+    onSuccess: (_res, clear) => {
+      toast({
+        title: clear ? 'Salon remis dans la file' : "Salon classé « pas d'email »",
+      });
+      queryClient.invalidateQueries({ queryKey: ['organizer-outreach-state', salonId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-salons-email-missing-count'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-salons-email-missing-ids'] });
+    },
+    onError: () => toast({ title: 'Erreur', description: "La requête a échoué.", variant: 'destructive' }),
+  });
+
+
   if (isLoading) {
     return (
       <Card>
