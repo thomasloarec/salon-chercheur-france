@@ -909,6 +909,62 @@ function OrganizerOutreachCard({ salonId }: { salonId: string }) {
             </AlertDialogContent>
           </AlertDialog>
         </div>
+
+        {!state.has_contact && state.hunter_status !== 'ready' && (
+          <div className="rounded-lg border p-3 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Mail className="h-4 w-4 text-amber-600" />
+              Aucun contact trouvé automatiquement
+            </div>
+
+            {state.salon_no_email ? (
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs text-muted-foreground">
+                  Ce salon est classé « pas d'email ». Il n'apparaît plus dans la file de traitement.
+                </p>
+                <Button variant="outline" size="sm"
+                  onClick={() => noEmailMutation.mutate(true)}
+                  disabled={noEmailMutation.isPending}>
+                  Remettre dans la file
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">
+                    Saisir l'email de contact (vaut pour tout l'organisateur)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="email"
+                      value={manualEmail}
+                      onChange={(e) => setManualEmail(e.target.value)}
+                      placeholder="contact@exemple.fr"
+                    />
+                    <Button size="sm"
+                      onClick={() => emailMutation.mutate(manualEmail)}
+                      disabled={emailMutation.isPending || !manualEmail.trim()}>
+                      <Check className="h-4 w-4 mr-1" />
+                      Enregistrer
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-3 pt-1">
+                  <p className="text-xs text-muted-foreground">
+                    Aucun email à trouver pour ce salon ?
+                  </p>
+                  <Button variant="ghost" size="sm"
+                    onClick={() => noEmailMutation.mutate(false)}
+                    disabled={noEmailMutation.isPending}
+                    className="text-muted-foreground">
+                    <MailX className="h-4 w-4 mr-1" />
+                    Classer « pas d'email »
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
