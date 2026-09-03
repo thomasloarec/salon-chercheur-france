@@ -662,6 +662,8 @@ function OrganizerOutreachCard({ salonId }: { salonId: string }) {
   const queryClient = useQueryClient();
   const [reason, setReason] = React.useState('');
   const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [manualEmail, setManualEmail] = React.useState('');
+
 
   const { data: state, isLoading } = useQuery({
     queryKey: ['organizer-outreach-state', salonId],
