@@ -663,6 +663,7 @@ function OrganizerOutreachCard({ salonId }: { salonId: string }) {
   const [reason, setReason] = React.useState('');
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [manualEmail, setManualEmail] = React.useState('');
+  const [editingEmail, setEditingEmail] = React.useState(false);
 
 
   const { data: state, isLoading } = useQuery({
@@ -737,6 +738,7 @@ function OrganizerOutreachCard({ salonId }: { salonId: string }) {
           ? ` — ses ${res.salons_resolus} salons sont résolus.` : '.'}`,
       });
       setManualEmail('');
+      setEditingEmail(false);
       queryClient.invalidateQueries({ queryKey: ['organizer-outreach-state', salonId] });
       queryClient.invalidateQueries({ queryKey: ['admin-salons-email-missing-count'] });
       queryClient.invalidateQueries({ queryKey: ['admin-salons-email-missing-ids'] });
@@ -909,6 +911,59 @@ function OrganizerOutreachCard({ salonId }: { salonId: string }) {
             </AlertDialogContent>
           </AlertDialog>
         </div>
+
+        {(state.has_contact || state.contact_email) && (
+          <div className="rounded-lg border p-3 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-xs text-muted-foreground">Contact de l'organisateur</div>
+                <div className="font-medium text-sm truncate">
+                  {state.contact_email || '—'}
+                </div>
+              </div>
+              {!editingEmail && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { setManualEmail(state.contact_email || ''); setEditingEmail(true); }}
+                >
+                  Modifier
+                </Button>
+              )}
+            </div>
+
+            {editingEmail && (
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground">
+                  Nouvel email de contact (vaut pour tout l'organisateur)
+                </label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="email"
+                    value={manualEmail}
+                    onChange={(e) => setManualEmail(e.target.value)}
+                    placeholder="contact@exemple.fr"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => emailMutation.mutate(manualEmail)}
+                    disabled={emailMutation.isPending || !manualEmail.trim()}
+                  >
+                    Enregistrer
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setEditingEmail(false); setManualEmail(''); }}
+                    disabled={emailMutation.isPending}
+                  >
+                    Annuler
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {!state.has_contact && state.hunter_status !== 'ready' && (
           <div className="rounded-lg border p-3 space-y-3">
