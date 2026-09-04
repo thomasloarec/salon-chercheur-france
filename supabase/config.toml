@@ -215,3 +215,6 @@ verify_jwt = false
 # Manual validation keeps the gate consistent with other novelty pipeline functions.
 verify_jwt = false
 
+
+[functions.activation-feedback]
+verify_jwt = false
