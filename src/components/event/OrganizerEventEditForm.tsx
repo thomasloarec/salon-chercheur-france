@@ -194,8 +194,11 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
     if (formData.tarif !== initial.tarif) changes.tarif = formData.tarif;
     if (formData.url_image !== initial.url_image) changes.url_image = formData.url_image;
     if (formData.description_event !== initial.description_event) {
-      changes.description_event = formData.description_event;
+      // Le texte saisi est reconverti en HTML simple pour préserver les
+      // retours à la ligne sur la page publique.
+      changes.description_event = plainTextToHtml(formData.description_event);
     }
+
     if (formData.accroche !== initial.accroche) {
       changes.accroche = formData.accroche;
     }
