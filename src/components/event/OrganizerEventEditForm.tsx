@@ -80,10 +80,14 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
   );
 
   const resolvedDescription = useMemo(() => {
-    return event.enrichissement_statut === 'valide' && event.description_enrichie
-      ? event.description_enrichie
-      : event.description_event || '';
+    const raw =
+      event.enrichissement_statut === 'valide' && event.description_enrichie
+        ? event.description_enrichie
+        : event.description_event || '';
+    // L'organisateur ne voit jamais de balises : on affiche du texte brut.
+    return htmlToPlainText(raw);
   }, [event]);
+
 
   useEffect(() => {
     if (!event || !sectorsReady) return;
