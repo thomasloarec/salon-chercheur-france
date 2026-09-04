@@ -14,6 +14,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { Event } from '@/types/event';
 import type { Sector } from '@/types/sector';
 import { scoreSeoQuality } from '@/lib/seoQuality';
+import { htmlToPlainText, plainTextToHtml } from '@/lib/richTextPlain';
+
 
 interface OrganizerEventEditFormProps {
   event: Event;
