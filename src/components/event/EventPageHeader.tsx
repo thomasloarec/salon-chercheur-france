@@ -43,30 +43,39 @@ interface EventPageHeaderProps {
   onPrepareVisit?: () => void;
 }
 
-/** Secteur principal, résolu comme EventSectors (table normalisée puis colonne secteur). */
-function useMainSector(event: Event): string | null {
+/** Tous les secteurs du salon, résolus comme EventSectors (table normalisée puis colonne secteur). */
+function useEventSectorNames(event: Event): string[] {
   const { data: eventSectors = [] } = useEventSectors(event.id_event || '');
-  if (eventSectors.length > 0) return eventSectors[0]?.name ?? null;
+  if (eventSectors.length > 0) {
+    return eventSectors
+      .map((s) => s?.name)
+      .filter((n): n is string => typeof n === 'string' && n.trim().length > 0);
+  }
   const raw = event.secteur;
-  if (!raw) return null;
+  if (!raw) return [];
   if (Array.isArray(raw)) {
-    const first = raw.flat().find((s) => typeof s === 'string' && s.trim());
-    return (first as string) ?? null;
+    return raw.flat().filter((s): s is string => typeof s === 'string' && s.trim().length > 0);
   }
   if (typeof raw === 'string') {
     const trimmed = raw.trim();
     if (trimmed.startsWith('[')) {
       try {
         const parsed = JSON.parse(trimmed);
-        const first = Array.isArray(parsed) ? parsed.flat().find(Boolean) : null;
-        return typeof first === 'string' ? first : null;
+        return Array.isArray(parsed)
+          ? parsed.flat().filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+          : trimmed
+            ? [trimmed]
+            : [];
       } catch {
-        return trimmed || null;
+        return trimmed ? [trimmed] : [];
       }
     }
-    return trimmed.split(',')[0]?.trim() || null;
+    return trimmed
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
-  return null;
+  return [];
 }
 
 export const EventPageHeader = ({
