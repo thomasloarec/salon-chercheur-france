@@ -3752,6 +3752,8 @@ export type Database = {
           exhibitors_confirmed_at: string | null
           exhibitors_confirmed_by: string | null
           exhibitors_confirmed_complete: boolean
+          expects_exhibitors: boolean | null
+          expects_program: boolean | null
           faq_json: Json | null
           has_exhibitors: boolean
           has_exhibitors_set_at: string | null
@@ -3821,6 +3823,8 @@ export type Database = {
           exhibitors_confirmed_at?: string | null
           exhibitors_confirmed_by?: string | null
           exhibitors_confirmed_complete?: boolean
+          expects_exhibitors?: boolean | null
+          expects_program?: boolean | null
           faq_json?: Json | null
           has_exhibitors?: boolean
           has_exhibitors_set_at?: string | null
@@ -3890,6 +3894,8 @@ export type Database = {
           exhibitors_confirmed_at?: string | null
           exhibitors_confirmed_by?: string | null
           exhibitors_confirmed_complete?: boolean
+          expects_exhibitors?: boolean | null
+          expects_program?: boolean | null
           faq_json?: Json | null
           has_exhibitors?: boolean
           has_exhibitors_set_at?: string | null
@@ -7057,6 +7063,138 @@ export type Database = {
           },
         ]
       }
+      organizer_activation_feedback: {
+        Row: {
+          activation_step: number | null
+          campaign_id: string
+          choix: string
+          created_at: string
+          id: string
+          organizer_id: string | null
+          theme: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          activation_step?: number | null
+          campaign_id: string
+          choix: string
+          created_at?: string
+          id?: string
+          organizer_id?: string | null
+          theme?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          activation_step?: number | null
+          campaign_id?: string
+          choix?: string
+          created_at?: string
+          id?: string
+          organizer_id?: string | null
+          theme?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizer_activation_feedback_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "organizer_outreach_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizer_activation_feedback_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_salons_email_missing"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "organizer_activation_feedback_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_eligibles_activation_organisateur"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "organizer_activation_feedback_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_eligibles_revendication_organisateur"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "organizer_activation_feedback_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_activation_state"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "organizer_activation_feedback_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizers_a_enrichir"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "organizer_activation_feedback_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "organizers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizer_activation_feedback_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_salons_email_missing"
+            referencedColumns: ["organizer_id"]
+          },
+          {
+            foreignKeyName: "organizer_activation_feedback_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "v_eligibles_activation_organisateur"
+            referencedColumns: ["organizer_id"]
+          },
+          {
+            foreignKeyName: "organizer_activation_feedback_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "v_eligibles_revendication_organisateur"
+            referencedColumns: ["organizer_id"]
+          },
+          {
+            foreignKeyName: "organizer_activation_feedback_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_activation_state"
+            referencedColumns: ["organizer_id"]
+          },
+          {
+            foreignKeyName: "organizer_activation_feedback_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_campaigns_missing"
+            referencedColumns: ["organizer_id"]
+          },
+          {
+            foreignKeyName: "organizer_activation_feedback_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizers_a_enrichir"
+            referencedColumns: ["organizer_id"]
+          },
+          {
+            foreignKeyName: "organizer_activation_feedback_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizers_summary"
+            referencedColumns: ["organizer_id"]
+          },
+        ]
+      }
       organizer_domains: {
         Row: {
           created_at: string
@@ -7095,7 +7233,21 @@ export type Database = {
             foreignKeyName: "organizer_domains_organizer_id_fkey"
             columns: ["organizer_id"]
             isOneToOne: false
+            referencedRelation: "v_eligibles_activation_organisateur"
+            referencedColumns: ["organizer_id"]
+          },
+          {
+            foreignKeyName: "organizer_domains_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
             referencedRelation: "v_eligibles_revendication_organisateur"
+            referencedColumns: ["organizer_id"]
+          },
+          {
+            foreignKeyName: "organizer_domains_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_activation_state"
             referencedColumns: ["organizer_id"]
           },
           {
@@ -7218,8 +7370,14 @@ export type Database = {
       }
       organizer_outreach_campaigns: {
         Row: {
+          activation_last_sent_at: string | null
+          activation_next_send_at: string | null
+          activation_started_at: string | null
           activation_status: string
           activation_step: number
+          activation_stop_reason: string | null
+          activation_stopped_at: string | null
+          activation_themes_envoyes: string[]
           claim_status: string
           claim_step: number
           claimed_at: string | null
@@ -7239,8 +7397,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          activation_last_sent_at?: string | null
+          activation_next_send_at?: string | null
+          activation_started_at?: string | null
           activation_status?: string
           activation_step?: number
+          activation_stop_reason?: string | null
+          activation_stopped_at?: string | null
+          activation_themes_envoyes?: string[]
           claim_status?: string
           claim_step?: number
           claimed_at?: string | null
@@ -7260,8 +7424,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          activation_last_sent_at?: string | null
+          activation_next_send_at?: string | null
+          activation_started_at?: string | null
           activation_status?: string
           activation_step?: number
+          activation_stop_reason?: string | null
+          activation_stopped_at?: string | null
+          activation_themes_envoyes?: string[]
           claim_status?: string
           claim_step?: number
           claimed_at?: string | null
@@ -7299,7 +7469,21 @@ export type Database = {
             foreignKeyName: "organizer_outreach_campaigns_organizer_id_fkey"
             columns: ["organizer_id"]
             isOneToOne: true
+            referencedRelation: "v_eligibles_activation_organisateur"
+            referencedColumns: ["organizer_id"]
+          },
+          {
+            foreignKeyName: "organizer_outreach_campaigns_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: true
             referencedRelation: "v_eligibles_revendication_organisateur"
+            referencedColumns: ["organizer_id"]
+          },
+          {
+            foreignKeyName: "organizer_outreach_campaigns_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_activation_state"
             referencedColumns: ["organizer_id"]
           },
           {
@@ -7411,7 +7595,21 @@ export type Database = {
             foreignKeyName: "organizer_outreach_contacts_organizer_outreach_campaign_id_fkey"
             columns: ["organizer_outreach_campaign_id"]
             isOneToOne: false
+            referencedRelation: "v_eligibles_activation_organisateur"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "organizer_outreach_contacts_organizer_outreach_campaign_id_fkey"
+            columns: ["organizer_outreach_campaign_id"]
+            isOneToOne: false
             referencedRelation: "v_eligibles_revendication_organisateur"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "organizer_outreach_contacts_organizer_outreach_campaign_id_fkey"
+            columns: ["organizer_outreach_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_activation_state"
             referencedColumns: ["campaign_id"]
           },
           {
@@ -8037,7 +8235,21 @@ export type Database = {
             foreignKeyName: "outreach_unsubscribe_events_organizer_campaign_id_fkey"
             columns: ["organizer_campaign_id"]
             isOneToOne: false
+            referencedRelation: "v_eligibles_activation_organisateur"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "outreach_unsubscribe_events_organizer_campaign_id_fkey"
+            columns: ["organizer_campaign_id"]
+            isOneToOne: false
             referencedRelation: "v_eligibles_revendication_organisateur"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "outreach_unsubscribe_events_organizer_campaign_id_fkey"
+            columns: ["organizer_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_activation_state"
             referencedColumns: ["campaign_id"]
           },
           {
@@ -11396,6 +11608,28 @@ export type Database = {
         }
         Relationships: []
       }
+      v_eligibles_activation_organisateur: {
+        Row: {
+          activation_next_send_at: string | null
+          activation_step: number | null
+          activation_themes_envoyes: string[] | null
+          campaign_id: string | null
+          contact_email: string | null
+          first_claimed_at: string | null
+          first_name: string | null
+          nb_salons_revendiques: number | null
+          next_action: string | null
+          next_event_date: string | null
+          organizer_id: string | null
+          organizer_name: string | null
+          owner_user_id: string | null
+          primary_domain: string | null
+          snapshot: Json | null
+          themes_autorises: Json | null
+          themes_interdits: Json | null
+        }
+        Relationships: []
+      }
       v_eligibles_nouveaute: {
         Row: {
           company_name: string | null
@@ -11781,6 +12015,30 @@ export type Database = {
             referencedColumns: ["exhibitor_uuid"]
           },
         ]
+      }
+      v_organizer_activation_state: {
+        Row: {
+          activation_last_sent_at: string | null
+          activation_next_send_at: string | null
+          activation_started_at: string | null
+          activation_status: string | null
+          activation_step: number | null
+          activation_stop_reason: string | null
+          campaign_id: string | null
+          first_claimed_at: string | null
+          last_claimed_at: string | null
+          nb_owners_distincts: number | null
+          nb_salons_revendiques: number | null
+          nb_salons_revendiques_a_venir: number | null
+          next_event_date: string | null
+          opt_out: boolean | null
+          organizer_id: string | null
+          organizer_name: string | null
+          outreach_blocked: boolean | null
+          primary_domain: string | null
+          primary_owner_user_id: string | null
+        }
+        Relationships: []
       }
       v_organizer_campaigns_missing: {
         Row: {
@@ -12605,6 +12863,10 @@ export type Database = {
       }
       delete_my_radar_crm_data: { Args: never; Returns: Json }
       delete_user_account: { Args: never; Returns: Json }
+      derive_first_name_from_email: {
+        Args: { p_email: string }
+        Returns: string
+      }
       detect_exhibitor_duplicates: {
         Args: { p_include_resolved?: boolean; p_min_score?: number }
         Returns: {
@@ -12943,6 +13205,27 @@ export type Database = {
         }
       }
       get_or_create_my_radar_account: { Args: never; Returns: string }
+      get_organizer_activation_recipient: {
+        Args: { p_campaign_id: string }
+        Returns: {
+          block_reason: string
+          first_name: string
+          is_blacklisted: boolean
+          is_generic: boolean
+          is_internal: boolean
+          nb_owners: number
+          owner_user_id: string
+          recipient_email: string
+        }[]
+      }
+      get_organizer_activation_snapshot: {
+        Args: { p_campaign_id: string }
+        Returns: Json
+      }
+      get_organizer_activation_themes_interdits: {
+        Args: { p_campaign_id: string }
+        Returns: Json
+      }
       get_outreach_pipeline_stats: { Args: never; Returns: Json }
       get_prerender_exhibitor_profiles: {
         Args: { p_after?: string; p_limit?: number }
@@ -13147,6 +13430,7 @@ export type Database = {
       is_ai_refusal: { Args: { txt: string }; Returns: boolean }
       is_email_blacklisted: { Args: { _email: string }; Returns: boolean }
       is_event_owner: { Args: { p_event_id: string }; Returns: boolean }
+      is_generic_mailbox: { Args: { p_email: string }; Returns: boolean }
       is_radar_member: {
         Args: { p_account_id: string; p_user_id?: string }
         Returns: boolean
@@ -13447,6 +13731,15 @@ export type Database = {
       }
       novelty_quota_status: {
         Args: { p_event_id: string; p_exhibitor_id: string }
+        Returns: Json
+      }
+      organizer_activation_feedback_record: {
+        Args: {
+          p_campaign_id: string
+          p_choix: string
+          p_theme?: string
+          p_user_agent?: string
+        }
         Returns: Json
       }
       organizer_root_domain: { Args: { _domain: string }; Returns: string }
