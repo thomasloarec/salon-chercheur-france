@@ -14,6 +14,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { Event } from '@/types/event';
 import type { Sector } from '@/types/sector';
 import { scoreSeoQuality } from '@/lib/seoQuality';
+import { htmlToPlainText, plainTextToHtml } from '@/lib/richTextPlain';
+
 
 interface OrganizerEventEditFormProps {
   event: Event;
@@ -80,10 +82,14 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
   );
 
   const resolvedDescription = useMemo(() => {
-    return event.enrichissement_statut === 'valide' && event.description_enrichie
-      ? event.description_enrichie
-      : event.description_event || '';
+    const raw =
+      event.enrichissement_statut === 'valide' && event.description_enrichie
+        ? event.description_enrichie
+        : event.description_event || '';
+    // L'organisateur ne voit jamais de balises : on affiche du texte brut.
+    return htmlToPlainText(raw);
   }, [event]);
+
 
   useEffect(() => {
     if (!event || !sectorsReady) return;
@@ -188,8 +194,11 @@ export const OrganizerEventEditForm: React.FC<OrganizerEventEditFormProps> = ({ 
     if (formData.tarif !== initial.tarif) changes.tarif = formData.tarif;
     if (formData.url_image !== initial.url_image) changes.url_image = formData.url_image;
     if (formData.description_event !== initial.description_event) {
-      changes.description_event = formData.description_event;
+      // Le texte saisi est reconverti en HTML simple pour préserver les
+      // retours à la ligne sur la page publique.
+      changes.description_event = plainTextToHtml(formData.description_event);
     }
+
     if (formData.accroche !== initial.accroche) {
       changes.accroche = formData.accroche;
     }
