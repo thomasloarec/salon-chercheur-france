@@ -89,7 +89,7 @@ export const EventPageHeader = ({
   const toggleFavorite = useToggleFavorite();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
-  const mainSector = useMainSector(event);
+  const sectorNames = useEventSectorNames(event);
 
   const isEventPast = isEventPastFn(event.date_debut, event.date_fin);
 
@@ -197,18 +197,21 @@ export const EventPageHeader = ({
         {/* Colonne gauche : contenu */}
         <div className="order-1 min-w-0 flex-1">
           {/* 1. Badges discrets */}
-          {(event.type_event || mainSector) && (
+          {(event.type_event || sectorNames.length > 0) && (
             <div className="mb-4 flex flex-wrap items-center gap-2">
               {event.type_event && (
                 <span className="inline-flex items-center rounded-md border border-border bg-muted px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground">
                   {getEventTypeLabel(event.type_event)}
                 </span>
               )}
-              {mainSector && (
-                <span className="inline-flex items-center rounded-full border border-primary/20 bg-violet-soft px-2.5 py-1 text-[11px] font-medium tracking-[0.02em] text-primary">
-                  {mainSector}
+              {sectorNames.map((sector) => (
+                <span
+                  key={sector}
+                  className="inline-flex items-center rounded-full border border-primary/20 bg-violet-soft px-2.5 py-1 text-[11px] font-medium tracking-[0.02em] text-primary"
+                >
+                  {sector}
                 </span>
-              )}
+              ))}
             </div>
           )}
 
