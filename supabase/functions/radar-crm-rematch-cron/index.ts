@@ -88,6 +88,7 @@ interface NewMatchRow {
   is_future_event: boolean | null
   nom_event: string | null
   needs_review?: boolean | null
+  notifiable?: boolean | null
   name_similarity?: number | null
 }
 
@@ -291,12 +292,12 @@ Deno.serve(async (req) => {
 
       const newMatches: NewMatchRow[] = ((matchData as any)?.newMatches ?? []) as NewMatchRow[]
       newMatchesCreated += newMatches.length
-      // Exclude matches flagged as needs_review from standard automatic
-      // notifications. They remain visible in the UI with a warning badge,
-      // and are surfaced in admin stats — but never trigger an email or
-      // an in-app notification.
+      // needs_review: visible in the UI with a warning badge, never notified.
+      // notifiable=false: company on watch (manual import, not yet qualified);
+      // visible everywhere, silent until the user qualifies it. Both flags are
+      // computed in SQL (crm_run_matching / radar_company_in_veille).
       const futureMatches = newMatches.filter(
-        (m) => m.is_future_event === true && m.needs_review !== true,
+        (m) => m.is_future_event === true && m.needs_review !== true && m.notifiable !== false,
       )
       futureNewMatches += futureMatches.length
 
@@ -462,7 +463,15 @@ Deno.serve(async (req) => {
         const companyMap = new Map<string, string>(
           (importCompanies ?? []).map((c: any) => [c.id, c.company_name]),
         )
-        const companyIds = Array.from(companyMap.keys())
+        // Same watch rule as the notifiable flag above, read from SQL: the
+        // reconciliation branch reads matches directly and has no flag.
+        const { data: veilleRows } = await supabase.rpc('radar_veille_company_ids', {
+          p_import_id: imp.id,
+        })
+        const veilleIds = new Set<string>(
+          ((veilleRows ?? []) as Array<{ crm_company_id: string }>).map((v) => v.crm_company_id),
+        )
+        const companyIds = Array.from(companyMap.keys()).filter((id) => !veilleIds.has(id))
         if (companyIds.length > 0) {
           const { data: allMatches, error: allMatchesErr } = await supabase
             .from('crm_company_event_matches')
