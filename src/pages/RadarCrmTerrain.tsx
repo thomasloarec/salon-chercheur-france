@@ -699,8 +699,8 @@ const RadarCrmTerrainInner: React.FC = () => {
     }
   };
 
-  const submitEncounter = async () => {
-    const name = encounterName.trim();
+  const submitEncounter = async (idExposant?: string, displayName?: string) => {
+    const name = (displayName ?? encounterName).trim();
     if (!name) { setEncounterError('Entrez un nom'); return; }
     if (!eventId || encounterSaving) return;
     setEncounterError(null);
@@ -708,20 +708,27 @@ const RadarCrmTerrainInner: React.FC = () => {
     const { data, error: rpcErr } = await supabase.rpc('add_radar_terrain_encounter', {
       p_event_id: eventId,
       p_name: name,
+      ...(idExposant ? { p_id_exposant: idExposant } : {}),
     });
     setEncounterSaving(false);
     if (rpcErr || !data) {
       console.error('[RadarCRM] add_radar_terrain_encounter failed:', rpcErr);
       toast({
         title: 'Ajout impossible',
-        description: 'Cette entreprise n’a pas pu être ajoutée.',
+        description: String(rpcErr?.message ?? '').includes('exposant_not_on_event')
+          ? 'Cet exposant n’est pas rattaché à ce salon. Réessayez la recherche.'
+          : 'Cette entreprise n’a pas pu être ajoutée.',
         variant: 'destructive',
       });
       return;
     }
-    void trackRadarEvent('radar_terrain_encounter_added', { eventId });
+    void trackRadarEvent('radar_terrain_encounter_added', {
+      eventId,
+      linked: Boolean(idExposant),
+    });
     setEncounterOpen(false);
     setEncounterName('');
+    setEncounterResults([]);
     setEncounterFollowUp({ missionId: data as unknown as string, name });
     setEncounterNote('');
     await load();
