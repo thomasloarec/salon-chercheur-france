@@ -1010,18 +1010,63 @@ const RadarCrmTerrainInner: React.FC = () => {
                     value={encounterName}
                     onChange={(e) => { setEncounterName(e.target.value); if (encounterError) setEncounterError(null); }}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void submitEncounter(); } }}
-                    placeholder="Nom de l’entreprise rencontrée"
+                    placeholder="Rechercher ou saisir un nom"
                     className="min-h-[44px] text-base"
                   />
                   {encounterError && (
                     <p className="text-xs font-medium text-destructive">{encounterError}</p>
+                  )}
+                  {encounterName.trim().length >= 2 && (
+                    <div className="max-h-64 overflow-y-auto rounded-lg border border-border/60 divide-y divide-border/60">
+                      {encounterSearching && encounterResults.length === 0 && (
+                        <p className="px-3 py-2 text-xs text-muted-foreground">Recherche…</p>
+                      )}
+                      {encounterResults.map((r: any) => (
+                        r.type === 'in_list' ? (
+                          <div key={`in-${r.crm_company_id}`} className="px-3 py-2 opacity-60">
+                            <p className="text-sm font-medium text-foreground truncate">{r.nom}</p>
+                            <p className="text-[11px] text-muted-foreground">Déjà dans votre liste</p>
+                          </div>
+                        ) : (
+                          <button
+                            key={`add-${r.id_exposant}`}
+                            type="button"
+                            onClick={() => void submitEncounter(r.id_exposant, r.nom)}
+                            disabled={encounterSaving}
+                            className="w-full text-left px-3 py-2 min-h-[44px] hover:bg-secondary/60"
+                          >
+                            <span className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-foreground truncate">{r.nom}</span>
+                              {r.ignored && (
+                                <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
+                                  écartée
+                                </span>
+                              )}
+                            </span>
+                            <span className="block text-[11px] text-muted-foreground truncate">
+                              {[r.stands ? `Stand ${r.stands}` : null, r.secteur].filter(Boolean).join(' · ')}
+                            </span>
+                          </button>
+                        )
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => void submitEncounter()}
+                        disabled={encounterSaving}
+                        className="w-full text-left px-3 py-2 min-h-[44px] hover:bg-secondary/60"
+                      >
+                        <span className="text-sm text-muted-foreground">
+                          Créer « <span className="font-medium text-foreground">{encounterName.trim()}</span> » — note hors CRM
+                        </span>
+                      </button>
+                    </div>
                   )}
                   <div className="flex items-center justify-end gap-2">
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => { setEncounterOpen(false); setEncounterName(''); setEncounterError(null); }}
+                      onClick={() => { setEncounterOpen(false); setEncounterName(''); setEncounterError(null); setEncounterResults([]); }}
                       className="gap-1"
                     >
                       <X className="h-4 w-4" /> Annuler
