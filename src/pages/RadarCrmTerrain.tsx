@@ -56,9 +56,11 @@ interface SalonMissionCompany {
 const rowKey = (c: SalonMissionCompany): string =>
   c.crm_company_id ?? c.mission_id ?? '';
 
-/** Rencontre saisie sur le terrain, hors CRM. */
-const isEncounter = (c: SalonMissionCompany): boolean =>
-  !c.crm_company_id || c.origin === 'rencontre';
+/** Note terrain non rattachée : aucune fiche CRM derrière. */
+const isOffCrm = (c: SalonMissionCompany): boolean => !c.crm_company_id;
+
+/** Rencontrée sur le stand, rattachée ou non. */
+const isMetOnSite = (c: SalonMissionCompany): boolean => c.origin === 'rencontre';
 
 interface SalonMissionEvent {
   event_id?: string | null;
@@ -128,6 +130,8 @@ interface TerrainRowProps {
   visited: boolean;
   /** Rencontre hors CRM : pas de fiche mission, ni statut, ni vocal. */
   encounter: boolean;
+  /** Rencontrée sur le stand (rattachée ou non). */
+  metOnSite?: boolean;
   relationship: RelationshipStatus;
   noteCount: number;
   noteOpen: boolean;
@@ -152,7 +156,7 @@ interface TerrainRowProps {
 
 /** Ligne de check-list terrain : grande, tactile, actions directes. */
 const TerrainRow: React.FC<TerrainRowProps> = ({
-  company: c, visited, encounter, relationship, noteCount, noteOpen, noteText, savingNote,
+  company: c, visited, encounter, metOnSite, relationship, noteCount, noteOpen, noteText, savingNote,
   pendingVoiceCount, voiceProcessing, voiceOpen, voiceSlot,
   onOpenMission, onToggleVisited, onOpenNote, onCloseNote, onChangeNote, onSubmitNote, onToggleVoice,
 }) => {
@@ -197,6 +201,11 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
               {encounter && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                   Hors CRM
+                </span>
+              )}
+              {!encounter && metOnSite && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  Rencontré
                 </span>
               )}
               </div>
@@ -359,6 +368,8 @@ const RadarCrmTerrainInner: React.FC = () => {
   const [encounterName, setEncounterName] = useState('');
   const [encounterError, setEncounterError] = useState<string | null>(null);
   const [encounterSaving, setEncounterSaving] = useState(false);
+  const [encounterResults, setEncounterResults] = useState<any[]>([]);
+  const [encounterSearching, setEncounterSearching] = useState(false);
   /** Mission fraîchement créée : on enchaîne sur une première note. */
   const [encounterFollowUp, setEncounterFollowUp] = useState<{ missionId: string; name: string } | null>(null);
   const [encounterNote, setEncounterNote] = useState('');
@@ -500,6 +511,31 @@ const RadarCrmTerrainInner: React.FC = () => {
   }, [voiceProcessing, clearVoiceWatch]);
 
   useEffect(() => clearVoiceWatch, [clearVoiceWatch]);
+
+  useEffect(() => {
+    const q = encounterName.trim();
+    if (!encounterOpen || !eventId || q.length < 2) {
+      setEncounterResults([]);
+      return;
+    }
+    let cancelled = false;
+    setEncounterSearching(true);
+    const timer = window.setTimeout(async () => {
+      const { data, error: searchErr } = await supabase.rpc('search_radar_salon_exposants', {
+        p_event_id: eventId,
+        p_query: q,
+      });
+      if (cancelled) return;
+      setEncounterSearching(false);
+      if (searchErr) {
+        console.error('[RadarCRM] search_radar_salon_exposants failed:', searchErr);
+        setEncounterResults([]);
+        return;
+      }
+      setEncounterResults(((data as any)?.results ?? []) as any[]);
+    }, 250);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [encounterName, encounterOpen, eventId]);
 
   const openVoice = (companyId: string) => {
     setNoteOpenFor(null);
@@ -663,8 +699,8 @@ const RadarCrmTerrainInner: React.FC = () => {
     }
   };
 
-  const submitEncounter = async () => {
-    const name = encounterName.trim();
+  const submitEncounter = async (idExposant?: string, displayName?: string) => {
+    const name = (displayName ?? encounterName).trim();
     if (!name) { setEncounterError('Entrez un nom'); return; }
     if (!eventId || encounterSaving) return;
     setEncounterError(null);
@@ -672,20 +708,27 @@ const RadarCrmTerrainInner: React.FC = () => {
     const { data, error: rpcErr } = await supabase.rpc('add_radar_terrain_encounter', {
       p_event_id: eventId,
       p_name: name,
+      ...(idExposant ? { p_id_exposant: idExposant } : {}),
     });
     setEncounterSaving(false);
     if (rpcErr || !data) {
       console.error('[RadarCRM] add_radar_terrain_encounter failed:', rpcErr);
       toast({
         title: 'Ajout impossible',
-        description: 'Cette entreprise n’a pas pu être ajoutée.',
+        description: String(rpcErr?.message ?? '').includes('exposant_not_on_event')
+          ? 'Cet exposant n’est pas rattaché à ce salon. Réessayez la recherche.'
+          : 'Cette entreprise n’a pas pu être ajoutée.',
         variant: 'destructive',
       });
       return;
     }
-    void trackRadarEvent('radar_terrain_encounter_added', { eventId });
+    void trackRadarEvent('radar_terrain_encounter_added', {
+      eventId,
+      linked: Boolean(idExposant),
+    });
     setEncounterOpen(false);
     setEncounterName('');
+    setEncounterResults([]);
     setEncounterFollowUp({ missionId: data as unknown as string, name });
     setEncounterNote('');
     await load();
@@ -870,7 +913,8 @@ const RadarCrmTerrainInner: React.FC = () => {
                       key={rowKey(c)}
                       company={c}
                       visited={false}
-                      encounter={isEncounter(c)}
+                      encounter={isOffCrm(c)}
+                      metOnSite={isMetOnSite(c)}
 
                       relationship={getRel(c)}
                       noteCount={noteCountFor(c)}
@@ -914,7 +958,8 @@ const RadarCrmTerrainInner: React.FC = () => {
                           key={rowKey(c)}
                           company={c}
                           visited
-                          encounter={isEncounter(c)}
+                          encounter={isOffCrm(c)}
+                          metOnSite={isMetOnSite(c)}
                           relationship={getRel(c)}
                           noteCount={noteCountFor(c)}
                           noteOpen={noteOpenFor === rowKey(c)}
@@ -965,18 +1010,63 @@ const RadarCrmTerrainInner: React.FC = () => {
                     value={encounterName}
                     onChange={(e) => { setEncounterName(e.target.value); if (encounterError) setEncounterError(null); }}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void submitEncounter(); } }}
-                    placeholder="Nom de l’entreprise rencontrée"
+                    placeholder="Rechercher ou saisir un nom"
                     className="min-h-[44px] text-base"
                   />
                   {encounterError && (
                     <p className="text-xs font-medium text-destructive">{encounterError}</p>
+                  )}
+                  {encounterName.trim().length >= 2 && (
+                    <div className="max-h-64 overflow-y-auto rounded-lg border border-border/60 divide-y divide-border/60">
+                      {encounterSearching && encounterResults.length === 0 && (
+                        <p className="px-3 py-2 text-xs text-muted-foreground">Recherche…</p>
+                      )}
+                      {encounterResults.map((r: any) => (
+                        r.type === 'in_list' ? (
+                          <div key={`in-${r.crm_company_id}`} className="px-3 py-2 opacity-60">
+                            <p className="text-sm font-medium text-foreground truncate">{r.nom}</p>
+                            <p className="text-[11px] text-muted-foreground">Déjà dans votre liste</p>
+                          </div>
+                        ) : (
+                          <button
+                            key={`add-${r.id_exposant}`}
+                            type="button"
+                            onClick={() => void submitEncounter(r.id_exposant, r.nom)}
+                            disabled={encounterSaving}
+                            className="w-full text-left px-3 py-2 min-h-[44px] hover:bg-secondary/60"
+                          >
+                            <span className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-foreground truncate">{r.nom}</span>
+                              {r.ignored && (
+                                <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
+                                  écartée
+                                </span>
+                              )}
+                            </span>
+                            <span className="block text-[11px] text-muted-foreground truncate">
+                              {[r.stands ? `Stand ${r.stands}` : null, r.secteur].filter(Boolean).join(' · ')}
+                            </span>
+                          </button>
+                        )
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => void submitEncounter()}
+                        disabled={encounterSaving}
+                        className="w-full text-left px-3 py-2 min-h-[44px] hover:bg-secondary/60"
+                      >
+                        <span className="text-sm text-muted-foreground">
+                          Créer « <span className="font-medium text-foreground">{encounterName.trim()}</span> » — note hors CRM
+                        </span>
+                      </button>
+                    </div>
                   )}
                   <div className="flex items-center justify-end gap-2">
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => { setEncounterOpen(false); setEncounterName(''); setEncounterError(null); }}
+                      onClick={() => { setEncounterOpen(false); setEncounterName(''); setEncounterError(null); setEncounterResults([]); }}
                       className="gap-1"
                     >
                       <X className="h-4 w-4" /> Annuler
