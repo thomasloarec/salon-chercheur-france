@@ -879,7 +879,8 @@ const RadarCrmTerrainInner: React.FC = () => {
                       key={rowKey(c)}
                       company={c}
                       visited={false}
-                      encounter={isEncounter(c)}
+                      encounter={isOffCrm(c)}
+                      metOnSite={isMetOnSite(c)}
 
                       relationship={getRel(c)}
                       noteCount={noteCountFor(c)}
@@ -923,7 +924,8 @@ const RadarCrmTerrainInner: React.FC = () => {
                           key={rowKey(c)}
                           company={c}
                           visited
-                          encounter={isEncounter(c)}
+                          encounter={isOffCrm(c)}
+                          metOnSite={isMetOnSite(c)}
                           relationship={getRel(c)}
                           noteCount={noteCountFor(c)}
                           noteOpen={noteOpenFor === rowKey(c)}
