@@ -8081,6 +8081,33 @@ export type Database = {
           },
         ]
       }
+      outreach_test_mode: {
+        Row: {
+          enabled: boolean
+          id: boolean
+          note: string | null
+          only_campaign_id: string | null
+          redirect_email: string | null
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          id?: boolean
+          note?: string | null
+          only_campaign_id?: string | null
+          redirect_email?: string | null
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          id?: boolean
+          note?: string | null
+          only_campaign_id?: string | null
+          redirect_email?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       outreach_unsubscribe_events: {
         Row: {
           campaign_id: string | null
@@ -11615,8 +11642,10 @@ export type Database = {
           activation_themes_envoyes: string[] | null
           campaign_id: string | null
           contact_email: string | null
+          destinataire_reel: string | null
           first_claimed_at: string | null
           first_name: string | null
+          mode_test: boolean | null
           nb_salons_revendiques: number | null
           next_action: string | null
           next_event_date: string | null
@@ -12194,7 +12223,7 @@ export type Database = {
         Returns: string
       }
       add_radar_terrain_encounter: {
-        Args: { p_event_id: string; p_name: string }
+        Args: { p_event_id: string; p_id_exposant?: string; p_name: string }
         Returns: string
       }
       admin_add_radar_member: {
@@ -13428,6 +13457,10 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_ai_refusal: { Args: { txt: string }; Returns: boolean }
+      is_campaign_in_test_mode: {
+        Args: { p_campaign_id: string }
+        Returns: boolean
+      }
       is_email_blacklisted: { Args: { _email: string }; Returns: boolean }
       is_event_owner: { Args: { p_event_id: string }; Returns: boolean }
       is_generic_mailbox: { Args: { p_email: string }; Returns: boolean }
@@ -13769,12 +13802,28 @@ export type Database = {
         Args: { p_account_id: string }
         Returns: string
       }
+      radar_company_in_veille: {
+        Args: {
+          p_account_id: string
+          p_company_key: string
+          p_import_id: string
+        }
+        Returns: boolean
+      }
       radar_company_key: {
         Args: { p_domain: string; p_name: string }
         Returns: string
       }
       radar_current_account_id: {
         Args: { p_user_id?: string }
+        Returns: string
+      }
+      radar_ensure_manual_import: {
+        Args: { p_account_id: string }
+        Returns: string
+      }
+      radar_manual_import_id: {
+        Args: { p_account_id: string }
         Returns: string
       }
       radar_member_avatar_url: { Args: { p_user_id: string }; Returns: string }
@@ -13794,6 +13843,12 @@ export type Database = {
       radar_set_primary_space: {
         Args: { p_account_id: string; p_user_id: string }
         Returns: undefined
+      }
+      radar_veille_company_ids: {
+        Args: { p_import_id: string }
+        Returns: {
+          crm_company_id: string
+        }[]
       }
       rebuild_event_duplicate_candidates: {
         Args: { p_only_future?: boolean }
