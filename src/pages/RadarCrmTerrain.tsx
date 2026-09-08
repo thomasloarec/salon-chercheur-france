@@ -368,6 +368,8 @@ const RadarCrmTerrainInner: React.FC = () => {
   const [encounterName, setEncounterName] = useState('');
   const [encounterError, setEncounterError] = useState<string | null>(null);
   const [encounterSaving, setEncounterSaving] = useState(false);
+  const [encounterResults, setEncounterResults] = useState<any[]>([]);
+  const [encounterSearching, setEncounterSearching] = useState(false);
   /** Mission fraîchement créée : on enchaîne sur une première note. */
   const [encounterFollowUp, setEncounterFollowUp] = useState<{ missionId: string; name: string } | null>(null);
   const [encounterNote, setEncounterNote] = useState('');
@@ -509,6 +511,31 @@ const RadarCrmTerrainInner: React.FC = () => {
   }, [voiceProcessing, clearVoiceWatch]);
 
   useEffect(() => clearVoiceWatch, [clearVoiceWatch]);
+
+  useEffect(() => {
+    const q = encounterName.trim();
+    if (!encounterOpen || !eventId || q.length < 2) {
+      setEncounterResults([]);
+      return;
+    }
+    let cancelled = false;
+    setEncounterSearching(true);
+    const timer = window.setTimeout(async () => {
+      const { data, error: searchErr } = await supabase.rpc('search_radar_salon_exposants', {
+        p_event_id: eventId,
+        p_query: q,
+      });
+      if (cancelled) return;
+      setEncounterSearching(false);
+      if (searchErr) {
+        console.error('[RadarCRM] search_radar_salon_exposants failed:', searchErr);
+        setEncounterResults([]);
+        return;
+      }
+      setEncounterResults(((data as any)?.results ?? []) as any[]);
+    }, 250);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [encounterName, encounterOpen, eventId]);
 
   const openVoice = (companyId: string) => {
     setNoteOpenFor(null);
