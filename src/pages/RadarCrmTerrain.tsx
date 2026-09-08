@@ -56,9 +56,11 @@ interface SalonMissionCompany {
 const rowKey = (c: SalonMissionCompany): string =>
   c.crm_company_id ?? c.mission_id ?? '';
 
-/** Rencontre saisie sur le terrain, hors CRM. */
-const isEncounter = (c: SalonMissionCompany): boolean =>
-  !c.crm_company_id || c.origin === 'rencontre';
+/** Note terrain non rattachée : aucune fiche CRM derrière. */
+const isOffCrm = (c: SalonMissionCompany): boolean => !c.crm_company_id;
+
+/** Rencontrée sur le stand, rattachée ou non. */
+const isMetOnSite = (c: SalonMissionCompany): boolean => c.origin === 'rencontre';
 
 interface SalonMissionEvent {
   event_id?: string | null;
@@ -128,6 +130,8 @@ interface TerrainRowProps {
   visited: boolean;
   /** Rencontre hors CRM : pas de fiche mission, ni statut, ni vocal. */
   encounter: boolean;
+  /** Rencontrée sur le stand (rattachée ou non). */
+  metOnSite?: boolean;
   relationship: RelationshipStatus;
   noteCount: number;
   noteOpen: boolean;
@@ -152,7 +156,7 @@ interface TerrainRowProps {
 
 /** Ligne de check-list terrain : grande, tactile, actions directes. */
 const TerrainRow: React.FC<TerrainRowProps> = ({
-  company: c, visited, encounter, relationship, noteCount, noteOpen, noteText, savingNote,
+  company: c, visited, encounter, metOnSite, relationship, noteCount, noteOpen, noteText, savingNote,
   pendingVoiceCount, voiceProcessing, voiceOpen, voiceSlot,
   onOpenMission, onToggleVisited, onOpenNote, onCloseNote, onChangeNote, onSubmitNote, onToggleVoice,
 }) => {
@@ -197,6 +201,11 @@ const TerrainRow: React.FC<TerrainRowProps> = ({
               {encounter && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                   Hors CRM
+                </span>
+              )}
+              {!encounter && metOnSite && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  Rencontré
                 </span>
               )}
               </div>
