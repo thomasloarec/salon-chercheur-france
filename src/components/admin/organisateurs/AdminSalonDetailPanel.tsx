@@ -76,6 +76,7 @@ const statusMeta: Record<string, { label: string; className: string }> = {
   pending: { label: 'En attente', className: 'bg-amber-100 text-amber-800 border-amber-300' },
   approved: { label: 'Approuvée', className: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
   rejected: { label: 'Rejetée', className: 'bg-muted text-muted-foreground' },
+  superseded: { label: 'Remplacée par une demande plus récente', className: 'bg-slate-100 text-slate-600 border-slate-300' },
 };
 
 const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {

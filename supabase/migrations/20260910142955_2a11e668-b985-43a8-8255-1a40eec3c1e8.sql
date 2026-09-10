@@ -1,0 +1,2 @@
+ALTER TABLE public.event_change_requests DROP CONSTRAINT IF EXISTS event_change_requests_status_check;
+ALTER TABLE public.event_change_requests ADD CONSTRAINT event_change_requests_status_check CHECK (status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text, 'superseded'::text]));
