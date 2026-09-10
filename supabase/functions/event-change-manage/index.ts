@@ -281,10 +281,11 @@ Deno.serve(async (req) => {
       if (typeof proposed.accroche === 'string' && proposed.accroche.length > 160)
         return json({ error: 'ACCROCHE_TOO_LONG', message: 'La phrase de présentation ne doit pas dépasser 160 caractères.' }, 400)
 
-      // V1 : une seule demande en attente par organisateur/salon -> on remplace la précédente
+      // V1 : une seule demande VALIDABLE par organisateur/salon.
+      // Les précédentes sont conservées (statut 'superseded') pour la traçabilité admin.
       await admin
         .from('event_change_requests')
-        .delete()
+        .update({ status: 'superseded', reviewed_at: new Date().toISOString() })
         .eq('event_id', ev.id)
         .eq('requester_user_id', user.id)
         .eq('status', 'pending')
