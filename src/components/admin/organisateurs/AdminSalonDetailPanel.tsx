@@ -344,14 +344,41 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
                   <Badge variant="outline" className="bg-muted text-muted-foreground">Libre</Badge>
                 )}
               </div>
-              {data.event.slug && (
-                <Button asChild variant="outline" size="sm">
-                  <Link to={`/events/${data.event.slug}`} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-                    Voir la page du salon
-                  </Link>
-                </Button>
-              )}
+              <div className="flex flex-wrap items-center gap-2">
+                {data.event.slug && (
+                  <Button asChild variant="outline" size="sm">
+                    <Link to={`/events/${data.event.slug}`} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                      Voir la page du salon
+                    </Link>
+                  </Button>
+                )}
+                {data.event.owner_user_id && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-destructive" disabled={revokeMutation.isPending}>
+                        <ShieldBan className="h-3.5 w-3.5 mr-1.5" />
+                        Révoquer la gouvernance
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Révoquer la gouvernance de ce salon ?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {data.ownerName || 'Le gestionnaire actuel'} perdra l'accès à l'espace organisateur de
+                          « {data.event.nom_event} ». Le salon redeviendra libre et pourra être revendiqué à nouveau.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => revokeMutation.mutate()}>
+                          Révoquer
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
             </CardContent>
           </Card>
 
