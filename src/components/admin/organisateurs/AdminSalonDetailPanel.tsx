@@ -225,6 +225,31 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
     },
   });
 
+  const revokeMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.functions.invoke('event-claim-manage', {
+        body: { action: 'revoke', event_id: salonId },
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Gouvernance révoquée',
+        description: 'Ce salon est de nouveau libre et peut être revendiqué.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-salon-detail', salonId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-salons'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-event-claims'] });
+    },
+    onError: (err: any) => {
+      toast({
+        title: 'Erreur',
+        description: err?.message || 'Impossible de révoquer la gouvernance.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const changeMutation = useMutation({
     mutationFn: async ({
       requestId,
