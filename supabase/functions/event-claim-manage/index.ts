@@ -325,7 +325,63 @@ Deno.serve(async (req) => {
       }
     }
 
-    return json({ error: 'UNKNOWN_ACTION', message: "Action inconnue. Utilisez 'create', 'approve' ou 'reject'." }, 400)
+    // ========================================================================
+    // REVOKE — admin uniquement : retire la gouvernance d'un salon
+    // ========================================================================
+    if (action === 'revoke') {
+      if (!(await isPlatformAdmin(admin, user.id)))
+        return json({ error: 'FORBIDDEN', message: 'Action réservée aux administrateurs.' }, 403)
+
+      const eventId = String(body?.event_id ?? '').trim()
+      if (!eventId) return json({ error: 'INVALID_INPUT', message: 'event_id requis.' }, 400)
+
+      const { data: ev } = await admin
+        .from('events')
+        .select('id, nom_event, owner_user_id')
+        .eq('id', eventId)
+        .maybeSingle()
+      if (!ev) return json({ error: 'EVENT_NOT_FOUND', message: 'Salon introuvable.' }, 404)
+
+      const previousOwner = ev.owner_user_id
+
+      const { error: updErr } = await admin
+        .from('events')
+        .update({ owner_user_id: null, verified_at: null })
+        .eq('id', eventId)
+      if (updErr) {
+        console.error('[event-claim] revoke update erreur:', updErr)
+        return json({ error: 'REVOKE_FAILED', message: updErr.message }, 500)
+      }
+
+      // Les revendications validées repassent en refusées pour permettre une nouvelle demande
+      await admin
+        .from('event_claim_requests')
+        .update({ status: 'rejected' })
+        .eq('event_id', eventId)
+        .eq('status', 'approved')
+
+      if (previousOwner) {
+        try {
+          await admin.from('notifications').insert({
+            user_id: previousOwner,
+            type: 'event_claim_revoked',
+            category: 'event_mgmt',
+            title: 'Gestion du salon retirée',
+            message: `Vous ne gérez plus la page du salon ${ev.nom_event ?? 'ce salon'}.`,
+            icon: '⚠️',
+            link_url: null,
+            read: false,
+          })
+        } catch (err) {
+          console.error('[event-claim] notif révocation échouée (non-bloquant):', err)
+        }
+      }
+
+      console.log(`[event-claim] gouvernance révoquée pour ${eventId} (ancien owner: ${previousOwner ?? 'aucun'})`)
+      return json({ success: true, event_id: eventId, status: 'revoked' })
+    }
+
+    return json({ error: 'UNKNOWN_ACTION', message: "Action inconnue. Utilisez 'create', 'approve', 'reject' ou 'revoke'." }, 400)
   } catch (err) {
     console.error('[event-claim] erreur inattendue:', err)
     return json({ error: 'INTERNAL_ERROR', message: 'Une erreur inattendue est survenue.' }, 500)

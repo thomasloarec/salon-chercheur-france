@@ -225,6 +225,31 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
     },
   });
 
+  const revokeMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.functions.invoke('event-claim-manage', {
+        body: { action: 'revoke', event_id: salonId },
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Gouvernance révoquée',
+        description: 'Ce salon est de nouveau libre et peut être revendiqué.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-salon-detail', salonId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-salons'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-event-claims'] });
+    },
+    onError: (err: any) => {
+      toast({
+        title: 'Erreur',
+        description: err?.message || 'Impossible de révoquer la gouvernance.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const changeMutation = useMutation({
     mutationFn: async ({
       requestId,
@@ -319,14 +344,41 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
                   <Badge variant="outline" className="bg-muted text-muted-foreground">Libre</Badge>
                 )}
               </div>
-              {data.event.slug && (
-                <Button asChild variant="outline" size="sm">
-                  <Link to={`/events/${data.event.slug}`} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-                    Voir la page du salon
-                  </Link>
-                </Button>
-              )}
+              <div className="flex flex-wrap items-center gap-2">
+                {data.event.slug && (
+                  <Button asChild variant="outline" size="sm">
+                    <Link to={`/events/${data.event.slug}`} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                      Voir la page du salon
+                    </Link>
+                  </Button>
+                )}
+                {data.event.owner_user_id && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-destructive" disabled={revokeMutation.isPending}>
+                        <ShieldBan className="h-3.5 w-3.5 mr-1.5" />
+                        Révoquer la gouvernance
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Révoquer la gouvernance de ce salon ?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {data.ownerName || 'Le gestionnaire actuel'} perdra l'accès à l'espace organisateur de
+                          « {data.event.nom_event} ». Le salon redeviendra libre et pourra être revendiqué à nouveau.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => revokeMutation.mutate()}>
+                          Révoquer
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
             </CardContent>
           </Card>
 
