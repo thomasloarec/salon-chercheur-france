@@ -361,11 +361,20 @@ Deno.serve(async (req) => {
         .eq('status', 'approved')
 
       if (previousOwner) {
-        await notifyRequester(admin, {
-          userId: previousOwner,
-          eventName: ev.nom_event ?? 'ce salon',
-          approved: false,
-        })
+        try {
+          await admin.from('notifications').insert({
+            user_id: previousOwner,
+            type: 'event_claim_revoked',
+            category: 'event_mgmt',
+            title: 'Gestion du salon retirée',
+            message: `Vous ne gérez plus la page du salon ${ev.nom_event ?? 'ce salon'}.`,
+            icon: '⚠️',
+            link_url: null,
+            read: false,
+          })
+        } catch (err) {
+          console.error('[event-claim] notif révocation échouée (non-bloquant):', err)
+        }
       }
 
       console.log(`[event-claim] gouvernance révoquée pour ${eventId} (ancien owner: ${previousOwner ?? 'aucun'})`)
