@@ -1,0 +1,2 @@
+UPDATE public.events SET owner_user_id = NULL, verified_at = NULL WHERE id = '763cdd39-7885-40b9-ad33-7574502660b5';
+UPDATE public.event_claim_requests SET status = 'rejected' WHERE id = '809f49d2-a07c-4265-872b-76317648524b';
