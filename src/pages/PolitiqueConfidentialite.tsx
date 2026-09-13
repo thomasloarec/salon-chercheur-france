@@ -105,16 +105,44 @@ const PolitiqueConfidentialite = () => {
           </div>
         </section>
 
-        {/* 4. Destinataires & sous‑traitants */}
-        <section id="destinataires" className="mb-8">
-          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">4. Destinataires</h2>
+        {/* 4. Origine des données (prospection commerciale) */}
+        <section id="origine-donnees" className="mb-8">
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">4. Origine des données (prospection commerciale)</h2>
           <p className="mb-4">
-            Les données sont destinées uniquement aux personnes habilitées de CECILE NOEL COMMUNICATION et à nos prestataires techniques listés ci‑dessous :
+            Conformément à l'article 14 du RGPD, certaines coordonnées professionnelles présentes sur le Site sont collectées indirectement auprès de sources publiques ou professionnelles :
           </p>
           <ul className="list-disc pl-6 mb-4">
-            <li>Hébergement : GoDaddy (Inde)</li>
-            <li>Service d'emailing : Brevo (France)</li>
+            <li>Listes publiques d'exposants publiées par les organisateurs de salons ;</li>
+            <li>Sites web des entreprises exposantes ;</li>
+            <li>Annuaires et outils professionnels de recherche et de vérification d'emails professionnels (ex. Hunter.io).</li>
           </ul>
+          <p className="mb-4">
+            Seules des données professionnelles relatives à l'activité des entreprises exposantes sont traitées. Vous pouvez vous opposer à tout moment à cette prospection en nous contactant à <a href="mailto:admin@lotexpo.com" className="text-primary hover:underline">admin@lotexpo.com</a>.
+          </p>
+        </section>
+
+        {/* 5. Destinataires et sous‑traitants */}
+        <section id="destinataires" className="mb-8">
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">5. Destinataires et sous‑traitants</h2>
+          <p className="mb-4">
+            Les données sont destinées aux personnes habilitées de CECILE NOEL COMMUNICATION, aux entreprises exposantes concernées lorsque vous demandez un rendez-vous ou téléchargez une brochure, ainsi qu'au CRM tiers que l'utilisateur connecte lui‑même.
+          </p>
+          <p className="mb-4">
+            Nos prestataires techniques sont :
+          </p>
+          <ul className="list-disc pl-6 mb-4">
+            <li>Hébergement application + base de données : Supabase (Union européenne, région Paris)</li>
+            <li>Développement et hébergement de l'interface : Lovable</li>
+            <li>Envoi d'emails transactionnels et de prospection : Resend (et le cas échéant Microsoft 365 / Outlook)</li>
+            <li>Recherche/vérification d'emails professionnels : Hunter.io (États‑Unis)</li>
+            <li>Import de données salons/exposants : Airtable (États‑Unis)</li>
+            <li>Mesure d'audience : Plausible (UE) et Google Analytics (États‑Unis)</li>
+            <li>Enrichissement éditorial par IA : prestataires d'IA, le cas échéant</li>
+            <li>Enregistrement du nom de domaine : GoDaddy</li>
+          </ul>
+          <p className="mb-4">
+            Chaque sous‑traitant est encadré par un accord conforme à l'article 28 du RGPD.
+          </p>
         </section>
 
         {/* 5. Transferts hors UE */}
