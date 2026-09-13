@@ -14,7 +14,7 @@ const PolitiqueConfidentialite = () => {
 
         {/* 0. Préambule */}
         <p className="mb-6">
-          La présente politique de confidentialité décrit comment CECILE NOEL COMMUNICATION (« nous », « notre », « nos ») collecte, utilise et protège les données personnelles que vous nous communiquez lorsque vous utilisez le site Lotexpo (ci‑après « le Site »).
+          La présente politique de confidentialité décrit comment CECILE NOEL COMMUNICATION (« nous », « notre », « nos ») collecte, utilise et protège les données que vous nous fournissez directement (formulaires, compte utilisateur, newsletter) ainsi que les données professionnelles que nous collectons indirectement dans le cadre de la prospection commerciale auprès des entreprises exposantes, lorsque vous utilisez le site Lotexpo (ci‑après « le Site »).
         </p>
 
         {/* 1. Responsable du traitement */}
