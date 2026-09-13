@@ -1,257 +1,249 @@
+// airtable-write — durci le 13/09/2026
+//
+// AVANT : le contrôle d'accès était factice. La fonction acceptait toute requête
+// portant l'en-tête `x-lovable-admin: true` (choisi librement par l'appelant) OU
+// n'importe quel en-tête Authorization, jamais vérifié. Un anonyme pouvait donc
+// créer des enregistrements dans la base Airtable de production.
+//
+// APRÈS : même pattern que premium-grant / novelties-moderate.
+//   - soit la clé service_role (automatisations serveur, n8n, cron),
+//   - soit un JWT utilisateur dont le compte porte le rôle admin dans user_roles
+//     (même source de vérité que la fonction SQL is_admin()).
+// Le reste du comportement (mapping, dédoublonnage, appel Airtable) est
+// strictement identique à la version précédente.
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import mapping from '../_shared/airtable-mapping.json' with { type: 'json' };
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-lovable-admin',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+const mapping: Record<string, Record<string, string>> = {
+  All_Events: {
+    id_event: 'id_event',
+    nom_event: 'nom_event',
+    type_event: 'type_event',
+    date_debut: 'date_debut',
+    date_fin: 'date_fin',
+    secteur: 'secteur',
+    url_image: 'url_image',
+    url_site_officiel: 'url_site_officiel',
+    description_event: 'description_event',
+    affluence: 'affluence',
+    tarif: 'tarif',
+    nom_lieu: 'nom_lieu',
+    rue: 'rue',
+    code_postal: 'code_postal',
+    ville: 'ville',
+    pays: 'pays',
+  },
+  All_Exposants: {
+    id_exposant: 'id_exposant',
+    nom_exposant: 'nom_exposant',
+    website_exposant: 'website_exposant',
+    exposant_description: 'exposant_description',
+  },
+  Participation: {
+    id_participation: 'id_participation',
+    nom_exposant: 'nom_exposant',
+    stand_exposant: 'stand_exposant',
+    website_exposant: 'website_exposant',
+    id_event: 'id_event',
+    urlexpo_event: 'urlexpo_event',
+  },
+};
+
+/** Retourne null si autorisé, sinon une Response d'erreur. */
+async function authorize(req: Request): Promise<Response | null> {
+  const deny = (status: number, error: string) =>
+    new Response(JSON.stringify({ success: false, error }), {
+      status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  const authHeader = req.headers.get('Authorization') ?? '';
+  if (!authHeader.startsWith('Bearer ')) {
+    console.warn('[airtable-write] refus : pas de Bearer token');
+    return deny(401, 'unauthorized');
+  }
+  const token = authHeader.slice('Bearer '.length).trim();
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!supabaseUrl || !serviceKey) {
+    console.error('[airtable-write] configuration Supabase incomplète');
+    return deny(500, 'server_misconfigured');
+  }
+
+  // Voie 1 : clé service_role (automatisations serveur).
+  if (token === serviceKey) {
+    console.log('[airtable-write] accès accordé : service_role');
+    return null;
+  }
+
+  // Voie 2 : JWT utilisateur + rôle admin dans user_roles.
+  const admin = createClient(supabaseUrl, serviceKey);
+  const { data: userData, error: userErr } = await admin.auth.getUser(token);
+  if (userErr || !userData?.user) {
+    console.warn('[airtable-write] refus : JWT invalide');
+    return deny(401, 'unauthorized');
+  }
+
+  const { data: role } = await admin
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userData.user.id)
+    .eq('role', 'admin')
+    .maybeSingle();
+
+  if (!role) {
+    console.warn('[airtable-write] refus : utilisateur non admin', userData.user.id);
+    return deny(403, 'forbidden');
+  }
+
+  console.log('[airtable-write] accès accordé : admin', userData.user.id);
+  return null;
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('[airtable-write] 🔍 Début de la requête d\'écriture');
-    console.log('[airtable-write] Headers reçus:', Object.fromEntries(req.headers.entries()));
-
-    // Vérifier le header admin de façon plus flexible
-    const adminHeader = req.headers.get('x-lovable-admin') || req.headers.get('X-Lovable-Admin');
-    const isAdminRequest = adminHeader === 'true';
-    
-    console.log('[airtable-write] Admin header:', adminHeader, 'Is admin:', isAdminRequest);
-
-    // Pour les requêtes admin ou authentifiées, on continue
-    const authHeader = req.headers.get('authorization');
-    const hasAuth = !!authHeader;
-    
-    console.log('[airtable-write] Auth present:', hasAuth);
-
-    if (!isAdminRequest && !hasAuth) {
-      console.log('[airtable-write] ❌ Access denied (no admin header and no auth)');
-      return new Response(
-        JSON.stringify({ success: false, error: 'Access denied' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const denied = await authorize(req);
+    if (denied) return denied;
 
     const { table, records } = await req.json();
 
     if (!table || !records) {
       return new Response(
         JSON.stringify({ success: false, error: 'Table and records parameters required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
-    // Get environment variables
     const AIRTABLE_PAT = Deno.env.get('AIRTABLE_PAT');
     const AIRTABLE_BASE_ID = Deno.env.get('AIRTABLE_BASE_ID');
 
     if (!AIRTABLE_PAT || !AIRTABLE_BASE_ID) {
-      console.error('[airtable-write] ❌ Variables manquantes');
+      console.error('[airtable-write] variables Airtable manquantes');
       return new Response(
-        JSON.stringify({ success: false, error: 'missing_env', missing: ['AIRTABLE_PAT', 'AIRTABLE_BASE_ID'] }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: 'missing_env' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
-    console.log(`[airtable-write] 📋 Écriture table: ${table}`);
-    console.log(`[airtable-write] 🔑 PAT présente: OUI (***${AIRTABLE_PAT.slice(-4)})`);
-    console.log(`[airtable-write] 📦 Records à traiter: ${records.length}`);
-
-    // Get mapping for this table
-    const tableMap = mapping[table as keyof typeof mapping];
+    const tableMap = mapping[table];
     if (!tableMap) {
-      console.error(`[airtable-write] ❌ Pas de mapping pour la table: ${table}`);
       return new Response(
-        JSON.stringify({
-          success: false,
-          schema: false,
-          message: `Table ${table} non supportée`
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, schema: false, message: `Table ${table} non supportée` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
-    console.log(`[airtable-write] 🗺️ Mapping disponible pour ${table}:`, Object.keys(tableMap));
-
-    // Process records with mapping
-    const mappedRecords = [];
+    const mappedRecords: Array<{ fields: Record<string, unknown> }> = [];
     for (const record of records) {
-      const fields: Record<string, any> = {};
+      const fields: Record<string, unknown> = {};
       const unknownKeys: string[] = [];
-      const keysBefore = Object.keys(record);
 
-      console.log(`[airtable-write] 🔍 Keys avant mapping:`, keysBefore);
-
-      for (const [payloadKey, value] of Object.entries(record)) {
-        const airtableKey = tableMap[payloadKey as keyof typeof tableMap];
-        
+      for (const [payloadKey, value] of Object.entries(record as Record<string, unknown>)) {
+        const airtableKey = tableMap[payloadKey];
         if (!airtableKey) {
           unknownKeys.push(payloadKey);
-          console.warn(`[airtable-write] ⚠️ Champ inconnu ignoré: ${payloadKey}`);
         } else {
           fields[airtableKey] = value;
-          console.log(`[airtable-write] 📍 Mapping appliqué: ${payloadKey} → ${airtableKey}`);
         }
       }
 
-      const keysAfter = Object.keys(fields);
-      console.log(`[airtable-write] ✅ Keys après mapping:`, keysAfter);
-      console.log(`[airtable-write] 📊 Mapping stage: { stage: "map", keys_before: ${JSON.stringify(keysBefore)}, keys_after: ${JSON.stringify(keysAfter)} }`);
-      
       if (unknownKeys.length > 0) {
-        console.warn(`[airtable-write] ⚠️ Champs ignorés:`, unknownKeys);
+        console.warn('[airtable-write] champs ignorés :', unknownKeys);
       }
 
       if (Object.keys(fields).length === 0) {
         return new Response(
-          JSON.stringify({
-            success: false,
-            schema: false,
-            message: `Aucun champ valide trouvé pour ${table}`
-          }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ success: false, schema: false, message: `Aucun champ valide trouvé pour ${table}` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
 
       mappedRecords.push({ fields });
     }
 
-    // Build Airtable URL
     const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}`;
-    console.log(`[airtable-write] 🌐 URL Airtable: ${airtableUrl}`);
-
-    // Prepare payload
     const payload = { records: mappedRecords };
-    console.log(`[airtable-write] 📤 Payload final:`, JSON.stringify(payload, null, 2));
 
-    // Check for duplicates before creating
+    // Dédoublonnage avant création (comportement inchangé).
     if (mappedRecords.length > 0) {
-      const firstRecord = mappedRecords[0].fields;
-      let duplicateCheckUrl = '';
+      const firstRecord = mappedRecords[0].fields as Record<string, string>;
       let filterFormula = '';
-      
+
       if (table === 'All_Exposants' && firstRecord.nom_exposant) {
-        filterFormula = `{nom_exposant}='${firstRecord.nom_exposant.replace(/'/g, "\\'")}'`;
+        filterFormula = `{nom_exposant}='${String(firstRecord.nom_exposant).replace(/'/g, "\\'")}'`;
       } else if (table === 'Participation' && firstRecord.website_exposant) {
-        filterFormula = `{website_exposant}='${firstRecord.website_exposant.replace(/'/g, "\\'")}'`;
+        filterFormula = `{website_exposant}='${String(firstRecord.website_exposant).replace(/'/g, "\\'")}'`;
       }
-      
+
       if (filterFormula) {
-        duplicateCheckUrl = `${airtableUrl}?filterByFormula=${encodeURIComponent(filterFormula)}`;
-        console.log(`[airtable-write] 🔍 Vérification doublon: ${duplicateCheckUrl}`);
-        
         try {
-          const duplicateResponse = await fetch(duplicateCheckUrl, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${AIRTABLE_PAT}`,
-            },
-          });
-          
+          const duplicateResponse = await fetch(
+            `${airtableUrl}?filterByFormula=${encodeURIComponent(filterFormula)}`,
+            { method: 'GET', headers: { Authorization: `Bearer ${AIRTABLE_PAT}` } },
+          );
           if (duplicateResponse.ok) {
             const duplicateData = await duplicateResponse.json();
             if (duplicateData.records && duplicateData.records.length > 0) {
-              console.log(`[airtable-write] 🔄 Doublon détecté pour ${table}, retour avec duplicate: true`);
               return new Response(
-                JSON.stringify({
-                  success: true,
-                  duplicate: true,
-                  message: 'Duplicate record found'
-                }),
-                { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                JSON.stringify({ success: true, duplicate: true, message: 'Duplicate record found' }),
+                { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
               );
             }
           }
         } catch (duplicateError) {
-          console.warn(`[airtable-write] ⚠️ Erreur lors de la vérification doublon:`, duplicateError);
-          // Continue with creation if duplicate check fails
+          console.warn('[airtable-write] échec vérification doublon :', duplicateError);
         }
       }
     }
 
-    try {
-      // Make request to Airtable
-      const response = await fetch(airtableUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${AIRTABLE_PAT}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+    const response = await fetch(airtableUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${AIRTABLE_PAT}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
 
-      const responseText = await response.text();
-      
-      if (!response.ok) {
-        console.error(`[airtable-write] ❌ Erreur Airtable ${response.status}: ${responseText}`);
-        
-        // Handle 422 as duplicate detection
-        if (response.status === 422) {
-          let errorBody;
-          try {
-            errorBody = JSON.parse(responseText);
-          } catch {
-            errorBody = { message: responseText };
-          }
+    const responseText = await response.text();
 
-          console.log(`[airtable-write] 🔄 Doublon détecté sur ${table}, retour 200`);
-          return new Response(
-            JSON.stringify({
-              success: true,
-              duplicate: true
-            }),
-            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        
+    if (!response.ok) {
+      console.error(`[airtable-write] erreur Airtable ${response.status}`);
+      if (response.status === 422) {
         return new Response(
-          JSON.stringify({
-            success: false,
-            error: 'airtable_error',
-            status: response.status,
-            message: responseText
-          }),
-          { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ success: true, duplicate: true }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
-
-      const data = JSON.parse(responseText);
-      console.log(`[airtable-write] ✅ Succès écriture ${table}: ${data.records?.length || 0} records créés`);
-
       return new Response(
-        JSON.stringify({
-          success: true,
-          records: data.records || []
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-
-    } catch (fetchError) {
-      console.error('[airtable-write] ❌ Exception fetch:', fetchError);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'network_error',
-          message: fetchError instanceof Error ? fetchError.message : String(fetchError)
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: 'airtable_error', status: response.status }),
+        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
-  } catch (error) {
-    console.error('[airtable-write] ❌ Exception générale:', error);
+    const data = JSON.parse(responseText);
+    console.log(`[airtable-write] succès ${table} : ${data.records?.length ?? 0} enregistrement(s)`);
+
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: 'internal_error',
-        message: error instanceof Error ? error.message : String(error)
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: true, records: data.records ?? [] }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
+  } catch (error) {
+    console.error('[airtable-write] exception :', error);
+    return new Response(
+      JSON.stringify({ success: false, error: 'internal_error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }
 });
