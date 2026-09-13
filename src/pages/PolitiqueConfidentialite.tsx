@@ -153,12 +153,14 @@ const PolitiqueConfidentialite = () => {
           </p>
         </section>
 
-        {/* 6. Durées de conservation */}
+        {/* 7. Durées de conservation */}
         <section id="conservation" className="mb-8">
-          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">6. Durées de conservation</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">7. Durées de conservation</h2>
           <p className="mb-4">Nous conservons les données pour les durées suivantes :</p>
           <ul className="list-disc pl-6 mb-4">
             <li>Données de contact : 3 ans après le dernier échange</li>
+            <li>Contacts de prospection : 3 ans à compter du dernier contact ; adresses collectées mais jamais sollicitées supprimées au plus tard 12 mois après leur collecte</li>
+            <li>Liste d'opposition / de désinscription : conservée le temps nécessaire pour ne plus solliciter la personne</li>
             <li>Données de newsletter : jusqu'au retrait du consentement</li>
             <li>Logs : 12 mois</li>
             <li>Cookies : voir tableau Cookies</li>
