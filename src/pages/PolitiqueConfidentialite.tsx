@@ -56,6 +56,26 @@ const PolitiqueConfidentialite = () => {
               </thead>
               <tbody>
                 <tr>
+                  <td className="border border-border px-4 py-2">Prospection commerciale auprès des entreprises exposantes</td>
+                  <td className="border border-border px-4 py-2">Intérêt légitime (f)</td>
+                  <td className="border border-border px-4 py-2">Email pro, prénom, poste, société, site web</td>
+                </tr>
+                <tr>
+                  <td className="border border-border px-4 py-2">Mise en relation visiteur/exposant (rendez-vous, brochure)</td>
+                  <td className="border border-border px-4 py-2">Mesures précontractuelles / intérêt légitime (b, f)</td>
+                  <td className="border border-border px-4 py-2">Données d'identification & contact, salon concerné</td>
+                </tr>
+                <tr>
+                  <td className="border border-border px-4 py-2">Gestion du compte et de l'espace exposant</td>
+                  <td className="border border-border px-4 py-2">Exécution du contrat (b)</td>
+                  <td className="border border-border px-4 py-2">Email, nom, société, données de connexion</td>
+                </tr>
+                <tr>
+                  <td className="border border-border px-4 py-2">Connexion à un CRM tiers (Radar CRM)</td>
+                  <td className="border border-border px-4 py-2">Exécution du contrat / consentement (a, b)</td>
+                  <td className="border border-border px-4 py-2">Données du compte connecté et contacts synchronisés</td>
+                </tr>
+                <tr>
                   <td className="border border-border px-4 py-2">Gestion du formulaire de contact</td>
                   <td className="border border-border px-4 py-2">Consentement (a)</td>
                   <td className="border border-border px-4 py-2">Données d'identification & contact</td>
@@ -67,7 +87,7 @@ const PolitiqueConfidentialite = () => {
                 </tr>
                 <tr>
                   <td className="border border-border px-4 py-2">Statistiques & mesure d'audience</td>
-                  <td className="border border-border px-4 py-2">Intérêt légitime (f)</td>
+                  <td className="border border-border px-4 py-2">Consentement (cookies) / intérêt légitime (f)</td>
                   <td className="border border-border px-4 py-2">Données de navigation</td>
                 </tr>
                 <tr>
