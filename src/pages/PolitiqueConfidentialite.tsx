@@ -167,9 +167,9 @@ const PolitiqueConfidentialite = () => {
           </ul>
         </section>
 
-        {/* 7. Sécurité */}
+        {/* 8. Sécurité */}
         <section id="securite" className="mb-8">
-          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">7. Sécurité</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">8. Sécurité</h2>
           <p className="mb-4">
             Nous mettons en œuvre des mesures techniques et organisationnelles adaptées (HTTPS, backups, contrôle d'accès, chiffrement en transit et au repos) conformément au <a href="https://www.cnil.fr/fr/guide-de-la-securite-des-donnees-personnelles-nouvelle-edition-2024" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Guide CNIL – sécurité des données personnelles</a>.
           </p>
