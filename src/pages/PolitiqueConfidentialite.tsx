@@ -145,11 +145,11 @@ const PolitiqueConfidentialite = () => {
           </p>
         </section>
 
-        {/* 5. Transferts hors UE */}
+        {/* 6. Transferts hors UE */}
         <section id="transferts" className="mb-8">
-          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">5. Transferts hors Union européenne</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">6. Transferts hors Union européenne</h2>
           <p className="mb-4">
-            Lorsque des données sont transférées en dehors de l'Espace économique européen, nous veillons à ce que le pays assure un niveau de protection adéquat (décision d'adéquation) ou mettons en œuvre des garanties appropriées (clauses contractuelles types).
+            Certains de nos sous‑traitants sont situés aux États‑Unis, notamment Hunter.io, Google (Google Analytics), Airtable, et le cas échéant Microsoft (Outlook/365) ainsi que les prestataires d'IA utilisés pour l'enrichissement éditorial. Lorsque des données sont transférées en dehors de l'Espace économique européen, nous veillons à ce que le pays assure un niveau de protection adéquat (décision d'adéquation EU‑US Data Privacy Framework) ou mettons en œuvre des garanties appropriées (clauses contractuelles types).
           </p>
         </section>
 
