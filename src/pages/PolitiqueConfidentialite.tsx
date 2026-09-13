@@ -189,9 +189,9 @@ const PolitiqueConfidentialite = () => {
           </p>
         </section>
 
-        {/* 9. Cookies & traceurs */}
+        {/* 10. Cookies & traceurs */}
         <section id="cookies" className="mb-8">
-          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">9. Cookies et traceurs</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">10. Cookies et traceurs</h2>
           <p className="mb-4">
             Nous utilisons des cookies pour assurer le fonctionnement du Site, mesurer son audience et vous proposer des contenus personnalisés. Vous pouvez gérer vos préférences via le bandeau cookies ou dans votre navigateur.
           </p>
@@ -202,6 +202,7 @@ const PolitiqueConfidentialite = () => {
                 <thead>
                   <tr className="bg-muted">
                     <th className="border border-border px-4 py-2 text-left">Nom</th>
+                    <th className="border border-border px-4 py-2 text-left">Émetteur</th>
                     <th className="border border-border px-4 py-2 text-left">Finalité</th>
                     <th className="border border-border px-4 py-2 text-left">Durée</th>
                   </tr>
@@ -209,8 +210,21 @@ const PolitiqueConfidentialite = () => {
                 <tbody>
                   <tr>
                     <td className="border border-border px-4 py-2">cookie_consent</td>
+                    <td className="border border-border px-4 py-2">Lotexpo</td>
                     <td className="border border-border px-4 py-2">Stocker vos préférences</td>
                     <td className="border border-border px-4 py-2">6 mois</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-border px-4 py-2">_ga, _ga_*</td>
+                    <td className="border border-border px-4 py-2">Google Analytics</td>
+                    <td className="border border-border px-4 py-2">Mesure d'audience (soumise au consentement)</td>
+                    <td className="border border-border px-4 py-2">13 mois</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-border px-4 py-2">—</td>
+                    <td className="border border-border px-4 py-2">Plausible</td>
+                    <td className="border border-border px-4 py-2">Mesure d'audience sans cookie</td>
+                    <td className="border border-border px-4 py-2">—</td>
                   </tr>
                 </tbody>
               </table>
