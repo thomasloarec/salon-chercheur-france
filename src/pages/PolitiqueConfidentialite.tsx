@@ -232,17 +232,17 @@ const PolitiqueConfidentialite = () => {
           </details>
         </section>
 
-        {/* 10. Modifications */}
+        {/* 11. Modifications */}
         <section id="modifications" className="mb-8">
-          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">10. Modifications de la politique</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">11. Modifications de la politique</h2>
           <p className="mb-4">
-            Cette politique peut être mise à jour à tout moment. Dernière mise à jour : 08/01/2026. Nous vous invitons à la consulter régulièrement.
+            Cette politique peut être mise à jour à tout moment. Dernière mise à jour : 13/09/2026. Nous vous invitons à la consulter régulièrement.
           </p>
         </section>
 
-        {/* 11. Contact */}
+        {/* 12. Contact */}
         <section id="contact" className="mb-8">
-          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">11. Nous contacter</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">12. Nous contacter</h2>
           <p className="mb-4">Pour toute question sur cette politique, contactez‑nous à <a href="mailto:admin@lotexpo.com" className="text-primary hover:underline">admin@lotexpo.com</a>.</p>
         </section>
       </div>
