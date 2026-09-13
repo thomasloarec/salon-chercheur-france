@@ -31,10 +31,11 @@ const PolitiqueConfidentialite = () => {
 
         {/* 2. Données collectées */}
         <section id="donnees-collectees" className="mb-8">
-          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">2. Données que nous collectons</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">2. Données que nous traitons</h2>
           <ul className="list-disc pl-6 mb-4">
             <li>Données d'identification : nom, prénom, société, fonction</li>
-            <li>Données de contact : adresse email, numéro de téléphone</li>
+            <li>Données de contact : adresse email (professionnelle ou personnelle), numéro de téléphone</li>
+            <li>Données professionnelles liées à la participation aux salons : société exposante, site web, poste occupé, événement concerné, stand</li>
             <li>Données de navigation : adresse IP, logs, pages visitées, cookies</li>
             <li>Préférences (abonnement newsletter, salons suivis)</li>
             <li>Autres données fournies via nos formulaires (ex. suggestions d'événements)</li>
