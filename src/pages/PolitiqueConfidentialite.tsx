@@ -175,14 +175,17 @@ const PolitiqueConfidentialite = () => {
           </p>
         </section>
 
-        {/* 8. Vos droits */}
+        {/* 9. Vos droits */}
         <section id="droits" className="mb-8">
-          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">8. Vos droits</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">9. Vos droits</h2>
           <p className="mb-4">
             Conformément au RGPD, vous disposez des droits d'accès, rectification, effacement, opposition, limitation et portabilité. Vous pouvez les exercer auprès de <a href="mailto:admin@lotexpo.com" className="text-primary hover:underline">admin@lotexpo.com</a>. En cas de doute raisonnable sur votre identité, une preuve pourra être demandée.
           </p>
           <p className="mb-4">
-            Vous disposez également du droit d'introduire une réclamation auprès de la CNIL (www.cnil.fr).
+            <strong>Opposition à la prospection.</strong> Vous pouvez vous opposer à tout moment à la réception de sollicitations commerciales en utilisant le lien de désinscription présent dans chaque email ou en nous écrivant à <a href="mailto:admin@lotexpo.com" className="text-primary hover:underline">admin@lotexpo.com</a>.
+          </p>
+          <p className="mb-4">
+            Vous disposez également du droit d'introduire une réclamation auprès de la CNIL (www.cnil.fr), 3 place de Fontenoy, TSA 80715, 75334 Paris Cedex 07.
           </p>
         </section>
 
