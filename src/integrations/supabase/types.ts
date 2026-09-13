@@ -13481,6 +13481,14 @@ export type Database = {
           secteur: string
         }[]
       }
+      leadmagnet_resolve_candidates: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: Json
+      }
+      leadmagnet_result_by_id: {
+        Args: { p_id_exposant: string; p_similar_limit?: number }
+        Returns: Json
+      }
       leadmagnet_search: {
         Args: { p_query: string; p_similar_limit?: number }
         Returns: Json

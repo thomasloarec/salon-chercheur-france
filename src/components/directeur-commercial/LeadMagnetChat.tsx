@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, Search, MapPin, CalendarDays, Sparkles, RefreshCcw } from 'lucide-react';
+import { Loader2, Search, MapPin, CalendarDays, Sparkles, RefreshCcw, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -38,11 +38,25 @@ export interface LeadMagnetResult {
   similar_prospects?: LeadMagnetProspect[];
 }
 
-type Bubble =
-  | { id: string; role: 'user'; text: string }
-  | { id: string; role: 'assistant'; result?: LeadMagnetResult; error?: string };
+interface Candidate {
+  id_exposant: string;
+  nom?: string;
+  domaine?: string;
+  description?: string;
+  similarity?: number;
+  has_upcoming?: boolean;
+}
+
+interface ResolveResponse {
+  query?: string;
+  match_type?: string;
+  count?: number;
+  candidates?: Candidate[];
+}
 
 type ExampleRow = { nom: string; secteur: string; nb_upcoming: number };
+
+type Step = 'input' | 'confirm' | 'choose' | 'result' | 'error' | 'not_found';
 
 function formatDateRangeFr(start?: string, end?: string) {
   if (!start) return '';
@@ -142,8 +156,8 @@ const AssistantBubble = ({ result, error }: { result?: LeadMagnetResult; error?:
   if (result.mode === 'not_found') {
     return (
       <p className="text-sm text-foreground">
-        Nous n'avons pas trouvé cette entreprise dans notre index. Essayez une autre orthographe,
-        son site web, ou une autre entreprise.
+        Nous n'avons pas cette entreprise dans notre index. Essayez une autre orthographe, ou son
+        site web.
       </p>
     );
   }
@@ -202,16 +216,32 @@ const AssistantBubble = ({ result, error }: { result?: LeadMagnetResult; error?:
   );
 };
 
+async function mapInvokeError(error: unknown): Promise<string> {
+  let body = '';
+  try {
+    const ctx = (error as { context?: { text?: () => Promise<string> } }).context;
+    body = ctx?.text ? await ctx.text() : '';
+  } catch {
+    /* ignore */
+  }
+  if (body.includes('rate_limited')) return "Trop de recherches d'affilée, réessayez dans un instant.";
+  if (body.includes('query_trop_courte')) return 'Le nom saisi est trop court.';
+  return 'La recherche est momentanément indisponible.';
+}
+
 interface Props {
   onSearched?: (query: string) => void;
 }
 
 const LeadMagnetChat = ({ onSearched }: Props) => {
   const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [bubbles, setBubbles] = useState<Bubble[]>([]);
+  const [step, setStep] = useState<Step>('input');
+  const [resolving, setResolving] = useState(false);
+  const [fetchingId, setFetchingId] = useState<string | null>(null);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [result, setResult] = useState<LeadMagnetResult | undefined>();
+  const [errorMsg, setErrorMsg] = useState<string | undefined>();
   const [examples, setExamples] = useState<string[]>([]);
-  const counter = useRef(0);
 
   const loadExamples = async () => {
     try {
@@ -228,121 +258,245 @@ const LeadMagnetChat = ({ onSearched }: Props) => {
     loadExamples();
   }, []);
 
-  const run = async (raw: string) => {
-    const query = raw.trim();
-    if (!query || loading) return;
-    counter.current += 1;
-    const uid = `u-${counter.current}`;
-    setBubbles((prev) => [...prev, { id: uid, role: 'user', text: query }]);
+  const reset = () => {
+    setStep('input');
+    setCandidates([]);
+    setResult(undefined);
+    setErrorMsg(undefined);
     setInput('');
-    setLoading(true);
+  };
+
+  const resolve = async (raw: string) => {
+    const query = raw.trim();
+    if (!query || resolving) return;
+    setResolving(true);
+    setErrorMsg(undefined);
+    setResult(undefined);
     onSearched?.(query);
 
-    let result: LeadMagnetResult | undefined;
-    let errorMsg: string | undefined;
-
     try {
-      const { data, error } = await supabase.functions.invoke('leadmagnet-search', {
-        body: { query, similar_limit: 6 },
+      const { data, error } = await supabase.functions.invoke('leadmagnet-resolve', {
+        body: { query },
       });
       if (error) {
-        let code = '';
-        try {
-          const ctx = (error as { context?: { text?: () => Promise<string> } }).context;
-          const body = ctx?.text ? await ctx.text() : '';
-          code = body;
-        } catch {
-          /* ignore */
-        }
-        if (code.includes('rate_limited')) {
-          errorMsg = "Trop de recherches d'affilée, réessayez dans un instant.";
-        } else if (code.includes('query_trop_courte')) {
-          errorMsg = 'Le nom saisi est trop court, essayez un nom plus complet.';
-        } else {
-          errorMsg = 'La recherche est momentanément indisponible. Réessayez dans un instant.';
-        }
+        setErrorMsg(await mapInvokeError(error));
+        setStep('error');
       } else {
-        result = data as LeadMagnetResult;
+        const res = (data ?? {}) as ResolveResponse;
+        const list = res.candidates ?? [];
+        if (!res.count || list.length === 0) {
+          setStep('not_found');
+        } else if (list.length === 1) {
+          setCandidates(list);
+          setStep('confirm');
+        } else {
+          setCandidates(list);
+          setStep('choose');
+        }
       }
     } catch {
-      errorMsg = 'La recherche est momentanément indisponible. Réessayez dans un instant.';
+      setErrorMsg('La recherche est momentanément indisponible.');
+      setStep('error');
     }
-
-    counter.current += 1;
-    setBubbles((prev) => [
-      ...prev,
-      { id: `a-${counter.current}`, role: 'assistant', result, error: errorMsg },
-    ]);
-    setLoading(false);
+    setResolving(false);
   };
+
+  const pick = async (candidate: Candidate) => {
+    if (fetchingId) return;
+    setFetchingId(candidate.id_exposant);
+    setErrorMsg(undefined);
+    try {
+      const { data, error } = await supabase.functions.invoke('leadmagnet-search-by-id', {
+        body: { id_exposant: candidate.id_exposant },
+      });
+      if (error) {
+        setErrorMsg(await mapInvokeError(error));
+        setStep('error');
+      } else {
+        setResult(data as LeadMagnetResult);
+        setStep('result');
+      }
+    } catch {
+      setErrorMsg('La recherche est momentanément indisponible.');
+      setStep('error');
+    }
+    setFetchingId(null);
+  };
+
+  const upcomingBadge = (c: Candidate) =>
+    c.has_upcoming ? (
+      <Badge variant="secondary" className="text-[11px]">
+        Présent sur des salons à venir
+      </Badge>
+    ) : null;
 
   return (
     <div className="w-full">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          run(input);
-        }}
-        className="flex flex-col gap-2 sm:flex-row"
-      >
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Nom d'une entreprise cliente ou prospect (ex : Adoria)"
-          className="h-12 rounded-full px-5"
-          aria-label="Nom d'une entreprise"
-        />
-        <Button type="submit" disabled={loading || !input.trim()} className="h-12 rounded-full px-6">
-          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-          Rechercher
-        </Button>
-      </form>
-
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        {examples.map((ex) => (
-          <button
-            key={ex}
-            type="button"
-            onClick={() => run(ex)}
-            disabled={loading}
-            className="rounded-full border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
+      {step === 'input' && (
+        <>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              resolve(input);
+            }}
+            className="flex flex-col gap-2 sm:flex-row"
           >
-            {ex}
-          </button>
-        ))}
-        {examples.length > 0 && (
-          <button
-            type="button"
-            onClick={loadExamples}
-            disabled={loading}
-            className="inline-flex items-center gap-1 rounded-full border border-transparent px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:text-primary disabled:opacity-50"
-            aria-label="Autres exemples"
-          >
-            <RefreshCcw className="h-3 w-3" /> Autres exemples
-          </button>
-        )}
-      </div>
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Nom d'une entreprise cliente ou prospect (ex : Adoria)"
+              className="h-12 rounded-full px-5"
+              aria-label="Nom d'une entreprise"
+            />
+            <Button
+              type="submit"
+              disabled={resolving || !input.trim()}
+              className="h-12 rounded-full px-6"
+            >
+              {resolving ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="mr-2 h-4 w-4" />
+              )}
+              Rechercher
+            </Button>
+          </form>
 
-      {(bubbles.length > 0 || loading) && (
-        <div className="mt-6 space-y-4">
-          {bubbles.map((b) =>
-            b.role === 'user' ? (
-              <div key={b.id} className="flex justify-end">
-                <div className="max-w-[85%] rounded-2xl bg-primary px-4 py-2 text-sm text-primary-foreground">
-                  {b.text}
-                </div>
-              </div>
-            ) : (
-              <div key={b.id} className="rounded-2xl border border-border bg-card p-4">
-                <AssistantBubble result={b.result} error={b.error} />
-              </div>
-            ),
-          )}
-          {loading && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {examples.map((ex) => (
+              <button
+                key={ex}
+                type="button"
+                onClick={() => resolve(ex)}
+                disabled={resolving}
+                className="rounded-full border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
+              >
+                {ex}
+              </button>
+            ))}
+            {examples.length > 0 && (
+              <button
+                type="button"
+                onClick={loadExamples}
+                disabled={resolving}
+                className="inline-flex items-center gap-1 rounded-full border border-transparent px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:text-primary disabled:opacity-50"
+                aria-label="Autres exemples"
+              >
+                <RefreshCcw className="h-3 w-3" /> Autres exemples
+              </button>
+            )}
+          </div>
+
+          {resolving && (
+            <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Recherche en cours…
             </div>
           )}
+        </>
+      )}
+
+      {step === 'confirm' && candidates[0] && (
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <p className="text-base font-semibold text-foreground">
+            S'agit-il bien de {candidates[0].nom}
+            {candidates[0].domaine ? ` (${candidates[0].domaine})` : ''} ?
+          </p>
+          {candidates[0].description && (
+            <p className="mt-2 text-sm text-muted-foreground">{candidates[0].description}</p>
+          )}
+          {candidates[0].has_upcoming && <div className="mt-3">{upcomingBadge(candidates[0])}</div>}
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <Button
+              onClick={() => pick(candidates[0])}
+              disabled={!!fetchingId}
+              className="h-11 rounded-full px-5"
+            >
+              {fetchingId ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+              )}
+              Oui, voir ses salons
+            </Button>
+            <Button
+              variant="outline"
+              onClick={reset}
+              disabled={!!fetchingId}
+              className="h-11 rounded-full px-5"
+            >
+              Non, ce n'est pas ça
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {step === 'choose' && (
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-foreground">
+            Plusieurs entreprises correspondent, laquelle cherchez-vous ?
+          </p>
+          {candidates.map((c) => (
+            <button
+              key={c.id_exposant}
+              type="button"
+              onClick={() => pick(c)}
+              disabled={!!fetchingId}
+              className="w-full rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-primary disabled:opacity-60"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-base font-semibold text-foreground">{c.nom}</span>
+                {fetchingId === c.id_exposant ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                ) : (
+                  upcomingBadge(c)
+                )}
+              </div>
+              {c.domaine && <p className="mt-0.5 text-xs text-muted-foreground">{c.domaine}</p>}
+              {c.description && (
+                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{c.description}</p>
+              )}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={reset}
+            disabled={!!fetchingId}
+            className="text-sm text-muted-foreground underline-offset-2 hover:text-primary hover:underline disabled:opacity-50"
+          >
+            Aucune de ces entreprises
+          </button>
+        </div>
+      )}
+
+      {step === 'not_found' && (
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <p className="text-sm text-foreground">
+            Nous n'avons pas cette entreprise dans notre index. Essayez une autre orthographe, ou
+            son site web.
+          </p>
+          <Button variant="outline" onClick={reset} className="mt-4 h-11 rounded-full px-5">
+            Nouvelle recherche
+          </Button>
+        </div>
+      )}
+
+      {step === 'error' && (
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <p className="text-sm text-muted-foreground">{errorMsg}</p>
+          <Button variant="outline" onClick={reset} className="mt-4 h-11 rounded-full px-5">
+            Nouvelle recherche
+          </Button>
+        </div>
+      )}
+
+      {step === 'result' && (
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <AssistantBubble result={result} />
+          </div>
+          <Button variant="outline" onClick={reset} className="h-11 rounded-full px-5">
+            <RefreshCcw className="mr-2 h-4 w-4" /> Nouvelle recherche
+          </Button>
         </div>
       )}
     </div>
