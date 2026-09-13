@@ -14,7 +14,7 @@ const PolitiqueConfidentialite = () => {
 
         {/* 0. Préambule */}
         <p className="mb-6">
-          La présente politique de confidentialité décrit comment CECILE NOEL COMMUNICATION (« nous », « notre », « nos ») collecte, utilise et protège les données personnelles que vous nous communiquez lorsque vous utilisez le site Lotexpo (ci‑après « le Site »).
+          La présente politique de confidentialité décrit comment CECILE NOEL COMMUNICATION (« nous », « notre », « nos ») collecte, utilise et protège les données que vous nous fournissez directement (formulaires, compte utilisateur, newsletter) ainsi que les données professionnelles que nous collectons indirectement dans le cadre de la prospection commerciale auprès des entreprises exposantes, lorsque vous utilisez le site Lotexpo (ci‑après « le Site »).
         </p>
 
         {/* 1. Responsable du traitement */}
@@ -31,10 +31,11 @@ const PolitiqueConfidentialite = () => {
 
         {/* 2. Données collectées */}
         <section id="donnees-collectees" className="mb-8">
-          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">2. Données que nous collectons</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">2. Données que nous traitons</h2>
           <ul className="list-disc pl-6 mb-4">
             <li>Données d'identification : nom, prénom, société, fonction</li>
-            <li>Données de contact : adresse email, numéro de téléphone</li>
+            <li>Données de contact : adresse email (professionnelle ou personnelle), numéro de téléphone</li>
+            <li>Données professionnelles liées à la participation aux salons : société exposante, site web, poste occupé, événement concerné, stand</li>
             <li>Données de navigation : adresse IP, logs, pages visitées, cookies</li>
             <li>Préférences (abonnement newsletter, salons suivis)</li>
             <li>Autres données fournies via nos formulaires (ex. suggestions d'événements)</li>
@@ -55,6 +56,26 @@ const PolitiqueConfidentialite = () => {
               </thead>
               <tbody>
                 <tr>
+                  <td className="border border-border px-4 py-2">Prospection commerciale auprès des entreprises exposantes</td>
+                  <td className="border border-border px-4 py-2">Intérêt légitime (f)</td>
+                  <td className="border border-border px-4 py-2">Email pro, prénom, poste, société, site web</td>
+                </tr>
+                <tr>
+                  <td className="border border-border px-4 py-2">Mise en relation visiteur/exposant (rendez-vous, brochure)</td>
+                  <td className="border border-border px-4 py-2">Mesures précontractuelles / intérêt légitime (b, f)</td>
+                  <td className="border border-border px-4 py-2">Données d'identification & contact, salon concerné</td>
+                </tr>
+                <tr>
+                  <td className="border border-border px-4 py-2">Gestion du compte et de l'espace exposant</td>
+                  <td className="border border-border px-4 py-2">Exécution du contrat (b)</td>
+                  <td className="border border-border px-4 py-2">Email, nom, société, données de connexion</td>
+                </tr>
+                <tr>
+                  <td className="border border-border px-4 py-2">Connexion à un CRM tiers (Radar CRM)</td>
+                  <td className="border border-border px-4 py-2">Exécution du contrat / consentement (a, b)</td>
+                  <td className="border border-border px-4 py-2">Données du compte connecté et contacts synchronisés</td>
+                </tr>
+                <tr>
                   <td className="border border-border px-4 py-2">Gestion du formulaire de contact</td>
                   <td className="border border-border px-4 py-2">Consentement (a)</td>
                   <td className="border border-border px-4 py-2">Données d'identification & contact</td>
@@ -66,7 +87,7 @@ const PolitiqueConfidentialite = () => {
                 </tr>
                 <tr>
                   <td className="border border-border px-4 py-2">Statistiques & mesure d'audience</td>
-                  <td className="border border-border px-4 py-2">Intérêt légitime (f)</td>
+                  <td className="border border-border px-4 py-2">Consentement (cookies) / intérêt légitime (f)</td>
                   <td className="border border-border px-4 py-2">Données de navigation</td>
                 </tr>
                 <tr>
@@ -84,60 +105,93 @@ const PolitiqueConfidentialite = () => {
           </div>
         </section>
 
-        {/* 4. Destinataires & sous‑traitants */}
-        <section id="destinataires" className="mb-8">
-          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">4. Destinataires</h2>
+        {/* 4. Origine des données (prospection commerciale) */}
+        <section id="origine-donnees" className="mb-8">
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">4. Origine des données (prospection commerciale)</h2>
           <p className="mb-4">
-            Les données sont destinées uniquement aux personnes habilitées de CECILE NOEL COMMUNICATION et à nos prestataires techniques listés ci‑dessous :
+            Conformément à l'article 14 du RGPD, certaines coordonnées professionnelles présentes sur le Site sont collectées indirectement auprès de sources publiques ou professionnelles :
           </p>
           <ul className="list-disc pl-6 mb-4">
-            <li>Hébergement : GoDaddy (Inde)</li>
-            <li>Service d'emailing : Brevo (France)</li>
+            <li>Listes publiques d'exposants publiées par les organisateurs de salons ;</li>
+            <li>Sites web des entreprises exposantes ;</li>
+            <li>Annuaires et outils professionnels de recherche et de vérification d'emails professionnels (ex. Hunter.io).</li>
           </ul>
-        </section>
-
-        {/* 5. Transferts hors UE */}
-        <section id="transferts" className="mb-8">
-          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">5. Transferts hors Union européenne</h2>
           <p className="mb-4">
-            Lorsque des données sont transférées en dehors de l'Espace économique européen, nous veillons à ce que le pays assure un niveau de protection adéquat (décision d'adéquation) ou mettons en œuvre des garanties appropriées (clauses contractuelles types).
+            Seules des données professionnelles relatives à l'activité des entreprises exposantes sont traitées. Vous pouvez vous opposer à tout moment à cette prospection en nous contactant à <a href="mailto:admin@lotexpo.com" className="text-primary hover:underline">admin@lotexpo.com</a>.
           </p>
         </section>
 
-        {/* 6. Durées de conservation */}
+        {/* 5. Destinataires et sous‑traitants */}
+        <section id="destinataires" className="mb-8">
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">5. Destinataires et sous‑traitants</h2>
+          <p className="mb-4">
+            Les données sont destinées aux personnes habilitées de CECILE NOEL COMMUNICATION, aux entreprises exposantes concernées lorsque vous demandez un rendez-vous ou téléchargez une brochure, ainsi qu'au CRM tiers que l'utilisateur connecte lui‑même.
+          </p>
+          <p className="mb-4">
+            Nos prestataires techniques sont :
+          </p>
+          <ul className="list-disc pl-6 mb-4">
+            <li>Hébergement application + base de données : Supabase (Union européenne, région Paris)</li>
+            <li>Développement et hébergement de l'interface : Lovable</li>
+            <li>Envoi d'emails transactionnels et de prospection : Resend (et le cas échéant Microsoft 365 / Outlook)</li>
+            <li>Recherche/vérification d'emails professionnels : Hunter.io (États‑Unis)</li>
+            <li>Import de données salons/exposants : Airtable (États‑Unis)</li>
+            <li>Mesure d'audience : Plausible (UE) et Google Analytics (États‑Unis)</li>
+            <li>Enrichissement éditorial par IA : prestataires d'IA, le cas échéant</li>
+            <li>Enregistrement du nom de domaine : GoDaddy</li>
+          </ul>
+          <p className="mb-4">
+            Chaque sous‑traitant est encadré par un accord conforme à l'article 28 du RGPD.
+          </p>
+        </section>
+
+        {/* 6. Transferts hors UE */}
+        <section id="transferts" className="mb-8">
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">6. Transferts hors Union européenne</h2>
+          <p className="mb-4">
+            Certains de nos sous‑traitants sont situés aux États‑Unis, notamment Hunter.io, Google (Google Analytics), Airtable, et le cas échéant Microsoft (Outlook/365) ainsi que les prestataires d'IA utilisés pour l'enrichissement éditorial. Lorsque des données sont transférées en dehors de l'Espace économique européen, nous veillons à ce que le pays assure un niveau de protection adéquat (décision d'adéquation EU‑US Data Privacy Framework) ou mettons en œuvre des garanties appropriées (clauses contractuelles types).
+          </p>
+        </section>
+
+        {/* 7. Durées de conservation */}
         <section id="conservation" className="mb-8">
-          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">6. Durées de conservation</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">7. Durées de conservation</h2>
           <p className="mb-4">Nous conservons les données pour les durées suivantes :</p>
           <ul className="list-disc pl-6 mb-4">
             <li>Données de contact : 3 ans après le dernier échange</li>
+            <li>Contacts de prospection : 3 ans à compter du dernier contact ; adresses collectées mais jamais sollicitées supprimées au plus tard 12 mois après leur collecte</li>
+            <li>Liste d'opposition / de désinscription : conservée le temps nécessaire pour ne plus solliciter la personne</li>
             <li>Données de newsletter : jusqu'au retrait du consentement</li>
             <li>Logs : 12 mois</li>
             <li>Cookies : voir tableau Cookies</li>
           </ul>
         </section>
 
-        {/* 7. Sécurité */}
+        {/* 8. Sécurité */}
         <section id="securite" className="mb-8">
-          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">7. Sécurité</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">8. Sécurité</h2>
           <p className="mb-4">
             Nous mettons en œuvre des mesures techniques et organisationnelles adaptées (HTTPS, backups, contrôle d'accès, chiffrement en transit et au repos) conformément au <a href="https://www.cnil.fr/fr/guide-de-la-securite-des-donnees-personnelles-nouvelle-edition-2024" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Guide CNIL – sécurité des données personnelles</a>.
           </p>
         </section>
 
-        {/* 8. Vos droits */}
+        {/* 9. Vos droits */}
         <section id="droits" className="mb-8">
-          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">8. Vos droits</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">9. Vos droits</h2>
           <p className="mb-4">
             Conformément au RGPD, vous disposez des droits d'accès, rectification, effacement, opposition, limitation et portabilité. Vous pouvez les exercer auprès de <a href="mailto:admin@lotexpo.com" className="text-primary hover:underline">admin@lotexpo.com</a>. En cas de doute raisonnable sur votre identité, une preuve pourra être demandée.
           </p>
           <p className="mb-4">
-            Vous disposez également du droit d'introduire une réclamation auprès de la CNIL (www.cnil.fr).
+            <strong>Opposition à la prospection.</strong> Vous pouvez vous opposer à tout moment à la réception de sollicitations commerciales en utilisant le lien de désinscription présent dans chaque email ou en nous écrivant à <a href="mailto:admin@lotexpo.com" className="text-primary hover:underline">admin@lotexpo.com</a>.
+          </p>
+          <p className="mb-4">
+            Vous disposez également du droit d'introduire une réclamation auprès de la CNIL (www.cnil.fr), 3 place de Fontenoy, TSA 80715, 75334 Paris Cedex 07.
           </p>
         </section>
 
-        {/* 9. Cookies & traceurs */}
+        {/* 10. Cookies & traceurs */}
         <section id="cookies" className="mb-8">
-          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">9. Cookies et traceurs</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">10. Cookies et traceurs</h2>
           <p className="mb-4">
             Nous utilisons des cookies pour assurer le fonctionnement du Site, mesurer son audience et vous proposer des contenus personnalisés. Vous pouvez gérer vos préférences via le bandeau cookies ou dans votre navigateur.
           </p>
@@ -148,6 +202,7 @@ const PolitiqueConfidentialite = () => {
                 <thead>
                   <tr className="bg-muted">
                     <th className="border border-border px-4 py-2 text-left">Nom</th>
+                    <th className="border border-border px-4 py-2 text-left">Émetteur</th>
                     <th className="border border-border px-4 py-2 text-left">Finalité</th>
                     <th className="border border-border px-4 py-2 text-left">Durée</th>
                   </tr>
@@ -155,8 +210,21 @@ const PolitiqueConfidentialite = () => {
                 <tbody>
                   <tr>
                     <td className="border border-border px-4 py-2">cookie_consent</td>
+                    <td className="border border-border px-4 py-2">Lotexpo</td>
                     <td className="border border-border px-4 py-2">Stocker vos préférences</td>
                     <td className="border border-border px-4 py-2">6 mois</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-border px-4 py-2">_ga, _ga_*</td>
+                    <td className="border border-border px-4 py-2">Google Analytics</td>
+                    <td className="border border-border px-4 py-2">Mesure d'audience (soumise au consentement)</td>
+                    <td className="border border-border px-4 py-2">13 mois</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-border px-4 py-2">—</td>
+                    <td className="border border-border px-4 py-2">Plausible</td>
+                    <td className="border border-border px-4 py-2">Mesure d'audience sans cookie</td>
+                    <td className="border border-border px-4 py-2">—</td>
                   </tr>
                 </tbody>
               </table>
@@ -164,17 +232,17 @@ const PolitiqueConfidentialite = () => {
           </details>
         </section>
 
-        {/* 10. Modifications */}
+        {/* 11. Modifications */}
         <section id="modifications" className="mb-8">
-          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">10. Modifications de la politique</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">11. Modifications de la politique</h2>
           <p className="mb-4">
-            Cette politique peut être mise à jour à tout moment. Dernière mise à jour : 08/01/2026. Nous vous invitons à la consulter régulièrement.
+            Cette politique peut être mise à jour à tout moment. Dernière mise à jour : 13/09/2026. Nous vous invitons à la consulter régulièrement.
           </p>
         </section>
 
-        {/* 11. Contact */}
+        {/* 12. Contact */}
         <section id="contact" className="mb-8">
-          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">11. Nous contacter</h2>
+          <h2 className="heading-display section-rule text-xl font-semibold mb-4 text-foreground">12. Nous contacter</h2>
           <p className="mb-4">Pour toute question sur cette politique, contactez‑nous à <a href="mailto:admin@lotexpo.com" className="text-primary hover:underline">admin@lotexpo.com</a>.</p>
         </section>
       </div>
