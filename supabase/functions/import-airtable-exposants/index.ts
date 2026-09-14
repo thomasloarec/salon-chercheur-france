@@ -1,173 +1,53 @@
-
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'npm:@supabase/supabase-js@2';
+// import-airtable-exposants — NEUTRALISEE le 14/09/2026 (lot 0, import listes exposants organisateur).
+//
+// Raison de la neutralisation :
+//   Cette fonction ecrivait directement dans `participation` SANS la clause
+//   `WHERE participation.source <> 'organizer'` que porte le pipeline vivant
+//   (RPC load_participations_from_staging). Elle constituait le seul chemin
+//   capable d'ecraser un stand fourni par un organisateur.
+//   Son upsert visait par ailleurs un conflit `id_event,id_exposant` qui ne
+//   correspond a AUCUNE contrainte UNIQUE existante : la seule est
+//   `participation_exposant_event_unique (id_exposant, id_event_text)`.
+//
+// Verifications faites avant neutralisation :
+//   - 0 appelant dans le repo (grep sur .ts/.tsx/.js/.json/.sql/.toml)
+//   - 0 appel dans les logs edge sur 24 h
+//
+// Pipeline de remplacement : import-airtable + RPC load_participations_from_staging.
+//
+// Ne pas reactiver. Si un besoin d'import exposants reapparait, passer par le
+// pipeline de staging, qui porte les garde-fous `source` et `stand_locked`.
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
 
-serve(async (req) => {
+Deno.serve((req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders });
   }
 
-  try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+  // Journalisation des appels residuels, sans jamais relayer le corps de la requete
+  // (il contiendrait une cle API Airtable).
+  console.warn(
+    '[import-airtable-exposants] appel sur une fonction neutralisee',
+    JSON.stringify({
+      method: req.method,
+      origin: req.headers.get('Origin'),
+      referer: req.headers.get('Referer'),
+      user_agent: req.headers.get('User-Agent'),
+      at: new Date().toISOString(),
+    }),
+  );
 
-    const { airtableApiKey, baseId, exposantsTableId, participationTableId } = await req.json()
-
-    if (!airtableApiKey || !baseId || !exposantsTableId) {
-      throw new Error('Missing required parameters: airtableApiKey, baseId, exposantsTableId')
-    }
-
-    console.log('🎫 Starting Airtable import for exposants and participation')
-
-    // Import exposants
-    const exposantsResponse = await fetch(
-      `https://api.airtable.com/v0/${baseId}/${exposantsTableId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${airtableApiKey}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-
-    if (!exposantsResponse.ok) {
-      throw new Error(`Airtable API error: ${exposantsResponse.statusText}`)
-    }
-
-    const exposantsData = await exposantsResponse.json()
-    console.log(`📊 Found ${exposantsData.records?.length || 0} exposants in Airtable`)
-
-    // Upsert exposants
-    let exposantsUpserted = 0
-    for (const record of exposantsData.records || []) {
-      const fields = record.fields
-      
-      const exposantData = {
-        id_exposant: record.id, // Utiliser l'ID Airtable comme clé fonctionnelle
-        nom_exposant: fields['Nom'] || fields['nom_exposant'] || 'Sans nom',
-        website_exposant: fields['Website'] || fields['website_exposant'] || null,
-        exposant_description: fields['Description'] || fields['exposant_description'] || null,
-      }
-
-      const { error: exposantError } = await supabase
-        .from('exposants')
-        .upsert(exposantData, { 
-          onConflict: 'id_exposant',
-          ignoreDuplicates: false 
-        })
-
-      if (exposantError) {
-        console.error(`❌ Error upserting exposant ${exposantData.id_exposant}:`, exposantError)
-      } else {
-        console.log(`🎫 Upserting exposant ${exposantData.id_exposant}`)
-        exposantsUpserted++
-      }
-    }
-
-    // Import participation si fourni
-    let participationUpserted = 0
-    if (participationTableId) {
-      const participationResponse = await fetch(
-        `https://api.airtable.com/v0/${baseId}/${participationTableId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${airtableApiKey}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      )
-
-      if (participationResponse.ok) {
-        const participationData = await participationResponse.json()
-        console.log(`📊 Found ${participationData.records?.length || 0} participations in Airtable`)
-
-        for (const record of participationData.records || []) {
-          const fields = record.fields
-          
-          // Récupérer l'UUID de l'événement depuis id_event (text)
-          const eventIdText = fields['id_event'] || fields['Event ID']
-          if (!eventIdText) {
-            console.warn(`⚠️ Skipping participation ${record.id}: no event ID`)
-            continue
-          }
-
-          // Chercher l'événement par id_event (text) pour obtenir l'UUID
-          const { data: eventData, error: eventError } = await supabase
-            .from('events')
-            .select('id')
-            .eq('id_event', eventIdText)
-            .single()
-
-          if (eventError || !eventData) {
-            console.warn(`⚠️ Event not found for id_event ${eventIdText}`)
-            continue
-          }
-
-          const participationData = {
-            id_event: eventData.id, // UUID de l'événement
-            id_exposant: fields['id_exposant'] || fields['Exposant ID'],
-            stand_exposant: fields['Stand'] || fields['stand_exposant'] || null,
-            website_exposant: fields['Website'] || fields['website_exposant'] || null,
-            urlexpo_event: fields['URL Expo'] || fields['urlexpo_event'] || null,
-          }
-
-          if (!participationData.id_exposant) {
-            console.warn(`⚠️ Skipping participation ${record.id}: no exposant ID`)
-            continue
-          }
-
-          const { error: participationError } = await supabase
-            .from('participation')
-            .upsert(participationData, { 
-              onConflict: 'id_event,id_exposant',
-              ignoreDuplicates: false 
-            })
-
-          if (participationError) {
-            console.error(`❌ Error upserting participation:`, participationError)
-          } else {
-            console.log(`🤝 Upserting participation ${participationData.id_exposant} → ${eventIdText}`)
-            participationUpserted++
-          }
-        }
-      }
-    }
-
-    const result = {
-      success: true,
-      exposantsUpserted,
-      participationUpserted,
-      message: `Import completed: ${exposantsUpserted} exposants, ${participationUpserted} participations`
-    }
-
-    console.log('✅ Import completed:', result)
-
-    return new Response(
-      JSON.stringify(result),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
-      }
-    )
-
-  } catch (error) {
-    console.error('❌ Import error:', error)
-    return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : String(error),
-        success: false
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
-      }
-    )
-  }
-})
+  return new Response(
+    JSON.stringify({
+      error: 'gone',
+      message:
+        "Fonction retiree le 14/09/2026. L'import des exposants et des participations passe desormais par import-airtable et la RPC load_participations_from_staging, qui respectent les garde-fous source='organizer' et stand_locked.",
+    }),
+    { status: 410, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+  );
+});
