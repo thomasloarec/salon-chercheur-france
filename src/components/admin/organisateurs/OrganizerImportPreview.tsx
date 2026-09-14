@@ -52,13 +52,20 @@ const OrganizerImportPreview: React.FC<Props> = ({ importId }) => {
   const [openLineId, setOpenLineId] = useState<string | null>(null);
   const [deciding, setDeciding] = useState(false);
   const [panelError, setPanelError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [forceOpen, setForceOpen] = useState(false);
+  const [forceMessage, setForceMessage] = useState<string | null>(null);
+  const [forceWord, setForceWord] = useState('');
+  const [applying, setApplying] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [applyResult, setApplyResult] = useState<Record<string, any> | null>(null);
 
   const { data: importRow } = useQuery({
     queryKey: ['organizer-import-row', importId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('organizer_exhibitor_imports')
-        .select('id, status, matched_at, applied_at')
+        .select('id, status, matched_at, applied_at, stats')
         .eq('id', importId)
         .maybeSingle();
       if (error) throw error;
