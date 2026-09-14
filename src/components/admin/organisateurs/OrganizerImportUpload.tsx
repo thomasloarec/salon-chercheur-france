@@ -73,7 +73,7 @@ const OrganizerImportUpload: React.FC<Props> = ({ eventId, importId }) => {
     queryFn: async () => {
       const { data, error: err } = await supabase
         .from('staging_organizer_exhibitors')
-        .select('line_no, raw_nom, raw_stand, raw_website, domain_full, domain_registrable, parse_flag, match_reason')
+        .select('line_no, raw_nom, raw_stand, raw_website, raw_description, domain_full, domain_registrable, parse_flag, match_reason')
         .eq('import_id', activeImportId as string)
         .order('line_no', { ascending: true });
       if (err) throw err;
@@ -108,10 +108,11 @@ const OrganizerImportUpload: React.FC<Props> = ({ eventId, importId }) => {
         normalized.findIndex((h) => h && HEADER_VARIANTS[target].includes(h));
 
       const idx = {
-        id_exposant: indexOf('id_exposant'),
         nom: indexOf('nom'),
         stand: indexOf('stand'),
         website: indexOf('website'),
+        description: indexOf('description'),
+        id_exposant: indexOf('id_exposant'),
       };
 
       if (idx.nom === -1 || idx.website === -1) {
@@ -141,6 +142,7 @@ const OrganizerImportUpload: React.FC<Props> = ({ eventId, importId }) => {
         nom: cell(row as unknown[], idx.nom),
         stand: cell(row as unknown[], idx.stand),
         website: cell(row as unknown[], idx.website),
+        description: cell(row as unknown[], idx.description),
         id_exposant: cell(row as unknown[], idx.id_exposant),
       }));
 
