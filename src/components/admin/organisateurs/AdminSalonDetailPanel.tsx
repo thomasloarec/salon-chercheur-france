@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Link } from 'react-router-dom';
 import VerifiedBadge from '@/components/exhibitor/VerifiedBadge';
+import OrganizerImportUpload from '@/components/admin/organisateurs/OrganizerImportUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -634,7 +635,8 @@ const AdminSalonDetailPanel = ({ salonId, onBack }: Props) => {
                 Imports exposants
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-5">
+              <OrganizerImportUpload eventId={salonId} />
               {importsLoading ? (
                 <Skeleton className="h-16 w-full" />
               ) : !imports || imports.length === 0 ? (
