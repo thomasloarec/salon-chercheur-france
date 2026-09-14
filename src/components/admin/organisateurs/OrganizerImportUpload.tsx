@@ -15,13 +15,14 @@ interface Props {
   importId?: string;
 }
 
-type TargetColumn = 'id_exposant' | 'nom' | 'stand' | 'website';
+type TargetColumn = 'id_exposant' | 'nom' | 'stand' | 'website' | 'description';
 
 const HEADER_VARIANTS: Record<TargetColumn, string[]> = {
   id_exposant: ['idexposant', 'id', 'identifiant', 'idlotexpo', 'reference'],
   nom: ['nom', 'nomexposant', 'exposant', 'raisonsociale', 'societe', 'entreprise', 'company', 'name'],
   stand: ['stand', 'standexposant', 'numerostand', 'nstand', 'emplacement', 'booth'],
   website: ['website', 'siteweb', 'site', 'url', 'siteinternet', 'web', 'lien'],
+  description: ['description', 'descriptionexposant', 'descriptif', 'resume', 'presentation'],
 };
 
 const normalizeHeader = (value: unknown): string =>
