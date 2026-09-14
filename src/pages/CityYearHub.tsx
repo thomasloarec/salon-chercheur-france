@@ -200,22 +200,22 @@ const CityYearHub = () => {
               <h2 className="section-rule heading-display text-2xl font-semibold text-foreground mb-6">
                 Programme {year}
               </h2>
-              <div className="space-y-10">
+              <div>
                 {grouped.map(({ monthLabel, events: monthEvents }) => (
-                  <div key={monthLabel} className="border-t border-border pt-8 first:border-t-0 first:pt-0">
-                    <h3 className="text-2xl font-semibold text-foreground mb-6 capitalize">{monthLabel}</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-5">
+                  <section key={monthLabel} className="mb-10">
+                    <MonthSeparator label={monthLabel} count={monthEvents.length} stickyTop="4rem" />
+                    <div className="flex flex-col">
                       {monthEvents.map(e => (
                         <EventCard
                           key={e.id}
                           event={e}
-                          view="grid"
+                          view="list"
                           exhibitorCount={statsMap?.[e.id]?.exhibitor_count}
                           noveltyCount={statsMap?.[e.id]?.novelty_count}
                         />
                       ))}
                     </div>
-                  </div>
+                  </section>
                 ))}
               </div>
             </section>
