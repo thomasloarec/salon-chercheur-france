@@ -104,8 +104,22 @@ const OrganizerImportUpload: React.FC<Props> = ({ eventId, importId }) => {
 
       const headerRow = matrix[0] as unknown[];
       const normalized = headerRow.map(normalizeHeader);
-      const indexOf = (target: TargetColumn) =>
-        normalized.findIndex((h) => h && HEADER_VARIANTS[target].includes(h));
+      // Tolérance au suffixe « exposant » : website_exposant → website.
+      const stripExposantSuffix = (h: string) => {
+        if (h.length > 'exposant'.length && h.endsWith('exposant')) {
+          return h.slice(0, -'exposant'.length);
+        }
+        return '';
+      };
+      const indexOf = (target: TargetColumn) => {
+        const variants = HEADER_VARIANTS[target];
+        const exact = normalized.findIndex((h) => h && variants.includes(h));
+        if (exact !== -1) return exact;
+        return normalized.findIndex((h) => {
+          const base = h ? stripExposantSuffix(h) : '';
+          return base.length > 0 && variants.includes(base);
+        });
+      };
 
       const idx = {
         nom: indexOf('nom'),
