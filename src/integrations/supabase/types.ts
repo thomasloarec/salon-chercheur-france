@@ -13873,6 +13873,19 @@ export type Database = {
         }
         Returns: Json
       }
+      organizer_decide_line: {
+        Args: { p_decision: string; p_id_exposant?: string; p_line_id: string }
+        Returns: Json
+      }
+      organizer_line_candidates: { Args: { p_line_id: string }; Returns: Json }
+      organizer_match_exhibitor_list: {
+        Args: { p_import_id: string }
+        Returns: Json
+      }
+      organizer_preview_exhibitor_list: {
+        Args: { p_import_id: string }
+        Returns: Json
+      }
       organizer_root_domain: { Args: { _domain: string }; Returns: string }
       organizer_stage_lines: {
         Args: { p_import_id: string; p_rows: Json }

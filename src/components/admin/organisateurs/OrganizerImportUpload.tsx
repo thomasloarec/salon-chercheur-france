@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, Upload, Info, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import OrganizerImportPreview from './OrganizerImportPreview';
 
 interface Props {
   eventId: string;
@@ -33,14 +34,14 @@ const normalizeHeader = (value: unknown): string =>
     .replace(/[^a-z0-9]/g, '');
 
 const FLAG_LABELS: Record<string, { label: string; tone: 'neutral' | 'alert' | 'info' }> = {
-  ok: { label: 'Lignes exploitables', tone: 'neutral' },
+  ok: { label: 'Lignes lues sans anomalie', tone: 'neutral' },
   missing_name: { label: 'Nom manquant', tone: 'alert' },
   missing_website: { label: 'Site web manquant', tone: 'alert' },
   invalid_url: { label: 'Adresse web illisible', tone: 'alert' },
   platform_url: { label: 'Lien de réseau social écarté', tone: 'alert' },
   duplicate_line: { label: 'Doublon dans le fichier', tone: 'alert' },
   bad_id_exposant: { label: 'Identifiant non reconnu', tone: 'alert' },
-  id_not_yet_synced: { label: 'Fiche Airtable pas encore synchronisée', tone: 'info' },
+  id_not_yet_synced: { label: 'Fiche à créer depuis Airtable', tone: 'neutral' },
 };
 
 const toneClass = (tone: 'neutral' | 'alert' | 'info') =>
@@ -73,7 +74,7 @@ const OrganizerImportUpload: React.FC<Props> = ({ eventId, importId }) => {
     queryFn: async () => {
       const { data, error: err } = await supabase
         .from('staging_organizer_exhibitors')
-        .select('line_no, raw_nom, raw_stand, raw_website, raw_description, domain_full, domain_registrable, parse_flag, match_reason')
+        .select('line_no, raw_nom, raw_stand, raw_website, raw_description, domain_full, domain_registrable, parse_flag, match_reason, decided_at')
         .eq('import_id', activeImportId as string)
         .order('line_no', { ascending: true });
       if (err) throw err;
@@ -294,8 +295,14 @@ const OrganizerImportUpload: React.FC<Props> = ({ eventId, importId }) => {
             })}
           </div>
           <p className="text-xs text-muted-foreground">
+            Ces compteurs décrivent la lecture du fichier, pas le rapprochement. Lancez le
+            rapprochement pour savoir ce qui sera créé ou modifié.
+          </p>
+          <p className="text-xs text-muted-foreground">
             Aucune donnée du site n'a été modifiée. Cette étape ne fait que préparer le rapprochement.
           </p>
+
+          <OrganizerImportPreview importId={result.import_id} />
 
           {rowsLoading ? (
             <Skeleton className="h-24 w-full" />
@@ -313,6 +320,7 @@ const OrganizerImportUpload: React.FC<Props> = ({ eventId, importId }) => {
                       <th className="px-2 py-2 font-medium">Domaine</th>
                       <th className="px-2 py-2 font-medium">Domaine racine</th>
                       <th className="px-2 py-2 font-medium">Statut</th>
+                      <th className="px-2 py-2 font-medium">Décision</th>
                       <th className="px-2 py-2 font-medium">Détail</th>
                     </tr>
                   </thead>
@@ -331,6 +339,15 @@ const OrganizerImportUpload: React.FC<Props> = ({ eventId, importId }) => {
                         <td className="px-2 py-1.5">{r.domain_registrable || '—'}</td>
                         <td className="px-2 py-1.5">
                           {FLAG_LABELS[r.parse_flag]?.label ?? r.parse_flag}
+                        </td>
+                        <td className="px-2 py-1.5">
+                          {r.decided_at ? (
+                            <Badge variant="outline" className="border-border bg-muted text-foreground">
+                              Décidée à la main
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">Automatique</span>
+                          )}
                         </td>
                         <td className="px-2 py-1.5 text-muted-foreground">{r.match_reason || '—'}</td>
                       </tr>
