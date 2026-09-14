@@ -445,6 +445,89 @@ const OrganizerImportPreview: React.FC<Props> = ({ importId }) => {
         </div>
       )}
 
+      <Dialog open={confirmOpen} onOpenChange={(o) => !applying && setConfirmOpen(o)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Appliquer cette liste au site ?</DialogTitle>
+            <DialogDescription>Cette action modifie les données publiques du salon.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 text-sm">
+            <p>
+              {nbCreate} exposants ajoutés, {Number(compteurs?.update_stand ?? 0)} stands mis à jour,{' '}
+              {nbRetraits} participations supprimées.
+            </p>
+            <p className="text-muted-foreground">
+              Les suppressions sont archivées et peuvent être restaurées.
+            </p>
+            <p>
+              Le site passera de {nbAvant} à {nbApres} participations pour ce salon.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" disabled={applying} onClick={() => setConfirmOpen(false)}>
+              Annuler
+            </Button>
+            <Button disabled={applying} onClick={() => applyList()}>
+              {applying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Appliquer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={forceOpen}
+        onOpenChange={(o) => {
+          if (applying) return;
+          setForceOpen(o);
+          if (!o) setForceWord('');
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Confirmation supplémentaire requise</DialogTitle>
+            <DialogDescription>
+              Cette application retire une part importante des participations existantes.
+            </DialogDescription>
+          </DialogHeader>
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{forceMessage}</AlertDescription>
+          </Alert>
+          <div className="space-y-2">
+            <p className="text-sm">
+              Pour continuer, saisissez le mot <strong>RETIRER</strong> ci-dessous.
+            </p>
+            <Input
+              value={forceWord}
+              onChange={(e) => setForceWord(e.target.value)}
+              placeholder=""
+              autoComplete="off"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              disabled={applying}
+              onClick={() => {
+                setForceOpen(false);
+                setForceWord('');
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={applying || forceWord !== 'RETIRER'}
+              onClick={() => applyList('RETIRER')}
+            >
+              {applying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirmer le retrait
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!openLineId} onOpenChange={(o) => !o && setOpenLineId(null)}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
