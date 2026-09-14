@@ -293,6 +293,7 @@ Deno.serve(async (req: Request) => {
     const rawNom = cleanCell(r.nom ?? r.raw_nom);
     const rawStand = cleanCell(r.stand ?? r.raw_stand);
     const rawWebsite = cleanCell(r.website ?? r.raw_website);
+    const rawDescription = cleanCell(r.description ?? r.raw_description);
     const rawId = cleanCell(r.id_exposant ?? r.raw_id_exposant);
     const nomNormalized = normalizeName(rawNom);
 
@@ -313,6 +314,7 @@ Deno.serve(async (req: Request) => {
       raw_nom: rawNom,
       raw_stand: rawStand,
       raw_website: rawWebsite,
+      raw_description: rawDescription,
       nom_normalized: nomNormalized,
       domain_full: domainFull,
       parse_flag: flag,

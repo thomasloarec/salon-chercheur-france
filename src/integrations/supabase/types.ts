@@ -10147,6 +10147,7 @@ export type Database = {
           nom_normalized: string | null
           parse_flag: string
           planned_action: string | null
+          raw_description: string | null
           raw_id_exposant: string | null
           raw_nom: string | null
           raw_stand: string | null
@@ -10170,6 +10171,7 @@ export type Database = {
           nom_normalized?: string | null
           parse_flag?: string
           planned_action?: string | null
+          raw_description?: string | null
           raw_id_exposant?: string | null
           raw_nom?: string | null
           raw_stand?: string | null
@@ -10193,6 +10195,7 @@ export type Database = {
           nom_normalized?: string | null
           parse_flag?: string
           planned_action?: string | null
+          raw_description?: string | null
           raw_id_exposant?: string | null
           raw_nom?: string | null
           raw_stand?: string | null
