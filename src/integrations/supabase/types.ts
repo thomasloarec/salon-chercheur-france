@@ -7275,27 +7275,45 @@ export type Database = {
       }
       organizer_exhibitor_imports: {
         Row: {
+          applied_at: string | null
+          applied_by: string | null
           created_at: string
           event_id: string
           file_path: string
           id: string
+          matched_at: string | null
           original_name: string | null
+          parsed_at: string | null
+          stats: Json | null
+          status: string
           uploaded_by: string
         }
         Insert: {
+          applied_at?: string | null
+          applied_by?: string | null
           created_at?: string
           event_id: string
           file_path: string
           id?: string
+          matched_at?: string | null
           original_name?: string | null
+          parsed_at?: string | null
+          stats?: Json | null
+          status?: string
           uploaded_by: string
         }
         Update: {
+          applied_at?: string | null
+          applied_by?: string | null
           created_at?: string
           event_id?: string
           file_path?: string
           id?: string
+          matched_at?: string | null
           original_name?: string | null
+          parsed_at?: string | null
+          stats?: Json | null
+          status?: string
           uploaded_by?: string
         }
         Relationships: [
@@ -8482,6 +8500,39 @@ export type Database = {
           stand_exposant?: string | null
           urlexpo_event?: string | null
           website_exposant?: string | null
+        }
+        Relationships: []
+      }
+      participation_removal_log: {
+        Row: {
+          id: string
+          id_event: string | null
+          id_exposant: string | null
+          import_id: string | null
+          reason: string | null
+          removed_at: string
+          removed_by: string | null
+          removed_row: Json
+        }
+        Insert: {
+          id?: string
+          id_event?: string | null
+          id_exposant?: string | null
+          import_id?: string | null
+          reason?: string | null
+          removed_at?: string
+          removed_by?: string | null
+          removed_row: Json
+        }
+        Update: {
+          id?: string
+          id_event?: string | null
+          id_exposant?: string | null
+          import_id?: string | null
+          reason?: string | null
+          removed_at?: string
+          removed_by?: string | null
+          removed_row?: Json
         }
         Relationships: []
       }
@@ -10080,35 +10131,71 @@ export type Database = {
       staging_organizer_exhibitors: {
         Row: {
           created_at: string
-          event_id: string | null
+          decided_at: string | null
+          decided_by: string | null
+          domain_full: string | null
+          domain_id_exposant: string | null
+          domain_registrable: string | null
+          event_id: string
           id: string
-          lead_id: string | null
-          match_type: string | null
-          matched_exhibitor_id: string | null
-          normalized_domain: string | null
+          import_id: string
+          line_no: number
+          match_kind: string
+          match_reason: string | null
+          match_score: number | null
+          matched_id_exposant: string | null
+          nom_normalized: string | null
+          parse_flag: string
+          planned_action: string | null
+          raw_id_exposant: string | null
           raw_nom: string | null
+          raw_stand: string | null
           raw_website: string | null
         }
         Insert: {
           created_at?: string
-          event_id?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          domain_full?: string | null
+          domain_id_exposant?: string | null
+          domain_registrable?: string | null
+          event_id: string
           id?: string
-          lead_id?: string | null
-          match_type?: string | null
-          matched_exhibitor_id?: string | null
-          normalized_domain?: string | null
+          import_id: string
+          line_no: number
+          match_kind?: string
+          match_reason?: string | null
+          match_score?: number | null
+          matched_id_exposant?: string | null
+          nom_normalized?: string | null
+          parse_flag?: string
+          planned_action?: string | null
+          raw_id_exposant?: string | null
           raw_nom?: string | null
+          raw_stand?: string | null
           raw_website?: string | null
         }
         Update: {
           created_at?: string
-          event_id?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          domain_full?: string | null
+          domain_id_exposant?: string | null
+          domain_registrable?: string | null
+          event_id?: string
           id?: string
-          lead_id?: string | null
-          match_type?: string | null
-          matched_exhibitor_id?: string | null
-          normalized_domain?: string | null
+          import_id?: string
+          line_no?: number
+          match_kind?: string
+          match_reason?: string | null
+          match_score?: number | null
+          matched_id_exposant?: string | null
+          nom_normalized?: string | null
+          parse_flag?: string
+          planned_action?: string | null
+          raw_id_exposant?: string | null
           raw_nom?: string | null
+          raw_stand?: string | null
           raw_website?: string | null
         }
         Relationships: [
@@ -10162,10 +10249,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "staging_organizer_exhibitors_lead_id_fkey"
-            columns: ["lead_id"]
+            foreignKeyName: "staging_organizer_exhibitors_import_id_fkey"
+            columns: ["import_id"]
             isOneToOne: false
-            referencedRelation: "growth_leads"
+            referencedRelation: "organizer_exhibitor_imports"
             referencedColumns: ["id"]
           },
         ]
@@ -13876,6 +13963,7 @@ export type Database = {
         Args: { p_lead_id: string; p_raison?: string }
         Returns: Json
       }
+      registrable_domain: { Args: { input_url: string }; Returns: string }
       related_events: {
         Args: { p_event_id: string; p_limit?: number }
         Returns: {
