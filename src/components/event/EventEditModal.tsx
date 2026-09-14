@@ -24,6 +24,7 @@ import { useSectors } from '@/hooks/useSectors';
 import type { Event } from '@/types/event';
 import type { Sector } from '@/types/sector';
 import { AlertTriangle, Info } from 'lucide-react';
+import { normalizeRichTextHtml } from '@/lib/richTextPlain';
 
 const EVENT_TYPES = [
   { value: 'salon', label: 'Salon' },
@@ -175,9 +176,10 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       slug: event.slug,
     });
     // Use description_enrichie when validated, otherwise description_event
-    const displayDescription = (event.enrichissement_statut === 'valide' && event.description_enrichie)
+    const rawDisplayDescription = (event.enrichissement_statut === 'valide' && event.description_enrichie)
       ? event.description_enrichie
       : (event.description_event || '');
+    const displayDescription = normalizeRichTextHtml(rawDisplayDescription);
 
     setFormData({
       nom_event: event.nom_event || '',
@@ -290,7 +292,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
       if (isEventsImport) {
         const updateData = {
           nom_event: formData.nom_event,
-          description_event: formData.description_event || null,
+          description_event: normalizeRichTextHtml(formData.description_event) || null,
           date_debut: formData.date_debut,
           date_fin: formData.date_fin || formData.date_debut,
           nom_lieu: formData.nom_lieu || null,
@@ -322,10 +324,11 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
         // If enriched description is validated, update description_enrichie too
         const isEnrichedActive = event.enrichissement_statut === 'valide' && event.description_enrichie;
+        const normalizedDescription = normalizeRichTextHtml(formData.description_event) || null;
 
         const updateData: Record<string, any> = {
           nom_event: formData.nom_event,
-          description_event: isEnrichedActive ? event.description_event : (formData.description_event || null),
+          description_event: isEnrichedActive ? event.description_event : normalizedDescription,
           date_debut: formData.date_debut,
           date_fin: formData.date_fin || formData.date_debut,
           nom_lieu: formData.nom_lieu || null,
@@ -347,7 +350,7 @@ export const EventEditModal = ({ event, open, onOpenChange, onEventUpdated }: Ev
 
         // When enriched description is active, save edits to description_enrichie
         if (isEnrichedActive) {
-          updateData.description_enrichie = formData.description_event || null;
+          updateData.description_enrichie = normalizedDescription;
         }
 
         const result = await supabase

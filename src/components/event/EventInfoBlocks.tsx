@@ -8,6 +8,7 @@ import EventMapEmbed from '@/components/maps/EventMapEmbed';
 import { isTarifDisplayable } from '@/lib/eventCapabilities';
 import { cn } from '@/lib/utils';
 import type { Event } from '@/types/event';
+import { normalizeRichTextHtml } from '@/lib/richTextPlain';
 
 interface EventInfoBlocksProps {
   event: Event;
@@ -63,24 +64,14 @@ function PracticalRow({
 export default function EventInfoBlocks({ event }: EventInfoBlocksProps) {
   const [showFullDescription, setShowFullDescription] = useState(false);
 
-  const { lead, bodyHtml } = useMemo(() => {
+  const bodyHtml = useMemo(() => {
     const isEnriched =
       event.enrichissement_statut === 'valide' && !!event.description_enrichie;
-    const raw = isEnriched ? event.description_enrichie! : event.description_event || '';
-    if (!raw.trim()) return { lead: '', bodyHtml: '' };
-
-    if (isEnriched) {
-      const paragraphs = raw.split(/\n\n+/).filter((p) => p.trim());
-      const [first, ...rest] = paragraphs;
-      return {
-        lead: first?.replace(/\n/g, ' ') ?? '',
-        bodyHtml: rest.map((p) => `<p>${p.replace(/\n/g, '<br/>')}</p>`).join(''),
-      };
-    }
-    return { lead: '', bodyHtml: raw };
+    const raw = isEnriched ? event.description_enrichie : event.description_event;
+    return normalizeRichTextHtml(raw);
   }, [event.description_enrichie, event.description_event, event.enrichissement_statut]);
 
-  const hasDescription = !!(lead || bodyHtml);
+  const hasDescription = !!bodyHtml;
 
   const addressLine = [
     event.rue,
@@ -122,17 +113,10 @@ export default function EventInfoBlocks({ event }: EventInfoBlocksProps) {
         {hasDescription && (
           <InfoCard title="À propos de l'événement">
             <div className={cn(!showFullDescription && 'line-clamp-[12]')}>
-              {lead && (
-                <p className="mb-3 text-[17px] font-medium leading-relaxed text-foreground">
-                  {lead}
-                </p>
-              )}
-              {bodyHtml && (
-                <div
-                  className="prose prose-sm max-w-none text-left leading-relaxed text-muted-foreground [&>p]:mb-3 [&_*]:text-left"
-                  dangerouslySetInnerHTML={{ __html: sanitize(bodyHtml) }}
-                />
-              )}
+              <div
+                className="prose prose-sm max-w-none whitespace-pre-line text-left leading-relaxed text-muted-foreground [&>p]:mb-3 [&_*]:text-left"
+                dangerouslySetInnerHTML={{ __html: sanitize(bodyHtml) }}
+              />
             </div>
             <Button
               variant="link"
