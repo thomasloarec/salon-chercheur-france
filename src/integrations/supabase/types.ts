@@ -13871,6 +13871,10 @@ export type Database = {
         Returns: Json
       }
       organizer_root_domain: { Args: { _domain: string }; Returns: string }
+      organizer_stage_lines: {
+        Args: { p_import_id: string; p_rows: Json }
+        Returns: Json
+      }
       outreach_unsubscribe: {
         Args: {
           p_campaign_id: string
