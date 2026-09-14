@@ -10,6 +10,7 @@ import { useEventCardStats } from '@/hooks/useEventCardStats';
 import { Badge } from '@/components/ui/badge';
 import { groupEventsByMonth } from '@/utils/eventGrouping';
 import type { Event } from '@/types/event';
+import { MonthSeparator } from '@/components/MonthSeparator';
 
 /** Derive a human-readable, capitalized city name from a URL slug. */
 function cityNameFromSlug(slug?: string): string {
