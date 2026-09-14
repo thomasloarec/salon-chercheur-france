@@ -13873,6 +13873,10 @@ export type Database = {
         }
         Returns: Json
       }
+      organizer_apply_exhibitor_list: {
+        Args: { p_confirm?: string; p_import_id: string }
+        Returns: Json
+      }
       organizer_decide_line: {
         Args: { p_decision: string; p_id_exposant?: string; p_line_id: string }
         Returns: Json
