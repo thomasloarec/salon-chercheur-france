@@ -422,16 +422,18 @@ const OrganizerImportPreview: React.FC<Props> = ({ importId }) => {
                         <td className="px-2 py-1.5 max-w-[200px] truncate">{l.website || '—'}</td>
                         <td className="px-2 py-1.5 text-muted-foreground">{l.raison || l.match_kind || '—'}</td>
                         <td className="px-2 py-1.5 text-right">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setPanelError(null);
-                              setOpenLineId(l.id);
-                            }}
-                          >
-                            Arbitrer
-                          </Button>
+                          {!isApplied && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setPanelError(null);
+                                setOpenLineId(l.id);
+                              }}
+                            >
+                              Arbitrer
+                            </Button>
+                          )}
                         </td>
                       </tr>
                     ))}
