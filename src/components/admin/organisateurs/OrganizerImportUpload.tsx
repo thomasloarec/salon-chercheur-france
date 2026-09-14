@@ -212,8 +212,9 @@ const OrganizerImportUpload: React.FC<Props> = ({ eventId, importId }) => {
         </p>
         <p className="text-muted-foreground">
           Un fichier Excel (.xlsx) ou CSV, une feuille, une ligne par exposant, avec ces colonnes en
-          première ligne : <strong>nom</strong> (obligatoire), <strong>website</strong> (obligatoire),{' '}
-          <strong>stand</strong> (facultatif), <strong>id_exposant</strong> (facultatif).
+          première ligne : <strong>nom_exposant</strong> (obligatoire),{' '}
+          <strong>stand_exposant</strong> (facultatif), <strong>website_exposant</strong> (obligatoire),{' '}
+          <strong>description_exposant</strong> (facultatif), <strong>id_exposant</strong> (facultatif).
         </p>
         <p className="text-muted-foreground">
           Les adresses web peuvent être écrites librement : <code>entreprise.com</code>,{' '}
@@ -294,6 +295,7 @@ const OrganizerImportUpload: React.FC<Props> = ({ eventId, importId }) => {
                       <th className="px-2 py-2 font-medium">Nom</th>
                       <th className="px-2 py-2 font-medium">Stand</th>
                       <th className="px-2 py-2 font-medium">Site web</th>
+                      <th className="px-2 py-2 font-medium">Description</th>
                       <th className="px-2 py-2 font-medium">Domaine</th>
                       <th className="px-2 py-2 font-medium">Domaine racine</th>
                       <th className="px-2 py-2 font-medium">Statut</th>
@@ -310,6 +312,7 @@ const OrganizerImportUpload: React.FC<Props> = ({ eventId, importId }) => {
                         <td className="px-2 py-1.5">{r.raw_nom || '—'}</td>
                         <td className="px-2 py-1.5">{r.raw_stand || '—'}</td>
                         <td className="px-2 py-1.5 max-w-[180px] truncate">{r.raw_website || '—'}</td>
+                        <td className="px-2 py-1.5 max-w-[240px] truncate">{r.raw_description || '—'}</td>
                         <td className="px-2 py-1.5">{r.domain_full || '—'}</td>
                         <td className="px-2 py-1.5">{r.domain_registrable || '—'}</td>
                         <td className="px-2 py-1.5">
