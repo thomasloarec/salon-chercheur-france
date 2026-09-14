@@ -243,7 +243,48 @@ const OrganizerImportPreview: React.FC<Props> = ({ importId }) => {
 
       {previewLoading && <Skeleton className="h-24 w-full" />}
 
-      {preview && (
+      {recap && (
+        <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-primary" />
+            <p className="text-sm font-medium">Import appliqué au site</p>
+          </div>
+          {importRow?.applied_at && (
+            <p className="text-xs text-muted-foreground">
+              Appliqué le {new Date(importRow.applied_at).toLocaleString('fr-FR')}
+            </p>
+          )}
+          <p className="text-base font-semibold">
+            Le salon compte désormais {recap.participations_apres ?? '—'} participations.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              ['Exposants créés', recap.exposants_crees],
+              ['Participations créées', recap.participations_creees],
+              ['Participations mises à jour', recap.participations_majs],
+              ['Participations supprimées', recap.participations_supprimees],
+              ['Participations avant', recap.participations_avant],
+            ].map(([label, value]) => (
+              <Badge key={String(label)} variant="outline" className="bg-background">
+                {label} : {value ?? 0}
+              </Badge>
+            ))}
+          </div>
+          {eventRow?.slug && (
+            <a
+              href={`/events/${eventRow.slug}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-primary underline underline-offset-4"
+            >
+              Voir la page publique du salon
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          )}
+        </div>
+      )}
+
+      {!recap && preview && (
         <div className="space-y-4">
           {/* Bloc compteurs */}
           <div className="space-y-2">
