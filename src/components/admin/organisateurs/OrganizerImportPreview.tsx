@@ -11,7 +11,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Loader2, AlertTriangle, RefreshCw, CheckCircle2, ExternalLink } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -51,13 +52,20 @@ const OrganizerImportPreview: React.FC<Props> = ({ importId }) => {
   const [openLineId, setOpenLineId] = useState<string | null>(null);
   const [deciding, setDeciding] = useState(false);
   const [panelError, setPanelError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [forceOpen, setForceOpen] = useState(false);
+  const [forceMessage, setForceMessage] = useState<string | null>(null);
+  const [forceWord, setForceWord] = useState('');
+  const [applying, setApplying] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [applyResult, setApplyResult] = useState<Record<string, any> | null>(null);
 
   const { data: importRow } = useQuery({
     queryKey: ['organizer-import-row', importId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('organizer_exhibitor_imports')
-        .select('id, status, matched_at, applied_at')
+        .select('id, status, matched_at, applied_at, stats')
         .eq('id', importId)
         .maybeSingle();
       if (error) throw error;
@@ -149,10 +157,69 @@ const OrganizerImportPreview: React.FC<Props> = ({ importId }) => {
   const changements = preview?.changements_stand ?? [];
   const retraits = preview?.retraits ?? [];
 
+  const isApplied = status === 'applied';
+  const storedApplication = (importRow?.stats as any)?.application ?? null;
+  const recap = applyResult ?? storedApplication;
+  const reviewCount = Number(compteurs?.review ?? 0);
+  const canApply = !isApplied && status === 'matched' && reviewCount === 0;
+
+  const nbAvant = Number(compteurs?.participations_actuelles ?? 0);
+  const nbRetraits = Number(compteurs?.retraits ?? 0);
+  const nbCreate = Number(compteurs?.create ?? 0);
+  const nbApres = nbAvant - nbRetraits + nbCreate;
+
+  const eventId = preview?.event?.id ?? null;
+  const { data: eventRow } = useQuery({
+    queryKey: ['organizer-import-event-slug', eventId],
+    enabled: !!eventId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('events')
+        .select('id, slug, nom_event')
+        .eq('id', eventId as string)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const applyList = async (confirmWord?: string) => {
+    setApplying(true);
+    setApplyError(null);
+    try {
+      const { data, error } = await supabase.rpc('organizer_apply_exhibitor_list', {
+        p_import_id: importId,
+        ...(confirmWord ? { p_confirm: confirmWord } : {}),
+      });
+      if (error) throw error;
+      setApplyResult((data ?? {}) as Record<string, any>);
+      setConfirmOpen(false);
+      setForceOpen(false);
+      setForceWord('');
+      setForceMessage(null);
+      await reload();
+      toast({ title: 'Liste appliquée au site' });
+    } catch (err: any) {
+      const message = err?.message ?? 'Erreur inconnue';
+      const needsConfirm =
+        /plus de 30%/i.test(message) || /moins de la moitie|moins de la moitié/i.test(message);
+      if (needsConfirm && !confirmWord) {
+        setConfirmOpen(false);
+        setForceMessage(message);
+        setForceWord('');
+        setForceOpen(true);
+      } else {
+        setApplyError(message);
+      }
+    } finally {
+      setApplying(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        {(status === 'parsed' || status === 'matched') && (
+        {!isApplied && (status === 'parsed' || status === 'matched') && (
           <Button size="sm" onClick={runMatch} disabled={matching} className="flex items-center gap-2">
             {matching ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -176,7 +243,48 @@ const OrganizerImportPreview: React.FC<Props> = ({ importId }) => {
 
       {previewLoading && <Skeleton className="h-24 w-full" />}
 
-      {preview && (
+      {recap && (
+        <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-primary" />
+            <p className="text-sm font-medium">Import appliqué au site</p>
+          </div>
+          {importRow?.applied_at && (
+            <p className="text-xs text-muted-foreground">
+              Appliqué le {new Date(importRow.applied_at).toLocaleString('fr-FR')}
+            </p>
+          )}
+          <p className="text-base font-semibold">
+            Le salon compte désormais {recap.participations_apres ?? '—'} participations.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              ['Exposants créés', recap.exposants_crees],
+              ['Participations créées', recap.participations_creees],
+              ['Participations mises à jour', recap.participations_majs],
+              ['Participations supprimées', recap.participations_supprimees],
+              ['Participations avant', recap.participations_avant],
+            ].map(([label, value]) => (
+              <Badge key={String(label)} variant="outline" className="bg-background">
+                {label} : {value ?? 0}
+              </Badge>
+            ))}
+          </div>
+          {eventRow?.slug && (
+            <a
+              href={`/events/${eventRow.slug}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-primary underline underline-offset-4"
+            >
+              Voir la page publique du salon
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          )}
+        </div>
+      )}
+
+      {!recap && preview && (
         <div className="space-y-4">
           {/* Bloc compteurs */}
           <div className="space-y-2">
@@ -195,6 +303,33 @@ const OrganizerImportPreview: React.FC<Props> = ({ importId }) => {
               ))}
             </div>
           </div>
+
+          {/* Application */}
+          {!isApplied && (
+            <div className="space-y-2">
+              <Button
+                size="sm"
+                disabled={!canApply || applying}
+                onClick={() => {
+                  setApplyError(null);
+                  setConfirmOpen(true);
+                }}
+              >
+                Appliquer au site
+              </Button>
+              {reviewCount > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {reviewCount} ligne(s) à arbitrer avant de pouvoir appliquer
+                </p>
+              )}
+              {applyError && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>{applyError}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
 
           {/* Bloc changements de stand */}
           <div className="space-y-1.5">
@@ -287,16 +422,18 @@ const OrganizerImportPreview: React.FC<Props> = ({ importId }) => {
                         <td className="px-2 py-1.5 max-w-[200px] truncate">{l.website || '—'}</td>
                         <td className="px-2 py-1.5 text-muted-foreground">{l.raison || l.match_kind || '—'}</td>
                         <td className="px-2 py-1.5 text-right">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setPanelError(null);
-                              setOpenLineId(l.id);
-                            }}
-                          >
-                            Arbitrer
-                          </Button>
+                          {!isApplied && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setPanelError(null);
+                                setOpenLineId(l.id);
+                              }}
+                            >
+                              Arbitrer
+                            </Button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -307,6 +444,89 @@ const OrganizerImportPreview: React.FC<Props> = ({ importId }) => {
           </div>
         </div>
       )}
+
+      <Dialog open={confirmOpen} onOpenChange={(o) => !applying && setConfirmOpen(o)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Appliquer cette liste au site ?</DialogTitle>
+            <DialogDescription>Cette action modifie les données publiques du salon.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 text-sm">
+            <p>
+              {nbCreate} exposants ajoutés, {Number(compteurs?.update_stand ?? 0)} stands mis à jour,{' '}
+              {nbRetraits} participations supprimées.
+            </p>
+            <p className="text-muted-foreground">
+              Les suppressions sont archivées et peuvent être restaurées.
+            </p>
+            <p>
+              Le site passera de {nbAvant} à {nbApres} participations pour ce salon.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" disabled={applying} onClick={() => setConfirmOpen(false)}>
+              Annuler
+            </Button>
+            <Button disabled={applying} onClick={() => applyList()}>
+              {applying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Appliquer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={forceOpen}
+        onOpenChange={(o) => {
+          if (applying) return;
+          setForceOpen(o);
+          if (!o) setForceWord('');
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Confirmation supplémentaire requise</DialogTitle>
+            <DialogDescription>
+              Cette application retire une part importante des participations existantes.
+            </DialogDescription>
+          </DialogHeader>
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{forceMessage}</AlertDescription>
+          </Alert>
+          <div className="space-y-2">
+            <p className="text-sm">
+              Pour continuer, saisissez le mot <strong>RETIRER</strong> ci-dessous.
+            </p>
+            <Input
+              value={forceWord}
+              onChange={(e) => setForceWord(e.target.value)}
+              placeholder=""
+              autoComplete="off"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              disabled={applying}
+              onClick={() => {
+                setForceOpen(false);
+                setForceWord('');
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={applying || forceWord !== 'RETIRER'}
+              onClick={() => applyList('RETIRER')}
+            >
+              {applying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirmer le retrait
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!openLineId} onOpenChange={(o) => !o && setOpenLineId(null)}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
