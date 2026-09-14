@@ -157,10 +157,69 @@ const OrganizerImportPreview: React.FC<Props> = ({ importId }) => {
   const changements = preview?.changements_stand ?? [];
   const retraits = preview?.retraits ?? [];
 
+  const isApplied = status === 'applied';
+  const storedApplication = (importRow?.stats as any)?.application ?? null;
+  const recap = applyResult ?? storedApplication;
+  const reviewCount = Number(compteurs?.review ?? 0);
+  const canApply = !isApplied && status === 'matched' && reviewCount === 0;
+
+  const nbAvant = Number(compteurs?.participations_actuelles ?? 0);
+  const nbRetraits = Number(compteurs?.retraits ?? 0);
+  const nbCreate = Number(compteurs?.create ?? 0);
+  const nbApres = nbAvant - nbRetraits + nbCreate;
+
+  const eventId = preview?.event?.id ?? null;
+  const { data: eventRow } = useQuery({
+    queryKey: ['organizer-import-event-slug', eventId],
+    enabled: !!eventId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('events')
+        .select('id, slug, nom_event')
+        .eq('id', eventId as string)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const applyList = async (confirmWord?: string) => {
+    setApplying(true);
+    setApplyError(null);
+    try {
+      const { data, error } = await supabase.rpc('organizer_apply_exhibitor_list', {
+        p_import_id: importId,
+        ...(confirmWord ? { p_confirm: confirmWord } : {}),
+      });
+      if (error) throw error;
+      setApplyResult((data ?? {}) as Record<string, any>);
+      setConfirmOpen(false);
+      setForceOpen(false);
+      setForceWord('');
+      setForceMessage(null);
+      await reload();
+      toast({ title: 'Liste appliquée au site' });
+    } catch (err: any) {
+      const message = err?.message ?? 'Erreur inconnue';
+      const needsConfirm =
+        /plus de 30%/i.test(message) || /moins de la moitie|moins de la moitié/i.test(message);
+      if (needsConfirm && !confirmWord) {
+        setConfirmOpen(false);
+        setForceMessage(message);
+        setForceWord('');
+        setForceOpen(true);
+      } else {
+        setApplyError(message);
+      }
+    } finally {
+      setApplying(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        {(status === 'parsed' || status === 'matched') && (
+        {!isApplied && (status === 'parsed' || status === 'matched') && (
           <Button size="sm" onClick={runMatch} disabled={matching} className="flex items-center gap-2">
             {matching ? (
               <Loader2 className="h-4 w-4 animate-spin" />
