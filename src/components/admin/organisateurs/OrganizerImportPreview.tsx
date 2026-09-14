@@ -304,6 +304,33 @@ const OrganizerImportPreview: React.FC<Props> = ({ importId }) => {
             </div>
           </div>
 
+          {/* Application */}
+          {!isApplied && (
+            <div className="space-y-2">
+              <Button
+                size="sm"
+                disabled={!canApply || applying}
+                onClick={() => {
+                  setApplyError(null);
+                  setConfirmOpen(true);
+                }}
+              >
+                Appliquer au site
+              </Button>
+              {reviewCount > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {reviewCount} ligne(s) à arbitrer avant de pouvoir appliquer
+                </p>
+              )}
+              {applyError && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>{applyError}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+
           {/* Bloc changements de stand */}
           <div className="space-y-1.5">
             <p className="text-sm font-medium">Changements de stand</p>
