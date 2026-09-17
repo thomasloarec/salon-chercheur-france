@@ -110,7 +110,8 @@ export function AdminSidebar() {
   const badgeByUrl: Record<string, number> = {
     '/admin/novelties': counts?.novelties ?? 0,
     '/admin/exhibitors/claims': counts?.claims ?? 0,
-    '/admin/exhibitors': counts?.unmanagedExhibitors ?? 0,
+    '/admin/exhibitors': counts?.exhibitorsNeedingAction ?? 0,
+    '/admin/exhibitors/participation-requests': counts?.participationRequests ?? 0,
     '/admin/organisateurs': counts?.organisateurs ?? 0,
     '/admin/events/completude': counts?.exhibitorsToFind ?? 0,
   };
