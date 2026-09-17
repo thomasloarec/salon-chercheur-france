@@ -188,7 +188,7 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
 
       const ids = exhibitors.map(e => e.id);
 
-      const [teamRes, claimRes] = await Promise.all([
+      const [teamRes, claimRes, participationRes] = await Promise.all([
         supabase
           .from('exhibitor_team_members')
           .select('exhibitor_id')
@@ -196,6 +196,11 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
           .eq('status', 'active'),
         supabase
           .from('exhibitor_claim_requests')
+          .select('exhibitor_id')
+          .in('exhibitor_id', ids)
+          .eq('status', 'pending'),
+        supabase
+          .from('exhibitor_participation_requests')
           .select('exhibitor_id')
           .in('exhibitor_id', ids)
           .eq('status', 'pending'),
@@ -210,9 +215,14 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
         (claimRes.data || []).map((c: any) => c.exhibitor_id)
       );
 
+      const pendingParticipations = new Set(
+        (participationRes.data || []).map((p: any) => p.exhibitor_id)
+      );
+
       const result: AdminExhibitor[] = exhibitors.map(e => {
         const tc = teamCounts[e.id] || 0;
         const hasPending = pendingClaims.has(e.id);
+        const hasPendingParticipation = pendingParticipations.has(e.id);
         let governance_status: GovernanceStatus = 'unmanaged';
         if (e.is_test) governance_status = 'test';
         else if (e.owner_user_id || tc > 0) governance_status = 'managed';
@@ -222,15 +232,23 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
           ...e,
           team_count: tc,
           has_pending_claim: hasPending,
+          has_pending_participation: hasPendingParticipation,
+          needs_action: hasPending || hasPendingParticipation,
           governance_status,
         };
       });
 
+      // Les entreprises à traiter remontent en haut, le reste garde l'ordre courant.
+      const sorted = [...result].sort((a, b) => {
+        if (a.needs_action === b.needs_action) return 0;
+        return a.needs_action ? -1 : 1;
+      });
+
       if (filters.status !== 'all') {
-        return result.filter(e => e.governance_status === filters.status);
+        return sorted.filter(e => e.governance_status === filters.status);
       }
 
-      return result;
+      return sorted;
     },
     staleTime: 30_000,
   });
