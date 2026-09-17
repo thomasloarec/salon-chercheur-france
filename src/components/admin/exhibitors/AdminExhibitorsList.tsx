@@ -50,6 +50,8 @@ const AdminExhibitorsList = ({ onSelectExhibitor, onSelectResult }: Props) => {
   };
 
   const { data: exhibitors, isLoading, refetch } = useAdminExhibitors(filters);
+  const { data: pendingCounts } = useAdminPendingCounts();
+  const needingAction = pendingCounts?.exhibitorsNeedingAction ?? 0;
 
   return (
     <Card>
