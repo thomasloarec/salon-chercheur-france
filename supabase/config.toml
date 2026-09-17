@@ -218,3 +218,9 @@ verify_jwt = false
 
 [functions.activation-feedback]
 verify_jwt = false
+
+[functions.notify-exhibitor-participation-request]
+# Invoquée par un Database Webhook (INSERT sur exhibitor_participation_requests).
+# Le webhook n'envoie pas de JWT utilisateur : la vérification doit rester
+# désactivée. La fonction se contente d'envoyer un email à admin@lotexpo.com.
+verify_jwt = false
