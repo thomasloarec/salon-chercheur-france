@@ -4887,6 +4887,138 @@ export type Database = {
           },
         ]
       }
+      exhibitor_participation_requests: {
+        Row: {
+          admin_note: string | null
+          created_at: string
+          event_id: string | null
+          exhibitor_id: string
+          id: string
+          message: string | null
+          proposed_event_city: string | null
+          proposed_event_name: string | null
+          proposed_event_start: string | null
+          proposed_event_url: string | null
+          requested_by: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          stand: string | null
+          status: string
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string
+          event_id?: string | null
+          exhibitor_id: string
+          id?: string
+          message?: string | null
+          proposed_event_city?: string | null
+          proposed_event_name?: string | null
+          proposed_event_start?: string | null
+          proposed_event_url?: string | null
+          requested_by: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          stand?: string | null
+          status?: string
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string
+          event_id?: string | null
+          exhibitor_id?: string
+          id?: string
+          message?: string | null
+          proposed_event_city?: string | null
+          proposed_event_name?: string | null
+          proposed_event_start?: string | null
+          proposed_event_url?: string | null
+          requested_by?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          stand?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibitor_participation_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "admin_events_exhibitor_coverage"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_participation_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "exhibitor_participation_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "exhibitor_participation_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_participation_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_participation_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_salons_email_missing"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "exhibitor_participation_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_participation_requests_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "exhibitor_participation_requests_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_participation_requests_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_participation_requests_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
+        ]
+      }
       exhibitor_profile_change_logs: {
         Row: {
           actor_role: string
@@ -14103,6 +14235,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      review_participation_request: {
+        Args: {
+          p_admin_note?: string
+          p_decision: string
+          p_request_id: string
+        }
+        Returns: Json
+      }
       revoke_radar_invitation: {
         Args: { p_invitation_id: string }
         Returns: Json
@@ -14210,6 +14350,17 @@ export type Database = {
       search_radar_salon_exposants: {
         Args: { p_event_id: string; p_query: string }
         Returns: Json
+      }
+      search_upcoming_events: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          date_debut: string
+          date_fin: string
+          id: string
+          nom_event: string
+          slug: string
+          ville: string
+        }[]
       }
       select_events_missing_accroche: {
         Args: { p_limit?: number }
