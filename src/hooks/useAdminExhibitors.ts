@@ -390,6 +390,8 @@ export function useAdminExhibitorDetail(exhibitorId: string | null) {
         ...exRes.data,
         team_count: (teamRes.data || []).filter((t: any) => t.status === 'active').length,
         has_pending_claim: (claimsRes.data || []).some((c: any) => c.status === 'pending'),
+        has_pending_participation: false,
+        needs_action: (claimsRes.data || []).some((c: any) => c.status === 'pending'),
         governance_status: exRes.data.is_test
           ? 'test'
           : exRes.data.owner_user_id || (teamRes.data || []).some((t: any) => t.status === 'active')
