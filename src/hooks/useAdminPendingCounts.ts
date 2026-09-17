@@ -52,12 +52,22 @@ export const useAdminPendingCounts = () => {
           .from('admin_events_exhibitor_coverage' as any)
           .select('id', { count: 'exact', head: true })
           .eq('bucket', 'todo'),
+        supabase
+          .from('exhibitor_participation_requests')
+          .select('exhibitor_id', { count: 'exact' })
+          .eq('status', 'pending'),
       ]);
 
       const noveltiesCount = noveltiesRes.count ?? 0;
       const claimsCount = claimsRes.count ?? 0;
-      const distinctExhibitors = new Set(
-        (claimsRes.data ?? []).map((r: any) => r.exhibitor_id)
+      const claimExhibitorIds = (claimsRes.data ?? []).map((r: any) => r.exhibitor_id);
+      const distinctExhibitors = new Set(claimExhibitorIds).size;
+
+      const participationExhibitorIds = (participationRes.data ?? []).map(
+        (r: any) => r.exhibitor_id
+      );
+      const needingAction = new Set(
+        [...claimExhibitorIds, ...participationExhibitorIds].filter(Boolean)
       ).size;
 
       return {
@@ -66,6 +76,8 @@ export const useAdminPendingCounts = () => {
         unmanagedExhibitors: distinctExhibitors,
         organisateurs: (eventClaimsRes.count ?? 0) + (eventChangesRes.count ?? 0),
         exhibitorsToFind: coverageTodoRes.count ?? 0,
+        participationRequests: participationRes.count ?? 0,
+        exhibitorsNeedingAction: needingAction,
       };
     },
   });
