@@ -39,6 +39,7 @@ import AdminExhibitorClaims from '@/pages/AdminExhibitorClaims';
 import AdminOrganisateurs from '@/pages/AdminOrganisateurs';
 import AdminExhibitors from '@/pages/AdminExhibitors';
 import AdminExhibitorCreateRequests from '@/pages/AdminExhibitorCreateRequests';
+import AdminExhibitorParticipationRequests from '@/pages/admin/AdminExhibitorParticipationRequests';
 import AdminImportDiagnostics from '@/pages/AdminImportDiagnostics';
 import AdminSeoAudit from '@/pages/AdminSeoAudit';
 import AdminIaVisite from '@/pages/AdminIaVisite';
@@ -66,6 +67,7 @@ import NoveltyDetail from '@/pages/NoveltyDetail';
 import Notifications from '@/pages/Notifications';
 import Exposants from '@/pages/Exposants';
 import ExhibitorProfile from '@/pages/ExhibitorProfile';
+import ExhibitorManagePage from '@/pages/ExhibitorManagePage';
 import PublierNouveaute from '@/pages/PublierNouveaute';
 import AtelierNouveaute from '@/pages/AtelierNouveaute';
 import SelectionExposant from '@/pages/SelectionExposant';
@@ -152,6 +154,7 @@ function App() {
             <Route path="/nouveautes/:slug" element={<NoveltyDetail />} />
             <Route path="/exposants" element={<Exposants />} />
             <Route path="/exposants/:slug" element={<ExhibitorProfile />} />
+            <Route path="/exposants/:slug/gerer" element={<ExhibitorManagePage />} />
             <Route path="/premium" element={<Exposants />} />
             <Route path="/publier-nouveaute" element={<PublierNouveaute />} />
             <Route path="/publier-nouveaute/exposant" element={<SelectionExposant />} />
@@ -189,6 +192,10 @@ function App() {
               <Route path="exhibitors" element={<AdminExhibitors />} />
               <Route path="exhibitors/claims" element={<AdminExhibitorClaims />} />
               <Route path="exhibitors/create-requests" element={<AdminExhibitorCreateRequests />} />
+              <Route
+                path="exhibitors/participation-requests"
+                element={<AdminExhibitorParticipationRequests />}
+              />
               <Route path="import-diagnostics" element={<AdminImportDiagnostics />} />
               <Route path="organisateurs" element={<AdminOrganisateurs />} />
               <Route path="seo-audit" element={<AdminSeoAudit />} />

@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export interface MyNovelty {
   id: string;
+  slug: string | null;
   title: string;
   type: string;
   status: string;
@@ -11,8 +12,13 @@ export interface MyNovelty {
   media_urls: string[];
   is_premium?: boolean;
   reason_1?: string;
+  reason_2?: string | null;
+  reason_3?: string | null;
+  summary?: string | null;
+  details?: string | null;
   stand_info?: string;
   doc_url?: string;
+  resource_url?: string | null;
   exhibitor_id?: string;
   exhibitors: {
     id: string;
@@ -53,7 +59,8 @@ export const useMyNovelties = () => {
   const { data, error } = await supabase
         .from('novelties')
         .select(`
-          id, title, type, status, created_at, media_urls, is_premium, reason_1, stand_info, doc_url,
+          id, slug, title, type, status, created_at, media_urls, is_premium,
+          reason_1, reason_2, reason_3, summary, details, stand_info, doc_url, resource_url,
           exhibitors!novelties_exhibitor_id_fkey ( id, name, slug, logo_url ),
           events!inner ( id, nom_event, slug, ville, date_debut, date_fin ),
           novelty_stats ( route_users_count, saves_count, reminders_count, popularity_score ),

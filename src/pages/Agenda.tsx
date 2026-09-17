@@ -1,56 +1,59 @@
-import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavoriteEvents } from '@/hooks/useFavoriteEvents';
-import { useUserExhibitors, useExhibitorMeetingRequests } from '@/hooks/useExhibitorAdmin';
-import { useMyNovelties } from '@/hooks/useMyNovelties';
+import { useMyExhibitors } from '@/hooks/useMyExhibitors';
 import { useLikedNovelties } from '@/hooks/useNoveltyLike';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarRange, Building2, Ticket } from 'lucide-react';
+import { CalendarRange } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { VisitorDashboard } from '@/components/agenda/VisitorDashboard';
-import { ExhibitorDashboard } from '@/components/agenda/ExhibitorDashboard';
+import { fetchExhibitorPublicSlugs } from '@/lib/exhibitorPublicSlug';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 const Agenda = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { data: allEvents = [], isLoading, error } = useFavoriteEvents();
-  const { data: userExhibitors = [] } = useUserExhibitors();
-  const { data: myNovelties = [], isLoading: noveltiesLoading } = useMyNovelties();
   const { data: likedNovelties = [] } = useLikedNovelties();
-  const { data: meetingRequests = [] } = useExhibitorMeetingRequests();
-  
-  // Initialize role from URL param ?tab=exposant
-  const initialRole =
-    searchParams.get('tab') === 'exposant' || searchParams.get('section') === 'rendezvous'
-      ? 'exhibitor'
-      : 'visitor';
-  const [activeRole, setActiveRole] = useState<'visitor' | 'exhibitor'>(initialRole);
-  
-  // Sync role when URL changes
-  useEffect(() => {
-    const tab = searchParams.get('tab');
-    if (tab === 'exposant' || searchParams.get('section') === 'rendezvous') {
-      setActiveRole('exhibitor');
-    }
-  }, [searchParams]);
+  const { data: memberships = [], isLoading: membershipsLoading } = useMyExhibitors();
 
-  // Scroll vers la section rendez-vous une fois les données arrivées
-  useEffect(() => {
-    if (searchParams.get('section') !== 'rendezvous' || activeRole !== 'exhibitor') return;
-    const timer = setTimeout(() => {
-      document.getElementById('rendezvous')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchParams, activeRole, meetingRequests.length, noveltiesLoading]);
+  // Les anciens liens « espace exposant » redirigent vers la nouvelle page de
+  // gestion de l'entreprise (ou vers le profil si l'utilisateur en gère
+  // plusieurs).
+  const wantsExhibitor =
+    searchParams.get('tab') === 'exposant' || searchParams.get('section') === 'rendezvous';
 
-  // Filter events: only upcoming or ongoing for visitor mode
+  useEffect(() => {
+    if (!wantsExhibitor || !user || membershipsLoading) return;
+    let cancelled = false;
+    const run = async () => {
+      if (memberships.length !== 1) {
+        navigate('/profile', { replace: true });
+        return;
+      }
+      const exhibitorId = memberships[0].exhibitor_id;
+      const slugs = await fetchExhibitorPublicSlugs([exhibitorId], []);
+      if (cancelled) return;
+      const info = slugs.byExhibitorId.get(exhibitorId);
+      if (info && !info.is_test && info.public_slug) {
+        navigate(`/exposants/${info.public_slug}/gerer`, { replace: true });
+      } else {
+        navigate('/profile', { replace: true });
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [wantsExhibitor, user, memberships, membershipsLoading, navigate]);
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   // Fusionner avec les événements issus des nouveautés likées (filet de
   // sécurité au cas où l'auto-favori n'aurait pas pu s'appliquer).
   const favoriteIds = new Set(allEvents.map((e: any) => e.id));
@@ -70,14 +73,9 @@ const Agenda = () => {
       endDate.setHours(23, 59, 59, 999);
       return endDate >= today;
     })
-    // Sort chronologically: closest events first
     .sort((a: any, b: any) => new Date(a.date_debut).getTime() - new Date(b.date_debut).getTime());
 
-  // Next event is now the first one in the sorted list
   const nextEvent = upcomingOrOngoingEvents[0];
-  const newMeetingRequests = (meetingRequests as any[]).filter((r) => (r.status ?? 'new') === 'new').length;
-  const hasExhibitorAccess =
-    userExhibitors.length > 0 || myNovelties.length > 0 || meetingRequests.length > 0;
 
   if (!user) {
     return (
@@ -116,76 +114,30 @@ const Agenda = () => {
     <MainLayout title="Mon agenda">
       <div className="min-h-screen bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header avec Role Switcher */}
           <div className="mb-8">
             <h1 className="heading-display text-3xl text-foreground mb-4 flex items-center gap-2">
               <CalendarRange className="h-8 w-8" />
               Mon agenda
             </h1>
-            
-            {/* Role Switcher - seulement si l'utilisateur est aussi exposant */}
-            {hasExhibitorAccess ? (
-              <div className="inline-flex rounded-lg border bg-card p-1 gap-1">
-                <button
-                  onClick={() => setActiveRole('visitor')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
-                    activeRole === 'visitor'
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <Ticket className="h-4 w-4" />
-                  Mode Visiteur
-                  <Badge variant="secondary" className="ml-1">
-                    {upcomingOrOngoingEvents.length + likedNovelties.length}
-                  </Badge>
-                </button>
-                
-                <button
-                  onClick={() => setActiveRole('exhibitor')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
-                    activeRole === 'exhibitor'
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <Building2 className="h-4 w-4" />
-                  Espace Exposant
-                  <Badge variant="secondary" className="ml-1">
-                    {myNovelties.length}
-                  </Badge>
-                  {newMeetingRequests > 0 && (
-                    <span className="h-2 w-2 rounded-full bg-destructive" aria-label="Nouvelles demandes de rendez-vous" />
-                  )}
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-4">
-                <p className="text-muted-foreground">
-                  {isLoading ? 'Chargement...' : `${upcomingOrOngoingEvents.length} salon(s) dans votre agenda`}
-                </p>
-                {nextEvent && (
-                  <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5">
-                    Prochain : {format(new Date(nextEvent.date_debut), 'dd MMM yyyy', { locale: fr })}
-                  </Badge>
-                )}
-              </div>
-            )}
+            <div className="flex items-center gap-4 flex-wrap">
+              <p className="text-muted-foreground">
+                {isLoading
+                  ? 'Chargement...'
+                  : `${upcomingOrOngoingEvents.length} salon(s) dans votre agenda`}
+              </p>
+              {nextEvent && (
+                <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5">
+                  Prochain : {format(new Date(nextEvent.date_debut), 'dd MMM yyyy', { locale: fr })}
+                </Badge>
+              )}
+            </div>
           </div>
 
-          {/* Contenu conditionnel selon le rôle */}
-          {activeRole === 'visitor' ? (
-            <VisitorDashboard 
-              events={upcomingOrOngoingEvents}
-              likedNovelties={likedNovelties}
-              isLoading={isLoading}
-            />
-          ) : (
-            <ExhibitorDashboard 
-              exhibitors={userExhibitors}
-              novelties={myNovelties}
-            />
-          )}
+          <VisitorDashboard
+            events={upcomingOrOngoingEvents}
+            likedNovelties={likedNovelties}
+            isLoading={isLoading}
+          />
         </div>
       </div>
     </MainLayout>
