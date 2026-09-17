@@ -41,7 +41,7 @@ function escapeHtml(s: unknown): string {
 }
 
 function formatDateFr(iso: string | null | undefined): string {
-  if (!iso) return 'Non renseigne';
+  if (!iso) return 'Non renseigné';
   try {
     return new Date(iso).toLocaleString('fr-FR', {
       day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
@@ -52,7 +52,7 @@ function formatDateFr(iso: string | null | undefined): string {
 }
 
 function formatDayFr(iso: string | null | undefined): string {
-  if (!iso) return 'Non renseignee';
+  if (!iso) return 'Non renseignée';
   try {
     return new Date(iso).toLocaleDateString('fr-FR', {
       day: '2-digit', month: 'long', year: 'numeric',
@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
     ? (eventSlug
         ? `<a href="${SITE_URL}/events/${escapeHtml(eventSlug)}">${escapeHtml(eventName ?? 'Salon existant')}</a>`
         : escapeHtml(eventName ?? 'Salon existant'))
-    : escapeHtml(record.proposed_event_name ?? 'Salon non renseigne');
+    : escapeHtml(record.proposed_event_name ?? 'Salon non renseigné');
 
   const rows: Array<[string, string]> = [
     ['Entreprise', exhibitorLink],
@@ -166,37 +166,37 @@ Deno.serve(async (req) => {
   ];
 
   if (!record.event_id) {
-    rows.push(['Salon hors Lotexpo', 'Oui, a creer avant validation']);
-    rows.push(['Ville du salon', record.proposed_event_city ?? 'Non renseignee']);
-    rows.push(['Date de debut', formatDayFr(record.proposed_event_start)]);
+    rows.push(['Salon hors Lotexpo', 'Oui, à créer avant validation']);
+    rows.push(['Ville du salon', record.proposed_event_city ?? 'Non renseignée']);
+    rows.push(['Date de début', formatDayFr(record.proposed_event_start)]);
     rows.push([
       'Site du salon',
       record.proposed_event_url
         ? `<a href="${escapeHtml(record.proposed_event_url)}">${escapeHtml(record.proposed_event_url)}</a>`
-        : 'Non renseigne',
+        : 'Non renseigné',
     ]);
   }
 
-  rows.push(['Stand', record.stand ?? 'Non renseigne']);
+  rows.push(['Stand', record.stand ?? 'Non renseigné']);
   rows.push(['Message', record.message ? escapeHtml(record.message) : 'Aucun message']);
   rows.push(['Date de la demande', formatDateFr(record.created_at)]);
 
   const html = renderEmailShell({
-    title: 'Nouvelle participation salon declaree',
-    preheader: `${exhibitorName} declare une participation a un salon.`,
+    title: 'Nouvelle participation salon déclarée',
+    preheader: `${exhibitorName} déclare une participation à un salon.`,
     bodyBlocks: [
-      heading('🔔 Nouvelle participation salon declaree'),
-      paragraph(`<strong>${escapeHtml(exhibitorName)}</strong> vient de declarer une participation a un salon.`),
+      heading('🔔 Nouvelle participation salon déclarée'),
+      paragraph(`<strong>${escapeHtml(exhibitorName)}</strong> vient de déclarer une participation à un salon.`),
       dataTable(rows),
       paragraph(
-        "Cette demande est en attente de validation dans l'administration. Rien n'est visible publiquement tant qu'elle n'est pas validee.",
+        "Cette demande est en attente de validation dans l'administration. Rien n'est visible publiquement tant qu'elle n'est pas validée.",
       ),
     ],
     // Email interne a l'admin : pas de lien de desinscription (transactionnel).
     footer: {},
   });
 
-  const subject = `🔔 Participation salon declaree — ${exhibitorName}`;
+  const subject = `🔔 Participation salon déclarée : ${exhibitorName}`;
 
   try {
     const result = await sendResendEmail({
