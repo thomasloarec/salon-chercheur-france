@@ -8,6 +8,8 @@ export interface AdminPendingCounts {
   unmanagedExhibitors: number; // exhibitors with at least one pending claim (proxy for "to process")
   organisateurs: number;   // demandes salon en attente : revendications + modifications
   exhibitorsToFind: number; // événements publiés à venir sans exposant, non ignorés
+  participationRequests: number; // déclarations de participation en attente
+  exhibitorsNeedingAction: number; // entreprises avec revendication ou participation en attente
 }
 
 /**
