@@ -71,9 +71,10 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
         let exhibitorMap: Record<string, any> = {};
         let teamCounts: Record<string, number> = {};
         let pendingClaims = new Set<string>();
+        let pendingParticipations = new Set<string>();
 
         if (realIds.length > 0) {
-          const [exRes, teamRes, claimRes] = await Promise.all([
+          const [exRes, teamRes, claimRes, participationRes] = await Promise.all([
             supabase
               .from('exhibitors')
               .select('id, name, slug, website, description, logo_url, approved, owner_user_id, verified_at, is_test, created_at, updated_at, plan')
