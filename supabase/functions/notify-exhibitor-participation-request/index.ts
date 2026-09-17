@@ -211,6 +211,8 @@ Deno.serve(async (req) => {
 
   const subject = `🔔 Participation salon déclarée : ${exhibitorName}`;
 
+  let emailId: string | null = null;
+  let emailError: string | null = null;
   try {
     const result = await sendResendEmail({
       to: ADMIN_EMAIL,
@@ -218,11 +220,49 @@ Deno.serve(async (req) => {
       html,
       tags: [{ name: 'type', value: 'exhibitor_participation_request' }],
     });
+    emailId = result.id;
     console.log('[notify-exhibitor-participation-request] email sent', { id: result.id, request: record.id });
-    return jsonResp({ ok: true, id: result.id });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error('[notify-exhibitor-participation-request] send failed', message);
-    return jsonResp({ ok: false, error: message }, 500);
+    emailError = err instanceof Error ? err.message : String(err);
+    console.error('[notify-exhibitor-participation-request] send failed', emailError);
   }
+
+  // Notification in-app aux administrateurs (effet independant de l'email).
+  try {
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { persistSession: false } },
+    );
+    const { data: admins, error: adminsError } = await serviceClient
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'admin');
+    if (adminsError) throw adminsError;
+
+    const targets = Array.from(new Set((admins ?? []).map((a: { user_id: string }) => a.user_id)));
+    if (targets.length > 0) {
+      const rowsToInsert = targets.map((userId) => ({
+        user_id: userId,
+        type: 'participation_request',
+        category: 'exhibitor_mgmt',
+        title: 'Nouvelle participation salon déclarée',
+        message: `${exhibitorName} a déclaré une participation à ${salonLabel}. À valider.`,
+        icon: '📩',
+        exhibitor_id: record.exhibitor_id ?? null,
+        event_id: record.event_id ?? null,
+        link_url: '/admin/exhibitors',
+        metadata: { participation_request_id: record.id ?? null },
+      }));
+      const { error: insertError } = await serviceClient.from('notifications').insert(rowsToInsert);
+      if (insertError) throw insertError;
+    }
+  } catch (err) {
+    console.error('[notify-exhibitor-participation-request] notification insert failed', String(err));
+  }
+
+  if (emailError) {
+    return jsonResp({ ok: false, error: emailError }, 500);
+  }
+  return jsonResp({ ok: true, id: emailId });
 });
