@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { ShieldCheck, Pencil } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ShieldCheck, Settings } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,11 +9,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useExhibitorGovernance } from '@/hooks/useExhibitorGovernance';
 import type { PublicExhibitorProfile } from '@/hooks/useExhibitorProfile';
 import ExhibitorClaimModal from '@/components/exhibitor/ExhibitorClaimModal';
-import ExhibitorOwnerEditDrawer from '@/components/exhibitor/ExhibitorOwnerEditDrawer';
 import AuthRequiredModal from '@/components/AuthRequiredModal';
 import { canEditExhibitorProfile } from '@/lib/exhibitorOwnerEdit';
 import { trackExhibitorEvent } from '@/lib/exhibitorTracking';
-import { cleanAiDescription } from '@/lib/exhibitorDescription';
 import { readCampFromParams, persistClaimCampaign } from '@/lib/claimCampaign';
 
 /* ------------------------------- Claim CTA ------------------------------- */
@@ -30,7 +28,6 @@ export default function ExhibitorClaimCta({
   const { isRealUser } = useAuth();
   const [claimOpen, setClaimOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
   const slug = profile.public_slug || '';
   const [searchParams] = useSearchParams();
 
@@ -40,11 +37,6 @@ export default function ExhibitorClaimCta({
   useEffect(() => {
     if (camp && slug) persistClaimCampaign(camp, slug);
   }, [camp, slug]);
-
-  // Deep-link édition : ?edit=1 ouvre automatiquement le drawer d'édition
-  // pour un gestionnaire validé (utilisé par les CTA de la checklist de
-  // complétion dans « Entreprises que je gère »).
-  const wantsEdit = searchParams.get('edit') === '1';
 
   // Origin-relative return URL forwarded to the auth flow (keeps ?camp=).
   const authRedirectTo = slug
@@ -69,11 +61,6 @@ export default function ExhibitorClaimCta({
     isManager: governance.isManager,
   });
 
-  // Auto-ouverture du drawer quand ?edit=1 et que l'utilisateur peut éditer.
-  useEffect(() => {
-    if (wantsEdit && canEdit) setEditOpen(true);
-  }, [wantsEdit, canEdit]);
-
   const handleClaimClick = () => {
     trackExhibitorEvent('claim_click', slug, {
       authenticated: isRealUser,
@@ -89,27 +76,15 @@ export default function ExhibitorClaimCta({
     return <Skeleton className="h-9 w-44" />;
   }
 
-  // State 5: validated manager → "Modifier cette fiche" (active, Phase 4A-C).
+  // State 5 : gestionnaire validé → accès à l'espace de gestion dédié.
   if (canEdit) {
     return (
-      <>
-        <Button
-          variant={websiteAvailable ? 'secondary' : 'default'}
-          className="gap-2"
-          onClick={() => setEditOpen(true)}
-        >
-          <Pencil className="h-4 w-4" />
-          Modifier cette fiche
-        </Button>
-        <ExhibitorOwnerEditDrawer
-          open={editOpen}
-          onOpenChange={setEditOpen}
-          exhibitorId={profile.exhibitor_id as string}
-          publicSlug={profile.public_slug}
-          exhibitorName={profile.display_name || profile.canonical_name || 'Exposant'}
-          resolvedDescription={cleanAiDescription(profile.description)}
-        />
-      </>
+      <Button asChild variant={websiteAvailable ? 'secondary' : 'default'} className="gap-2">
+        <Link to={`/exposants/${slug}/gerer`}>
+          <Settings className="h-4 w-4" />
+          Gérer ma fiche
+        </Link>
+      </Button>
     );
   }
 

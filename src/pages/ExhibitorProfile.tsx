@@ -9,7 +9,6 @@ import ExhibitorProfileSEO from '@/components/exhibitor/ExhibitorProfileSEO';
 import ExhibitorProfileSkeleton from '@/components/exhibitor/ExhibitorProfileSkeleton';
 import ExhibitorNotFoundView from '@/components/exhibitor/ExhibitorNotFoundView';
 import ExhibitorHero from '@/components/exhibitor/ExhibitorHero';
-import ExhibitorManagerWidget from '@/components/exhibitor/ExhibitorManagerWidget';
 import ExhibitorStats from '@/components/exhibitor/ExhibitorStats';
 import ExhibitorUpcomingEvents from '@/components/exhibitor/ExhibitorUpcomingEvents';
 import ExhibitorNovelties from '@/components/exhibitor/ExhibitorNovelties';
@@ -83,7 +82,6 @@ export default function ExhibitorProfile() {
                   {/* Espace gestionnaire — première carte de la sidebar, visible
                       des seuls gestionnaires de cette fiche (Bloc B). Logique
                       interne (visibilité / RPC) inchangée : emplacement uniquement. */}
-                  <ExhibitorManagerWidget profile={profile} />
                   <ExhibitorTrustInfo profile={profile} />
                 </aside>
               </div>
