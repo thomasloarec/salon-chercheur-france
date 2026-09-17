@@ -202,6 +202,76 @@ export default function ExhibitorFicheSection({
 
   return (
     <div className="space-y-6">
+      {/* Complétude */}
+      <Card className="p-6 space-y-4">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h3 className="text-base font-semibold">Complétude de votre fiche</h3>
+          {completion && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold tabular-nums text-muted-foreground">
+                {completion.profile_score}/100
+              </span>
+              {completion.tier && (
+                <Badge variant="outline" className={`gap-1 ${TIER_META[completion.tier].className}`}>
+                  <Award className="h-3 w-3" />
+                  {TIER_META[completion.tier].label}
+                </Badge>
+              )}
+            </div>
+          )}
+        </div>
+
+        {completionLoading || !completion ? (
+          <Skeleton className="h-24 w-full rounded-lg" />
+        ) : (
+          <>
+            <Progress value={completion.profile_score} className="h-2" />
+            <ul className="space-y-1.5">
+              {items.map((item) => {
+                const Icon = item.icon;
+                if (item.done) {
+                  return (
+                    <li
+                      key={item.key}
+                      className="flex items-center gap-2 py-1 text-sm text-muted-foreground"
+                    >
+                      <Check className="h-4 w-4 text-info flex-shrink-0" />
+                      <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span className="truncate">{item.label}</span>
+                    </li>
+                  );
+                }
+                return (
+                  <li
+                    key={item.key}
+                    className="flex items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 p-2.5"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Icon className="h-4 w-4 flex-shrink-0 text-primary" />
+                      <span className="text-sm font-medium truncate">{item.label}</span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="h-7 flex-shrink-0"
+                      onClick={item.action}
+                    >
+                      Compléter
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+            {!completion.governance_confirmed && (
+              <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+                <Lock className="h-3.5 w-3.5" />
+                La gouvernance se confirme dans la section « Mon équipe ».
+              </p>
+            )}
+          </>
+        )}
+      </Card>
+
       <Card className="p-6">
         {isLoading ? (
           <div className="space-y-4">
@@ -361,76 +431,6 @@ export default function ExhibitorFicheSection({
               </Button>
             </div>
           </div>
-        )}
-      </Card>
-
-      {/* Complétude */}
-      <Card className="p-6 space-y-4">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <h3 className="text-base font-semibold">Complétude de votre fiche</h3>
-          {completion && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold tabular-nums text-muted-foreground">
-                {completion.profile_score}/100
-              </span>
-              {completion.tier && (
-                <Badge variant="outline" className={`gap-1 ${TIER_META[completion.tier].className}`}>
-                  <Award className="h-3 w-3" />
-                  {TIER_META[completion.tier].label}
-                </Badge>
-              )}
-            </div>
-          )}
-        </div>
-
-        {completionLoading || !completion ? (
-          <Skeleton className="h-24 w-full rounded-lg" />
-        ) : (
-          <>
-            <Progress value={completion.profile_score} className="h-2" />
-            <ul className="space-y-1.5">
-              {items.map((item) => {
-                const Icon = item.icon;
-                if (item.done) {
-                  return (
-                    <li
-                      key={item.key}
-                      className="flex items-center gap-2 py-1 text-sm text-muted-foreground"
-                    >
-                      <Check className="h-4 w-4 text-info flex-shrink-0" />
-                      <Icon className="h-3.5 w-3.5 flex-shrink-0" />
-                      <span className="truncate">{item.label}</span>
-                    </li>
-                  );
-                }
-                return (
-                  <li
-                    key={item.key}
-                    className="flex items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 p-2.5"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Icon className="h-4 w-4 flex-shrink-0 text-primary" />
-                      <span className="text-sm font-medium truncate">{item.label}</span>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="default"
-                      className="h-7 flex-shrink-0"
-                      onClick={item.action}
-                    >
-                      Compléter
-                    </Button>
-                  </li>
-                );
-              })}
-            </ul>
-            {!completion.governance_confirmed && (
-              <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
-                <Lock className="h-3.5 w-3.5" />
-                La gouvernance se confirme dans la section « Mon équipe ».
-              </p>
-            )}
-          </>
         )}
       </Card>
     </div>

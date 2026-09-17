@@ -759,6 +759,32 @@ Deno.serve(async (req) => {
         return jsonError("Vous n'administrez pas cet exposant", 403)
       }
 
+      // ── Garde métier : un salon terminé n'est plus modifiable ──
+      {
+        const { data: evRow, error: evErr } = await serviceClient
+          .from('events')
+          .select('date_debut, date_fin')
+          .eq('id', event_id)
+          .maybeSingle()
+        if (evErr) {
+          console.error('❌ set_stand: event lookup failed:', evErr)
+          return jsonError('Failed to load event', 500, evErr)
+        }
+        if (!evRow) {
+          return jsonError('Salon introuvable', 404)
+        }
+        const rawDate = evRow.date_fin ?? evRow.date_debut
+        if (rawDate) {
+          const endDate = new Date(rawDate as string)
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          if (!Number.isNaN(endDate.getTime()) && endDate.getTime() < today.getTime()) {
+            return jsonError('Ce salon est terminé, le numéro de stand ne peut plus être modifié', 400)
+          }
+        }
+      }
+
+
       const { data: updated, error: updErr } = await serviceClient
         .from('participation')
         .update({ stand_exposant: finalStand, stand_locked: true })
