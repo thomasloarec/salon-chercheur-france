@@ -16,7 +16,7 @@
 // webhook.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { sendResendEmail } from '../_shared/resend.ts';
-import { renderEmailShell, heading, paragraph, dataTable } from '../_shared/email-template.ts';
+import { renderEmailShell, heading, paragraph, dataTable, link } from '../_shared/email-template.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -150,36 +150,48 @@ Deno.serve(async (req) => {
     console.warn('[notify-exhibitor-participation-request] lookup failed', String(err));
   }
 
-  const exhibitorLink = exhibitorSlug
-    ? `<a href="${SITE_URL}/exposants/${escapeHtml(exhibitorSlug)}">${escapeHtml(exhibitorName)}</a>`
-    : escapeHtml(exhibitorName);
-
   const salonLabel = record.event_id
-    ? (eventSlug
-        ? `<a href="${SITE_URL}/events/${escapeHtml(eventSlug)}">${escapeHtml(eventName ?? 'Salon existant')}</a>`
-        : escapeHtml(eventName ?? 'Salon existant'))
-    : escapeHtml(record.proposed_event_name ?? 'Salon non renseigné');
+    ? (eventName ?? 'Salon existant')
+    : (record.proposed_event_name ?? 'Salon non renseigné');
 
+  // dataTable echappe systematiquement ses cellules : texte simple uniquement.
   const rows: Array<[string, string]> = [
-    ['Entreprise', exhibitorLink],
+    ['Entreprise', exhibitorName],
     ['Salon', salonLabel],
   ];
+
+  const proposedUrl = record.proposed_event_url?.trim()
+    ? (/^https?:\/\//i.test(record.proposed_event_url.trim())
+        ? record.proposed_event_url.trim()
+        : `https://${record.proposed_event_url.trim()}`)
+    : null;
 
   if (!record.event_id) {
     rows.push(['Salon hors Lotexpo', 'Oui, à créer avant validation']);
     rows.push(['Ville du salon', record.proposed_event_city ?? 'Non renseignée']);
     rows.push(['Date de début', formatDayFr(record.proposed_event_start)]);
-    rows.push([
-      'Site du salon',
-      record.proposed_event_url
-        ? `<a href="${escapeHtml(record.proposed_event_url)}">${escapeHtml(record.proposed_event_url)}</a>`
-        : 'Non renseigné',
-    ]);
+    rows.push(['Site du salon', proposedUrl ?? 'Non renseigné']);
   }
 
   rows.push(['Stand', record.stand ?? 'Non renseigné']);
-  rows.push(['Message', record.message ? escapeHtml(record.message) : 'Aucun message']);
+  rows.push(['Message', record.message ?? 'Aucun message']);
   rows.push(['Date de la demande', formatDateFr(record.created_at)]);
+
+  // Les liens cliquables vivent hors du dataTable (link() echappe le href).
+  const linkBlocks: string[] = [];
+  if (exhibitorSlug) {
+    linkBlocks.push(
+      paragraph(`Fiche exposant : ${link(`${SITE_URL}/exposants/${exhibitorSlug}`, escapeHtml(exhibitorName))}`),
+    );
+  }
+  if (record.event_id && eventSlug) {
+    linkBlocks.push(
+      paragraph(`Page du salon : ${link(`${SITE_URL}/events/${eventSlug}`, escapeHtml(eventName ?? 'Voir le salon'))}`),
+    );
+  }
+  if (!record.event_id && proposedUrl) {
+    linkBlocks.push(paragraph(`Site du salon : ${link(proposedUrl, escapeHtml(proposedUrl))}`));
+  }
 
   const html = renderEmailShell({
     title: 'Nouvelle participation salon déclarée',
@@ -188,6 +200,7 @@ Deno.serve(async (req) => {
       heading('🔔 Nouvelle participation salon déclarée'),
       paragraph(`<strong>${escapeHtml(exhibitorName)}</strong> vient de déclarer une participation à un salon.`),
       dataTable(rows),
+      ...linkBlocks,
       paragraph(
         "Cette demande est en attente de validation dans l'administration. Rien n'est visible publiquement tant qu'elle n'est pas validée.",
       ),
@@ -198,6 +211,8 @@ Deno.serve(async (req) => {
 
   const subject = `🔔 Participation salon déclarée : ${exhibitorName}`;
 
+  let emailId: string | null = null;
+  let emailError: string | null = null;
   try {
     const result = await sendResendEmail({
       to: ADMIN_EMAIL,
@@ -205,11 +220,49 @@ Deno.serve(async (req) => {
       html,
       tags: [{ name: 'type', value: 'exhibitor_participation_request' }],
     });
+    emailId = result.id;
     console.log('[notify-exhibitor-participation-request] email sent', { id: result.id, request: record.id });
-    return jsonResp({ ok: true, id: result.id });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error('[notify-exhibitor-participation-request] send failed', message);
-    return jsonResp({ ok: false, error: message }, 500);
+    emailError = err instanceof Error ? err.message : String(err);
+    console.error('[notify-exhibitor-participation-request] send failed', emailError);
   }
+
+  // Notification in-app aux administrateurs (effet independant de l'email).
+  try {
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { persistSession: false } },
+    );
+    const { data: admins, error: adminsError } = await serviceClient
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'admin');
+    if (adminsError) throw adminsError;
+
+    const targets = Array.from(new Set((admins ?? []).map((a: { user_id: string }) => a.user_id)));
+    if (targets.length > 0) {
+      const rowsToInsert = targets.map((userId) => ({
+        user_id: userId,
+        type: 'participation_request',
+        category: 'exhibitor_mgmt',
+        title: 'Nouvelle participation salon déclarée',
+        message: `${exhibitorName} a déclaré une participation à ${salonLabel}. À valider.`,
+        icon: '📩',
+        exhibitor_id: record.exhibitor_id ?? null,
+        event_id: record.event_id ?? null,
+        link_url: '/admin/exhibitors',
+        metadata: { participation_request_id: record.id ?? null },
+      }));
+      const { error: insertError } = await serviceClient.from('notifications').insert(rowsToInsert);
+      if (insertError) throw insertError;
+    }
+  } catch (err) {
+    console.error('[notify-exhibitor-participation-request] notification insert failed', String(err));
+  }
+
+  if (emailError) {
+    return jsonResp({ ok: false, error: emailError }, 500);
+  }
+  return jsonResp({ ok: true, id: emailId });
 });

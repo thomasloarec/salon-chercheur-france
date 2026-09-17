@@ -92,12 +92,17 @@ export default function AdminExhibitorParticipationRequests() {
 
   const reviewMutation = useMutation({
     mutationFn: async (vars: { id: string; decision: 'approved' | 'rejected' }) => {
-      const { error } = await supabase.rpc('review_participation_request', {
-        p_request_id: vars.id,
-        p_decision: vars.decision,
-        p_admin_note: notes[vars.id]?.trim() ? notes[vars.id].trim() : null,
+      const { data, error } = await supabase.functions.invoke('exhibitor-participation-decide', {
+        body: {
+          request_id: vars.id,
+          decision: vars.decision,
+          admin_note: notes[vars.id]?.trim() ? notes[vars.id].trim() : null,
+        },
       });
       if (error) throw error;
+      if (data && (data as { error?: string }).error) {
+        throw new Error((data as { error?: string }).error);
+      }
     },
     onSuccess: (_d, vars) => {
       toast.success(
