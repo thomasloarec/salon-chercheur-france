@@ -173,6 +173,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_answer_date_audit: {
+        Row: {
+          annee_max_citee: number | null
+          conversation_key: string | null
+          created_at: string
+          evenements_suspects: Json
+          extrait_reponse: string | null
+          id: string
+        }
+        Insert: {
+          annee_max_citee?: number | null
+          conversation_key?: string | null
+          created_at?: string
+          evenements_suspects?: Json
+          extrait_reponse?: string | null
+          id?: string
+        }
+        Update: {
+          annee_max_citee?: number | null
+          conversation_key?: string | null
+          created_at?: string
+          evenements_suspects?: Json
+          extrait_reponse?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
       ai_editorial_prompts: {
         Row: {
           actif: boolean
@@ -13810,6 +13837,7 @@ export type Database = {
           p_ville?: string
         }
         Returns: {
+          a_venir: boolean
           affluence_visiteurs: number
           categories_matchees: string[]
           date_debut: string
@@ -13817,6 +13845,7 @@ export type Database = {
           envergure: string
           nb_exposants_domaine: number
           nom_event: string
+          note: string
           proximite: string
           score: number
           sim_max: number
