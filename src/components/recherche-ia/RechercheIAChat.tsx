@@ -506,11 +506,16 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
                   </div>
                 </div>
               ) : (
-                <div key={m.id} className="flex justify-start gap-2 animate-fade-in">
-                  <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-                    L
+                <div key={m.id} className="animate-fade-in">
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
+                      L
+                    </span>
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                      Réponse Lotexpo
+                    </span>
                   </div>
-                  <div className="max-w-[92%] rounded-2xl rounded-bl-sm bg-background/80 backdrop-blur border border-border px-4 py-3 shadow-sm">
+                  <div className="rounded-2xl border border-border/70 bg-card px-5 py-4 shadow-[0_1px_2px_rgba(11,19,43,0.04)] sm:px-6 sm:py-5">
                     <AnswerMarkdown>{m.content}</AnswerMarkdown>
                   </div>
                 </div>
