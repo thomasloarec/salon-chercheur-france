@@ -165,6 +165,159 @@ export const AdminExhibitorParticipationsCard: React.FC<Props> = ({ exhibitorId,
   );
 };
 
+interface PendingRequestRow {
+  id: string;
+  stand: string | null;
+  message: string | null;
+  created_at: string;
+  event_id: string | null;
+  requested_by: string;
+  proposed_event_name: string | null;
+  proposed_event_city: string | null;
+  proposed_event_start: string | null;
+  proposed_event_url: string | null;
+  events: { nom_event: string | null; slug: string | null } | null;
+}
+
+const PendingRequestsSection: React.FC<{ exhibitorId: string; participationsKey: unknown[] }> = ({
+  exhibitorId,
+  participationsKey,
+}) => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const pendingKey = ['admin-exhibitor-pending-participation-requests', exhibitorId];
+
+  const { data: requests = [] } = useQuery({
+    queryKey: pendingKey,
+    queryFn: async (): Promise<PendingRequestRow[]> => {
+      const { data, error } = await supabase
+        .from('exhibitor_participation_requests')
+        .select(
+          'id, stand, message, created_at, event_id, requested_by, proposed_event_name, proposed_event_city, proposed_event_start, proposed_event_url, events(nom_event, slug)',
+        )
+        .eq('exhibitor_id', exhibitorId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as PendingRequestRow[];
+    },
+  });
+
+  const decide = useMutation({
+    mutationFn: async (vars: { id: string; decision: 'approved' | 'rejected' }) => {
+      const { data, error } = await supabase.functions.invoke('exhibitor-participation-decide', {
+        body: {
+          request_id: vars.id,
+          decision: vars.decision,
+          admin_note: notes[vars.id]?.trim() ? notes[vars.id].trim() : null,
+        },
+      });
+      if (error) throw error;
+      if (data && (data as { error?: string }).error) throw new Error((data as { error?: string }).error);
+    },
+    onSuccess: (_d, vars) => {
+      toast({
+        title: vars.decision === 'approved' ? 'Participation confirmée' : 'Demande refusée',
+      });
+      queryClient.invalidateQueries({ queryKey: pendingKey });
+      queryClient.invalidateQueries({ queryKey: participationsKey });
+      queryClient.invalidateQueries({ queryKey: ['admin-participation-requests'] });
+    },
+    onError: (err: any) =>
+      toast({
+        title: 'Erreur',
+        description: err?.message || "L'action n'a pas pu être appliquée",
+        variant: 'destructive',
+      }),
+    onSettled: () => setBusyId(null),
+  });
+
+  if (requests.length === 0) return null;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <AlertTriangle className="h-4 w-4 text-primary" />
+        <span>Demandes en attente</span>
+        <span className="text-muted-foreground">({requests.length})</span>
+      </div>
+      <div className="space-y-3">
+        {requests.map((r) => {
+          const busy = busyId === r.id;
+          const salonName = r.event_id
+            ? (r.events?.nom_event ?? 'Salon existant')
+            : (r.proposed_event_name ?? 'Salon non précisé');
+          return (
+            <div key={r.id} className="rounded-md border p-3 space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-medium">{salonName}</span>
+                {r.stand && <Badge variant="secondary">Stand {r.stand}</Badge>}
+                <span className="text-xs text-muted-foreground">Déclarée le {fmt(r.created_at)}</span>
+              </div>
+              {!r.event_id && (
+                <div className="text-xs text-muted-foreground">
+                  {[r.proposed_event_city, fmt(r.proposed_event_start)].filter(Boolean).join(' · ')}
+                  {r.proposed_event_url && (
+                    <>
+                      {' · '}
+                      <a
+                        href={r.proposed_event_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        site officiel
+                      </a>
+                    </>
+                  )}
+                </div>
+              )}
+              {r.message && <p className="text-sm bg-muted/40 rounded-md p-2">{r.message}</p>}
+              {!r.event_id && (
+                <div className="flex items-start gap-2 rounded-md border border-primary/30 bg-primary/5 p-2">
+                  <AlertTriangle className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-xs">Salon hors Lotexpo, à créer avant de pouvoir confirmer.</p>
+                </div>
+              )}
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  value={notes[r.id] ?? ''}
+                  onChange={(e) => setNotes((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                  placeholder="Note (facultative, utile en cas de refus)"
+                  className="h-8 flex-1 min-w-[200px]"
+                />
+                <Button
+                  size="sm"
+                  disabled={busy || !r.event_id}
+                  onClick={() => {
+                    setBusyId(r.id);
+                    decide.mutate({ id: r.id, decision: 'approved' });
+                  }}
+                >
+                  Confirmer
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => {
+                    setBusyId(r.id);
+                    decide.mutate({ id: r.id, decision: 'rejected' });
+                  }}
+                >
+                  Refuser
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const Section: React.FC<{
   title: string;
   icon: React.ReactNode;
