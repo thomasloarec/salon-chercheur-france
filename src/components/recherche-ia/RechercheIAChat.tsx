@@ -497,7 +497,7 @@ const RechercheIAChat = ({ variant = 'page', showHero = true, headingAs = 'h2', 
 
         {/* Conversation */}
         {hasStarted && (
-          <div className="flex-1 space-y-5">
+          <div className="flex-1 space-y-6">
             {messages.map((m) =>
               m.role === 'user' ? (
                 <div key={m.id} className="flex justify-end animate-fade-in">
