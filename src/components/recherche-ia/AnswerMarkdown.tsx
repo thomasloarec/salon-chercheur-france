@@ -71,7 +71,7 @@ const AnswerMarkdown = ({ children }: { children: string }) => {
               first?.tagName === 'strong' && CALLOUT_RE.test(hastText(first).trim());
             if (isCallout) {
               return (
-                <div className="my-5 rounded-xl border border-primary/20 bg-[hsl(var(--violet-soft))]/60 px-4 py-3 text-[15px] leading-[1.65]">
+                <div className="my-5 rounded-xl border border-primary/20 bg-[hsl(var(--violet-soft)/0.6)] px-4 py-3 text-[15px] leading-[1.65]">
                   <p {...props}>{children}</p>
                 </div>
               );
