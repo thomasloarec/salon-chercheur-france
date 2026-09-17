@@ -164,12 +164,20 @@ const ExhibitorPanel = ({
       {/* Actions row — two clear paths (stacked on mobile, inline on desktop) */}
       <div className="px-3 pb-3 pt-0 flex flex-col sm:flex-row gap-2">
         {publicSlug ? (
-          <Button asChild variant="outline" size="sm" className="flex-1">
-            <Link to={`/exposants/${publicSlug}`}>
-              <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-              Voir la fiche publique
-            </Link>
-          </Button>
+          <>
+            <Button asChild size="sm" className="flex-1">
+              <Link to={`/exposants/${publicSlug}/gerer`}>
+                <Settings className="h-3.5 w-3.5 mr-1.5" />
+                Gérer
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm" className="flex-1">
+              <Link to={`/exposants/${publicSlug}`}>
+                <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                Voir la fiche publique
+              </Link>
+            </Button>
+          </>
         ) : (
           <Button variant="outline" size="sm" className="flex-1" disabled>
             Fiche en préparation
