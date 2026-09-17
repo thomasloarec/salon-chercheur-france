@@ -22,6 +22,8 @@ export interface AdminExhibitor {
   // Computed
   team_count: number;
   has_pending_claim: boolean;
+  has_pending_participation: boolean;
+  needs_action: boolean;
   governance_status: GovernanceStatus;
   // Search-only metadata (present when result comes from search_admin_companies RPC)
   source?: AdminSearchSource;
