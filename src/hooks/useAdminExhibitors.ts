@@ -89,7 +89,15 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
               .select('exhibitor_id')
               .in('exhibitor_id', realIds)
               .eq('status', 'pending'),
+            supabase
+              .from('exhibitor_participation_requests')
+              .select('exhibitor_id')
+              .in('exhibitor_id', realIds)
+              .eq('status', 'pending'),
           ]);
+          pendingParticipations = new Set(
+            (participationRes.data || []).map((p: any) => p.exhibitor_id)
+          );
           (exRes.data || []).forEach((e: any) => { exhibitorMap[e.id] = e; });
           (teamRes.data || []).forEach((t: any) => {
             teamCounts[t.exhibitor_id] = (teamCounts[t.exhibitor_id] || 0) + 1;
