@@ -210,6 +210,15 @@ const AdminExhibitorsList = ({ onSelectExhibitor, onSelectResult }: Props) => {
                 </div>
 
                 <div className="flex items-center gap-3 ml-4 shrink-0">
+                  {ex.needs_action && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs gap-1 bg-destructive/10 text-destructive border-destructive/30"
+                    >
+                      <AlertCircle className="h-3.5 w-3.5" />
+                      {ex.has_pending_participation ? 'Participation à valider' : 'Action requise'}
+                    </Badge>
+                  )}
                   {ex.source === 'outreach' && !ex.has_exhibitor_row && (
                     <Badge variant="outline" className="text-xs gap-1 bg-sky-50 text-sky-700 border-sky-200">
                       <Mail className="h-3.5 w-3.5" />
