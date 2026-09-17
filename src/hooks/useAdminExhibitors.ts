@@ -136,6 +136,8 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
             plan: ex?.plan ?? null,
             team_count: tc,
             has_pending_claim: hasPending,
+            has_pending_participation: hasPendingParticipation,
+            needs_action: hasPending || hasPendingParticipation,
             governance_status,
             source: r.source as AdminSearchSource,
             has_exhibitor_row: !!r.has_exhibitor_row,
