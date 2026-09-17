@@ -134,6 +134,7 @@ export const AdminExhibitorParticipationsCard: React.FC<Props> = ({ exhibitorId,
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {exhibitorId && <PendingRequestsSection exhibitorId={exhibitorId} participationsKey={queryKey} />}
         {isLoading ? (
           <div className="text-sm text-muted-foreground py-4">Chargement…</div>
         ) : (rows?.length ?? 0) === 0 ? (
