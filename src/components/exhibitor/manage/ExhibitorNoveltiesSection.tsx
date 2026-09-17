@@ -279,11 +279,13 @@ export default function ExhibitorNoveltiesSection({
         <ExhibitorMeetingRequests />
       </div>
 
-      <EditNoveltyDialog
-        novelty={editingNovelty}
-        open={!!editingNovelty}
-        onOpenChange={(open) => !open && setEditingNovelty(null)}
-      />
+      {editingNovelty && (
+        <EditNoveltyDialog
+          novelty={editingNovelty}
+          open
+          onOpenChange={(open) => !open && setEditingNovelty(null)}
+        />
+      )}
     </div>
   );
 }
