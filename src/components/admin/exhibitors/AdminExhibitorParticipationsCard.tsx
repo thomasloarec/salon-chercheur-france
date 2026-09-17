@@ -224,6 +224,8 @@ const PendingRequestsSection: React.FC<{ exhibitorId: string; participationsKey:
       queryClient.invalidateQueries({ queryKey: pendingKey });
       queryClient.invalidateQueries({ queryKey: participationsKey });
       queryClient.invalidateQueries({ queryKey: ['admin-participation-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-exhibitors'] });
     },
     onError: (err: any) =>
       toast({
