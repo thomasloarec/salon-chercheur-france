@@ -150,36 +150,48 @@ Deno.serve(async (req) => {
     console.warn('[notify-exhibitor-participation-request] lookup failed', String(err));
   }
 
-  const exhibitorLink = exhibitorSlug
-    ? `<a href="${SITE_URL}/exposants/${escapeHtml(exhibitorSlug)}">${escapeHtml(exhibitorName)}</a>`
-    : escapeHtml(exhibitorName);
-
   const salonLabel = record.event_id
-    ? (eventSlug
-        ? `<a href="${SITE_URL}/events/${escapeHtml(eventSlug)}">${escapeHtml(eventName ?? 'Salon existant')}</a>`
-        : escapeHtml(eventName ?? 'Salon existant'))
-    : escapeHtml(record.proposed_event_name ?? 'Salon non renseigné');
+    ? (eventName ?? 'Salon existant')
+    : (record.proposed_event_name ?? 'Salon non renseigné');
 
+  // dataTable echappe systematiquement ses cellules : texte simple uniquement.
   const rows: Array<[string, string]> = [
-    ['Entreprise', exhibitorLink],
+    ['Entreprise', exhibitorName],
     ['Salon', salonLabel],
   ];
+
+  const proposedUrl = record.proposed_event_url?.trim()
+    ? (/^https?:\/\//i.test(record.proposed_event_url.trim())
+        ? record.proposed_event_url.trim()
+        : `https://${record.proposed_event_url.trim()}`)
+    : null;
 
   if (!record.event_id) {
     rows.push(['Salon hors Lotexpo', 'Oui, à créer avant validation']);
     rows.push(['Ville du salon', record.proposed_event_city ?? 'Non renseignée']);
     rows.push(['Date de début', formatDayFr(record.proposed_event_start)]);
-    rows.push([
-      'Site du salon',
-      record.proposed_event_url
-        ? `<a href="${escapeHtml(record.proposed_event_url)}">${escapeHtml(record.proposed_event_url)}</a>`
-        : 'Non renseigné',
-    ]);
+    rows.push(['Site du salon', proposedUrl ?? 'Non renseigné']);
   }
 
   rows.push(['Stand', record.stand ?? 'Non renseigné']);
-  rows.push(['Message', record.message ? escapeHtml(record.message) : 'Aucun message']);
+  rows.push(['Message', record.message ?? 'Aucun message']);
   rows.push(['Date de la demande', formatDateFr(record.created_at)]);
+
+  // Les liens cliquables vivent hors du dataTable (link() echappe le href).
+  const linkBlocks: string[] = [];
+  if (exhibitorSlug) {
+    linkBlocks.push(
+      paragraph(`Fiche exposant : ${link(`${SITE_URL}/exposants/${exhibitorSlug}`, escapeHtml(exhibitorName))}`),
+    );
+  }
+  if (record.event_id && eventSlug) {
+    linkBlocks.push(
+      paragraph(`Page du salon : ${link(`${SITE_URL}/events/${eventSlug}`, escapeHtml(eventName ?? 'Voir le salon'))}`),
+    );
+  }
+  if (!record.event_id && proposedUrl) {
+    linkBlocks.push(paragraph(`Site du salon : ${link(proposedUrl, escapeHtml(proposedUrl))}`));
+  }
 
   const html = renderEmailShell({
     title: 'Nouvelle participation salon déclarée',
@@ -188,6 +200,7 @@ Deno.serve(async (req) => {
       heading('🔔 Nouvelle participation salon déclarée'),
       paragraph(`<strong>${escapeHtml(exhibitorName)}</strong> vient de déclarer une participation à un salon.`),
       dataTable(rows),
+      ...linkBlocks,
       paragraph(
         "Cette demande est en attente de validation dans l'administration. Rien n'est visible publiquement tant qu'elle n'est pas validée.",
       ),
