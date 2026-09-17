@@ -16,7 +16,7 @@
 // webhook.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { sendResendEmail } from '../_shared/resend.ts';
-import { renderEmailShell, heading, paragraph, dataTable } from '../_shared/email-template.ts';
+import { renderEmailShell, heading, paragraph, dataTable, link } from '../_shared/email-template.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
