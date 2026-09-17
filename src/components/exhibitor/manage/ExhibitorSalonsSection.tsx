@@ -24,8 +24,20 @@ interface ParticipationRow {
     slug: string | null;
     nom_event: string | null;
     date_debut: string | null;
+    date_fin: string | null;
     ville: string | null;
   } | null;
+}
+
+/** Un salon est terminé si sa date de fin (à défaut sa date de début) est passée. */
+function isPastEvent(events: ParticipationRow['events']) {
+  const raw = events?.date_fin ?? events?.date_debut;
+  if (!raw) return false;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return d.getTime() < today.getTime();
 }
 
 interface UpcomingEventResult {
@@ -69,7 +81,7 @@ function ParticipationsBlock({ exhibitorId }: { exhibitorId: string }) {
       const { data, error } = await supabase
         .from('participation')
         .select(
-          'id_participation, id_event, stand_exposant, events!inner(slug, nom_event, date_debut, ville)',
+          'id_participation, id_event, stand_exposant, events!inner(slug, nom_event, date_debut, date_fin, ville)',
         )
         .eq('exhibitor_id', exhibitorId);
       if (error) throw error;
@@ -157,6 +169,7 @@ function ParticipationsBlock({ exhibitorId }: { exhibitorId: string }) {
             const dirty = value.trim() !== current.trim();
             const busy = savingId === row.id_participation;
             const dateLabel = formatDate(row.events?.date_debut);
+            const past = isPastEvent(row.events);
             return (
               <li key={row.id_participation} className="rounded-lg border bg-muted/20 p-3 space-y-2">
                 <div className="min-w-0">
@@ -179,6 +192,15 @@ function ParticipationsBlock({ exhibitorId }: { exhibitorId: string }) {
                     </p>
                   )}
                 </div>
+                {past ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm">
+                      <span className="text-muted-foreground">Stand : </span>
+                      {current ? current : 'non renseigné'}
+                    </p>
+                    <Badge variant="outline">Salon terminé</Badge>
+                  </div>
+                ) : (
                 <div className="flex items-center gap-2">
                   <Input
                     value={value}
@@ -199,6 +221,7 @@ function ParticipationsBlock({ exhibitorId }: { exhibitorId: string }) {
                     {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Enregistrer'}
                   </Button>
                 </div>
+                )}
               </li>
             );
           })}
