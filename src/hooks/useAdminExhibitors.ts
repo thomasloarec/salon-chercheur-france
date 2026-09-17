@@ -22,6 +22,8 @@ export interface AdminExhibitor {
   // Computed
   team_count: number;
   has_pending_claim: boolean;
+  has_pending_participation: boolean;
+  needs_action: boolean;
   governance_status: GovernanceStatus;
   // Search-only metadata (present when result comes from search_admin_companies RPC)
   source?: AdminSearchSource;
@@ -69,9 +71,10 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
         let exhibitorMap: Record<string, any> = {};
         let teamCounts: Record<string, number> = {};
         let pendingClaims = new Set<string>();
+        let pendingParticipations = new Set<string>();
 
         if (realIds.length > 0) {
-          const [exRes, teamRes, claimRes] = await Promise.all([
+          const [exRes, teamRes, claimRes, participationRes] = await Promise.all([
             supabase
               .from('exhibitors')
               .select('id, name, slug, website, description, logo_url, approved, owner_user_id, verified_at, is_test, created_at, updated_at, plan')
@@ -86,7 +89,15 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
               .select('exhibitor_id')
               .in('exhibitor_id', realIds)
               .eq('status', 'pending'),
+            supabase
+              .from('exhibitor_participation_requests')
+              .select('exhibitor_id')
+              .in('exhibitor_id', realIds)
+              .eq('status', 'pending'),
           ]);
+          pendingParticipations = new Set(
+            (participationRes.data || []).map((p: any) => p.exhibitor_id)
+          );
           (exRes.data || []).forEach((e: any) => { exhibitorMap[e.id] = e; });
           (teamRes.data || []).forEach((t: any) => {
             teamCounts[t.exhibitor_id] = (teamCounts[t.exhibitor_id] || 0) + 1;
@@ -98,6 +109,9 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
           const ex = r.exhibitor_id ? exhibitorMap[r.exhibitor_id] : null;
           const tc = r.exhibitor_id ? (teamCounts[r.exhibitor_id] || 0) : 0;
           const hasPending = r.exhibitor_id ? pendingClaims.has(r.exhibitor_id) : false;
+          const hasPendingParticipation = r.exhibitor_id
+            ? pendingParticipations.has(r.exhibitor_id)
+            : false;
           const isTest = ex?.is_test ?? false;
           let governance_status: GovernanceStatus = 'unmanaged';
           if (isTest) governance_status = 'test';
@@ -125,6 +139,8 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
             plan: ex?.plan ?? null,
             team_count: tc,
             has_pending_claim: hasPending,
+            has_pending_participation: hasPendingParticipation,
+            needs_action: hasPending || hasPendingParticipation,
             governance_status,
             source: r.source as AdminSearchSource,
             has_exhibitor_row: !!r.has_exhibitor_row,
@@ -172,7 +188,7 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
 
       const ids = exhibitors.map(e => e.id);
 
-      const [teamRes, claimRes] = await Promise.all([
+      const [teamRes, claimRes, participationRes] = await Promise.all([
         supabase
           .from('exhibitor_team_members')
           .select('exhibitor_id')
@@ -180,6 +196,11 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
           .eq('status', 'active'),
         supabase
           .from('exhibitor_claim_requests')
+          .select('exhibitor_id')
+          .in('exhibitor_id', ids)
+          .eq('status', 'pending'),
+        supabase
+          .from('exhibitor_participation_requests')
           .select('exhibitor_id')
           .in('exhibitor_id', ids)
           .eq('status', 'pending'),
@@ -194,9 +215,14 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
         (claimRes.data || []).map((c: any) => c.exhibitor_id)
       );
 
+      const pendingParticipations = new Set(
+        (participationRes.data || []).map((p: any) => p.exhibitor_id)
+      );
+
       const result: AdminExhibitor[] = exhibitors.map(e => {
         const tc = teamCounts[e.id] || 0;
         const hasPending = pendingClaims.has(e.id);
+        const hasPendingParticipation = pendingParticipations.has(e.id);
         let governance_status: GovernanceStatus = 'unmanaged';
         if (e.is_test) governance_status = 'test';
         else if (e.owner_user_id || tc > 0) governance_status = 'managed';
@@ -206,15 +232,23 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
           ...e,
           team_count: tc,
           has_pending_claim: hasPending,
+          has_pending_participation: hasPendingParticipation,
+          needs_action: hasPending || hasPendingParticipation,
           governance_status,
         };
       });
 
+      // Les entreprises à traiter remontent en haut, le reste garde l'ordre courant.
+      const sorted = [...result].sort((a, b) => {
+        if (a.needs_action === b.needs_action) return 0;
+        return a.needs_action ? -1 : 1;
+      });
+
       if (filters.status !== 'all') {
-        return result.filter(e => e.governance_status === filters.status);
+        return sorted.filter(e => e.governance_status === filters.status);
       }
 
-      return result;
+      return sorted;
     },
     staleTime: 30_000,
   });
@@ -356,6 +390,8 @@ export function useAdminExhibitorDetail(exhibitorId: string | null) {
         ...exRes.data,
         team_count: (teamRes.data || []).filter((t: any) => t.status === 'active').length,
         has_pending_claim: (claimsRes.data || []).some((c: any) => c.status === 'pending'),
+        has_pending_participation: false,
+        needs_action: (claimsRes.data || []).some((c: any) => c.status === 'pending'),
         governance_status: exRes.data.is_test
           ? 'test'
           : exRes.data.owner_user_id || (teamRes.data || []).some((t: any) => t.status === 'active')

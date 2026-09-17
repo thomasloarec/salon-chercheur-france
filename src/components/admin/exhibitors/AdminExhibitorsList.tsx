@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Building2, Shield, Clock, AlertCircle, ExternalLink, RefreshCw, FlaskConical, Mail, Archive } from 'lucide-react';
 import { useAdminExhibitors, type AdminExhibitorsFilters, type GovernanceStatus } from '@/hooks/useAdminExhibitors';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useAdminPendingCounts } from '@/hooks/useAdminPendingCounts';
 import type { AdminSelection } from './types';
 
 const statusLabels: Record<GovernanceStatus, string> = {
@@ -50,6 +51,8 @@ const AdminExhibitorsList = ({ onSelectExhibitor, onSelectResult }: Props) => {
   };
 
   const { data: exhibitors, isLoading, refetch } = useAdminExhibitors(filters);
+  const { data: pendingCounts } = useAdminPendingCounts();
+  const needingAction = pendingCounts?.exhibitorsNeedingAction ?? 0;
 
   return (
     <Card>
@@ -60,6 +63,9 @@ const AdminExhibitorsList = ({ onSelectExhibitor, onSelectResult }: Props) => {
             Entreprises exposantes
             {exhibitors && (
               <Badge variant="secondary" className="ml-2">{exhibitors.length}</Badge>
+            )}
+            {!!needingAction && (
+              <Badge variant="destructive">{needingAction} à traiter</Badge>
             )}
           </CardTitle>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
@@ -210,6 +216,15 @@ const AdminExhibitorsList = ({ onSelectExhibitor, onSelectResult }: Props) => {
                 </div>
 
                 <div className="flex items-center gap-3 ml-4 shrink-0">
+                  {ex.needs_action && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs gap-1 bg-destructive/10 text-destructive border-destructive/30"
+                    >
+                      <AlertCircle className="h-3.5 w-3.5" />
+                      {ex.has_pending_participation ? 'Participation à valider' : 'Action requise'}
+                    </Badge>
+                  )}
                   {ex.source === 'outreach' && !ex.has_exhibitor_row && (
                     <Badge variant="outline" className="text-xs gap-1 bg-sky-50 text-sky-700 border-sky-200">
                       <Mail className="h-3.5 w-3.5" />

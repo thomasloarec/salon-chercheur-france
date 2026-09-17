@@ -109,6 +109,8 @@ export default function AdminExhibitorParticipationRequests() {
         vars.decision === 'approved' ? 'Déclaration acceptée' : 'Déclaration refusée',
       );
       queryClient.invalidateQueries({ queryKey: ['admin-participation-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-exhibitors'] });
     },
     onError: (err: unknown) =>
       toast.error(
