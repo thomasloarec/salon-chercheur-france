@@ -109,6 +109,9 @@ export function useAdminExhibitors(filters: AdminExhibitorsFilters) {
           const ex = r.exhibitor_id ? exhibitorMap[r.exhibitor_id] : null;
           const tc = r.exhibitor_id ? (teamCounts[r.exhibitor_id] || 0) : 0;
           const hasPending = r.exhibitor_id ? pendingClaims.has(r.exhibitor_id) : false;
+          const hasPendingParticipation = r.exhibitor_id
+            ? pendingParticipations.has(r.exhibitor_id)
+            : false;
           const isTest = ex?.is_test ?? false;
           let governance_status: GovernanceStatus = 'unmanaged';
           if (isTest) governance_status = 'test';
