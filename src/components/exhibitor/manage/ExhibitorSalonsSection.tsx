@@ -392,7 +392,7 @@ function DeclareBlock({ exhibitorId }: { exhibitorId: string }) {
             )}
           </div>
 
-          {!selected && (
+          {!selected && query.trim().length > 0 && (
             <button
               type="button"
               onClick={() => setManualMode(true)}
