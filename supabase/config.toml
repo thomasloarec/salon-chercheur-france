@@ -224,3 +224,8 @@ verify_jwt = false
 # Le webhook n'envoie pas de JWT utilisateur : la vérification doit rester
 # désactivée. La fonction se contente d'envoyer un email à admin@lotexpo.com.
 verify_jwt = false
+
+[functions.exhibitor-participation-decide]
+# Appelée par un administrateur connecté depuis l'admin : JWT requis.
+# Le rôle admin est vérifié en plus dans le code.
+verify_jwt = true
