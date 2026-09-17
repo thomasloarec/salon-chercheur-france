@@ -24,7 +24,14 @@ export const useAdminPendingCounts = () => {
     enabled: !!isAdmin,
     staleTime: 30_000,
     queryFn: async (): Promise<AdminPendingCounts> => {
-      const [noveltiesRes, claimsRes, eventClaimsRes, eventChangesRes, coverageTodoRes] = await Promise.all([
+      const [
+        noveltiesRes,
+        claimsRes,
+        eventClaimsRes,
+        eventChangesRes,
+        coverageTodoRes,
+        participationRes,
+      ] = await Promise.all([
         supabase
           .from('novelties')
           .select('id', { count: 'exact', head: true })
