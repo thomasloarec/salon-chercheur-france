@@ -78,13 +78,13 @@ export default function AdminExhibitorParticipationRequests() {
       const ids = Array.from(new Set(requests.map((r) => r.requested_by)));
       const { data, error } = await supabase
         .from('profiles')
-        .select('user_id, first_name, last_name, email')
+        .select('user_id, first_name, last_name')
         .in('user_id', ids);
       if (error) throw error;
       const map: Record<string, string> = {};
       for (const p of data ?? []) {
         const name = [p.first_name, p.last_name].filter(Boolean).join(' ');
-        map[p.user_id] = name || (p as { email?: string }).email || p.user_id;
+        map[p.user_id] = name || p.user_id;
       }
       return map;
     },

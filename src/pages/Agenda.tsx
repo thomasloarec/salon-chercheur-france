@@ -36,9 +36,9 @@ const Agenda = () => {
         return;
       }
       const exhibitorId = memberships[0].exhibitor_id;
-      const slugs = await fetchExhibitorPublicSlugs([exhibitorId]);
+      const slugs = await fetchExhibitorPublicSlugs([exhibitorId], []);
       if (cancelled) return;
-      const info = slugs[exhibitorId];
+      const info = slugs.byExhibitorId.get(exhibitorId);
       if (info && !info.is_test && info.public_slug) {
         navigate(`/exposants/${info.public_slug}/gerer`, { replace: true });
       } else {
