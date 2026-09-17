@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Building2, Shield, Clock, AlertCircle, ExternalLink, RefreshCw, FlaskConical, Mail, Archive } from 'lucide-react';
 import { useAdminExhibitors, type AdminExhibitorsFilters, type GovernanceStatus } from '@/hooks/useAdminExhibitors';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useAdminPendingCounts } from '@/hooks/useAdminPendingCounts';
 import type { AdminSelection } from './types';
 
 const statusLabels: Record<GovernanceStatus, string> = {
