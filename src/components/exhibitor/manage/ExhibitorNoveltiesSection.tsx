@@ -74,7 +74,7 @@ export default function ExhibitorNoveltiesSection({
 
   const novelties = useMemo(() => {
     return allNovelties
-      .filter((n) => n.exhibitors?.id === exhibitorId)
+      .filter((n) => !!n && n.exhibitors?.id === exhibitorId && !!n.events?.id)
       .slice()
       .sort((a, b) => {
         const ta = a.events?.date_debut ? new Date(a.events.date_debut).getTime() : 0;
@@ -131,13 +131,20 @@ export default function ExhibitorNoveltiesSection({
                 <Card className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
-                      <Link
-                        to={`/events/${novelty.events.slug}`}
-                        className="flex items-center gap-1 hover:text-primary"
-                      >
-                        <MapPin className="h-4 w-4" />
-                        {novelty.events.nom_event}
-                      </Link>
+                      {novelty.events.slug ? (
+                        <Link
+                          to={`/events/${novelty.events.slug}`}
+                          className="flex items-center gap-1 hover:text-primary"
+                        >
+                          <MapPin className="h-4 w-4" />
+                          {novelty.events.nom_event ?? 'Salon'}
+                        </Link>
+                      ) : (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-4 w-4" />
+                          {novelty.events.nom_event ?? 'Salon'}
+                        </span>
+                      )}
                       {novelty.events.date_debut && (
                         <span>
                           {format(new Date(novelty.events.date_debut), 'dd MMM yyyy', {
