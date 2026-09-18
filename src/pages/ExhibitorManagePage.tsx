@@ -307,6 +307,14 @@ export default function ExhibitorManagePage() {
                 completion={completion}
               />
             )}
+
+            {activeSection === 'aide' && (
+              <SupportChatPanel
+                contextType="exhibitor"
+                entityId={profile.exhibitor_id}
+                entityLabel={name}
+              />
+            )}
           </section>
         </div>
       </div>
