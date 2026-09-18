@@ -237,7 +237,10 @@ export default function ExhibitorManagePage() {
                   <li key={s.key} className="shrink-0 md:shrink">
                     <button
                       type="button"
-                      onClick={() => setActiveSection(s.key)}
+                      onClick={() => {
+                        setActiveSection(s.key);
+                        if (s.key === 'aide') clearSupportUnread();
+                      }}
                       aria-current={isActive ? 'page' : undefined}
                       className={cn(
                         'w-full flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap md:whitespace-normal text-left',
@@ -248,6 +251,11 @@ export default function ExhibitorManagePage() {
                     >
                       <Icon className="h-4 w-4 shrink-0" />
                       <span>{s.label}</span>
+                      {s.key === 'aide' && supportUnread > 0 && (
+                        <Badge variant="destructive" className="ml-auto h-5 px-1.5 text-[11px]">
+                          {supportUnread}
+                        </Badge>
+                      )}
                     </button>
                   </li>
                 );
