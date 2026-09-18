@@ -129,8 +129,10 @@ export default function ExhibitorManagePage() {
     let cancelled = false;
     setMaterializing(true);
     // Cast: le RPC vient d'être ajouté et n'est pas encore dans les types générés.
-    supabase
-      .rpc('admin_materialize_exhibitor_from_slug' as never, { p_public_slug: slug } as never)
+    // Promise.resolve: rpc() renvoie un PromiseLike sans .finally dans les types.
+    Promise.resolve(
+      supabase.rpc('admin_materialize_exhibitor_from_slug' as never, { p_public_slug: slug } as never),
+    )
       .then(({ error }) => {
         if (cancelled) return;
         if (error) {
