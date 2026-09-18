@@ -23,6 +23,8 @@ import ExhibitorFicheSection from '@/components/exhibitor/manage/ExhibitorFicheS
 import ExhibitorSalonsSection from '@/components/exhibitor/manage/ExhibitorSalonsSection';
 import ExhibitorNoveltiesSection from '@/components/exhibitor/manage/ExhibitorNoveltiesSection';
 import ExhibitorTeamSection from '@/components/exhibitor/manage/ExhibitorTeamSection';
+import SupportChatPanel from '@/components/support/SupportChatPanel';
+import { useSupportUnread } from '@/components/support/useSupportUnread';
 
 const TIER_LABEL: Record<ExhibitorTier, string> = {
   bronze: 'Bronze',
@@ -30,7 +32,7 @@ const TIER_LABEL: Record<ExhibitorTier, string> = {
   or: 'Or',
 };
 
-type SectionKey = 'fiche' | 'salons' | 'nouveautes' | 'equipe';
+type SectionKey = 'fiche' | 'salons' | 'nouveautes' | 'equipe' | 'aide';
 
 const SECTIONS: {
   key: SectionKey;
@@ -69,6 +71,13 @@ const SECTIONS: {
     icon: Users,
     title: 'Votre équipe',
     description: 'Indiquez qui gère cette page et invitez vos collaborateurs.',
+  },
+  {
+    key: 'aide',
+    label: "Besoin d'aide",
+    icon: LifeBuoy,
+    title: "Besoin d'aide ?",
+    description: 'Écrivez-nous depuis cet espace. Nous vous répondons ici et par email.',
   },
 ];
 
