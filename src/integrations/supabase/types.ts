@@ -4298,6 +4298,30 @@ export type Database = {
         }
         Relationships: []
       }
+      exhibitor_ai_refusal_backup: {
+        Row: {
+          cleaned_at: string
+          exhibitor_id: string
+          id: number
+          resume_court: string | null
+          source_url: string | null
+        }
+        Insert: {
+          cleaned_at?: string
+          exhibitor_id: string
+          id?: never
+          resume_court?: string | null
+          source_url?: string | null
+        }
+        Update: {
+          cleaned_at?: string
+          exhibitor_id?: string
+          id?: never
+          resume_court?: string | null
+          source_url?: string | null
+        }
+        Relationships: []
+      }
       exhibitor_ai_remap_archive: {
         Row: {
           archive_id: string
@@ -13493,6 +13517,7 @@ export type Database = {
       check_pipeline_health: { Args: never; Returns: number }
       check_seo_automation_dependencies: { Args: never; Returns: Json }
       check_seo_cron_dependencies: { Args: never; Returns: Json }
+      clean_ai_refusals: { Args: never; Returns: number }
       cleanup_expired_claim_tokens: { Args: never; Returns: undefined }
       cleanup_expired_csrf_tokens: { Args: never; Returns: undefined }
       cohere_embed_query: { Args: { p_text: string }; Returns: string }
