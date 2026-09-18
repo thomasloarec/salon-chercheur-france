@@ -35,6 +35,7 @@ import {
 } from '@/hooks/useExhibitorOwnerEdit';
 import { resolveDescriptionPrefill } from '@/lib/exhibitorOwnerEdit';
 import type { ExhibitorCompletion, ExhibitorTier } from '@/hooks/useExhibitorCompletion';
+import ExhibitorCategoriesSection from '@/components/exhibitor/manage/ExhibitorCategoriesSection';
 
 const DESCRIPTION_MAX = 3000;
 
@@ -271,6 +272,9 @@ export default function ExhibitorFicheSection({
           </>
         )}
       </Card>
+
+      {/* Catégories d'activité (référentiel canonique) */}
+      <ExhibitorCategoriesSection exhibitorId={exhibitorId} publicSlug={publicSlug} />
 
       <Card className="p-6">
         {isLoading ? (

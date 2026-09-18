@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 
 import type { PublicExhibitorProfile } from '@/hooks/useExhibitorProfile';
 import { useExhibitorProducts } from '@/hooks/useExhibitorProfile';
+import { usePublicExhibitorCategories } from '@/hooks/useExhibitorCategories';
 import ExhibitorAlertButton from '@/components/exhibitor/ExhibitorAlertButton';
 import ExhibitorClaimCta from '@/components/exhibitor/ExhibitorClaimCta';
 import ExhibitorAvatar from '@/components/event/ExhibitorAvatar';
