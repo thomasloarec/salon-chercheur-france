@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Award, Building2, CalendarDays, ExternalLink, Sparkles, Users } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 import MainLayout from '@/components/layout/MainLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -72,10 +75,19 @@ const SECTIONS: {
 export default function ExhibitorManagePage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { isRealUser, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { data: profile, isLoading, isError } = useExhibitorProfile(slug);
   const [activeSection, setActiveSection] = useState<SectionKey>('fiche');
+
+  // Promotion à l'accès (parité avec l'espace organisateur des salons) :
+  // un admin peut gérer n'importe quel exposant, y compris les fiches legacy
+  // (exhibitor_id NULL). À l'ouverture, la fiche legacy est matérialisée en
+  // fiche moderne côté serveur (RPC admin, slug public préservé), puis la page
+  // se recharge normalement.
+  const [materializing, setMaterializing] = useState(false);
+  const [materializeFailed, setMaterializeFailed] = useState(false);
 
   const governance = useExhibitorGovernance(
     profile?.exhibitor_id || profile?.legacy_exposant_id || undefined,
@@ -94,10 +106,15 @@ export default function ExhibitorManagePage() {
     isTest: profile?.is_test,
     isManager: governance.isManager,
   });
-  const canManage = isManagerOfProfile || (isAdmin && !!profile?.exhibitor_id);
+  // Un admin peut toujours gérer (comme sur la page organisateur du salon).
+  const canManage = isManagerOfProfile || isAdmin;
+  // Fiche legacy ouverte par un admin : à matérialiser avant l'affichage.
+  const needsMaterialization =
+    isAdmin && !isManagerOfProfile && !!profile && !profile.exhibitor_id && !isError;
 
   const ready = !authLoading && !adminLoading && !isLoading && !governance.isLoading;
 
+  // Redirection des utilisateurs non habilités (comportement inchangé).
   useEffect(() => {
     if (!ready) return;
     if (isError || !profile || !canManage) {
@@ -105,7 +122,43 @@ export default function ExhibitorManagePage() {
     }
   }, [ready, isError, profile, canManage, navigate, slug]);
 
-  if (!ready) {
+  // Matérialisation admin d'une fiche legacy -> fiche moderne (slug préservé).
+  useEffect(() => {
+    if (!ready || !needsMaterialization) return;
+    if (materializing || materializeFailed) return;
+    let cancelled = false;
+    setMaterializing(true);
+    // Cast: le RPC vient d'être ajouté et n'est pas encore dans les types générés.
+    supabase
+      .rpc('admin_materialize_exhibitor_from_slug' as never, { p_public_slug: slug } as never)
+      .then(({ error }) => {
+        if (cancelled) return;
+        if (error) {
+          console.error('admin_materialize_exhibitor_from_slug:', error);
+          setMaterializeFailed(true);
+          toast.error("Impossible d'ouvrir la gestion de cet exposant.");
+          navigate(`/exposants/${slug ?? ''}`, { replace: true });
+        } else {
+          queryClient.invalidateQueries({ queryKey: ['public-exhibitor-profile', slug] });
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setMaterializing(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    ready,
+    needsMaterialization,
+    materializing,
+    materializeFailed,
+    slug,
+    navigate,
+    queryClient,
+  ]);
+
+  if (!ready || materializing || (needsMaterialization && !materializeFailed)) {
     return (
       <MainLayout title="Gérer ma fiche exposant">
         <div className="max-w-6xl mx-auto py-8 space-y-6">

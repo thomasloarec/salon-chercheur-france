@@ -9,12 +9,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ArrowLeft, Building2, Mail, Archive, Globe, ExternalLink, Calendar, Info,
-  Pencil, Save, X,
+  Pencil, Save, X, Settings,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ExhibitorOutreachPanel from './ExhibitorOutreachPanel';
 import AdminExhibitorParticipationsCard from './AdminExhibitorParticipationsCard';
 import { CAMPAIGN_STATUS_VARIANTS, campaignStatusLabel } from '@/lib/outreach/labels';
+import { PUBLIC_SITE_URL } from '@/lib/siteConfig';
 import type { AdminSelection } from './types';
 
 interface Props {
@@ -98,6 +99,21 @@ const AdminNonExhibitorPanel = ({ selection, onBack }: Props) => {
     },
   });
 
+  // Slug public de la fiche (pour lier vers la page publique et la page "gérer").
+  const { data: publicSlug } = useQuery({
+    queryKey: ['admin-non-exhibitor-public-slug', legacyId],
+    enabled: !!legacyId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('public_exhibitor_profiles')
+        .select('public_slug')
+        .eq('legacy_exposant_id', legacyId!)
+        .maybeSingle();
+      if (error) return null;
+      return (data?.public_slug as string | undefined) ?? null;
+    },
+  });
+
   const sourceBadge = isOutreach ? (
     <Badge variant="outline" className="gap-1 bg-sky-50 text-sky-700 border-sky-200">
       <Mail className="h-3.5 w-3.5" /> Campagne email uniquement
@@ -155,7 +171,33 @@ const AdminNonExhibitorPanel = ({ selection, onBack }: Props) => {
             <TabsContent value="overview" className="mt-4 space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Fiche entreprise</CardTitle>
+                  <div className="flex items-center justify-between gap-2">
+                    <CardTitle className="text-base">Fiche entreprise</CardTitle>
+                    {publicSlug && (
+                      <div className="flex items-center gap-2">
+                        <Button asChild variant="outline" size="sm">
+                          <a
+                            href={`${PUBLIC_SITE_URL}/exposants/${publicSlug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                            Voir la fiche publique
+                          </a>
+                        </Button>
+                        <Button asChild variant="outline" size="sm">
+                          <a
+                            href={`${PUBLIC_SITE_URL}/exposants/${publicSlug}/gerer`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Settings className="h-3.5 w-3.5 mr-1" />
+                            Gérer la fiche
+                          </a>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
