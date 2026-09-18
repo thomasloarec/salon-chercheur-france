@@ -113,6 +113,8 @@ export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const isHealthTab = searchParams.get('tab') === 'sante';
   const { data: counts } = useAdminPendingCounts();
 
   // Map of route → pending count to show as a notification bubble
@@ -126,8 +128,9 @@ export function AdminSidebar() {
     '/admin/support': counts?.supportThreads ?? 0,
   };
 
-  const isActive = (url: string, end?: boolean) => {
-    if (end) return location.pathname === url;
+  const isActive = (url: string, end?: boolean, isHealth?: boolean) => {
+    if (isHealth) return location.pathname === '/admin' && isHealthTab;
+    if (end) return location.pathname === url && !isHealthTab;
     return location.pathname === url || location.pathname.startsWith(url + '/');
   };
 
@@ -154,7 +157,7 @@ export function AdminSidebar() {
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       asChild
-                      isActive={isActive(item.url, (item as any).end)}
+                      isActive={isActive(item.url, (item as any).end, (item as any).isHealth)}
                     >
                       <Link to={item.url} className="flex items-center gap-2">
                         <item.icon className="h-4 w-4" />
