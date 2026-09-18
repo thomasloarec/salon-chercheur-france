@@ -74,7 +74,7 @@ export default function SupportChatPanel({
       .eq('thread_id', id)
       .order('created_at', { ascending: true });
     if (msgError) throw msgError;
-    setMessages((data ?? []) as unknown as SupportMessage[]);
+    setMessages((data ?? []) as SupportMessage[]);
   }, []);
 
   const init = useCallback(async () => {
@@ -87,22 +87,20 @@ export default function SupportChatPanel({
         .maybeSingle();
       setEnabled(settings?.enabled !== false);
 
-      const { data: threads, error: threadError } = await supabase.rpc(
-        'support_my_thread' as never,
-        { p_context_type: contextType, p_entity_id: entityId } as never,
-      );
+      const { data: threads, error: threadError } = await supabase.rpc('support_my_thread', {
+        p_context_type: contextType,
+        p_entity_id: entityId,
+      });
       if (threadError) throw threadError;
 
-      const list = (threads ?? []) as Array<{ thread_id: string; status: string }>;
+      const list = threads ?? [];
       const current =
         list.find((t) => t.status === 'open' || t.status === 'pending_user') ?? list[0];
 
       if (current?.thread_id) {
         setThreadId(current.thread_id);
         await loadMessages(current.thread_id);
-        await supabase.rpc('support_mark_read' as never, {
-          p_thread_id: current.thread_id,
-        } as never);
+        await supabase.rpc('support_mark_read', { p_thread_id: current.thread_id });
       } else {
         setThreadId(null);
         setMessages([]);
@@ -137,7 +135,7 @@ export default function SupportChatPanel({
           setMessages((prev) =>
             prev.some((m) => m.id === row.id) ? prev : [...prev, row],
           );
-          void supabase.rpc('support_mark_read' as never, { p_thread_id: threadId } as never);
+          void supabase.rpc('support_mark_read', { p_thread_id: threadId });
         },
       )
       .subscribe();
@@ -171,20 +169,20 @@ export default function SupportChatPanel({
     setBody('');
     try {
       if (threadId) {
-        const { error: postError } = await supabase.rpc('support_post_message' as never, {
+        const { error: postError } = await supabase.rpc('support_post_message', {
           p_thread_id: threadId,
           p_body: text,
-        } as never);
+        });
         if (postError) throw postError;
         await loadMessages(threadId);
       } else {
-        const { error: openError } = await supabase.rpc('support_open_thread' as never, {
+        const { error: openError } = await supabase.rpc('support_open_thread', {
           p_context_type: contextType,
           p_entity_id: entityId,
           p_message: text,
           p_topic: topic,
           p_subject: `${topic} · ${entityLabel}`,
-        } as never);
+        });
         if (openError) throw openError;
         await init();
       }
