@@ -33,6 +33,7 @@ import {
   Inbox,
   Megaphone,
   Users,
+  LifeBuoy,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAdminPendingCounts } from '@/hooks/useAdminPendingCounts';
@@ -88,6 +89,12 @@ const navSections = [
     label: 'CMO IA',
     items: [
       { title: 'Pilotage', url: '/admin/cmo', icon: Megaphone },
+    ],
+  },
+  {
+    label: 'SUPPORT',
+    items: [
+      { title: "Demandes d'aide", url: '/admin/support', icon: LifeBuoy },
     ],
   },
   {
