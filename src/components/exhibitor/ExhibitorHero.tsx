@@ -36,6 +36,12 @@ export default function ExhibitorHero({
   const linkedinUrl = normalizeLinkedInUrl(profile.linkedin_url);
   const { data: aiData } = useExhibitorProducts(profile.public_slug || undefined);
   const products = aiData?.produits_services ?? [];
+  // Catégories d'activité issues du référentiel canonique
+  // (exhibitor_sub_sectors -> sub_sectors), principal en premier.
+  const { data: categories = [] } = usePublicExhibitorCategories(
+    profile.exhibitor_id,
+    profile.legacy_exposant_id,
+  );
 
   return (
     <section
