@@ -13,6 +13,8 @@ import AdminSiteHealthPage from '@/pages/admin/AdminSiteHealthPage';
 const AdminLayout = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
+  const [searchParams] = useSearchParams();
+  const isHealthTab = searchParams.get('tab') === 'sante';
 
   if (authLoading || adminLoading) {
     return (
@@ -35,6 +37,7 @@ const AdminLayout = () => {
         <div className="min-h-screen flex w-full">
           <AdminSidebar />
           <div className="flex-1 flex flex-col min-w-0">
+            <SiteHealthBanner />
             <header className="h-12 flex items-center border-b bg-background px-4 shrink-0 gap-3">
               <SidebarTrigger />
               <span className="text-sm text-muted-foreground">Administration Lotexpo</span>
@@ -54,7 +57,7 @@ const AdminLayout = () => {
               </div>
             </header>
             <main className="flex-1 overflow-auto p-6">
-              <Outlet />
+              {isHealthTab ? <AdminSiteHealthPage /> : <Outlet />}
             </main>
           </div>
         </div>
