@@ -9916,6 +9916,24 @@ export type Database = {
         }
         Relationships: []
       }
+      security_anon_write_allowlist: {
+        Row: {
+          function_name: string
+          note: string | null
+          reviewed_at: string
+        }
+        Insert: {
+          function_name: string
+          note?: string | null
+          reviewed_at?: string
+        }
+        Update: {
+          function_name?: string
+          note?: string | null
+          reviewed_at?: string
+        }
+        Relationships: []
+      }
       security_events: {
         Row: {
           created_at: string | null
