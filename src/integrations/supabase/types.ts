@@ -14928,6 +14928,21 @@ export type Database = {
         Returns: string
       }
       support_escalate_pending: { Args: never; Returns: number }
+      support_feedback_export: {
+        Args: { p_days?: number }
+        Returns: {
+          context_type: string
+          created_at: string
+          entity_label: string
+          escalated: boolean
+          first_message: string
+          first_reply_minutes: number
+          message_count: number
+          requester_email: string
+          status: string
+          topic: string
+        }[]
+      }
       support_mark_read: { Args: { p_thread_id: string }; Returns: undefined }
       support_my_thread: {
         Args: { p_context_type: string; p_entity_id: string }
@@ -14981,6 +14996,7 @@ export type Database = {
         Args: { p_status: string; p_thread_id: string }
         Returns: undefined
       }
+      support_stats: { Args: { p_days?: number }; Returns: Json }
       support_user_link: {
         Args: {
           _thread: Database["public"]["Tables"]["support_threads"]["Row"]
