@@ -14,6 +14,15 @@ const REFUSAL_PATTERNS: RegExp[] = [
   /aucune description ni contenu web/,
   /aucun contenu de site web[^.]{0,40}fourni/,
   /veuillez fournir[^.]{0,40}(description|site web)/,
+  /absence de contenu web/,
+  /aucun contenu web (exploitable|disponible|fourni|accessible)/,
+  /donnees? manquantes/,
+  /faute d.?informations? disponibles?/,
+  /activite( principale)? n.?a pas pu etre determin/,
+  /n.?a pas pu etre (determin|consult)/,
+  /contenu du site (est )?trop limite/,
+  /trop limite pour (determin|qualifi|analys)/,
+  /aucune information de site web/,
 ];
 
 export function isAiRefusal(text: string | null | undefined): boolean {
