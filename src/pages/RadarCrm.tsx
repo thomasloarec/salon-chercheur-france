@@ -770,7 +770,7 @@ const RadarCrmPage: React.FC = () => {
           <div className="max-w-3xl mb-8">
             <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">Démarrez tout de suite</p>
             <h2 className="heading-display text-2xl md:text-3xl mb-3 section-rule">
-              Commencez sans connecter votre CRM.
+              Connectez vos données en 3 clics.
             </h2>
             <p className="text-base text-muted-foreground">
               Le CSV/Excel fonctionne dès maintenant. Les connexions natives arrivent pour automatiser
