@@ -88,7 +88,11 @@ export default function ExhibitorManagePage() {
   const { isRealUser, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { data: profile, isLoading, isError } = useExhibitorProfile(slug);
-  const [activeSection, setActiveSection] = useState<SectionKey>('fiche');
+  const location = useLocation();
+  const hasAideParam = new URLSearchParams(location.search).has('aide');
+  const [activeSection, setActiveSection] = useState<SectionKey>(
+    hasAideParam ? 'aide' : 'fiche',
+  );
 
   // Promotion à l'accès (parité avec l'espace organisateur des salons) :
   // un admin peut gérer n'importe quel exposant, y compris les fiches legacy
