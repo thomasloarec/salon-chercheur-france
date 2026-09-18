@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Award, Building2, CalendarDays, ExternalLink, Sparkles, Users } from 'lucide-react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Award, Building2, CalendarDays, ExternalLink, LifeBuoy, Sparkles, Users } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -23,6 +23,8 @@ import ExhibitorFicheSection from '@/components/exhibitor/manage/ExhibitorFicheS
 import ExhibitorSalonsSection from '@/components/exhibitor/manage/ExhibitorSalonsSection';
 import ExhibitorNoveltiesSection from '@/components/exhibitor/manage/ExhibitorNoveltiesSection';
 import ExhibitorTeamSection from '@/components/exhibitor/manage/ExhibitorTeamSection';
+import SupportChatPanel from '@/components/support/SupportChatPanel';
+import { useSupportUnread } from '@/components/support/useSupportUnread';
 
 const TIER_LABEL: Record<ExhibitorTier, string> = {
   bronze: 'Bronze',
@@ -30,7 +32,7 @@ const TIER_LABEL: Record<ExhibitorTier, string> = {
   or: 'Or',
 };
 
-type SectionKey = 'fiche' | 'salons' | 'nouveautes' | 'equipe';
+type SectionKey = 'fiche' | 'salons' | 'nouveautes' | 'equipe' | 'aide';
 
 const SECTIONS: {
   key: SectionKey;
@@ -70,6 +72,13 @@ const SECTIONS: {
     title: 'Votre équipe',
     description: 'Indiquez qui gère cette page et invitez vos collaborateurs.',
   },
+  {
+    key: 'aide',
+    label: "Besoin d'aide",
+    icon: LifeBuoy,
+    title: "Besoin d'aide ?",
+    description: 'Écrivez-nous depuis cet espace. Nous vous répondons ici et par email.',
+  },
 ];
 
 export default function ExhibitorManagePage() {
@@ -79,7 +88,11 @@ export default function ExhibitorManagePage() {
   const { isRealUser, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { data: profile, isLoading, isError } = useExhibitorProfile(slug);
-  const [activeSection, setActiveSection] = useState<SectionKey>('fiche');
+  const location = useLocation();
+  const hasAideParam = new URLSearchParams(location.search).has('aide');
+  const [activeSection, setActiveSection] = useState<SectionKey>(
+    hasAideParam ? 'aide' : 'fiche',
+  );
 
   // Promotion à l'accès (parité avec l'espace organisateur des salons) :
   // un admin peut gérer n'importe quel exposant, y compris les fiches legacy
@@ -99,6 +112,10 @@ export default function ExhibitorManagePage() {
     exhibitorId ? [exhibitorId] : [],
   );
   const completion = exhibitorId ? completionMap?.[exhibitorId] : undefined;
+  const { unread: supportUnread, clear: clearSupportUnread } = useSupportUnread(
+    'exhibitor',
+    exhibitorId,
+  );
 
   const isManagerOfProfile = canEditExhibitorProfile({
     isAuthenticated: isRealUser,
@@ -220,7 +237,10 @@ export default function ExhibitorManagePage() {
                   <li key={s.key} className="shrink-0 md:shrink">
                     <button
                       type="button"
-                      onClick={() => setActiveSection(s.key)}
+                      onClick={() => {
+                        setActiveSection(s.key);
+                        if (s.key === 'aide') clearSupportUnread();
+                      }}
                       aria-current={isActive ? 'page' : undefined}
                       className={cn(
                         'w-full flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap md:whitespace-normal text-left',
@@ -231,6 +251,11 @@ export default function ExhibitorManagePage() {
                     >
                       <Icon className="h-4 w-4 shrink-0" />
                       <span>{s.label}</span>
+                      {s.key === 'aide' && supportUnread > 0 && (
+                        <Badge variant="destructive" className="ml-auto h-5 px-1.5 text-[11px]">
+                          {supportUnread}
+                        </Badge>
+                      )}
                     </button>
                   </li>
                 );
@@ -280,6 +305,14 @@ export default function ExhibitorManagePage() {
                 publicSlug={publicSlug}
                 isOwner={governance.isOwner || isAdmin}
                 completion={completion}
+              />
+            )}
+
+            {activeSection === 'aide' && (
+              <SupportChatPanel
+                contextType="exhibitor"
+                entityId={profile.exhibitor_id}
+                entityLabel={name}
               />
             )}
           </section>

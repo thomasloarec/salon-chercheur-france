@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Sparkles, Building2, Users, Megaphone, Code, CalendarClock, Radio } from 'lucide-react';
+import { ExternalLink, Sparkles, Building2, Users, Megaphone, Code, CalendarClock, Radio, LifeBuoy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import OrganizerEventEditForm from '@/components/event/OrganizerEventEditForm';
 import SeoScorecard from '@/components/event/SeoScorecard';
@@ -20,6 +20,8 @@ import { useEventScorecard } from '@/hooks/useEventScorecard';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import OrganizerProgramManager from '@/components/event/OrganizerProgramManager';
 import OrganizerFeedManager from '@/components/event/OrganizerFeedManager';
+import SupportChatPanel from '@/components/support/SupportChatPanel';
+import { useSupportUnread } from '@/components/support/useSupportUnread';
 import type { Event } from '@/types/event';
 
 const OrganizerSalonPage: React.FC = () => {
@@ -29,7 +31,11 @@ const OrganizerSalonPage: React.FC = () => {
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<'salon' | 'fil' | 'programme' | 'exposants' | 'activation' | 'widget'>('salon');
+  const location = useLocation();
+  const hasAideParam = new URLSearchParams(location.search).has('aide');
+  const [activeSection, setActiveSection] = useState<
+    'salon' | 'fil' | 'programme' | 'exposants' | 'activation' | 'widget' | 'aide'
+  >(hasAideParam ? 'aide' : 'salon');
   const queryClient = useQueryClient();
   const [exhibitorOverride, setExhibitorOverride] = useState<boolean | null>(null);
   const [savingExhibitorVisibility, setSavingExhibitorVisibility] = useState(false);
@@ -99,6 +105,10 @@ const OrganizerSalonPage: React.FC = () => {
   };
 
   const { data: scorecardData } = useEventScorecard(event?.id, !!event);
+  const { unread: supportUnread, clear: clearSupportUnread } = useSupportUnread(
+    'organizer',
+    event?.id,
+  );
   const c = (scorecardData as any)?.completude;
   const exposants = c?.exposants_references ?? 0;
   const pct = Math.max(0, Math.min(100, Number(c?.pct_enrichies ?? 0)));
@@ -117,7 +127,7 @@ const OrganizerSalonPage: React.FC = () => {
   if (!event) return null;
   if (!user || (!isAdmin && user.id !== event.owner_user_id)) return null;
 
-  type SectionKey = 'salon' | 'fil' | 'programme' | 'exposants' | 'activation' | 'widget';
+  type SectionKey = 'salon' | 'fil' | 'programme' | 'exposants' | 'activation' | 'widget' | 'aide';
   const sections: {
     key: SectionKey;
     label: string;
@@ -170,6 +180,13 @@ const OrganizerSalonPage: React.FC = () => {
       description:
         'Affichez les nouveautés de votre salon sur votre propre site. Copiez ce code et collez-le où vous le souhaitez.',
     },
+    {
+      key: 'aide',
+      label: "Besoin d'aide",
+      icon: LifeBuoy,
+      title: "Besoin d'aide ?",
+      description: 'Écrivez-nous depuis cet espace. Nous vous répondons ici et par email.',
+    },
   ];
 
   const active = sections.find((s) => s.key === activeSection)!;
@@ -214,7 +231,10 @@ const OrganizerSalonPage: React.FC = () => {
                   <li key={s.key} className="shrink-0 md:shrink">
                     <button
                       type="button"
-                      onClick={() => setActiveSection(s.key)}
+                      onClick={() => {
+                        setActiveSection(s.key);
+                        if (s.key === 'aide') clearSupportUnread();
+                      }}
                       aria-current={isActive ? 'page' : undefined}
                       className={cn(
                         'w-full flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap md:whitespace-normal text-left',
@@ -225,6 +245,11 @@ const OrganizerSalonPage: React.FC = () => {
                     >
                       <Icon className="h-4 w-4 shrink-0" />
                       <span>{s.label}</span>
+                      {s.key === 'aide' && supportUnread > 0 && (
+                        <Badge variant="destructive" className="ml-auto h-5 px-1.5 text-[11px]">
+                          {supportUnread}
+                        </Badge>
+                      )}
                     </button>
                   </li>
                 );
@@ -283,6 +308,13 @@ const OrganizerSalonPage: React.FC = () => {
             )}
             {activeSection === 'widget' && (
               <OrganizerEmbedWidget slug={event.slug || event.id} nomEvent={event.nom_event} />
+            )}
+            {activeSection === 'aide' && (
+              <SupportChatPanel
+                contextType="organizer"
+                entityId={event.id}
+                entityLabel={event.nom_event}
+              />
             )}
           </section>
         </div>
