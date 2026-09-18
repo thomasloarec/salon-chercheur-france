@@ -33,6 +33,7 @@ import {
   Inbox,
   Megaphone,
   Users,
+  LifeBuoy,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAdminPendingCounts } from '@/hooks/useAdminPendingCounts';
@@ -91,6 +92,12 @@ const navSections = [
     ],
   },
   {
+    label: 'SUPPORT',
+    items: [
+      { title: "Demandes d'aide", url: '/admin/support', icon: LifeBuoy },
+    ],
+  },
+  {
     label: 'SYSTÈME',
     items: [
       { title: 'Enrichissement IA', url: '/admin/system/ai', icon: Bot },
@@ -114,6 +121,7 @@ export function AdminSidebar() {
     '/admin/exhibitors/participation-requests': counts?.participationRequests ?? 0,
     '/admin/organisateurs': counts?.organisateurs ?? 0,
     '/admin/events/completude': counts?.exhibitorsToFind ?? 0,
+    '/admin/support': counts?.supportThreads ?? 0,
   };
 
   const isActive = (url: string, end?: boolean) => {

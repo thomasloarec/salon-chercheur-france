@@ -38,6 +38,7 @@ import AdminEventDetail from '@/pages/AdminEventDetail';
 import AdminExhibitorClaims from '@/pages/AdminExhibitorClaims';
 import AdminOrganisateurs from '@/pages/AdminOrganisateurs';
 import AdminExhibitors from '@/pages/AdminExhibitors';
+import AdminSupportPage from '@/pages/admin/AdminSupportPage';
 import AdminExhibitorCreateRequests from '@/pages/AdminExhibitorCreateRequests';
 import AdminExhibitorParticipationRequests from '@/pages/admin/AdminExhibitorParticipationRequests';
 import AdminImportDiagnostics from '@/pages/AdminImportDiagnostics';
@@ -208,6 +209,7 @@ function App() {
               <Route path="campaigns" element={<AdminCampaignsPage />} />
               <Route path="leads" element={<AdminLeadsPage />} />
               <Route path="radar-leads" element={<AdminRadarLeadsPage />} />
+              <Route path="support" element={<AdminSupportPage />} />
             </Route>
 
               <Route path="/auth" element={<Auth />} />

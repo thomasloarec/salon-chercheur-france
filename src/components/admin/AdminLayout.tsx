@@ -6,6 +6,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AdminSidebar } from './AdminSidebar';
 import { Button } from '@/components/ui/button';
 import { Home, ExternalLink } from 'lucide-react';
+import { AdminSupportProvider } from './support/AdminSupportWidget';
 
 const AdminLayout = () => {
   const { user, loading: authLoading } = useAuth();
@@ -27,34 +28,36 @@ const AdminLayout = () => {
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AdminSidebar />
-        <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-12 flex items-center border-b bg-background px-4 shrink-0 gap-3">
-            <SidebarTrigger />
-            <span className="text-sm text-muted-foreground">Administration Lotexpo</span>
-            <div className="ml-auto flex items-center gap-2">
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/">
-                  <Home className="h-4 w-4 mr-2" />
-                  Accueil
-                </Link>
-              </Button>
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/" target="_blank" rel="noopener noreferrer">
-                  Voir le site
-                  <ExternalLink className="h-4 w-4 ml-2" />
-                </Link>
-              </Button>
-            </div>
-          </header>
-          <main className="flex-1 overflow-auto p-6">
-            <Outlet />
-          </main>
+    <AdminSupportProvider>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full">
+          <AdminSidebar />
+          <div className="flex-1 flex flex-col min-w-0">
+            <header className="h-12 flex items-center border-b bg-background px-4 shrink-0 gap-3">
+              <SidebarTrigger />
+              <span className="text-sm text-muted-foreground">Administration Lotexpo</span>
+              <div className="ml-auto flex items-center gap-2">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/">
+                    <Home className="h-4 w-4 mr-2" />
+                    Accueil
+                  </Link>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/" target="_blank" rel="noopener noreferrer">
+                    Voir le site
+                    <ExternalLink className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
+              </div>
+            </header>
+            <main className="flex-1 overflow-auto p-6">
+              <Outlet />
+            </main>
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </AdminSupportProvider>
   );
 };
 

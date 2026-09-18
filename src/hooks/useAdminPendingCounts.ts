@@ -10,6 +10,7 @@ export interface AdminPendingCounts {
   exhibitorsToFind: number; // événements publiés à venir sans exposant, non ignorés
   participationRequests: number; // déclarations de participation en attente
   exhibitorsNeedingAction: number; // entreprises avec revendication ou participation en attente
+  supportThreads: number; // fils de support à traiter
 }
 
 /**
@@ -31,6 +32,7 @@ export const useAdminPendingCounts = () => {
         eventChangesRes,
         coverageTodoRes,
         participationRes,
+        supportRes,
       ] = await Promise.all([
         supabase
           .from('novelties')
@@ -56,6 +58,7 @@ export const useAdminPendingCounts = () => {
           .from('exhibitor_participation_requests')
           .select('exhibitor_id', { count: 'exact' })
           .eq('status', 'pending'),
+        supabase.rpc('support_admin_inbox', { p_status: undefined, p_limit: 200 }),
       ]);
 
       const noveltiesCount = noveltiesRes.count ?? 0;
@@ -78,6 +81,9 @@ export const useAdminPendingCounts = () => {
         exhibitorsToFind: coverageTodoRes.count ?? 0,
         participationRequests: participationRes.count ?? 0,
         exhibitorsNeedingAction: needingAction,
+        supportThreads: ((supportRes.data ?? []) as any[]).filter(
+          (t) => (t.admin_unread_count ?? 0) > 0 || t.status === 'open'
+        ).length,
       };
     },
   });
