@@ -14969,7 +14969,12 @@ export type Database = {
         Returns: string
       }
       support_post_message: {
-        Args: { p_body: string; p_is_internal?: boolean; p_thread_id: string }
+        Args: {
+          p_as_role?: string
+          p_body: string
+          p_is_internal?: boolean
+          p_thread_id: string
+        }
         Returns: string
       }
       support_set_status: {
