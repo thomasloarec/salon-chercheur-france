@@ -112,6 +112,10 @@ export default function ExhibitorManagePage() {
     exhibitorId ? [exhibitorId] : [],
   );
   const completion = exhibitorId ? completionMap?.[exhibitorId] : undefined;
+  const { unread: supportUnread, clear: clearSupportUnread } = useSupportUnread(
+    'exhibitor',
+    exhibitorId,
+  );
 
   const isManagerOfProfile = canEditExhibitorProfile({
     isAuthenticated: isRealUser,
