@@ -121,6 +121,7 @@ export function AdminSidebar() {
     '/admin/exhibitors/participation-requests': counts?.participationRequests ?? 0,
     '/admin/organisateurs': counts?.organisateurs ?? 0,
     '/admin/events/completude': counts?.exhibitorsToFind ?? 0,
+    '/admin/support': counts?.supportThreads ?? 0,
   };
 
   const isActive = (url: string, end?: boolean) => {

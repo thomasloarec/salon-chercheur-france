@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building2, ClipboardList, CopyCheck, Globe, GitMerge } from 'lucide-react';
 import AdminExhibitorsList from '@/components/admin/exhibitors/AdminExhibitorsList';
@@ -14,6 +14,15 @@ import { isUuid, type AdminSelection } from '@/components/admin/exhibitors/types
 const AdminExhibitors = () => {
   const [selection, setSelection] = useState<AdminSelection | null>(null);
   const [activeTab, setActiveTab] = useState('exhibitors');
+  const [searchParams] = useSearchParams();
+
+  // Lien profond : ?exposant=<uuid> ouvre directement la fiche de l'entreprise.
+  const deepLinkExhibitor = searchParams.get('exposant');
+  useEffect(() => {
+    if (deepLinkExhibitor && isUuid(deepLinkExhibitor)) {
+      setSelection({ kind: 'exhibitor', exhibitor_id: deepLinkExhibitor });
+    }
+  }, [deepLinkExhibitor]);
 
   if (selection) {
     if (selection.kind === 'exhibitor' && isUuid(selection.exhibitor_id)) {
