@@ -124,6 +124,20 @@ export default function ExhibitorHero({
           </p>
         )}
 
+        {categories.length > 0 && (
+          <ul
+            className="flex flex-wrap gap-2 mt-4 hero-in"
+            style={{ animationDelay: '215ms' }}
+            aria-label="Catégories d'activité"
+          >
+            {categories.map((c) => (
+              <li key={c.sub_sector_id}>
+                <Badge variant={c.is_primary ? 'default' : 'secondary'}>{c.name}</Badge>
+              </li>
+            ))}
+          </ul>
+        )}
+
         {products.length > 0 && (
           <ul
             className="flex flex-wrap gap-2 mt-4 hero-in"
