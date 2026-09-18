@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 
 import type { PublicExhibitorProfile } from '@/hooks/useExhibitorProfile';
 import { useExhibitorProducts } from '@/hooks/useExhibitorProfile';
+import { usePublicExhibitorCategories } from '@/hooks/useExhibitorCategories';
 import ExhibitorAlertButton from '@/components/exhibitor/ExhibitorAlertButton';
 import ExhibitorClaimCta from '@/components/exhibitor/ExhibitorClaimCta';
 import ExhibitorAvatar from '@/components/event/ExhibitorAvatar';
@@ -35,6 +36,12 @@ export default function ExhibitorHero({
   const linkedinUrl = normalizeLinkedInUrl(profile.linkedin_url);
   const { data: aiData } = useExhibitorProducts(profile.public_slug || undefined);
   const products = aiData?.produits_services ?? [];
+  // Catégories d'activité issues du référentiel canonique
+  // (exhibitor_sub_sectors -> sub_sectors), principal en premier.
+  const { data: categories = [] } = usePublicExhibitorCategories(
+    profile.exhibitor_id,
+    profile.legacy_exposant_id,
+  );
 
   return (
     <section
@@ -115,6 +122,20 @@ export default function ExhibitorHero({
           <p className="text-sm text-muted-foreground mt-2">
             Aucune participation aux salons identifiée pour le moment.
           </p>
+        )}
+
+        {categories.length > 0 && (
+          <ul
+            className="flex flex-wrap gap-2 mt-4 hero-in"
+            style={{ animationDelay: '215ms' }}
+            aria-label="Catégories d'activité"
+          >
+            {categories.map((c) => (
+              <li key={c.sub_sector_id}>
+                <Badge variant={c.is_primary ? 'default' : 'secondary'}>{c.name}</Badge>
+              </li>
+            ))}
+          </ul>
         )}
 
         {products.length > 0 && (

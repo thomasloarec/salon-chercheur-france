@@ -5152,21 +5152,33 @@ export type Database = {
           created_at: string
           exhibitor_id: string
           is_primary: boolean
+          position: number | null
+          source: string
           sub_sector_id: string
+          updated_at: string
+          updated_by: string | null
         }
         Insert: {
           confidence?: number | null
           created_at?: string
           exhibitor_id: string
           is_primary?: boolean
+          position?: number | null
+          source?: string
           sub_sector_id: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           confidence?: number | null
           created_at?: string
           exhibitor_id?: string
           is_primary?: boolean
+          position?: number | null
+          source?: string
           sub_sector_id?: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -12996,6 +13008,10 @@ export type Database = {
         Args: { p_event_id: string; p_exhibitor_id: string }
         Returns: Json
       }
+      can_manage_exhibitor: {
+        Args: { p_exhibitor_id: string }
+        Returns: boolean
+      }
       can_publish_novelty: {
         Args: { event_id: string; exhibitor_id: string }
         Returns: boolean
@@ -13233,6 +13249,10 @@ export type Database = {
           ville_reelle: string
         }[]
       }
+      exhibitor_categories_locked: {
+        Args: { p_taxonomy_key: string }
+        Returns: boolean
+      }
       exhibitor_identity_insert_safe: {
         Args: {
           p_base: string
@@ -13351,6 +13371,10 @@ export type Database = {
         }[]
       }
       get_exhibitor_ai_enrichment_stats: { Args: never; Returns: Json }
+      get_exhibitor_categories: {
+        Args: { p_exhibitor_id: string }
+        Returns: Json
+      }
       get_exhibitor_completion: {
         Args: { ids: string[] }
         Returns: {
@@ -14213,6 +14237,10 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: string
       }
+      resolve_taxonomy_key: {
+        Args: { p_exhibitor_id: string }
+        Returns: string
+      }
       resolve_widget_token: {
         Args: { p_token: string }
         Returns: {
@@ -14405,6 +14433,10 @@ export type Database = {
           p_public_slug: string
           p_source_surface?: string
         }
+        Returns: Json
+      }
+      set_exhibitor_categories: {
+        Args: { p_exhibitor_id: string; p_sub_sector_ids: string[] }
         Returns: Json
       }
       set_exhibitors_complete: {
