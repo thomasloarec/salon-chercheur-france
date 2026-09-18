@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import {
   ArrowLeft, Building2, Shield, ShieldCheck, Globe, User, Users, Clock,
   Plus, Trash2, Crown, ExternalLink, AlertCircle, CheckCircle, Pencil, Save, X, ClipboardList, Check,
-  Briefcase, Mail,
+  Briefcase, Mail, Settings,
 } from 'lucide-react';
 import { useAdminExhibitorDetail } from '@/hooks/useAdminExhibitors';
 import { supabase } from '@/integrations/supabase/client';
@@ -224,16 +224,28 @@ const AdminExhibitorDetailPanel = ({ exhibitorId, onBack }: Props) => {
               <div className="flex items-center justify-between gap-2">
                 <CardTitle className="text-base">Fiche entreprise</CardTitle>
                 {publicSlug && (
-                  <Button asChild variant="outline" size="sm">
-                    <a
-                      href={`${PUBLIC_SITE_URL}/exposants/${publicSlug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5 mr-1" />
-                      Voir la fiche publique
-                    </a>
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button asChild variant="outline" size="sm">
+                      <a
+                        href={`${PUBLIC_SITE_URL}/exposants/${publicSlug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                        Voir la fiche publique
+                      </a>
+                    </Button>
+                    <Button asChild variant="outline" size="sm">
+                      <a
+                        href={`${PUBLIC_SITE_URL}/exposants/${publicSlug}/gerer`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Settings className="h-3.5 w-3.5 mr-1" />
+                        Gérer la fiche
+                      </a>
+                    </Button>
+                  </div>
                 )}
               </div>
             </CardHeader>

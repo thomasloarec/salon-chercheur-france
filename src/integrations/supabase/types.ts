@@ -12616,6 +12616,10 @@ export type Database = {
           trial_ends_at: string
         }[]
       }
+      admin_materialize_exhibitor_from_slug: {
+        Args: { p_public_slug: string }
+        Returns: string
+      }
       admin_merge_organizers: {
         Args: { p_source_id: string; p_target_id: string }
         Returns: Json
