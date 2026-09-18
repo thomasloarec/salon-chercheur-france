@@ -8755,6 +8755,33 @@ export type Database = {
         }
         Relationships: []
       }
+      pipeline_health_alerts: {
+        Row: {
+          created_at: string
+          detail: string | null
+          detected_on: string
+          id: number
+          jobid: number | null
+          jobname: string | null
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          detected_on?: string
+          id?: never
+          jobid?: number | null
+          jobname?: string | null
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          detected_on?: string
+          id?: never
+          jobid?: number | null
+          jobname?: string | null
+        }
+        Relationships: []
+      }
       plans: {
         Row: {
           created_at: string
@@ -10167,6 +10194,48 @@ export type Database = {
         }
         Relationships: []
       }
+      site_health_incidents: {
+        Row: {
+          category: string | null
+          check_key: string
+          detail: string | null
+          emailed_at: string | null
+          label: string | null
+          last_seen_at: string
+          metric: number | null
+          notified_inapp_at: string | null
+          opened_at: string
+          resolved_at: string | null
+          status: string
+        }
+        Insert: {
+          category?: string | null
+          check_key: string
+          detail?: string | null
+          emailed_at?: string | null
+          label?: string | null
+          last_seen_at?: string
+          metric?: number | null
+          notified_inapp_at?: string | null
+          opened_at?: string
+          resolved_at?: string | null
+          status: string
+        }
+        Update: {
+          category?: string | null
+          check_key?: string
+          detail?: string | null
+          emailed_at?: string | null
+          label?: string | null
+          last_seen_at?: string
+          metric?: number | null
+          notified_inapp_at?: string | null
+          opened_at?: string
+          resolved_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       slug_redirects: {
         Row: {
           created_at: string | null
@@ -10795,6 +10864,7 @@ export type Database = {
           id: string
           last_admin_message_at: string | null
           last_user_message_at: string | null
+          last_user_read_at: string | null
           message_count: number
           resolved_at: string | null
           resolved_by: string | null
@@ -10802,6 +10872,7 @@ export type Database = {
           subject: string | null
           topic: string | null
           updated_at: string
+          user_notified_at: string | null
           user_unread_count: number
         }
         Insert: {
@@ -10816,6 +10887,7 @@ export type Database = {
           id?: string
           last_admin_message_at?: string | null
           last_user_message_at?: string | null
+          last_user_read_at?: string | null
           message_count?: number
           resolved_at?: string | null
           resolved_by?: string | null
@@ -10823,6 +10895,7 @@ export type Database = {
           subject?: string | null
           topic?: string | null
           updated_at?: string
+          user_notified_at?: string | null
           user_unread_count?: number
         }
         Update: {
@@ -10837,6 +10910,7 @@ export type Database = {
           id?: string
           last_admin_message_at?: string | null
           last_user_message_at?: string | null
+          last_user_read_at?: string | null
           message_count?: number
           resolved_at?: string | null
           resolved_by?: string | null
@@ -10844,6 +10918,7 @@ export type Database = {
           subject?: string | null
           topic?: string | null
           updated_at?: string
+          user_notified_at?: string | null
           user_unread_count?: number
         }
         Relationships: [
@@ -11582,6 +11657,16 @@ export type Database = {
         }
         Relationships: []
       }
+      data_freshness: {
+        Row: {
+          backlog: number | null
+          hours_old: number | null
+          last_update: string | null
+          pipeline: string | null
+          seuil_heures: number | null
+        }
+        Relationships: []
+      }
       event_salon_concept: {
         Row: {
           concept_key: string | null
@@ -11843,6 +11928,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pipeline_health: {
+        Row: {
+          active: boolean | null
+          hours_since_success: number | null
+          jobid: number | null
+          jobname: string | null
+          last_run_at: string | null
+          last_status: string | null
+          last_success_at: string | null
+          needs_attention: boolean | null
+          schedule: string | null
+        }
+        Relationships: []
       }
       public_comment_authors: {
         Row: {
@@ -13391,6 +13490,7 @@ export type Database = {
           wall_type: string
         }[]
       }
+      check_pipeline_health: { Args: never; Returns: number }
       check_seo_automation_dependencies: { Args: never; Returns: Json }
       check_seo_cron_dependencies: { Args: never; Returns: Json }
       cleanup_expired_claim_tokens: { Args: never; Returns: undefined }
@@ -13401,6 +13501,17 @@ export type Database = {
         Returns: number
       }
       compute_seo_source_hash: { Args: { p_event_id: string }; Returns: string }
+      compute_site_health: {
+        Args: never
+        Returns: {
+          category: string
+          check_key: string
+          detail: string
+          label: string
+          metric: number
+          status: string
+        }[]
+      }
       confirm_growth_optin: { Args: { p_token: string }; Returns: Json }
       count_active_leads: { Args: { exhibitor_uuid: string }; Returns: number }
       count_novelty_distinct_visitors: {
@@ -14535,6 +14646,7 @@ export type Database = {
       refresh_public_exhibitor_profiles_mv: { Args: never; Returns: Json }
       refresh_recommendable_embeddings: { Args: never; Returns: number }
       refresh_recommendations_if_needed: { Args: never; Returns: number }
+      refresh_site_health: { Args: never; Returns: number }
       refresh_stale_event_profiles: { Args: never; Returns: number }
       refuse_growth_lead: {
         Args: { p_lead_id: string; p_raison?: string }
@@ -14852,6 +14964,7 @@ export type Database = {
         Args: { p_name: string; p_value: string }
         Returns: Json
       }
+      site_health_mark_emailed: { Args: { p_keys: string[] }; Returns: number }
       slugify: { Args: { txt: string }; Returns: string }
       snapshot_all_event_participations: { Args: never; Returns: number }
       start_seo_weekly_catchup: { Args: never; Returns: Json }
