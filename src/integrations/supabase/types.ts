@@ -4220,6 +4220,9 @@ export type Database = {
           mots_cles_metier: Json | null
           produits_services: Json | null
           profils_visiteurs: Json | null
+          reclass_at: string | null
+          reclass_outcome: string | null
+          reclass_pass: string | null
           resume_court: string | null
           secteur_id: string | null
           secteur_principal: string | null
@@ -4235,6 +4238,9 @@ export type Database = {
           mots_cles_metier?: Json | null
           produits_services?: Json | null
           profils_visiteurs?: Json | null
+          reclass_at?: string | null
+          reclass_outcome?: string | null
+          reclass_pass?: string | null
           resume_court?: string | null
           secteur_id?: string | null
           secteur_principal?: string | null
@@ -4250,6 +4256,9 @@ export type Database = {
           mots_cles_metier?: Json | null
           produits_services?: Json | null
           profils_visiteurs?: Json | null
+          reclass_at?: string | null
+          reclass_outcome?: string | null
+          reclass_pass?: string | null
           resume_court?: string | null
           secteur_id?: string | null
           secteur_principal?: string | null
@@ -5189,6 +5198,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      exhibitor_taxonomy_snapshots: {
+        Row: {
+          ai_resume_court: string | null
+          ai_secteur_id: string | null
+          ai_secteur_principal: string | null
+          ai_source_url: string | null
+          ai_sous_secteurs: Json | null
+          exhibitor_id: string
+          id: number
+          snapshot_label: string
+          sub_sectors: Json
+          taken_at: string
+        }
+        Insert: {
+          ai_resume_court?: string | null
+          ai_secteur_id?: string | null
+          ai_secteur_principal?: string | null
+          ai_source_url?: string | null
+          ai_sous_secteurs?: Json | null
+          exhibitor_id: string
+          id?: never
+          snapshot_label: string
+          sub_sectors?: Json
+          taken_at?: string
+        }
+        Update: {
+          ai_resume_court?: string | null
+          ai_secteur_id?: string | null
+          ai_secteur_principal?: string | null
+          ai_source_url?: string | null
+          ai_sous_secteurs?: Json | null
+          exhibitor_id?: string
+          id?: never
+          snapshot_label?: string
+          sub_sectors?: Json
+          taken_at?: string
+        }
+        Relationships: []
       }
       exhibitor_team_members: {
         Row: {
@@ -10597,6 +10645,287 @@ export type Database = {
           },
         ]
       }
+      support_email_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          last_error: string | null
+          message_id: string | null
+          payload: Json | null
+          recipient_email: string | null
+          recipient_kind: string
+          recipient_user_id: string | null
+          sent_at: string | null
+          status: string
+          template: string
+          thread_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          message_id?: string | null
+          payload?: Json | null
+          recipient_email?: string | null
+          recipient_kind: string
+          recipient_user_id?: string | null
+          sent_at?: string | null
+          status?: string
+          template: string
+          thread_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          message_id?: string | null
+          payload?: Json | null
+          recipient_email?: string | null
+          recipient_kind?: string
+          recipient_user_id?: string | null
+          sent_at?: string | null
+          status?: string
+          template?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_email_queue_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "support_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_email_queue_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "support_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          is_internal_note: boolean
+          read_by_admin_at: string | null
+          read_by_user_at: string | null
+          sender_name: string | null
+          sender_role: string
+          sender_user_id: string | null
+          thread_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          is_internal_note?: boolean
+          read_by_admin_at?: string | null
+          read_by_user_at?: string | null
+          sender_name?: string | null
+          sender_role: string
+          sender_user_id?: string | null
+          thread_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_internal_note?: boolean
+          read_by_admin_at?: string | null
+          read_by_user_at?: string | null
+          sender_name?: string | null
+          sender_role?: string
+          sender_user_id?: string | null
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "support_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_settings: {
+        Row: {
+          admin_email: string | null
+          enabled: boolean
+          escalation_delay_minutes: number
+          escalation_message: string
+          id: boolean
+          response_promise_hours: number
+        }
+        Insert: {
+          admin_email?: string | null
+          enabled?: boolean
+          escalation_delay_minutes?: number
+          escalation_message?: string
+          id?: boolean
+          response_promise_hours?: number
+        }
+        Update: {
+          admin_email?: string | null
+          enabled?: boolean
+          escalation_delay_minutes?: number
+          escalation_message?: string
+          id?: boolean
+          response_promise_hours?: number
+        }
+        Relationships: []
+      }
+      support_threads: {
+        Row: {
+          admin_unread_count: number
+          context_type: string
+          created_at: string
+          created_by: string
+          escalated_at: string | null
+          event_id: string | null
+          exhibitor_id: string | null
+          first_admin_reply_at: string | null
+          id: string
+          last_admin_message_at: string | null
+          last_user_message_at: string | null
+          message_count: number
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          subject: string | null
+          topic: string | null
+          updated_at: string
+          user_unread_count: number
+        }
+        Insert: {
+          admin_unread_count?: number
+          context_type: string
+          created_at?: string
+          created_by: string
+          escalated_at?: string | null
+          event_id?: string | null
+          exhibitor_id?: string | null
+          first_admin_reply_at?: string | null
+          id?: string
+          last_admin_message_at?: string | null
+          last_user_message_at?: string | null
+          message_count?: number
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          subject?: string | null
+          topic?: string | null
+          updated_at?: string
+          user_unread_count?: number
+        }
+        Update: {
+          admin_unread_count?: number
+          context_type?: string
+          created_at?: string
+          created_by?: string
+          escalated_at?: string | null
+          event_id?: string | null
+          exhibitor_id?: string | null
+          first_admin_reply_at?: string | null
+          id?: string
+          last_admin_message_at?: string | null
+          last_user_message_at?: string | null
+          message_count?: number
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          subject?: string | null
+          topic?: string | null
+          updated_at?: string
+          user_unread_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_threads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "admin_events_exhibitor_coverage"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_threads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "support_threads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "support_threads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_threads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_threads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_salons_email_missing"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "support_threads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_threads_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "support_threads_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_threads_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_threads_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
+        ]
+      }
       system_locks: {
         Row: {
           lock_name: string
@@ -11402,6 +11731,37 @@ export type Database = {
           id_exposant?: string | null
           nom_exposant?: string | null
           website_exposant?: string | null
+        }
+        Relationships: []
+      }
+      exposants_a_reclasser: {
+        Row: {
+          a_rattachement: boolean | null
+          exposant_description: string | null
+          id_exposant: string | null
+          lot: string | null
+          n_conformes: number | null
+          n_libelles: number | null
+          nom_exposant: string | null
+          prochain_event: string | null
+          reclass_outcome: string | null
+          reclass_pass: string | null
+          seau_generique: boolean | null
+          website_exposant: string | null
+        }
+        Relationships: []
+      }
+      exposants_a_traiter: {
+        Row: {
+          exposant_description: string | null
+          id_exposant: string | null
+          lot: string | null
+          motif: string | null
+          nom_exposant: string | null
+          prochain_event: string | null
+          reclass_outcome: string | null
+          reclass_pass: string | null
+          website_exposant: string | null
         }
         Relationships: []
       }
@@ -13004,6 +13364,10 @@ export type Database = {
         Args: { p_top_k?: number }
         Returns: number
       }
+      can_access_support_thread: {
+        Args: { _thread_id: string }
+        Returns: boolean
+      }
       can_add_novelty: {
         Args: { p_event_id: string; p_exhibitor_id: string }
         Returns: Json
@@ -14251,6 +14615,14 @@ export type Database = {
           id_event_text: string
         }[]
       }
+      restore_exhibitor_taxonomy_snapshot: {
+        Args: {
+          p_dry_run?: boolean
+          p_exhibitor_ids?: string[]
+          p_snapshot_label: string
+        }
+        Returns: Json
+      }
       revert_exposant_merge: { Args: { p_log_id: string }; Returns: undefined }
       revert_participation_dedup: {
         Args: { p_log_id: string }
@@ -14507,6 +14879,109 @@ export type Database = {
         }
         Returns: string
       }
+      support_admin_inbox: {
+        Args: { p_limit?: number; p_status?: string }
+        Returns: {
+          admin_link: string
+          admin_unread_count: number
+          context_type: string
+          created_by: string
+          entity_id: string
+          entity_label: string
+          escalated_at: string
+          first_admin_reply_at: string
+          last_admin_message_at: string
+          last_message_preview: string
+          last_user_message_at: string
+          minutes_waiting: number
+          requester_email: string
+          requester_name: string
+          status: string
+          thread_id: string
+          topic: string
+        }[]
+      }
+      support_admin_link: {
+        Args: {
+          _thread: Database["public"]["Tables"]["support_threads"]["Row"]
+        }
+        Returns: string
+      }
+      support_can_manage_entity: {
+        Args: { _context_type: string; _entity_id: string }
+        Returns: boolean
+      }
+      support_enqueue_email: {
+        Args: {
+          _message_id: string
+          _payload: Json
+          _recipient_kind: string
+          _template: string
+          _thread: Database["public"]["Tables"]["support_threads"]["Row"]
+        }
+        Returns: undefined
+      }
+      support_entity_label: {
+        Args: {
+          _thread: Database["public"]["Tables"]["support_threads"]["Row"]
+        }
+        Returns: string
+      }
+      support_escalate_pending: { Args: never; Returns: number }
+      support_mark_read: { Args: { p_thread_id: string }; Returns: undefined }
+      support_my_thread: {
+        Args: { p_context_type: string; p_entity_id: string }
+        Returns: {
+          created_at: string
+          escalated_at: string
+          status: string
+          thread_id: string
+          user_unread_count: number
+        }[]
+      }
+      support_notify_admins: {
+        Args: {
+          _actor_user_id: string
+          _message: string
+          _thread: Database["public"]["Tables"]["support_threads"]["Row"]
+          _title: string
+          _type: string
+        }
+        Returns: undefined
+      }
+      support_notify_user: {
+        Args: {
+          _message: string
+          _thread: Database["public"]["Tables"]["support_threads"]["Row"]
+          _title: string
+          _type: string
+        }
+        Returns: undefined
+      }
+      support_open_thread: {
+        Args: {
+          p_context_type: string
+          p_entity_id: string
+          p_message: string
+          p_subject?: string
+          p_topic?: string
+        }
+        Returns: string
+      }
+      support_post_message: {
+        Args: { p_body: string; p_is_internal?: boolean; p_thread_id: string }
+        Returns: string
+      }
+      support_set_status: {
+        Args: { p_status: string; p_thread_id: string }
+        Returns: undefined
+      }
+      support_user_link: {
+        Args: {
+          _thread: Database["public"]["Tables"]["support_threads"]["Row"]
+        }
+        Returns: string
+      }
       sync_exhibitor_public_identities: {
         Args: { p_limit?: number }
         Returns: {
@@ -14581,6 +15056,7 @@ export type Database = {
           p_exhibitor_id: string
           p_macro: string
           p_mots_cles_metier: Json
+          p_pass_label?: string
           p_produits_services: Json
           p_profils_visiteurs: Json
           p_resume_court: string
