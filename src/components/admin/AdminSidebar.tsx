@@ -13,6 +13,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import {
+  Activity,
   LayoutDashboard,
   Calendar,
   CalendarDays,
