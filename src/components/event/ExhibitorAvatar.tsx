@@ -63,31 +63,34 @@ export const ExhibitorAvatar: React.FC<ExhibitorAvatarProps> = ({
   imageClassName,
 }) => {
   const resolved = getExhibitorLogoUrl(logoUrl, website);
+  // Un `logoUrl` renseigné = logo curé, téléversé dans notre bucket : source de
+  // confiance. Le favicon Google dérivé du site, lui, peut revenir transparent/vide.
+  const isCuratedLogo = !!logoUrl;
   const [failed, setFailed] = useState(false);
   const showImage = !!resolved && !failed;
+  // Logo curé affiché : surface propre + AUCUN monogramme derrière, sinon les
+  // initiales transparaissent à travers un logo au fond transparent (bug AMDP & OCETA).
+  const cleanLogo = isCuratedLogo && showImage;
 
-  // Le monogramme est TOUJOURS rendu, en couche de fond. L'image se pose
-  // par-dessus. Un favicon transparent ou blanc — cas de Özel Tekstil et
-  // Pakipek Group — laisse donc apparaître le monogramme au lieu d'un carré
-  // vide. Le pixel ne peut pas être inspecté : le service de favicons de
-  // Google ne renvoie pas d'en-tête CORS, le canvas serait teinté.
   return (
     <div
       className={cn(
         'relative flex items-center justify-center overflow-hidden rounded-lg ring-1',
-        toneForName(name),
+        cleanLogo ? 'bg-card ring-border' : toneForName(name),
         className,
       )}
       aria-hidden="true"
     >
-      <span
-        className={cn(
-          'heading-display font-semibold leading-none tracking-tight',
-          textClassName ?? 'text-base',
-        )}
-      >
-        {getMonogram(name)}
-      </span>
+      {!cleanLogo && (
+        <span
+          className={cn(
+            'heading-display font-semibold leading-none tracking-tight',
+            textClassName ?? 'text-base',
+          )}
+        >
+          {getMonogram(name)}
+        </span>
+      )}
 
       {showImage && (
         <img
@@ -97,12 +100,18 @@ export const ExhibitorAvatar: React.FC<ExhibitorAvatarProps> = ({
           decoding="async"
           width={64}
           height={64}
-          className={cn('absolute inset-0 h-full w-full object-contain p-1', imageClassName)}
+          className={cn(
+            'absolute inset-0 h-full w-full object-contain p-1',
+            imageClassName,
+            // Logo curé : padding modéré et constant, quel que soit imageClassName.
+            cleanLogo && 'p-2',
+          )}
           onError={() => setFailed(true)}
           onLoad={(e) => {
+            // Heuristique « favicon générique 16 px » : UNIQUEMENT pour les
+            // favicons dérivés, jamais pour un logo curé.
+            if (isCuratedLogo) return;
             const img = e.currentTarget;
-            // Favicon générique 16 px servi par défaut quand le domaine n'en
-            // publie pas → on retombe sur le seul monogramme.
             if (img.naturalWidth < MIN_USABLE_PX || img.naturalHeight < MIN_USABLE_PX) {
               setFailed(true);
             }
