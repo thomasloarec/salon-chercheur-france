@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link, useSearchParams } from 'react-router-dom';
 import {
   Sidebar,
   SidebarContent,
@@ -100,6 +100,7 @@ const navSections = [
   {
     label: 'SYSTÈME',
     items: [
+      { title: 'Santé du site', url: '/admin?tab=sante', icon: Activity, isHealth: true },
       { title: 'Enrichissement IA', url: '/admin/system/ai', icon: Bot },
       { title: 'Données de test', url: '/admin/system/test', icon: TestTube },
       { title: 'Outils & Export', url: '/admin/system/tools', icon: Wrench },
