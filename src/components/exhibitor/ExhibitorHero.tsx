@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 import type { PublicExhibitorProfile } from '@/hooks/useExhibitorProfile';
-import { useExhibitorProducts } from '@/hooks/useExhibitorProfile';
 import { usePublicExhibitorCategories } from '@/hooks/useExhibitorCategories';
 import ExhibitorAlertButton from '@/components/exhibitor/ExhibitorAlertButton';
 import ExhibitorClaimCta from '@/components/exhibitor/ExhibitorClaimCta';
@@ -34,8 +33,6 @@ export default function ExhibitorHero({
   // Normalized external links — CTAs only render for valid, absolute URLs.
   const websiteUrl = normalizeExternalUrl(profile.website);
   const linkedinUrl = normalizeLinkedInUrl(profile.linkedin_url);
-  const { data: aiData } = useExhibitorProducts(profile.public_slug || undefined);
-  const products = aiData?.produits_services ?? [];
   // Catégories d'activité issues du référentiel canonique
   // (exhibitor_sub_sectors -> sub_sectors), principal en premier.
   const { data: categories = [] } = usePublicExhibitorCategories(
@@ -130,30 +127,17 @@ export default function ExhibitorHero({
             style={{ animationDelay: '215ms' }}
             aria-label="Catégories d'activité"
           >
-            {categories.map((c) => (
-              <li key={c.sub_sector_id}>
-                <Badge variant={c.is_primary ? 'default' : 'secondary'}>{c.name}</Badge>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {products.length > 0 && (
-          <ul
-            className="flex flex-wrap gap-2 mt-4 hero-in"
-            style={{ animationDelay: '230ms' }}
-          >
-            {products.slice(0, 4).map((p) => (
-              <li
-                key={p}
-                title={p}
-                className="max-w-full truncate rounded-full border border-border px-3 py-1 text-xs text-muted-foreground"
-              >
-                {p}
-              </li>
-            ))}
-          </ul>
-        )}
+          {categories.map((c) => (
+            <li
+              key={c.sub_sector_id}
+              title={c.name}
+              className="max-w-full truncate rounded-full border border-border px-3 py-1 text-xs text-muted-foreground"
+            >
+              {c.name}
+            </li>
+          ))}
+        </ul>
+      )}
 
         {/* CTAs — hiérarchie : 1 action principale, le reste en secondaire.
             Site officiel reste l'action principale quand il existe ; sinon
