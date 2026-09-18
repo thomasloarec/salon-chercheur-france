@@ -215,6 +215,7 @@ function ThreadConversation({
         p_thread_id: thread.thread_id,
         p_body: text,
         p_is_internal: internal,
+        p_as_role: 'admin',
       });
       if (error) throw error;
       setBody('');

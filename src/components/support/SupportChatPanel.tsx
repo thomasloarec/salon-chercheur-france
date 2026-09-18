@@ -39,7 +39,6 @@ interface SupportMessage {
 const TOPICS = [
   'Problème technique',
   'Données erronées sur ma fiche',
-  'Question sur mon offre',
   "Suggestion d'amélioration",
   'Autre',
 ];
@@ -172,6 +171,8 @@ export default function SupportChatPanel({
         const { error: postError } = await supabase.rpc('support_post_message', {
           p_thread_id: threadId,
           p_body: text,
+          p_is_internal: false,
+          p_as_role: 'user',
         });
         if (postError) throw postError;
         await loadMessages(threadId);
