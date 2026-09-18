@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, Outlet, Link } from 'react-router-dom';
+import { Navigate, Outlet, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -7,6 +7,8 @@ import { AdminSidebar } from './AdminSidebar';
 import { Button } from '@/components/ui/button';
 import { Home, ExternalLink } from 'lucide-react';
 import { AdminSupportProvider } from './support/AdminSupportWidget';
+import SiteHealthBanner from './SiteHealthBanner';
+import AdminSiteHealthPage from '@/pages/admin/AdminSiteHealthPage';
 
 const AdminLayout = () => {
   const { user, loading: authLoading } = useAuth();
