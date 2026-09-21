@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import NotFoundSEO from '@/components/seo/NotFoundSEO';
+import { buildSeoTitle } from '@/lib/seoTitle';
 import LeadForm from '@/components/novelty/LeadForm';
 import NoveltyDetailView from '@/components/novelty/NoveltyDetailView';
 import NoveltyComments from '@/components/novelty/NoveltyComments';
@@ -104,9 +105,15 @@ export default function NoveltyDetail() {
       `${novelty.title} présenté par ${exhibitorName}${
         novelty.event_name ? ` à ${novelty.event_name}` : ''
       }.`).slice(0, 160);
-  const pageTitle = `${novelty.title} — ${exhibitorName}${
-    novelty.event_name ? ` à ${novelty.event_name}` : ''
-  }`;
+  // Title identique au pré-rendu : socle tronqué sur un mot entier AVANT le
+  // suffixe « | Lotexpo » (60/70 max), suffixe jamais coupé (« | Lot »).
+  const pageTitle = buildSeoTitle(
+    `${novelty.title} — ${exhibitorName}${
+      novelty.event_name ? ` à ${novelty.event_name}` : ''
+    }`,
+    '| Lotexpo',
+    70,
+  );
   const ogImage = images[0] || `${SITE_ORIGIN}/og-exhibitor-default.png`;
 
   const creativeWork: Record<string, unknown> = {
@@ -162,7 +169,7 @@ export default function NoveltyDetail() {
   const brochureUrl = novelty.doc_url || novelty.resource_url || undefined;
 
   return (
-    <MainLayout title={pageTitle} description={metaDescription} canonical={canonical}>
+    <MainLayout title={pageTitle} rawTitle description={metaDescription} canonical={canonical}>
       <Helmet>
         <meta name="robots" content={novelty.seo_indexable ? 'index, follow' : 'noindex, follow'} />
         <meta property="og:type" content="article" />

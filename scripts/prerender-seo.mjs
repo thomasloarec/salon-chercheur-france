@@ -72,6 +72,24 @@ function truncate(s, n) {
   if (!s) return '';
   return s.length <= n ? s : s.slice(0, n).trimEnd() + '…';
 }
+// Miroir strict de src/lib/seoTitle.ts : le socle est tronque (sur un mot
+// entier) AVANT d'ajouter le suffixe de marque, jamais apres. Tronquer apres
+// produit des finissions coupees en production (« – Lotexp », « | Lot »).
+function cutWords(text, max) {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const sp = cut.lastIndexOf(' ');
+  return (sp > 0 ? cut.slice(0, sp) : cut).replace(/[\s,;:\u2013\u2014-]+$/, '');
+}
+function seoTitle(base, brandSuffix, max, prefix = '') {
+  const cleanBase = String(base || '').replace(/\s+/g, ' ').trim();
+  const head = prefix ? `${prefix} ` : '';
+  const full = `${head}${cleanBase} ${brandSuffix}`;
+  if (full.length <= max) return full;
+  const budget = Math.max(0, max - head.length - brandSuffix.length - 1);
+  if (budget < 3) return full.slice(0, max);
+  return `${head}${cutWords(cleanBase, budget)} ${brandSuffix}`;
+}
 function safeJsonLd(obj) {
   return JSON.stringify(obj).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 }
@@ -260,15 +278,15 @@ function buildEvent(ev, exhibitors, novelties, program) {
   const city = ev.ville || 'France';
   // Title aligne sur SEOHead.tsx (source unique de formule) : dedup de l'annee
   // si elle est deja dans le nom, prefixe [Termine] pour les events passes,
-  // coupe dure a 60 (pas d'ellipse) pour que la version statique soit identique
-  // a la version reinjectee par react-helmet apres hydratation.
+  // socle tronque sur un mot entier AVANT l'ajout du suffixe marque (jamais
+  // « – Lotexp »), pour que la version statique soit identique a la version
+  // reinjectee par react-helmet apres hydratation.
   const nameHasYear = new RegExp(`\\b${year}\\b`).test(ev.nom_event || '');
   const namePart = nameHasYear ? ev.nom_event : `${ev.nom_event} ${year}`;
   const todayStr = new Date().toISOString().slice(0, 10);
   const endStr = (ev.date_fin || ev.date_debut || '').slice(0, 10);
   const isPast = endStr ? endStr < todayStr : false;
-  const baseTitle = `${namePart} | Salon professionnel à ${city} – Lotexpo`.slice(0, 60);
-  const title = isPast ? `[Terminé] ${baseTitle}`.slice(0, 60) : baseTitle;
+  const title = seoTitle(namePart, `| Salon professionnel à ${city} – Lotexpo`, 60, isPast ? '[Terminé]' : '');
   // Description publiable : description_enrichie UNIQUEMENT si statut='valide'
   const enrichedValid =
     ev.enrichissement_statut === 'valide' && ev.description_enrichie
@@ -528,7 +546,7 @@ function buildBlogIndex(articles) {
 }
 
 function buildBlogArticle(a) {
-  const title = truncate(a.meta_title || `${a.title} | Lotexpo`, 70);
+  const title = a.meta_title ? truncate(String(a.meta_title), 70) : seoTitle(String(a.title), '| Lotexpo', 70);
   const description = truncate(a.meta_description || stripHtml(a.intro_text) || `Article Lotexpo : ${a.title}.`, 160);
   const canonical = `${SITE_ORIGIN}/blog/${a.slug}`;
   const articleSchema = {
@@ -551,7 +569,7 @@ function buildBlogArticle(a) {
 
 function buildSector(slug, label, top) {
   const sectorLabel = label || slug.replace(/-/g, ' ');
-  const title = truncate(`Salons ${sectorLabel} en France | Lotexpo`, 70);
+  const title = seoTitle(`Salons ${sectorLabel} en France`, '| Lotexpo', 70);
   const description = truncate(`Découvrez les salons professionnels du secteur ${sectorLabel} en France : ${top.length} événement${top.length > 1 ? 's' : ''} à venir, dates, lieux et exposants sur Lotexpo.`, 160);
   const canonical = `${SITE_ORIGIN}/secteur/${slug}`;
   const collectionSchema = {
@@ -583,7 +601,7 @@ function buildSectorYear(slug, label, year, eventsOfYear, otherYears) {
   // Below threshold → noindex,follow + canonical points to the evergreen hub.
   const indexable = n >= SECTOR_YEAR_INDEX_THRESHOLD;
   const robots = indexable ? undefined : 'noindex,follow';
-  const title = truncate(`Salons ${sectorLabel} en France en ${year} | Lotexpo`, 70);
+  const title = seoTitle(`Salons ${sectorLabel} en France en ${year}`, '| Lotexpo', 70);
   const description = truncate(`${n} salons ${sectorLabel} programmés en ${year} en France. Consultez les dates, lieux, villes, exposants et informations pratiques sur Lotexpo.`, 160);
   const evergreen = `${SITE_ORIGIN}/secteur/${slug}`;
   const self = `${SITE_ORIGIN}/secteur/${slug}/${year}`;
@@ -637,7 +655,7 @@ function buildCity(slug, label, top) {
   // (unlike evergreen sector hubs). Below threshold → noindex,follow.
   const indexable = top.length >= CITY_YEAR_INDEX_THRESHOLD;
   const robots = indexable ? undefined : 'noindex,follow';
-  const title = truncate(`Salons professionnels à ${cityLabel} | Lotexpo`, 70);
+  const title = seoTitle(`Salons professionnels à ${cityLabel}`, '| Lotexpo', 70);
   const description = truncate(`Tous les salons professionnels organisés à ${cityLabel} : ${top.length} événement${top.length > 1 ? 's' : ''} à venir, dates, secteurs et exposants sur Lotexpo.`, 160);
   const canonical = `${SITE_ORIGIN}/ville/${slug}`;
   const collectionSchema = {
@@ -669,7 +687,7 @@ function buildCityYear(slug, label, year, eventsOfYear, otherYears) {
   // Below threshold → noindex,follow + canonical points to the evergreen hub.
   const indexable = n >= CITY_YEAR_INDEX_THRESHOLD;
   const robots = indexable ? undefined : 'noindex,follow';
-  const title = truncate(`Salons professionnels à ${cityLabel} en ${year} | Lotexpo`, 70);
+  const title = seoTitle(`Salons professionnels à ${cityLabel} en ${year}`, '| Lotexpo', 70);
   const description = truncate(`${n} salons professionnels programmés à ${cityLabel} en ${year}. Consultez les dates, lieux, secteurs, exposants et informations pratiques sur Lotexpo.`, 160);
   const evergreen = `${SITE_ORIGIN}/ville/${slug}`;
   const self = `${SITE_ORIGIN}/ville/${slug}/${year}`;
@@ -735,7 +753,7 @@ function buildExhibitor(profile, events, novelties) {
   const canonical = `${SITE_ORIGIN}/exposants/${slug}`;
   const robots = indexable ? 'index, follow' : 'noindex, follow';
 
-  const title = `${name} : salons, nouveautés et événements professionnels | Lotexpo`.slice(0, 70);
+  const title = seoTitle(`${name} : salons, nouveautés et événements professionnels`, '| Lotexpo', 70);
   const evNames = (events || []).map((e) => e && e.nom_event).filter(Boolean);
   const nSalons = evNames.length;
   let description;
@@ -824,8 +842,9 @@ function buildNovelty(n) {
   const canonical = `${SITE_ORIGIN}/nouveautes/${slug}`;
   const robots = indexable ? 'index, follow' : 'noindex, follow';
 
-  const title = truncate(
-    `${n.title} — ${exhibitorName}${eventName ? ` à ${eventName}` : ''} | Lotexpo`,
+  const title = seoTitle(
+    `${n.title} — ${exhibitorName}${eventName ? ` à ${eventName}` : ''}`,
+    '| Lotexpo',
     70,
   );
 

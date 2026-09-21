@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { Event } from '@/types/event';
 import { formatAffluence } from '@/utils/affluenceUtils';
+import { buildSeoTitle } from '@/lib/seoTitle';
 
 interface SEOHeadProps {
   event: Event;
@@ -23,14 +24,19 @@ export const SEOHead = ({ event, noIndex = false }: SEOHeadProps) => {
   const isEventPast = endStr ? endStr < todayStr : false;
 
   // Optimized title: {{Nom de l'événement}} {{Année}} | Salon professionnel à {{Ville}} – Lotexpo
-  // Max 60 chars, keyword first, brand suffix
+  // Max 60 chars, keyword first, brand suffix. Le socle est tronqué sur un mot
+  // entier AVANT l'ajout du suffixe (miroir de scripts/prerender-seo.mjs).
   const eventYear = event.date_debut ? new Date(event.date_debut).getFullYear() : currentYear;
   // Avoid duplicating the year when the event name already contains it
   // (e.g. "SIDO 2026" would otherwise become "SIDO 2026 2026 | ...").
   const nameHasYear = new RegExp(`\\b${eventYear}\\b`).test(event.nom_event || '');
   const namePart = nameHasYear ? event.nom_event : `${event.nom_event} ${eventYear}`;
-  const baseTitle = `${namePart} | Salon professionnel à ${event.ville || 'France'} – Lotexpo`.slice(0, 60);
-  const title = isEventPast ? `[Terminé] ${baseTitle}`.slice(0, 60) : baseTitle;
+  const title = buildSeoTitle(
+    namePart,
+    `| Salon professionnel à ${event.ville || 'France'} – Lotexpo`,
+    60,
+    isEventPast ? '[Terminé]' : undefined,
+  );
 
   // Optimized description: prefer generated meta if available, otherwise fallback
   const description = (event.meta_description_gen || 

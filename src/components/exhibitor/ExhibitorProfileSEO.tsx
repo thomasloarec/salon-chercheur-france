@@ -9,6 +9,7 @@ import {
   normalizeLinkedInUrl,
 } from '@/lib/urlUtils';
 import { cleanAiDescription } from '@/lib/exhibitorDescription';
+import { buildSeoTitle } from '@/lib/seoTitle';
 
 // Dedicated 1200x630 Open Graph fallback for exhibitor pages.
 // Always used for og:image (never the company logo) so social previews
@@ -146,8 +147,13 @@ export const ExhibitorProfileSEO = ({ profile }: ExhibitorProfileSEOProps) => {
   const name = profile.display_name || profile.canonical_name || 'Exposant';
   const slug = profile.public_slug || '';
 
-  const title =
-    `${name} : salons, nouveautés et événements professionnels | Lotexpo`.slice(0, 70);
+  // Socle tronqué sur un mot entier AVANT le suffixe de marque (miroir du
+  // pré-rendu, scripts/prerender-seo.mjs).
+  const title = buildSeoTitle(
+    `${name} : salons, nouveautés et événements professionnels`,
+    '| Lotexpo',
+    70,
+  );
 
   // Full deduped participation list (past + upcoming) — same source that feeds
   // the "Salons et événements" section AND the static prerender's evList.

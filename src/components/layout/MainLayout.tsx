@@ -6,13 +6,19 @@ import Footer from '@/components/Footer';
 
 interface MainLayoutProps {
   title?: string;
+  /** Le title fourni est déjà complet (suffixe marque inclus) : ne rien ajouter. */
+  rawTitle?: boolean;
   description?: string;
   canonical?: string;
   children: React.ReactNode;
 }
 
-const MainLayout = ({ title, description, canonical, children }: MainLayoutProps) => {
-  const fullTitle = title ? `${title} – Lotexpo` : 'Lotexpo | Tous les salons professionnels en France';
+const MainLayout = ({ title, rawTitle, description, canonical, children }: MainLayoutProps) => {
+  const fullTitle = rawTitle && title
+    ? title
+    : title
+      ? `${title} – Lotexpo`
+      : 'Lotexpo | Tous les salons professionnels en France';
   const metaDescription = description || 'Lotexpo centralise les salons professionnels B2B en France : découvrez les événements, repérez les exposants, suivez les nouveautés et préparez vos visites ou votre présence sur les salons.';
 
   return (
