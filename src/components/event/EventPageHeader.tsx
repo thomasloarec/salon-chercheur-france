@@ -226,7 +226,7 @@ export const EventPageHeader = ({
 
           {/* 2. H1 */}
           <h1 className="heading-display break-words text-2xl font-bold leading-tight text-foreground sm:text-3xl lg:text-[2.5rem]">
-            {event.nom_event}
+            {h1Text}
           </h1>
 
           {/* 3. Accroche */}
