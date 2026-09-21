@@ -410,7 +410,7 @@ function buildEvent(ev, exhibitors, novelties, program) {
     : '';
 
   const body = `<div id="seo-prerender" class="seo-prerender-fallback">
-    <h1>${escapeHtml(namePart)} – ${escapeHtml(city)}</h1>
+    <h1>${escapeHtml(ev.nom_event || '')}</h1>
     ${bodyDesc ? `<p>${escapeHtml(bodyDesc)}</p>` : ''}
     ${dateLine ? `<p>Dates : ${escapeHtml(dateLine)}${ev.nom_lieu ? ' – ' + escapeHtml(ev.nom_lieu) : ''}${ev.ville ? ', ' + escapeHtml(ev.ville) : ''}</p>` : ''}
     ${sectorSlug ? `<p><a href="/secteur/${encodeURIComponent(sectorSlug)}">Voir les salons ${escapeHtml(sector)}</a></p>` : ''}
