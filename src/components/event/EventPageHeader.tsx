@@ -97,14 +97,8 @@ export const EventPageHeader = ({
 
   const official = event.url_site_officiel;
 
-  // H1 aligné sur le pré-rendu (scripts/prerender-seo.mjs buildEvent) : nom du
-  // salon + année (dédupliquée si déjà présente) + ville.
-  const eventYear = event.date_debut
-    ? new Date(event.date_debut).getFullYear()
-    : new Date().getFullYear();
-  const nameHasYear = new RegExp(`\\b${eventYear}\\b`).test(event.nom_event || '');
-  const namePart = nameHasYear ? event.nom_event : `${event.nom_event} ${eventYear}`;
-  const h1Text = `${namePart} – ${event.ville || 'France'}`;
+  // H1 = nom du salon, à l'identique du pré-rendu (scripts/prerender-seo.mjs).
+  const h1Text = event.nom_event || '';
 
   const handleFavoriteClick = async () => {
     if (!user) {
