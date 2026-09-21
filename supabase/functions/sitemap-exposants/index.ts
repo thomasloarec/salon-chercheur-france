@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     let from = 0;
     for (;;) {
       const { data, error } = await supabase
-        .from('public_exhibitor_profiles_mv_DOES_NOT_EXIST')
+        .from('public_exhibitor_profiles_mv')
         .select('public_slug, last_activity_at, updated_at, created_at')
         .eq('seo_indexable', true)
         .eq('is_test', false)
