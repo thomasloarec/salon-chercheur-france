@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
     // exhibitor pages at all. Fail loudly instead so they retry.
     if (rows.length === 0) {
       console.error(
-        `[sitemap-exposants] FAILED: 0 indexable rows returned (raw rows=${(data ?? []).length}, ${elapsed}ms) — responding 500 instead of an empty urlset`,
+        `[sitemap-exposants] FAILED: 0 indexable rows returned (raw rows=${fetched}, ${elapsed}ms) — responding 500 instead of an empty urlset`,
       );
       return new Response('<!-- sitemap temporarily unavailable -->\n', { status: 500, headers: errorHeaders });
     }
