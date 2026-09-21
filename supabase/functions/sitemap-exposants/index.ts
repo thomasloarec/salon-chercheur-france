@@ -70,29 +70,42 @@ Deno.serve(async (req) => {
     const seen = new Set<string>();
     const rows: { slug: string; lastmod: string }[] = [];
 
-    // Single global query against the materialized view (service_role only).
-    const { data, error } = await supabase
-      .from('public_exhibitor_profiles_mv')
-      .select('public_slug, last_activity_at, updated_at, created_at')
-      .eq('seo_indexable', true)
-      .eq('is_test', false)
-      .not('public_slug', 'is', null)
-      .neq('public_slug', '')
-      .order('public_slug', { ascending: true })
-      .limit(MAX_ROWS);
+    // Global query against the materialized view (service_role only), fetched
+    // in large windows until the server returns nothing more.
+    let fetched = 0;
+    let from = 0;
+    for (;;) {
+      const { data, error } = await supabase
+        .from('public_exhibitor_profiles_mv')
+        .select('public_slug, last_activity_at, updated_at, created_at')
+        .eq('seo_indexable', true)
+        .eq('is_test', false)
+        .not('public_slug', 'is', null)
+        .neq('public_slug', '')
+        .order('public_slug', { ascending: true })
+        .range(from, from + PAGE_SIZE - 1);
 
-    if (error) {
-      console.error('[sitemap-exposants] query failed', error);
-      throw error;
+      if (error) {
+        console.error('[sitemap-exposants] query failed', error);
+        throw error;
+      }
+
+      const batch = data ?? [];
+      if (batch.length === 0) break;
+      fetched += batch.length;
+
+      for (const r of batch) {
+        const slug = (r.public_slug ?? '').trim();
+        if (!slug || seen.has(slug)) continue;
+        seen.add(slug);
+        const lastmod = formatDate(r.last_activity_at) || formatDate(r.updated_at) || formatDate(r.created_at) || now;
+        rows.push({ slug, lastmod });
+      }
+
+      from += batch.length;
+      if (from >= HARD_CAP) break;
     }
 
-    for (const r of data ?? []) {
-      const slug = (r.public_slug ?? '').trim();
-      if (!slug || seen.has(slug)) continue;
-      seen.add(slug);
-      const lastmod = formatDate(r.last_activity_at) || formatDate(r.updated_at) || formatDate(r.created_at) || now;
-      rows.push({ slug, lastmod });
-    }
 
     const elapsed = Date.now() - startedAt;
 
