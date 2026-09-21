@@ -8,7 +8,6 @@ Disallow: /auth
 Disallow: /profile
 Disallow: /agenda
 Disallow: /api/
-Crawl-delay: 1
 
 # Google Images
 User-agent: Googlebot-Image
@@ -21,7 +20,6 @@ Disallow: /admin/
 Disallow: /auth
 Disallow: /profile
 Disallow: /agenda
-Crawl-delay: 2
 
 # Social media bots (for rich previews)
 User-agent: Twitterbot
@@ -37,6 +35,9 @@ User-agent: Slackbot
 Allow: /
 
 # Crawlers IA — autorisés sur tout le contenu public
+User-agent: OAI-SearchBot
+Allow: /
+
 User-agent: GPTBot
 Allow: /
 Disallow: /admin/
@@ -78,7 +79,6 @@ Disallow: /notifications
 Disallow: /favorites
 Disallow: /crm-integrations
 Disallow: /api/
-Crawl-delay: 5
 
 # Sitemaps
 Sitemap: https://lotexpo.com/sitemap.xml
