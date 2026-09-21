@@ -1,5 +1,4 @@
-import { describe, expect, it } from 'bun:test';
-import { buildSeoTitle, cutWords } from '../seoTitle';
+import { buildSeoTitle, cutWords } from '@/lib/seoTitle';
 
 describe('cutWords', () => {
   it('ne coupe pas un texte plus court que la limite', () => {
