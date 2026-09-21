@@ -55,7 +55,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const RadarTeamPage: React.FC = () => {
   const navigate = useNavigate();
-  const { reloadAll, checkOfferProfile, loadSpaceMeta } = useRadarWorkspace();
+  const { reloadAll, checkOfferProfile, loadSpaceMeta, isSpaceOwner } = useRadarWorkspace();
   const [access, setAccess] = useState<Access | null>(null);
   const [prefs, setPrefs] = useState<Prefs | null>(null);
   const [loading, setLoading] = useState(true);
@@ -222,31 +222,34 @@ const RadarTeamPage: React.FC = () => {
   };
 
   const handleDeleteClick = () => {
-    void trackRadarEvent('radar_data_delete_clicked', { source: 'radar_crm' });
+    void trackRadarEvent('radar_data_delete_clicked', { source: 'radar_crm', role: isSpaceOwner ? 'owner' : 'member' });
     setConfirmOpen(true);
   };
 
   const handleConfirmDelete = async () => {
     setDeleting(true);
-    void trackRadarEvent('radar_data_delete_confirmed', { source: 'radar_crm' });
-    const { data, error } = await supabase.rpc('delete_my_radar_crm_data');
+    void trackRadarEvent('radar_data_delete_confirmed', { source: 'radar_crm', role: isSpaceOwner ? 'owner' : 'member' });
+    // Owner : ferme l'espace et purge toutes ses données. Membre : quitte l'espace partagé.
+    // L'espace actif est résolu côté serveur (radar_current_account_id), aucun argument à passer.
+    const rpcName = isSpaceOwner ? 'radar_close_workspace' : 'radar_leave_workspace';
+    const { data, error } = await supabase.rpc(rpcName);
     setDeleting(false);
     if (error) {
-      toast({ title: 'Erreur lors de la suppression', description: error.message, variant: 'destructive' });
+      toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
       return;
     }
-    const summary = (data ?? {}) as unknown as Record<string, number>;
-    void trackRadarEvent('radar_data_deleted', {
-      source: 'radar_crm',
-      deletedImports: summary.deleted_imports ?? summary.deletedImports ?? 0,
-      deletedCompanies: summary.deleted_companies ?? summary.deletedCompanies ?? 0,
-      deletedMatches: summary.deleted_matches ?? summary.deletedMatches ?? 0,
-      deletedAlerts: summary.deleted_alerts ?? summary.deletedAlerts ?? 0,
-    });
-    toast({
-      title: 'Données Radar CRM supprimées',
-      description: `Imports: ${summary.deleted_imports ?? 0} · Entreprises: ${summary.deleted_companies ?? 0} · Correspondances: ${summary.deleted_matches ?? 0}`,
-    });
+    const res = (data ?? {}) as { action?: string; deleted?: Record<string, number> };
+    if (isSpaceOwner) {
+      const d = res.deleted ?? {};
+      void trackRadarEvent('radar_data_deleted', { source: 'radar_crm', role: 'owner', ...d });
+      toast({
+        title: 'Espace Radar CRM fermé',
+        description: `Entreprises: ${d.companies ?? 0} · Imports: ${d.imports ?? 0} · Missions: ${d.missions ?? 0}`,
+      });
+    } else {
+      void trackRadarEvent('radar_data_deleted', { source: 'radar_crm', role: 'member' });
+      toast({ title: 'Vous avez quitté cet espace Radar CRM' });
+    }
     setConfirmOpen(false);
     await reloadAll();
     void loadSpaceMeta();
@@ -478,28 +481,44 @@ const RadarTeamPage: React.FC = () => {
                 Les fichiers importés dans Radar CRM sont utilisés uniquement pour détecter les correspondances entre vos entreprises et les exposants référencés sur Lotexpo. Vos données Radar CRM ne sont pas affichées publiquement. Elles ne modifient pas les événements, les exposants ou les données publiques du site.
               </p>
               <ul className="text-sm space-y-1.5">
-                <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-foreground mt-0.5 shrink-0" /> Données visibles uniquement par vous</li>
+                <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-foreground mt-0.5 shrink-0" /> Données visibles uniquement par les membres de votre espace</li>
                 <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-foreground mt-0.5 shrink-0" /> Matching basé sur les sites web des entreprises</li>
                 <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-foreground mt-0.5 shrink-0" /> Suppression possible à tout moment</li>
               </ul>
             </CardContent>
           </Card>
 
-          {/* Bloc D — Suppression */}
+          {/* Bloc D — Fermeture d'espace (owner) / sortie d'espace (membre) */}
           <Card className="border-destructive/40">
             <CardContent className="pt-5 space-y-3">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-destructive" />
-                <h3 className="font-semibold">Supprimer mes données Radar CRM</h3>
+                <h3 className="font-semibold">
+                  {isSpaceOwner ? "Fermer l'espace Radar CRM" : "Quitter l'espace Radar CRM"}
+                </h3>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Cette action supprimera vos imports, les entreprises importées, les correspondances détectées et les alertes Radar CRM associées.
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Elle ne supprimera pas votre compte Lotexpo, votre agenda, les événements ajoutés à votre agenda, ni les exposants ou événements publics de Lotexpo.
-              </p>
+              {isSpaceOwner ? (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    Cette action supprime définitivement toutes les données Radar CRM de l'espace : imports, entreprises importées, correspondances, missions, notes, tâches, profil d'offre et alertes. L'espace est fermé pour tous ses membres.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Elle ne supprime pas votre compte Lotexpo, votre agenda, ni les exposants ou événements publics de Lotexpo.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    Vous quitterez cet espace Radar CRM partagé et perdrez l'accès à ses données. Le contenu de l'équipe (entreprises, missions, notes) est conservé pour les autres membres.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Elle ne supprime pas votre compte Lotexpo ni votre agenda.
+                  </p>
+                </>
+              )}
               <Button variant="destructive" onClick={handleDeleteClick}>
-                <Trash2 className="mr-2 h-4 w-4" /> Supprimer mes données Radar CRM
+                <Trash2 className="mr-2 h-4 w-4" />
+                {isSpaceOwner ? "Fermer l'espace et tout supprimer" : "Quitter l'espace"}
               </Button>
             </CardContent>
           </Card>
@@ -511,9 +530,13 @@ const RadarTeamPage: React.FC = () => {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogTitle>
+              {isSpaceOwner ? "Fermer définitivement l'espace ?" : "Quitter cet espace ?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action est définitive. Vos imports Radar CRM, entreprises importées et correspondances seront supprimés. Vous pourrez réimporter un fichier plus tard.
+              {isSpaceOwner
+                ? "Cette action est définitive. Toutes les données Radar CRM de l'espace (imports, entreprises, correspondances, missions, notes, tâches, profil d'offre) seront supprimées et l'espace sera fermé pour tous ses membres."
+                : "Vous perdrez l'accès aux données de cet espace partagé. Le contenu de l'équipe est conservé pour les autres membres. Vous pourrez être réinvité plus tard."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -523,7 +546,9 @@ const RadarTeamPage: React.FC = () => {
               onClick={(e) => { e.preventDefault(); void handleConfirmDelete(); }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleting ? 'Suppression…' : 'Confirmer la suppression'}
+              {deleting
+                ? (isSpaceOwner ? 'Fermeture…' : 'Sortie…')
+                : (isSpaceOwner ? "Fermer l'espace" : "Quitter l'espace")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

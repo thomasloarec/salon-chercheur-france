@@ -14628,6 +14628,7 @@ export type Database = {
         Args: { p_account_id: string }
         Returns: string
       }
+      radar_close_workspace: { Args: { p_account_id?: string }; Returns: Json }
       radar_company_in_veille: {
         Args: {
           p_account_id: string
@@ -14648,6 +14649,7 @@ export type Database = {
         Args: { p_account_id: string }
         Returns: string
       }
+      radar_leave_workspace: { Args: { p_account_id?: string }; Returns: Json }
       radar_manual_import_id: {
         Args: { p_account_id: string }
         Returns: string
