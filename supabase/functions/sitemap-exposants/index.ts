@@ -30,11 +30,15 @@ const errorHeaders = {
 };
 
 const SITE_URL = 'https://lotexpo.com';
-// Single query: the MV returns the whole set in one round-trip. The explicit
-// limit is a safety ceiling only (PostgREST would otherwise cap at max_rows).
-const MAX_ROWS = 50000;
+// One query would be ideal, but PostgREST enforces a server-side max-rows cap
+// (1000) that .limit() cannot raise. We therefore request large 10 000-row
+// windows and advance by the number of rows actually returned: on the MV each
+// round-trip costs ~23ms, so the whole set is fetched in well under a second.
+const PAGE_SIZE = 10000;
 // Sitemap protocol hard limits: 50 000 URLs / 50 MB per file.
 const WARN_THRESHOLD = 45000;
+const HARD_CAP = 60000;
+
 
 const escapeXml = (v: string) =>
   String(v)
