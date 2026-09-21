@@ -72,6 +72,24 @@ function truncate(s, n) {
   if (!s) return '';
   return s.length <= n ? s : s.slice(0, n).trimEnd() + '…';
 }
+// Miroir strict de src/lib/seoTitle.ts : le socle est tronque (sur un mot
+// entier) AVANT d'ajouter le suffixe de marque, jamais apres. Tronquer apres
+// produit des finissions coupees en production (« – Lotexp », « | Lot »).
+function cutWords(text, max) {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const sp = cut.lastIndexOf(' ');
+  return (sp > 0 ? cut.slice(0, sp) : cut).replace(/[\s,;:\u2013\u2014-]+$/, '');
+}
+function seoTitle(base, brandSuffix, max, prefix = '') {
+  const cleanBase = String(base || '').replace(/\s+/g, ' ').trim();
+  const head = prefix ? `${prefix} ` : '';
+  const full = `${head}${cleanBase} ${brandSuffix}`;
+  if (full.length <= max) return full;
+  const budget = Math.max(0, max - head.length - brandSuffix.length - 1);
+  if (budget < 3) return full.slice(0, max);
+  return `${head}${cutWords(cleanBase, budget)} ${brandSuffix}`;
+}
 function safeJsonLd(obj) {
   return JSON.stringify(obj).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 }
