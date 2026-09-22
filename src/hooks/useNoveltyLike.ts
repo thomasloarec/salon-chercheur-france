@@ -146,6 +146,7 @@ export const useLikedNovelties = () => {
             title,
             type,
             status,
+            slug,
             media_urls,
             created_at,
             event_id,
