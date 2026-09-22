@@ -13953,6 +13953,7 @@ export type Database = {
           value: string
         }[]
       }
+      get_market_intel: { Args: { p_event_id: string }; Returns: Json }
       get_my_crm_connections: {
         Args: never
         Returns: {
