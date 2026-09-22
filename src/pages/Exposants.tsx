@@ -19,6 +19,7 @@ import {
   Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import exposantsHero from '@/assets/exposants-hero.png';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -510,7 +511,7 @@ export default function Exposants() {
           {/* Image d'en-tête, fondue vers la gauche (modèle Home) */}
           <div aria-hidden className="absolute inset-y-0 right-0 z-0 w-full lg:w-[72%]">
             <img
-              src="/exposants-hero.jpg"
+              src={exposantsHero}
               alt=""
               className="h-full w-full object-cover object-center"
               style={{
