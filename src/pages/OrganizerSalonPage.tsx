@@ -314,6 +314,7 @@ const OrganizerSalonPage: React.FC = () => {
             {activeSection === 'marche' && (
               <OrganizerMarketIntel
                 eventId={event.id}
+                eventName={event.nom_event}
                 onSwitchToExposants={() => setActiveSection('exposants')}
                 onSwitchToSalon={() => setActiveSection('salon')}
               />
