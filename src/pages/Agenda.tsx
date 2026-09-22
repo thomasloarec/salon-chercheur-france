@@ -256,7 +256,7 @@ const Agenda = () => {
                   </span>
                 ) : daysToNext !== null && daysToNext >= 0 ? (
                   <div className="leading-none lg:text-right">
-                    <div className="heading-display text-[clamp(2.2rem,4vw,3.4rem)] tabular-nums text-inverse-primary">
+                    <div className="heading-display text-[clamp(2.2rem,4vw,3.4rem)] tabular-nums text-inverse">
                       {daysToNext === 0 ? "Aujourd'hui" : `J-${daysToNext}`}
                     </div>
                     {daysToNext > 0 && (
