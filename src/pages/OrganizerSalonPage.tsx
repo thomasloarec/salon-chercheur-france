@@ -10,12 +10,13 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Sparkles, Building2, Users, Megaphone, Code, CalendarClock, Radio, LifeBuoy } from 'lucide-react';
+import { ExternalLink, Sparkles, Building2, Users, Megaphone, Code, CalendarClock, Radio, LifeBuoy, Compass } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import OrganizerEventEditForm from '@/components/event/OrganizerEventEditForm';
 import SeoScorecard from '@/components/event/SeoScorecard';
 import OrganizerActivationKit from '@/components/event/OrganizerActivationKit';
 import OrganizerEmbedWidget from '@/components/event/OrganizerEmbedWidget';
+import OrganizerMarketIntel from '@/components/event/OrganizerMarketIntel';
 import { useEventScorecard } from '@/hooks/useEventScorecard';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import OrganizerProgramManager from '@/components/event/OrganizerProgramManager';
@@ -34,7 +35,7 @@ const OrganizerSalonPage: React.FC = () => {
   const location = useLocation();
   const hasAideParam = new URLSearchParams(location.search).has('aide');
   const [activeSection, setActiveSection] = useState<
-    'salon' | 'fil' | 'programme' | 'exposants' | 'activation' | 'widget' | 'aide'
+    'salon' | 'fil' | 'programme' | 'exposants' | 'marche' | 'activation' | 'widget' | 'aide'
   >(hasAideParam ? 'aide' : 'salon');
   const queryClient = useQueryClient();
   const [exhibitorOverride, setExhibitorOverride] = useState<boolean | null>(null);
@@ -90,6 +91,7 @@ const OrganizerSalonPage: React.FC = () => {
       setEvent((prev) => (prev ? { ...prev, has_exhibitors: value } : prev));
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['event-scorecard', event.id] });
+      queryClient.invalidateQueries({ queryKey: ['market-intel', event.id] });
       toast.success(
         value
           ? 'Sections Nouveautés et Exposants réactivées sur votre page publique.'
@@ -127,7 +129,7 @@ const OrganizerSalonPage: React.FC = () => {
   if (!event) return null;
   if (!user || (!isAdmin && user.id !== event.owner_user_id)) return null;
 
-  type SectionKey = 'salon' | 'fil' | 'programme' | 'exposants' | 'activation' | 'widget' | 'aide';
+  type SectionKey = 'salon' | 'fil' | 'programme' | 'exposants' | 'marche' | 'activation' | 'widget' | 'aide';
   const sections: {
     key: SectionKey;
     label: string;
@@ -164,6 +166,14 @@ const OrganizerSalonPage: React.FC = () => {
       icon: Users,
       title: 'Vos exposants',
       description: 'Suivez la complétude des fiches et la visibilité de votre salon dans les recherches IA.',
+    },
+    {
+      key: 'marche',
+      label: 'Mon marché',
+      icon: Compass,
+      title: 'Votre salon dans son marché',
+      description:
+        'Où se situe votre plateau face aux salons comparables, ce qu’il couvre bien, et les segments où il est clairsemé.',
     },
     {
       key: 'activation',
@@ -301,6 +311,13 @@ const OrganizerSalonPage: React.FC = () => {
             )}
             {activeSection === 'programme' && <OrganizerProgramManager eventId={event.id} />}
             {activeSection === 'exposants' && <SeoScorecard eventId={event.id} />}
+            {activeSection === 'marche' && (
+              <OrganizerMarketIntel
+                eventId={event.id}
+                onSwitchToExposants={() => setActiveSection('exposants')}
+                onSwitchToSalon={() => setActiveSection('salon')}
+              />
+            )}
             {activeSection === 'activation' && (
               <OrganizerActivationKit
                 event={{ id: event.id, slug: event.slug, nom_event: event.nom_event }}
