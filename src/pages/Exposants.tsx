@@ -370,7 +370,7 @@ const SOLUTION_BLOCKS: SolutionBlock[] = [
     title: 'Visible au moment exact où les visiteurs préparent leur venue',
     body: (
       <>
-        Votre nouveauté apparaît sur la page du salon, dans les nouveautés du site et dans les
+        Votre nouveauté apparaît sur Lotexpo sur la page du salon, dans les nouveautés du site et dans les
         réponses de la recherche IA.{' '}
         <strong className="font-semibold text-primary">
           Les visiteurs la repèrent pendant qu'ils construisent leur parcours
@@ -410,7 +410,7 @@ const STEPS = [
   {
     icon: Search,
     n: 'Étape 1',
-    title: 'Retrouvez votre salon',
+    title: 'Retrouvez votre salon sur Lotexpo',
     text: "Cherchez l'événement auquel vous participez et ouvrez la publication depuis sa page.",
   },
   {
@@ -541,7 +541,7 @@ export default function Exposants() {
 
               <p className="mt-5 text-lg md:text-xl text-muted-foreground max-w-[52ch]">
                 Annoncez ce que vous présentez sur votre stand. Les visiteurs qui préparent déjà leur
-                venue vous repèrent,{' '}
+                venue sur Lotexpo vous repèrent,{' '}
                 <b className="text-foreground font-semibold">
                   et vous arrivez au salon avec des rendez-vous.
                 </b>
@@ -589,7 +589,7 @@ export default function Exposants() {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-10 w-full max-w-3xl">
               {[
-                { big: '0 €', lbl: 'pour publier votre nouveauté, sans carte bancaire' },
+                { big: 'Gratuit', lbl: 'pour publier votre nouveauté sur Lotexpo' },
                 { big: '~5 min', lbl: "de votre temps, l’IA écrit le premier jet" },
                 { big: 'Avant J-1', lbl: 'les premiers contacts arrivent avant le salon' },
               ].map((c, i) => (
