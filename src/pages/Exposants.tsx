@@ -1,626 +1,874 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useNavigate } from 'react-router-dom';
-import { Check, Crown, Zap, TrendingUp, Users, Calendar, X, Search, Megaphone, LineChart, Sparkles, Target, ShieldCheck } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  ArrowRight,
+  CalendarCheck,
+  Check,
+  ChevronRight,
+  Clock,
+  Download,
+  Eye,
+  FileUp,
+  Info,
+  Lightbulb,
+  MapPin,
+  Megaphone,
+  Search,
+  Sparkles,
+  Users,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import MainLayout from '@/components/layout/MainLayout';
-import { PremiumLeadDialog } from '@/components/premium/PremiumLeadDialog';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
+/* ================================================================== */
+/* Utils : reduced motion, in-view, révélation au scroll               */
+/* (mêmes primitives que la Home, dupliquées volontairement pour ne    */
+/*  pas modifier Home.tsx)                                             */
+/* ================================================================== */
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduced(mq.matches);
+    const handler = () => setReduced(mq.matches);
+    mq.addEventListener?.('change', handler);
+    return () => mq.removeEventListener?.('change', handler);
+  }, []);
+  return reduced;
+}
+
+function useInView<T extends HTMLElement>(threshold = 0.2) {
+  const ref = useRef<T>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          setInView(true);
+          obs.disconnect();
+        }
+      },
+      { threshold },
+    );
+    obs.observe(node);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return [ref, inView] as const;
+}
+
+function Reveal({
+  children,
+  className = '',
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  delay?: number;
+}) {
+  const reduced = usePrefersReducedMotion();
+  const [ref, inView] = useInView<HTMLDivElement>(0.14);
+  const shown = reduced || inView;
+  return (
+    <div
+      ref={ref}
+      style={{ transitionDelay: shown ? `${delay}ms` : '0ms' }}
+      className={`transition-all duration-700 ease-out ${
+        shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+      } ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+/* Cadre mock générique (identique à la Home) */
+const Mock = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+  <div
+    className={`rounded-[20px] border border-border bg-background shadow-[0_12px_34px_-14px_hsl(var(--primary)/0.22)] p-5 ${className}`}
+  >
+    {children}
+  </div>
+);
+
+/* ================================================================== */
+/* Mock 1 — L'assistant IA : votre matière devient des angles          */
+/* ================================================================== */
+const AiMock = () => {
+  const [ref, inView] = useInView<HTMLDivElement>(0.35);
+  const angles = [
+    {
+      title: 'La cobotique de soudure accessible aux ateliers de 10 personnes',
+      why: 'Démonstration en continu sur le stand, pièce soudée repartie en main.',
+    },
+    {
+      title: '30 % de temps de réglage en moins sur vos séries courtes',
+      why: 'Le chiffre mesuré chez trois clients pilotes, expliqué en 2 minutes.',
+    },
+    {
+      title: 'Ce que nous montrons pour la première fois en France',
+      why: 'Avant-première européenne, présentée uniquement pendant le salon.',
+    },
+  ];
+  return (
+    <Mock>
+      <div ref={ref}>
+        <div
+          className="flex items-center gap-2 rounded-xl border border-dashed px-3 py-3 mb-3"
+          style={{ borderColor: 'hsl(var(--primary) / 0.5)', backgroundColor: 'hsl(var(--primary) / 0.06)' }}
+        >
+          <FileUp className="h-4 w-4 text-primary shrink-0" />
+          <span className="text-sm text-primary font-medium truncate">
+            plaquette-produit-2026.pdf
+          </span>
+          <span className="ml-auto text-[0.7rem] font-bold text-primary shrink-0">lu par l'IA</span>
+        </div>
+
+        <div className="space-y-1.5 mb-4">
+          {['Lecture de votre matière', 'Recherche des meilleurs angles'].map((s, i) => (
+            <div key={s} className="flex items-center gap-2 text-xs text-foreground">
+              <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+              <span
+                className="transition-opacity duration-500"
+                style={{ transitionDelay: `${i * 220}ms`, opacity: inView ? 1 : 0.35 }}
+              >
+                {s}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2.5">
+          3 angles proposés
+        </p>
+
+        <div className="space-y-2.5">
+          {angles.map((a, i) => (
+            <div
+              key={a.title}
+              style={{ transitionDelay: `${240 + i * 190}ms` }}
+              className={`rounded-[14px] border border-border bg-background px-4 py-3 transition-all duration-500 ${
+                inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
+              }`}
+            >
+              <p className="text-sm font-semibold leading-snug text-foreground">{a.title}</p>
+              <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{a.why}</p>
+              <span className="mt-2.5 inline-flex items-center gap-1 text-[0.78rem] font-semibold text-primary">
+                Utiliser cet angle
+                <ArrowRight className="h-3 w-3" />
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 flex items-start gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
+          <Lightbulb className="h-4 w-4 shrink-0 text-primary" />
+          L'assistant ne remplace pas vos mots, il révèle pourquoi votre nouveauté mérite une visite.
+        </div>
+      </div>
+    </Mock>
+  );
+};
+
+/* ================================================================== */
+/* Mock 2 — La nouveauté publiée, vue par un visiteur                  */
+/* ================================================================== */
+const NoveltyMock = () => (
+  <Mock className="max-w-[420px] mx-auto">
+    <div className="flex flex-wrap items-center gap-2 mb-3">
+      <span className="rounded-md bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
+        Innovation
+      </span>
+      <span className="inline-flex items-center gap-1 rounded-full border border-foreground bg-foreground px-2 py-0.5 text-xs font-semibold text-background tabular-nums">
+        <Clock className="h-3 w-3" />
+        J-12
+      </span>
+    </div>
+
+    <div
+      className="h-[132px] rounded-xl mb-4 flex items-center justify-center"
+      style={{
+        background:
+          'linear-gradient(135deg, hsl(var(--primary) / 0.22), hsl(var(--secondary)))',
+      }}
+    >
+      <Megaphone className="h-10 w-10 text-primary opacity-50" />
+    </div>
+
+    <p className="heading-display text-lg leading-snug text-foreground mb-2.5">
+      La cobotique de soudure accessible aux ateliers de 10 personnes
+    </p>
+
+    <div className="flex items-center gap-2.5 mb-3.5">
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-sm font-extrabold text-primary-foreground">
+        A
+      </div>
+      <div className="min-w-0">
+        <div className="text-sm font-bold leading-tight text-primary truncate">Atelier Meca</div>
+        <div className="text-xs text-muted-foreground">Stand C12 · Global Industrie</div>
+      </div>
+    </div>
+
+    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
+      Pourquoi c'est intéressant
+    </p>
+    <ul className="space-y-1.5 mb-4">
+      {[
+        'Démonstration en continu, pièce soudée repartie en main.',
+        '30 % de temps de réglage en moins sur les séries courtes.',
+      ].map((r) => (
+        <li key={r} className="flex gap-2 text-xs leading-relaxed text-foreground/80">
+          <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground" />
+          {r}
+        </li>
+      ))}
+    </ul>
+
+    <div className="flex items-center gap-2 border-t border-border pt-3 text-xs font-semibold text-info">
+      <Eye className="h-4 w-4" />
+      Repérée par 34 visiteurs · 8 prévoient de passer
+    </div>
+  </Mock>
+);
+
+/* ================================================================== */
+/* Mock 3 — Les contacts générés avant l'ouverture                     */
+/* ================================================================== */
+const LeadsMock = () => {
+  const [ref, inView] = useInView<HTMLDivElement>(0.35);
+  const leads = [
+    { who: 'Responsable production · PME agroalimentaire', act: 'Demande de rendez-vous', cls: 'bg-primary/15 text-primary', icon: CalendarCheck },
+    { who: 'Directeur technique · groupe industriel', act: 'Brochure téléchargée', cls: 'bg-info/10 text-info', icon: Download },
+    { who: 'Acheteur · sous-traitance mécanique', act: 'Stand ajouté à son parcours', cls: 'bg-secondary text-secondary-foreground', icon: MapPin },
+  ];
+  return (
+    <Mock>
+      <div ref={ref}>
+        <div className="flex items-center justify-between gap-3 border-b border-border pb-3.5">
+          <span className="font-bold text-primary">Vos contacts · avant l'ouverture</span>
+          <span className="whitespace-nowrap rounded-full bg-primary px-2.5 py-1 text-xs font-bold text-primary-foreground">
+            J-12
+          </span>
+        </div>
+
+        <div className="my-3.5 rounded-xl bg-secondary/40 px-3.5 py-3 text-sm text-primary">
+          <b>3 professionnels</b> se sont manifestés sur votre nouveauté. Le salon n'a pas encore
+          ouvert.
+        </div>
+
+        {leads.map((l, i) => (
+          <div
+            key={l.who}
+            style={{ transitionDelay: `${160 + i * 190}ms` }}
+            className={`mb-2.5 rounded-[13px] border border-border p-[15px] transition-all duration-500 ${
+              inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-2.5">
+              <span className="text-sm font-semibold text-foreground">{l.who}</span>
+            </div>
+            <span
+              className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.72rem] font-bold ${l.cls}`}
+            >
+              <l.icon className="h-3 w-3" />
+              {l.act}
+            </span>
+          </div>
+        ))}
+
+        <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground">
+          Vous arrivez sur le salon avec des rendez-vous, pas avec une liste vide.
+        </p>
+      </div>
+    </Mock>
+  );
+};
+
+/* ================================================================== */
+/* Blocs solution alternés (modèle Home)                               */
+/* ================================================================== */
+interface SolutionBlock {
+  actor: string;
+  title: string;
+  body: React.ReactNode;
+  ecoNote: string;
+  cta?: { label: string; to: string };
+  visual: React.ReactNode;
+}
+
+const SolutionRow = ({
+  block,
+  reversed,
+  muted,
+}: {
+  block: SolutionBlock;
+  reversed: boolean;
+  muted?: boolean;
+}) => (
+  <Reveal className={cn('w-full', muted && 'bg-muted/40')}>
+    <div className="max-w-[1180px] mx-auto px-7 py-14 grid grid-cols-1 lg:grid-cols-2 gap-y-[38px] lg:gap-y-0 lg:gap-x-[74px] items-center">
+      <div className={reversed ? 'lg:order-last' : ''}>
+        <span className="inline-flex items-center gap-2 rounded-full bg-secondary text-primary font-bold text-[0.78rem] uppercase tracking-[0.06em] px-[13px] py-[5px] mb-4">
+          {block.actor}
+        </span>
+        <h3 className="heading-display font-bold text-[clamp(1.7rem,3vw,2.4rem)] leading-[1.12] text-foreground max-w-[16ch]">
+          {block.title}
+        </h3>
+        <p className="mt-[18px] text-[1.08rem] leading-[1.65] text-foreground/70 max-w-[46ch]">
+          {block.body}
+        </p>
+        <div className="mt-5 flex gap-[11px] items-start bg-secondary/25 border-l-[3px] border-primary rounded-r-[10px] px-4 py-[13px] max-w-[46ch]">
+          <Info className="h-[18px] w-[18px] text-primary shrink-0 mt-0.5" />
+          <p className="text-[0.96rem] leading-relaxed text-foreground/75">{block.ecoNote}</p>
+        </div>
+        {block.cta && (
+          <Link
+            to={block.cta.to}
+            className="group mt-6 inline-flex items-center gap-2 font-bold text-primary transition-colors hover:text-primary"
+          >
+            {block.cta.label}
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </Link>
+        )}
+      </div>
+      <div className={reversed ? 'lg:order-first' : ''}>{block.visual}</div>
+    </div>
+  </Reveal>
+);
+
+const SOLUTION_BLOCKS: SolutionBlock[] = [
+  {
+    actor: "L'IA rédige avec vous",
+    title: 'Vous avez la matière. L’IA en fait une nouveauté qui donne envie.',
+    body: (
+      <>
+        Un PDF, une plaquette, un post déjà écrit, ou trois phrases en vrac : l'assistant lit votre
+        matière, en extrait même les visuels, et vous propose{' '}
+        <strong className="font-semibold text-primary">plusieurs angles de présentation</strong>. Vous
+        choisissez celui qui vous ressemble, vous ajustez, c'est publié.
+      </>
+    ),
+    ecoNote:
+      "Présenter une innovation en quelques lignes est un exercice difficile. C'est exactement ce que l'assistant a été entraîné à faire.",
+    cta: { label: 'Publier ma nouveauté', to: '/publier-nouveaute' },
+    visual: <AiMock />,
+  },
+  {
+    actor: 'Avant le salon',
+    title: 'Visible au moment exact où les visiteurs préparent leur venue',
+    body: (
+      <>
+        Votre nouveauté apparaît sur la page du salon, dans les nouveautés du site et dans les
+        réponses de la recherche IA.{' '}
+        <strong className="font-semibold text-primary">
+          Les visiteurs la repèrent pendant qu'ils construisent leur parcours
+        </strong>
+        , des semaines avant d'entrer dans le hall.
+      </>
+    ),
+    ecoNote:
+      "Le jour J, on ne vous découvre plus par hasard en passant dans l'allée : on vient vous voir exprès.",
+    cta: { label: 'Voir les nouveautés déjà publiées', to: '/nouveautes' },
+    visual: <NoveltyMock />,
+  },
+  {
+    actor: 'Le plus important',
+    title: 'Des contacts qualifiés avant même l’ouverture des portes',
+    body: (
+      <>
+        Chaque visiteur peut demander un rendez-vous, télécharger votre brochure ou ajouter votre
+        stand à son parcours.{' '}
+        <strong className="font-semibold text-primary">
+          Chacune de ces actions vous remonte comme un contact
+        </strong>
+        , exploitable avant le premier jour du salon.
+      </>
+    ),
+    ecoNote:
+      'Votre stand est déjà payé. Ces contacts, eux, ne vous coûtent rien de plus : ils sont le rendement de votre présence.',
+    cta: { label: 'Publier ma nouveauté', to: '/publier-nouveaute' },
+    visual: <LeadsMock />,
+  },
+];
+
+/* ================================================================== */
+/* Étapes                                                              */
+/* ================================================================== */
+const STEPS = [
+  {
+    icon: Search,
+    n: 'Étape 1',
+    title: 'Retrouvez votre salon',
+    text: "Cherchez l'événement auquel vous participez et ouvrez la publication depuis sa page.",
+  },
+  {
+    icon: Sparkles,
+    n: 'Étape 2',
+    title: "Laissez l'IA écrire le premier jet",
+    text: 'Importez un PDF ou collez votre texte. L’assistant propose les angles, vous gardez la main sur chaque mot.',
+  },
+  {
+    icon: Users,
+    n: 'Étape 3',
+    title: 'Récupérez vos contacts',
+    text: 'Rendez-vous demandés, brochures téléchargées, stands ajoutés aux parcours : tout vous remonte avant le salon.',
+  },
+];
+
+const FAQ = [
+  {
+    q: 'Est-ce vraiment gratuit ?',
+    a: "Oui. Publier votre nouveauté sur Lotexpo est gratuit, sans carte bancaire et sans engagement. Vous êtes exposant sur un salon référencé, vous publiez, c'est tout.",
+  },
+  {
+    q: 'Que puis-je publier comme nouveauté ?',
+    a: "Un nouveau produit, une démonstration, une innovation, un service, une offre spéciale, un cas client, une conférence ou une animation : tout ce qui donne à un visiteur une raison concrète de passer sur votre stand.",
+  },
+  {
+    q: "Comment l'IA fonctionne-t-elle exactement ?",
+    a: "Vous lui donnez votre matière : un PDF de plaquette ou de présentation, un post que vous avez déjà rédigé, ou simplement quelques phrases. Elle en extrait le texte et les visuels exploitables, puis vous propose plusieurs angles de présentation. Vous choisissez, vous modifiez librement, rien n'est publié sans votre validation.",
+  },
+  {
+    q: "Comment récupère-t-on les contacts générés ?",
+    a: "Chaque demande de rendez-vous, téléchargement de brochure ou ajout à un parcours de visite est enregistré et vous est transmis. Vous pouvez recontacter ces professionnels avant le salon, pendant qu'ils préparent encore leur venue.",
+  },
+  {
+    q: "Faut-il un grand stand ou une grosse notoriété ?",
+    a: "Non, et c'est précisément l'intérêt. Une nouveauté bien présentée permet d'être repéré indépendamment de votre emplacement dans le hall ou de la taille de votre stand.",
+  },
+  {
+    q: 'Combien de temps avant sa mise en ligne ?',
+    a: "Votre nouveauté est relue par l'équipe Lotexpo sous 24 heures avant publication. Vous êtes prévenu dès qu'elle est en ligne.",
+  },
+];
+
+/* ================================================================== */
+/* Page                                                                */
+/* ================================================================== */
 export default function Exposants() {
   const navigate = useNavigate();
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
   return (
-    <>
+    <div className="min-h-screen bg-background flex flex-col">
       <Helmet>
-        <title>Exposants | Maximisez votre ROI salon professionnel – Lotexpo</title>
-        <meta 
-          name="description" 
-          content="Découvrez comment Lotexpo aide les exposants à maximiser leur ROI événementiel. Générez des leads qualifiés avant l'ouverture des salons B2B." 
+        <title>Publier une nouveauté sur vos salons, gratuitement | Lotexpo</title>
+        <meta
+          name="description"
+          content="Annoncez gratuitement ce que vous présentez sur votre stand. L'IA de Lotexpo rédige votre nouveauté à partir de vos documents, et vous génère des rendez-vous avant l'ouverture du salon."
         />
         <link rel="canonical" href="https://lotexpo.com/exposants" />
-        <meta property="og:title" content="Exposants | Maximisez votre ROI salon professionnel – Lotexpo" />
+        <meta
+          property="og:title"
+          content="Publier une nouveauté sur vos salons, gratuitement | Lotexpo"
+        />
         <meta property="og:url" content="https://lotexpo.com/exposants" />
         <meta property="og:site_name" content="Lotexpo" />
         <script type="application/ld+json">
           {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            "itemListElement": [
-              { "@type": "ListItem", "position": 1, "name": "Salons", "item": "https://lotexpo.com" },
-              { "@type": "ListItem", "position": 2, "name": "Exposants", "item": "https://lotexpo.com/exposants" }
-            ]
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Salons', item: 'https://lotexpo.com' },
+              {
+                '@type': 'ListItem',
+                position: 2,
+                name: 'Exposants',
+                item: 'https://lotexpo.com/exposants',
+              },
+            ],
+          })}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: FAQ.map((f) => ({
+              '@type': 'Question',
+              name: f.q,
+              acceptedAnswer: { '@type': 'Answer', text: f.a },
+            })),
           })}
         </script>
       </Helmet>
-    <MainLayout title="Lotexpo pour les Exposants - Maximisez votre ROI événementiel">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-primary/10 border-b">
-        <div className="container max-w-6xl mx-auto px-4 py-16 md:py-24">
-          <div className="text-center space-y-6 max-w-3xl mx-auto">
 
-            {/* Headline */}
-            <h1 className="heading-display text-3xl md:text-4xl lg:text-5xl text-foreground leading-tight">
-              Ne comptez plus sur le <span className="text-primary">hasard</span>
-              <br />
-              pour attirer les bons visiteurs
-            </h1>
+      <Header />
 
-            {/* Sous-titre */}
-            <p className="text-xl text-muted-foreground leading-relaxed">
-              Publiez ce que vous présenterez sur votre stand et donnez aux visiteurs une raison de venir vous voir{' '}
-              <strong className="text-foreground">avant même l'ouverture du salon</strong>.
+      <main className="flex-1">
+        {/* ============================= HERO ============================= */}
+        <section className="relative overflow-hidden">
+          {/* Image d'en-tête, fondue vers la gauche (modèle Home) */}
+          <div aria-hidden className="absolute inset-y-0 right-0 z-0 w-full lg:w-[72%]">
+            <img
+              src="/exposants-hero.jpg"
+              alt=""
+              className="h-full w-full object-cover object-center"
+              style={{
+                maskImage:
+                  'linear-gradient(90deg, transparent 0%, transparent 14%, black 46%)',
+                WebkitMaskImage:
+                  'linear-gradient(90deg, transparent 0%, transparent 14%, black 46%)',
+              }}
+            />
+            {/* Voile sur mobile : l'image passe derrière le texte */}
+            <div className="absolute inset-0 bg-background/75 lg:hidden" />
+          </div>
+
+          <div className="relative z-10 max-w-6xl mx-auto px-6 py-16 lg:min-h-[calc(100vh-64px)] lg:py-0 flex flex-col justify-center">
+            <Reveal className="text-left max-w-[560px]">
+              <span className="inline-flex items-center gap-2 rounded-full bg-background border border-border shadow-sm pl-2 pr-4 py-1.5 text-sm font-semibold text-primary mb-5">
+                <span className="rounded-full bg-primary text-primary-foreground text-[0.7rem] font-bold uppercase tracking-wide px-2 py-0.5">
+                  Gratuit
+                </span>
+                Publier une nouveauté ne coûte rien
+              </span>
+
+              <h1 className="heading-display text-[clamp(1.9rem,3.6vw,3.3rem)] text-foreground max-w-[17ch] text-balance">
+                Attirez les bons visiteurs
+                <span className="block text-primary">avant l'ouverture des portes.</span>
+              </h1>
+
+              <p className="mt-5 text-lg md:text-xl text-muted-foreground max-w-[52ch]">
+                Annoncez ce que vous présentez sur votre stand. Les visiteurs qui préparent déjà leur
+                venue vous repèrent,{' '}
+                <b className="text-foreground font-semibold">
+                  et vous arrivez au salon avec des rendez-vous.
+                </b>
+              </p>
+
+              <div className="mt-8 flex flex-wrap items-center gap-4">
+                <Button
+                  size="lg"
+                  className="h-12 rounded-xl px-6 text-base gap-2 shadow-lg"
+                  onClick={() => navigate('/publier-nouveaute')}
+                >
+                  <Megaphone className="h-5 w-5" />
+                  Publier ma première nouveauté
+                </Button>
+                <span className="text-sm text-muted-foreground">ou</span>
+                <Link to="/nouveautes">
+                  <Button variant="outline" className="h-12 rounded-xl px-6 text-base">
+                    Voir des exemples
+                  </Button>
+                </Link>
+              </div>
+
+              <p className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
+                {['100 % gratuit', 'Sans carte bancaire', "Rédigée avec l'IA en quelques minutes"].map(
+                  (t, i) => (
+                    <React.Fragment key={t}>
+                      {i > 0 && <span aria-hidden>·</span>}
+                      <span className="inline-flex items-center gap-1.5">
+                        <Check className="h-4 w-4 text-primary" />
+                        {t}
+                      </span>
+                    </React.Fragment>
+                  ),
+                )}
+              </p>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ============================= BANDEAU CHIFFRES ============================= */}
+        <section className="border-y border-border bg-secondary/40">
+          <div className="max-w-5xl mx-auto px-6 py-11 flex flex-col items-center">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary mb-6 text-center">
+              Ce que change une nouveauté publiée
             </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-10 w-full max-w-3xl">
+              {[
+                { big: '0 €', lbl: 'pour publier votre nouveauté, sans carte bancaire' },
+                { big: '~5 min', lbl: "de votre temps, l’IA écrit le premier jet" },
+                { big: 'Avant J-1', lbl: 'les premiers contacts arrivent avant le salon' },
+              ].map((c, i) => (
+                <Reveal
+                  key={c.big}
+                  delay={i * 80}
+                  className={`text-center sm:relative ${
+                    i < 2
+                      ? 'sm:after:content-[""] sm:after:absolute sm:after:-right-5 sm:after:top-[12%] sm:after:h-[76%] sm:after:w-px sm:after:bg-border'
+                      : ''
+                  }`}
+                >
+                  <div className="heading-display text-[clamp(2rem,3.4vw,2.9rem)] text-primary leading-none">
+                    {c.big}
+                  </div>
+                  <div className="mt-2.5 text-muted-foreground font-medium leading-snug">{c.lbl}</div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
 
-            {/* CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Button 
-                size="lg" 
-                className="text-lg px-8 gap-2 shadow-lg"
+        {/* ============================= LE CONSTAT (section inverse) ============================= */}
+        <section className="relative overflow-hidden bg-surface-inverse text-inverse py-24">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage: 'url(/home-texture-plexus.jpg)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              opacity: 0.28,
+            }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(80% 60% at 50% 40%, transparent, hsl(var(--surface-inverse) / 0.85))',
+            }}
+          />
+          <div className="relative max-w-6xl mx-auto px-6">
+            <Reveal className="max-w-[760px] mx-auto text-center mb-[60px]">
+              <div className="w-[46px] h-[3px] bg-inverse-primary rounded-full mx-auto mb-5" />
+              <p className="text-inverse-primary font-bold uppercase tracking-[0.15em] text-xs mb-3">
+                Le constat
+              </p>
+              <h2 className="heading-display text-[clamp(2rem,3.7vw,3rem)]">
+                Vous avez payé le stand. Pas l'attention.
+              </h2>
+              <p className="mt-4 text-lg text-inverse-muted max-w-[62ch] mx-auto">
+                Un salon coûte cher, se prépare des mois à l'avance, et se joue pourtant sur trois
+                jours de passage dans une allée.
+              </p>
+            </Reveal>
+
+            <Reveal className="max-w-5xl mx-auto">
+              <div className="flex flex-col md:flex-row items-stretch gap-4 md:gap-0">
+                {[
+                  {
+                    title: 'Votre nom dans une liste',
+                    text: "Vous apparaissez parmi des centaines d'exposants. Rien n'indique au visiteur ce que vous montrez, ni pourquoi cela le concerne.",
+                  },
+                  {
+                    title: 'Un parcours déjà décidé',
+                    text: 'Les visiteurs préparent leur visite en amont. Quand ils arrivent, leur liste de stands est faite, et vous n’y êtes pas.',
+                  },
+                  {
+                    title: 'Un temps fort découvert trop tard',
+                    text: 'Démonstration, lancement, offre : si on l’apprend sur place, la majorité des visiteurs ne passera jamais.',
+                  },
+                ].flatMap((c, i, arr) => {
+                  const card = (
+                    <Reveal
+                      key={c.title}
+                      delay={i * 80}
+                      className="flex-1 rounded-2xl border border-inverse/15 bg-inverse/5 p-6 text-left"
+                    >
+                      <h3 className="heading-display text-xl mb-2">{c.title}</h3>
+                      <p className="text-sm text-inverse-muted leading-relaxed">{c.text}</p>
+                    </Reveal>
+                  );
+                  if (i < arr.length - 1) {
+                    return [
+                      card,
+                      <div
+                        key={`${c.title}-arrow`}
+                        className="flex items-center justify-center text-inverse/40 px-2 rotate-90 md:rotate-0"
+                      >
+                        <ArrowRight className="h-6 w-6" />
+                      </div>,
+                    ];
+                  }
+                  return [card];
+                })}
+              </div>
+            </Reveal>
+
+            <Reveal className="text-center mt-14">
+              <div className="heading-display text-[clamp(1.8rem,4vw,3rem)]">
+                Tout se joue <em className="not-italic italic text-inverse-primary">avant</em> le
+                salon.
+              </div>
+              <p className="mt-6 text-lg text-inverse-muted max-w-[56ch] mx-auto">
+                C'est là que se décide qui vient vous voir. Et c'est exactement là que Lotexpo vous
+                rend visible, gratuitement.
+              </p>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ============================= LA SOLUTION ============================= */}
+        <section className="bg-background pt-24 pb-10">
+          <Reveal className="max-w-[760px] mx-auto px-6 text-center mb-[60px]">
+            <div className="w-[46px] h-[3px] bg-primary rounded-full mx-auto mb-5" />
+            <p className="text-primary font-bold uppercase tracking-[0.15em] text-xs mb-3">
+              La nouveauté
+            </p>
+            <h2 className="heading-display text-[clamp(2rem,3.7vw,3rem)] text-foreground">
+              Annoncez. Soyez repéré. Récupérez vos contacts.
+            </h2>
+            <p className="mt-4 text-lg text-foreground/70">
+              Une nouveauté, ce n'est pas un post de plus. C'est une page dédiée à ce que vous montrez
+              sur votre stand,{' '}
+              <b className="font-semibold text-primary">
+                lue par les visiteurs qui préparent ce salon précis.
+              </b>
+            </p>
+          </Reveal>
+
+          <div className="flex flex-col">
+            {SOLUTION_BLOCKS.map((b, i) => (
+              <SolutionRow key={b.title} block={b} reversed={i % 2 === 1} muted={i % 2 === 0} />
+            ))}
+          </div>
+        </section>
+
+        {/* ============================= ÉTAPES ============================= */}
+        <section className="bg-background border-t border-border">
+          <div className="max-w-6xl mx-auto px-6 py-20">
+            <Reveal className="max-w-[640px] mx-auto text-center mb-14">
+              <div className="w-[46px] h-[3px] bg-primary rounded-full mx-auto mb-5" />
+              <h2 className="heading-display text-[clamp(1.8rem,3vw,2.6rem)] text-foreground">
+                Trois étapes, quelques minutes
+              </h2>
+            </Reveal>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {STEPS.map((s, i) => (
+                <Reveal key={s.title} delay={i * 90}>
+                  <div className="h-full rounded-2xl border border-border bg-background p-7 transition-colors hover:border-primary/40">
+                    <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-secondary text-primary">
+                      <s.icon className="h-6 w-6" />
+                    </div>
+                    <p className="mb-2 text-[0.72rem] font-bold uppercase tracking-[0.12em] text-primary">
+                      {s.n}
+                    </p>
+                    <h3 className="heading-display text-xl text-foreground mb-2.5">{s.title}</h3>
+                    <p className="text-sm leading-relaxed text-muted-foreground">{s.text}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+
+            <Reveal className="mt-12 text-center">
+              <Button
+                size="lg"
+                className="h-12 rounded-xl px-6 text-base gap-2"
                 onClick={() => navigate('/publier-nouveaute')}
               >
                 <Megaphone className="h-5 w-5" />
                 Publier ma première nouveauté
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="text-lg px-8 gap-2"
-                onClick={() => {
-                  document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                <Crown className="h-5 w-5" />
-                Découvrir le Premium
-              </Button>
-            </div>
-
-            {/* Trust indicators */}
-            <p className="text-sm text-muted-foreground flex items-center justify-center gap-2 flex-wrap">
-              <span className="flex items-center gap-1">
-                <Check className="h-4 w-4 text-foreground" />
-                1 nouveauté gratuite
-              </span>
-              <span>•</span>
-              <span className="flex items-center gap-1">
-                <Check className="h-4 w-4 text-foreground" />
-                Sans carte bancaire
-              </span>
-              <span>•</span>
-              <span className="flex items-center gap-1">
-                <Check className="h-4 w-4 text-foreground" />
-                Publication en quelques minutes
-              </span>
-            </p>
-            <p className="text-sm text-muted-foreground/80">
-              Ciblez les visiteurs qui préparent déjà leur venue.
-            </p>
+            </Reveal>
           </div>
-        </div>
+        </section>
 
-        {/* Pattern de fond subtil */}
-        <div className="absolute inset-0 -z-10 opacity-10 pointer-events-none">
-          <div 
-            className="absolute inset-0" 
+        {/* ============================= INSPIRATION ============================= */}
+        <section className="bg-muted/40 border-y border-border">
+          <div className="max-w-5xl mx-auto px-6 py-16">
+            <Reveal className="flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">
+              <div className="max-w-[46ch]">
+                <h2 className="heading-display text-[clamp(1.6rem,2.6vw,2.2rem)] text-foreground">
+                  En panne d'inspiration ?
+                </h2>
+                <p className="mt-3 text-foreground/70">
+                  Parcourez les nouveautés déjà publiées par d'autres exposants : produits,
+                  démonstrations, lancements, conférences. De quoi voir ce qui fonctionne avant
+                  d'écrire la vôtre.
+                </p>
+              </div>
+              <Link to="/nouveautes" className="shrink-0">
+                <Button variant="outline" className="h-12 rounded-xl px-6 text-base gap-2">
+                  Voir toutes les nouveautés
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ============================= FAQ ============================= */}
+        <section className="bg-background">
+          <div className="max-w-3xl mx-auto px-6 py-20">
+            <Reveal className="text-center mb-12">
+              <div className="w-[46px] h-[3px] bg-primary rounded-full mx-auto mb-5" />
+              <h2 className="heading-display text-[clamp(1.8rem,3vw,2.6rem)] text-foreground">
+                Questions fréquentes
+              </h2>
+            </Reveal>
+
+            <Reveal>
+              <Accordion type="single" collapsible className="space-y-4">
+                {FAQ.map((f, i) => (
+                  <AccordionItem key={f.q} value={`faq-${i}`} className="rounded-xl border px-6">
+                    <AccordionTrigger className="text-left hover:no-underline">{f.q}</AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground leading-relaxed">
+                      {f.a}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ============================= CTA FINAL ============================= */}
+        <section
+          className="relative overflow-hidden text-primary-foreground text-center py-24"
+          style={{ background: 'linear-gradient(160deg, hsl(var(--primary)), hsl(218 95% 14%))' }}
+        >
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
             style={{
-              backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)',
-              backgroundSize: '48px 48px'
-            }} 
+              backgroundImage: 'url(/home-texture-final.jpg)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              opacity: 0.3,
+            }}
           />
-        </div>
-      </section>
-
-      {/* Section Problème/Solution */}
-      <section className="py-16 border-b bg-muted/30">
-        <div className="container max-w-6xl mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            {/* Problème */}
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-destructive/10 border border-destructive/20">
-                <X className="h-5 w-5 text-destructive" />
-                <span className="text-sm font-semibold">Le problème</span>
-              </div>
-              
-              <h2 className="section-rule heading-display text-3xl text-foreground leading-tight">
-                Pourquoi tant d'exposants repartent avec le sentiment d'avoir subi leur salon ?
-              </h2>
-
-              <div className="space-y-4">
-                <div className="p-4 bg-background border border-border rounded-lg">
-                  <p className="text-sm">
-                    <strong className="text-foreground">Les visiteurs ne savent pas pourquoi venir vous voir :</strong> Votre nom apparaît dans une liste d'exposants, mais votre valeur n'est pas toujours visible avant le salon.
-                  </p>
-                </div>
-                <div className="p-4 bg-background border border-border rounded-lg">
-                  <p className="text-sm">
-                    <strong className="text-foreground">Le trafic dans les allées reste imprévisible :</strong> Même avec un bon stand, vous dépendez du passage, du timing et de la curiosité des visiteurs.
-                  </p>
-                </div>
-                <div className="p-4 bg-background border border-border rounded-lg">
-                  <p className="text-sm">
-                    <strong className="text-foreground">Vos temps forts sont découverts trop tard :</strong> Démonstration, lancement produit, offre spéciale, expertise métier : si les visiteurs l'apprennent sur place, beaucoup ne passeront jamais.
-                  </p>
-                </div>
-                <div className="p-4 bg-background border border-border rounded-lg">
-                  <p className="text-sm">
-                    <strong className="text-foreground">Le retour commercial est difficile à préparer :</strong> Sans signaux d'intérêt avant le salon, vos équipes arrivent souvent sans priorités claires.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Solution */}
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted border border-primary/20">
-                <Check className="h-5 w-5 text-foreground" />
-                <span className="text-sm font-semibold text-primary">La solution Lotexpo</span>
-              </div>
-              
-              <h2 className="section-rule heading-display text-3xl text-foreground leading-tight">
-                Créez une intention de visite avant le salon
-              </h2>
-
-              <div className="space-y-4">
-                <div className="p-4 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg">
-                  <p className="text-sm">
-                    <strong className="text-foreground">Avant le salon :</strong> Vos nouveautés sont visibles quand les visiteurs préparent leur parcours.
-                  </p>
-                </div>
-                <div className="p-4 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg">
-                  <p className="text-sm">
-                    <strong className="text-foreground">Pendant le salon :</strong> Les visiteurs savent déjà pourquoi passer sur votre stand.
-                  </p>
-                </div>
-                <div className="p-4 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg">
-                  <p className="text-sm">
-                    <strong className="text-foreground">Après le salon :</strong> Vous mesurez les signaux d'intérêt générés par vos publications.
-                  </p>
-                </div>
-              </div>
-              <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                <p className="text-sm font-semibold text-foreground">
-                  ✨ Résultat : votre présence n'est plus seulement passive. Vous donnez aux visiteurs une raison claire de vous intégrer à leur parcours.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Section soulagement émotionnel — Ce que vous n'avez plus à laisser au hasard */}
-      <section className="py-16 md:py-20 px-4 bg-background">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center max-w-3xl mx-auto mb-10 md:mb-14">
-            <h2 className="heading-display text-3xl md:text-4xl text-foreground mb-4 section-rule [&::before]:mx-auto">
-              Ce que vous n'avez plus à laisser au hasard
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(60% 70% at 50% 50%, hsl(var(--primary) / 0.55), hsl(218 95% 14% / 0.9))',
+            }}
+          />
+          <Reveal className="relative z-10 max-w-3xl mx-auto px-6">
+            <h2 className="heading-display text-[clamp(2rem,3.7vw,3rem)]">
+              Votre prochain salon commence maintenant.
             </h2>
-            <p className="text-lg text-muted-foreground">
-              Publier une Nouveauté ne sert pas seulement à être visible. Cela permet de réduire l'incertitude avant le salon en donnant aux visiteurs une raison claire d'intégrer votre stand à leur parcours.
+            <p className="mt-4 text-lg text-primary-foreground/80 max-w-[52ch] mx-auto">
+              Publier votre nouveauté est gratuit. Le temps que vous y passez, vous le récupérez en
+              visites qui savent déjà pourquoi elles viennent.
             </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-card border border-border rounded-xl p-6">
-              <div className="bg-muted rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                <Sparkles className="h-6 w-6 text-foreground" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">
-                Être découvert avant le jour J
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Votre nouveauté est visible quand les visiteurs préparent leur parcours, pas seulement quand ils passent devant votre stand.
-              </p>
+            <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
+              <Link to="/publier-nouveaute">
+                <Button className="h-12 rounded-xl bg-background px-6 text-base text-primary hover:bg-background/90">
+                  Publier ma nouveauté
+                  <Megaphone className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+              <span className="text-sm text-primary-foreground/60">ou</span>
+              <Link to="/nouveautes">
+                <Button
+                  variant="outline"
+                  className="h-12 rounded-xl border-primary-foreground/40 bg-transparent px-6 text-base text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                >
+                  Voir des exemples
+                </Button>
+              </Link>
             </div>
+          </Reveal>
+        </section>
+      </main>
 
-            <div className="bg-card border border-border rounded-xl p-6">
-              <div className="bg-muted rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                <Target className="h-6 w-6 text-foreground" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">
-                Donner une vraie raison de passer vous voir
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Produit, démonstration, lancement, offre, conférence : vous montrez à l'avance ce qui mérite le détour.
-              </p>
-            </div>
-
-            <div className="bg-card border border-border rounded-xl p-6">
-              <div className="bg-muted rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                <Users className="h-6 w-6 text-foreground" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">
-                Parler aux visiteurs déjà intéressés par le salon
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Lotexpo ne pousse pas votre message à une audience froide. Vous touchez des professionnels qui cherchent ce salon, ce secteur ou préparent leur visite.
-              </p>
-            </div>
-
-            <div className="bg-card border border-border rounded-xl p-6">
-              <div className="bg-muted rounded-full w-12 h-12 flex items-center justify-center mb-4">
-                <ShieldCheck className="h-6 w-6 text-foreground" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">
-                Arriver avec moins d'incertitude
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Vous ne misez plus uniquement sur votre emplacement, le trafic dans l'allée ou la chance. Vous créez un signal clair avant l'ouverture.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-
-      {/* How It Works Section */}
-      <section className="py-20 px-4 bg-background">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="heading-display text-3xl md:text-4xl text-center text-foreground mb-4 section-rule [&::before]:mx-auto">
-            Comment ça marche ?
-          </h2>
-          <p className="text-xl text-muted-foreground text-center mb-16 max-w-3xl mx-auto">
-            3 étapes simples pour donner plus de visibilité à ce que vous présentez sur votre stand.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            {/* Connecting line */}
-            <div className="hidden md:block absolute top-24 left-0 right-0 h-0.5 bg-gradient-to-r from-primary/30 via-primary/50 to-primary/30" style={{ width: 'calc(100% - 8rem)', margin: '0 4rem' }} />
-            
-            {/* Step 1 */}
-            <div className="relative">
-              <div className="bg-card border-2 border-primary/20 rounded-2xl p-8 text-center relative z-10 hover:border-primary/40 transition-colors">
-                <div className="bg-gradient-to-br from-primary to-primary/80 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg">
-                  <Search className="h-10 w-10 text-foreground-foreground" />
-                </div>
-                <div className="inline-block bg-primary/10 text-primary font-bold text-sm px-4 py-1 rounded-full mb-4">
-                  ÉTAPE 1
-                </div>
-                <h3 className="text-2xl font-bold text-foreground mb-4">
-                  Retrouvez votre salon
-                </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Identifiez l'événement auquel votre entreprise participe et accédez à votre espace exposant.
-                </p>
-              </div>
-            </div>
-
-            {/* Step 2 */}
-            <div className="relative">
-              <div className="bg-card border-2 border-primary/20 rounded-2xl p-8 text-center relative z-10 hover:border-primary/40 transition-colors">
-                <div className="bg-gradient-to-br from-primary to-primary/80 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg">
-                  <Megaphone className="h-10 w-10 text-foreground-foreground" />
-                </div>
-                <div className="inline-block bg-primary/10 text-primary font-bold text-sm px-4 py-1 rounded-full mb-4">
-                  ÉTAPE 2
-                </div>
-                <h3 className="text-2xl font-bold text-foreground mb-4">
-                  Publiez ce qui mérite le détour
-                </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Présentez un produit, une démonstration, une innovation, un service, une offre ou un temps fort prévu sur votre stand.
-                </p>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="relative">
-              <div className="bg-card border-2 border-primary/20 rounded-2xl p-8 text-center relative z-10 hover:border-primary/40 transition-colors">
-                <div className="bg-gradient-to-br from-primary to-primary/80 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-lg">
-                  <LineChart className="h-10 w-10 text-foreground-foreground" />
-                </div>
-                <div className="inline-block bg-primary/10 text-primary font-bold text-sm px-4 py-1 rounded-full mb-4">
-                  ÉTAPE 3
-                </div>
-                <h3 className="text-2xl font-bold text-foreground mb-4">
-                  Transformez l'attention en visites utiles
-                </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Les visiteurs peuvent repérer votre nouveauté, télécharger une brochure ou demander un rendez-vous avant même le début du salon.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Comparison */}
-      <section id="pricing" className="py-20">
-        <div className="container max-w-5xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="heading-display text-3xl text-foreground mb-3 section-rule [&::before]:mx-auto">
-              Commencez gratuitement, amplifiez si le salon est stratégique
-            </h2>
-            <p className="text-muted-foreground text-lg">
-              Publiez une première nouveauté gratuitement. Passez au Premium si vous souhaitez multiplier vos publications, suivre vos performances et exploiter davantage les signaux d'intérêt.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Plan Gratuit - Point d'entrée */}
-            <Card className="relative border-primary shadow-2xl scale-105">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <Badge className="bg-primary text-primary-foreground px-4 py-1">
-                  🚀 Commencez ici
-                </Badge>
-              </div>
-              <CardContent className="p-8">
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">Plan Gratuit</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Idéal pour publier une première nouveauté et tester Lotexpo
-                    </p>
-                  </div>
-
-                  <div>
-                    <span className="font-display text-4xl font-semibold tracking-tight">0€</span>
-                    <span className="text-muted-foreground ml-2">/ événement</span>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">1 nouveauté par événement</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">3 premiers contacts générés gratuits</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Sans carte bancaire</span>
-                    </div>
-                    <div className="flex items-start gap-2 opacity-50">
-                      <X className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Contacts générés illimités</span>
-                    </div>
-                    <div className="flex items-start gap-2 opacity-50">
-                      <X className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Export CSV / Statistiques avancées</span>
-                    </div>
-                  </div>
-
-                  <Button 
-                    className="w-full"
-                    onClick={() => navigate('/publier-nouveaute')}
-                  >
-                    <Megaphone className="h-4 w-4 mr-2" />
-                    Publier ma nouveauté gratuitement
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Plan Premium */}
-            {/* Plan Premium - Upgrade */}
-            <Card className="relative">
-              <CardContent className="p-8">
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
-                      Plan Premium
-                      <Crown className="h-5 w-5 text-foreground" />
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Pour amplifier vos résultats et accéder à tout le potentiel de la plateforme
-                    </p>
-                  </div>
-
-                  <div>
-                    <span className="font-display text-4xl font-semibold tracking-tight">99€</span>
-                    <span className="text-muted-foreground ml-2">HT / événement</span>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
-                      <span className="text-sm"><strong>5 Nouveautés par événement</strong></span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
-                      <span className="text-sm"><strong>Accès complet aux contacts générés</strong></span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Export CSV de vos contacts</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Statistiques détaillées</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Check className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
-                      <span className="text-sm">Badge Premium sur vos nouveautés</span>
-                    </div>
-                  </div>
-
-                  <Button 
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setIsDialogOpen(true)}
-                  >
-                    <Zap className="h-4 w-4 mr-2" />
-                    Passer au Premium
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Use Cases Section */}
-      <section className="py-20 bg-muted/30">
-        <div className="container max-w-6xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="heading-display text-3xl text-foreground mb-3 section-rule [&::before]:mx-auto">
-              Premium s'adapte à votre situation
-            </h2>
-            <p className="text-muted-foreground text-lg">
-              Quel que soit votre profil, utilisez Lotexpo pour mieux préparer votre visibilité avant le salon.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Startup */}
-            <Card>
-              <CardContent className="p-6 space-y-4">
-                <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
-                  <Zap className="h-6 w-6 text-foreground" />
-                </div>
-                <h3 className="text-xl font-bold">Startup innovante</h3>
-                <p className="text-sm text-muted-foreground">
-                  Vous avez une vraie nouveauté, mais un petit stand ou une faible notoriété.
-                </p>
-                <div className="pt-2 border-t">
-                  <p className="text-sm font-semibold text-primary mb-2">Avec Premium :</p>
-                  <p className="text-sm text-muted-foreground">
-                    Vous mettez votre innovation en avant avant l'ouverture du salon et vous donnez aux visiteurs une raison concrète de vous identifier dans leur parcours.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* PME établie */}
-            <Card>
-              <CardContent className="p-6 space-y-4">
-                <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
-                  <TrendingUp className="h-6 w-6 text-foreground" />
-                </div>
-                <h3 className="text-xl font-bold">PME établie</h3>
-                <p className="text-sm text-muted-foreground">
-                  Vous participez à plusieurs salons par an et vous voulez mieux préparer vos actions commerciales.
-                </p>
-                <div className="pt-2 border-t">
-                  <p className="text-sm font-semibold text-primary mb-2">Avec Premium :</p>
-                  <p className="text-sm text-muted-foreground">
-                    Vous suivez les performances de vos publications, exploitez les signaux d'intérêt et structurez mieux vos actions avant, pendant et après le salon.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Grande entreprise */}
-            <Card>
-              <CardContent className="p-6 space-y-4">
-                <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
-                  <Users className="h-6 w-6 text-foreground" />
-                </div>
-                <h3 className="text-xl font-bold">Grande entreprise</h3>
-                <p className="text-sm text-muted-foreground">
-                  Vous avez plusieurs offres, divisions ou nouveautés à présenter sur un même salon.
-                </p>
-                <div className="pt-2 border-t">
-                  <p className="text-sm font-semibold text-primary mb-2">Avec Premium :</p>
-                  <p className="text-sm text-muted-foreground">
-                    Vous pouvez mettre en avant plusieurs temps forts et aider les visiteurs à comprendre rapidement ce qui mérite un passage sur votre stand.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="py-20">
-        <div className="container max-w-3xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="heading-display text-3xl text-foreground mb-3 section-rule [&::before]:mx-auto">
-              Questions fréquentes
-            </h2>
-          </div>
-
-          <Accordion type="single" collapsible className="space-y-4">
-            <AccordionItem value="item-1" className="border rounded-lg px-6">
-              <AccordionTrigger className="text-left hover:no-underline">
-                Pourquoi publier une nouveauté avant le salon ?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                Parce que les visiteurs préparent de plus en plus leur venue en amont. Une nouveauté
-                claire leur donne une raison concrète d'ajouter votre stand à leur parcours avant même
-                l'ouverture du salon.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="item-2" className="border rounded-lg px-6">
-              <AccordionTrigger className="text-left hover:no-underline">
-                Est-ce réservé aux entreprises avec un grand stand ?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                Non. Lotexpo est justement utile aux exposants qui veulent être repérés au-delà de leur
-                emplacement physique, qu'ils aient un petit stand, un grand stand ou une visibilité
-                limitée sur le salon.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="item-3" className="border rounded-lg px-6">
-              <AccordionTrigger className="text-left hover:no-underline">
-                Que puis-je publier comme nouveauté ?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                Vous pouvez publier un nouveau produit, une démonstration, une offre spéciale, un
-                service, une innovation, un cas client, une conférence, une animation ou tout élément
-                qui donne aux visiteurs une raison de venir vous rencontrer.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="item-4" className="border rounded-lg px-6">
-              <AccordionTrigger className="text-left hover:no-underline">
-                Le Premium garantit-il des leads ?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                Non. Le Premium ne garantit pas un volume de contacts. Il augmente votre capacité à
-                publier, mesurer et exploiter vos signaux d'intérêt. Les résultats dépendront de votre
-                salon, de votre offre, de votre message et de votre audience.
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </div>
-      </section>
-
-      {/* Final CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-primary/10 to-primary/5">
-        <div className="container max-w-4xl mx-auto px-4 text-center space-y-8">
-          <h2 className="heading-display text-3xl md:text-4xl text-foreground section-rule [&::before]:mx-auto">
-            Donnez aux visiteurs une raison de venir vous voir
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Ne laissez pas votre prochaine participation dépendre uniquement du passage dans les allées. Publiez ce que vous présenterez sur votre stand et donnez aux visiteurs une raison de vous ajouter à leur parcours avant le jour J.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button 
-              size="lg"
-              className="text-lg px-8 gap-2"
-              onClick={() => navigate('/publier-nouveaute')}
-            >
-              <Megaphone className="h-5 w-5" />
-              Publier ma première nouveauté
-            </Button>
-            <Button 
-              size="lg"
-              variant="outline"
-              className="text-lg px-8 gap-2"
-              onClick={() => setIsDialogOpen(true)}
-            >
-              <Crown className="h-5 w-5" />
-              Découvrir le Premium
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            1 nouveauté gratuite • Sans carte bancaire • Publication en quelques minutes
-          </p>
-        </div>
-      </section>
-
-      <PremiumLeadDialog 
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-      />
-    </MainLayout>
-    </>
+      <Footer />
+    </div>
   );
 }
