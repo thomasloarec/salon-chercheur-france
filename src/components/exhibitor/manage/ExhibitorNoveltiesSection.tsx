@@ -52,7 +52,7 @@ export default function ExhibitorNoveltiesSection({
   onGoToSalons,
   onGoToRendezvous,
 }: ExhibitorNoveltiesSectionProps) {
-  const { data: allNovelties = [], isLoading } = useMyNovelties();
+  const { data: allNovelties = [], isLoading } = useMyNovelties(exhibitorId);
   const [editingNovelty, setEditingNovelty] = useState<MyNovelty | null>(null);
 
   const novelties = useMemo(() => {
