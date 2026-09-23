@@ -4807,6 +4807,183 @@ export type Database = {
           },
         ]
       }
+      exhibitor_invitation_page_staff: {
+        Row: {
+          invitation_id: string
+          sort_order: number
+          staff_id: string
+        }
+        Insert: {
+          invitation_id: string
+          sort_order?: number
+          staff_id: string
+        }
+        Update: {
+          invitation_id?: string
+          sort_order?: number
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibitor_invitation_page_staff_invitation_id_fkey"
+            columns: ["invitation_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_invitation_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_invitation_page_staff_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exhibitor_invitation_pages: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          event_id: string
+          exhibitor_id: string
+          headline: string | null
+          id: string
+          message: string | null
+          novelty_id: string | null
+          published_at: string | null
+          slug: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          exhibitor_id: string
+          headline?: string | null
+          id?: string
+          message?: string | null
+          novelty_id?: string | null
+          published_at?: string | null
+          slug: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          exhibitor_id?: string
+          headline?: string | null
+          id?: string
+          message?: string | null
+          novelty_id?: string | null
+          published_at?: string | null
+          slug?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibitor_invitation_pages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "admin_events_exhibitor_coverage"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_invitation_pages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "exhibitor_invitation_pages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "exhibitor_invitation_pages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_invitation_pages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_invitation_pages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_salons_email_missing"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "exhibitor_invitation_pages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_invitation_pages_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "exhibitor_invitation_pages_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_invitation_pages_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_invitation_pages_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
+          {
+            foreignKeyName: "exhibitor_invitation_pages_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "novelties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_invitation_pages_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "public_novelties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_invitation_pages_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "v_novelty_visit_signals"
+            referencedColumns: ["novelty_id"]
+          },
+        ]
+      }
       exhibitor_invitations: {
         Row: {
           accepted_at: string | null
@@ -5172,6 +5349,77 @@ export type Database = {
           },
           {
             foreignKeyName: "exhibitor_public_identities_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
+        ]
+      }
+      exhibitor_staff: {
+        Row: {
+          created_at: string
+          exhibitor_id: string
+          first_name: string
+          id: string
+          is_active: boolean
+          job_title: string | null
+          last_name: string
+          linkedin_url: string | null
+          photo_url: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          exhibitor_id: string
+          first_name: string
+          id?: string
+          is_active?: boolean
+          job_title?: string | null
+          last_name: string
+          linkedin_url?: string | null
+          photo_url?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          exhibitor_id?: string
+          first_name?: string
+          id?: string
+          is_active?: boolean
+          job_title?: string | null
+          last_name?: string
+          linkedin_url?: string | null
+          photo_url?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibitor_staff_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "exhibitor_staff_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_staff_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_staff_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
             referencedRelation: "participations_with_exhibitors"
@@ -6180,8 +6428,10 @@ export type Database = {
           notes: string | null
           novelty_id: string | null
           phone: string | null
+          preferred_slot: string | null
           rdv_date: string | null
           role: string | null
+          source: string | null
           stand_info: string | null
           status: string | null
           type: string | null
@@ -6207,8 +6457,10 @@ export type Database = {
           notes?: string | null
           novelty_id?: string | null
           phone?: string | null
+          preferred_slot?: string | null
           rdv_date?: string | null
           role?: string | null
+          source?: string | null
           stand_info?: string | null
           status?: string | null
           type?: string | null
@@ -6234,8 +6486,10 @@ export type Database = {
           notes?: string | null
           novelty_id?: string | null
           phone?: string | null
+          preferred_slot?: string | null
           rdv_date?: string | null
           role?: string | null
+          source?: string | null
           stand_info?: string | null
           status?: string | null
           type?: string | null
@@ -13501,6 +13755,15 @@ export type Database = {
           volume: number
         }[]
       }
+      build_invitation_payload: {
+        Args: {
+          p_event_id: string
+          p_exhibitor_id: string
+          p_invitation_id: string
+          p_novelty_id: string
+        }
+        Returns: Json
+      }
       build_upcoming_event_recommendations: {
         Args: { p_top_k?: number }
         Returns: number
@@ -13517,6 +13780,7 @@ export type Database = {
         Args: { p_exhibitor_id: string }
         Returns: boolean
       }
+      can_manage_staff_object: { Args: { p_name: string }; Returns: boolean }
       can_publish_novelty: {
         Args: { event_id: string; exhibitor_id: string }
         Returns: boolean
@@ -13916,6 +14180,30 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_exhibitor_leads: {
+        Args: { p_exhibitor_id: string }
+        Returns: {
+          company: string
+          created_at: string
+          email: string
+          event_id: string
+          event_name: string
+          event_slug: string
+          first_name: string
+          id: string
+          last_name: string
+          lead_type: string
+          masked: boolean
+          notes: string
+          novelty_id: string
+          novelty_title: string
+          origin: string
+          phone: string
+          preferred_slot: string
+          role: string
+          status: string
+        }[]
+      }
       get_exhibitor_products: {
         Args: { p_public_slug: string }
         Returns: {
@@ -13942,6 +14230,30 @@ export type Database = {
       get_founder_pricing: { Args: never; Returns: Json }
       get_growth_report_data: {
         Args: { p_event_id: string; p_top_recos?: number }
+        Returns: Json
+      }
+      get_invitation_page: { Args: { p_slug: string }; Returns: Json }
+      get_invitation_pages_overview: {
+        Args: { p_exhibitor_id: string }
+        Returns: {
+          date_debut: string
+          date_fin: string
+          event_id: string
+          event_name: string
+          event_slug: string
+          invitation_id: string
+          invitation_slug: string
+          invitation_status: string
+          novelty_id: string
+          novelty_status: string
+          novelty_title: string
+          requests_count: number
+          state: string
+          ville: string
+        }[]
+      }
+      get_invitation_preview: {
+        Args: { p_event_id: string; p_exhibitor_id: string }
         Returns: Json
       }
       get_location_suggestions: {
@@ -15246,6 +15558,36 @@ export type Database = {
           p_type_interet: Json
         }
         Returns: undefined
+      }
+      upsert_invitation_page: {
+        Args: {
+          p_event_id: string
+          p_exhibitor_id: string
+          p_headline: string
+          p_message: string
+          p_publish: boolean
+          p_staff_ids: string[]
+        }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          event_id: string
+          exhibitor_id: string
+          headline: string | null
+          id: string
+          message: string | null
+          novelty_id: string | null
+          published_at: string | null
+          slug: string
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "exhibitor_invitation_pages"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       upsert_radar_mission: {
         Args: {
