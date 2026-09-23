@@ -19,10 +19,15 @@ interface ExhibitorAvatarProps {
  * 2. favicon dérivé du site web via getExhibitorLogoUrl
  * 3. monogramme typographique (Playfair sur une surface dérivée du nom)
  *
- * Lot 11 — le niveau 3 se déclenche désormais aussi quand l'image échoue
- * (`onError`) ET quand elle se charge « vide » : le service de favicons
- * renvoie un globe générique de 16 px quand le domaine n'en publie pas,
- * ce qui produisait le carré vide observé (Özel Tekstil, Pakipek Group).
+ * Lot 11 — le niveau 3 se déclenche aussi quand l'image échoue (`onError`)
+ * ET quand elle se charge « vide » : le service de favicons renvoie un globe
+ * générique de 16 px quand le domaine n'en publie pas, ce qui produisait le
+ * carré vide observé (Özel Tekstil, Pakipek Group).
+ *
+ * Lot 19 — dès qu'une image est réellement affichée (logo curé OU favicon
+ * valide), on la pose sur une surface neutre SANS monogramme derrière. Sinon,
+ * les initiales transparaissent sous les logos/favicons à fond transparent.
+ * Le monogramme ne s'affiche donc que lorsqu'AUCUNE image n'est montrée.
  */
 export function getMonogram(name: string): string {
   const words = (name || '')
@@ -67,21 +72,23 @@ export const ExhibitorAvatar: React.FC<ExhibitorAvatarProps> = ({
   // confiance. Le favicon Google dérivé du site, lui, peut revenir transparent/vide.
   const isCuratedLogo = !!logoUrl;
   const [failed, setFailed] = useState(false);
+  // Une image est affichée dès qu'une URL est résolue et n'a pas échoué —
+  // qu'il s'agisse du logo curé OU du favicon dérivé.
   const showImage = !!resolved && !failed;
-  // Logo curé affiché : surface propre + AUCUN monogramme derrière, sinon les
-  // initiales transparaissent à travers un logo au fond transparent (bug AMDP & OCETA).
-  const cleanLogo = isCuratedLogo && showImage;
+  // Le monogramme (initiales) n'apparaît QUE si aucune image n'est affichée,
+  // pour ne jamais transparaître sous un logo/favicon à fond transparent.
+  const showMonogram = !showImage;
 
   return (
     <div
       className={cn(
         'relative flex items-center justify-center overflow-hidden rounded-lg ring-1',
-        cleanLogo ? 'bg-card ring-border' : toneForName(name),
+        showImage ? 'bg-card ring-border' : toneForName(name),
         className,
       )}
       aria-hidden="true"
     >
-      {!cleanLogo && (
+      {showMonogram && (
         <span
           className={cn(
             'heading-display font-semibold leading-none tracking-tight',
@@ -104,7 +111,7 @@ export const ExhibitorAvatar: React.FC<ExhibitorAvatarProps> = ({
             'absolute inset-0 h-full w-full object-contain p-1',
             imageClassName,
             // Logo curé : padding modéré et constant, quel que soit imageClassName.
-            cleanLogo && 'p-2',
+            isCuratedLogo && 'p-2',
           )}
           onError={() => setFailed(true)}
           onLoad={(e) => {
