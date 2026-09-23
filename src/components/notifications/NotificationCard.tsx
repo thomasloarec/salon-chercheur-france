@@ -38,6 +38,9 @@ const getNotificationIcon = (type: string): string => {
 const isEventReminder = (type: string) => 
   type === 'event_reminder_7d' || type === 'event_reminder_1d'
 
+const isLeadNotification = (type: string) =>
+  type === 'new_lead_rdv' || type === 'new_lead_brochure'
+
 // Sanitize notification link URLs
 const sanitizeLinkUrl = (url: string | null): string | null => {
   if (!url) return null
@@ -66,6 +69,13 @@ export const NotificationCard = ({ notification, onClick }: NotificationCardProp
   
   const handleClick = () => {
     onClick() // Mark as read
+    // Leads (demande de rendez-vous, téléchargement de plaquette) : toujours
+    // l'onglet « Rendez-vous » de la bonne entreprise, comme le bouton de l'email.
+    // Couvre aussi les notifications déjà envoyées avec l'ancien lien /agenda.
+    if (isLeadNotification(notification.type) && notification.exhibitor_id) {
+      navigate(`/agenda?tab=exposant&section=rendezvous&exhibitor=${encodeURIComponent(notification.exhibitor_id)}`)
+      return
+    }
     const cleanUrl = sanitizeLinkUrl(notification.link_url)
     if (cleanUrl) {
       navigate(cleanUrl)

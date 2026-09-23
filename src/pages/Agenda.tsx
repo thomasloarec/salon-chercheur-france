@@ -61,16 +61,31 @@ const Agenda = () => {
     if (!wantsExhibitor || !user || membershipsLoading) return;
     let cancelled = false;
     const run = async () => {
-      if (memberships.length !== 1) {
+      // Entreprise ciblée par le lien (notifications) si l'utilisateur en est membre,
+      // sinon l'unique entreprise gérée.
+      const wanted = searchParams.get('exhibitor');
+      const target = wanted && memberships.some((m) => m.exhibitor_id === wanted)
+        ? wanted
+        : memberships.length === 1
+          ? memberships[0].exhibitor_id
+          : null;
+      if (!target) {
         navigate('/profile', { replace: true });
         return;
       }
-      const exhibitorId = memberships[0].exhibitor_id;
+      // Onglet d'arrivée : les leads ouvrent « Rendez-vous », les nouveautés « Mes nouveautés ».
+      const rawSection = searchParams.get('section');
+      const section = rawSection === 'rendezvous' || window.location.hash === '#leads'
+        ? 'rendezvous'
+        : rawSection === 'novelties'
+          ? 'nouveautes'
+          : null;
+      const exhibitorId = target;
       const slugs = await fetchExhibitorPublicSlugs([exhibitorId], []);
       if (cancelled) return;
       const info = slugs.byExhibitorId.get(exhibitorId);
       if (info && !info.is_test && info.public_slug) {
-        navigate(`/exposants/${info.public_slug}/gerer`, { replace: true });
+        navigate(`/exposants/${info.public_slug}/gerer${section ? `?section=${section}` : ''}`, { replace: true });
       } else {
         navigate('/profile', { replace: true });
       }
@@ -79,7 +94,7 @@ const Agenda = () => {
     return () => {
       cancelled = true;
     };
-  }, [wantsExhibitor, user, memberships, membershipsLoading, navigate]);
+  }, [wantsExhibitor, user, memberships, membershipsLoading, navigate, searchParams]);
 
   // Fusion favoris + événements issus des nouveautés likées (filet de sécurité
   // au cas où l'auto-favori n'aurait pas pu s'appliquer), puis séparation
