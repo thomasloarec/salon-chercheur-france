@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Award, Building2, CalendarDays, ExternalLink, LifeBuoy, Sparkles, Users } from 'lucide-react';
+import { Award, Building2, CalendarCheck, CalendarDays, ExternalLink, LifeBuoy, Sparkles, Users } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -23,6 +23,8 @@ import ExhibitorFicheSection from '@/components/exhibitor/manage/ExhibitorFicheS
 import ExhibitorSalonsSection from '@/components/exhibitor/manage/ExhibitorSalonsSection';
 import ExhibitorNoveltiesSection from '@/components/exhibitor/manage/ExhibitorNoveltiesSection';
 import ExhibitorTeamSection from '@/components/exhibitor/manage/ExhibitorTeamSection';
+import ExhibitorLeadsSection from '@/components/exhibitor/manage/ExhibitorLeadsSection';
+import { useExhibitorLeads } from '@/hooks/useExhibitorLeads';
 import SupportChatPanel from '@/components/support/SupportChatPanel';
 import { useSupportUnread } from '@/components/support/useSupportUnread';
 
@@ -32,7 +34,9 @@ const TIER_LABEL: Record<ExhibitorTier, string> = {
   or: 'Or',
 };
 
-type SectionKey = 'fiche' | 'salons' | 'nouveautes' | 'equipe' | 'aide';
+type SectionKey = 'fiche' | 'salons' | 'nouveautes' | 'rendezvous' | 'equipe' | 'aide';
+
+const SECTION_KEYS: SectionKey[] = ['fiche', 'salons', 'nouveautes', 'rendezvous', 'equipe', 'aide'];
 
 const SECTIONS: {
   key: SectionKey;
@@ -63,7 +67,15 @@ const SECTIONS: {
     icon: Sparkles,
     title: 'Vos nouveautés',
     description:
-      'Suivez vos nouveautés telles qu\u2019elles apparaissent sur le site, avec les leads générés.',
+      'Suivez vos nouveautés telles qu\u2019elles apparaissent sur le site et leurs performances.',
+  },
+  {
+    key: 'rendezvous',
+    label: 'Rendez-vous',
+    icon: CalendarCheck,
+    title: 'Vos rendez-vous et contacts',
+    description:
+      'Toutes les demandes de rendez-vous et tous les téléchargements de brochure, au même endroit.',
   },
   {
     key: 'equipe',
@@ -89,10 +101,16 @@ export default function ExhibitorManagePage() {
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const { data: profile, isLoading, isError } = useExhibitorProfile(slug);
   const location = useLocation();
-  const hasAideParam = new URLSearchParams(location.search).has('aide');
-  const [activeSection, setActiveSection] = useState<SectionKey>(
-    hasAideParam ? 'aide' : 'fiche',
-  );
+  // Ouverture directe d'une section : ?aide (historique) ou ?section=<clé>
+  // (liens des emails de notification : ?section=rendezvous).
+  const searchParams = new URLSearchParams(location.search);
+  const sectionParam = searchParams.get('section') as SectionKey | null;
+  const initialSection: SectionKey = searchParams.has('aide')
+    ? 'aide'
+    : sectionParam && SECTION_KEYS.includes(sectionParam)
+      ? sectionParam
+      : 'fiche';
+  const [activeSection, setActiveSection] = useState<SectionKey>(initialSection);
 
   // Promotion à l'accès (parité avec l'espace organisateur des salons) :
   // un admin peut gérer n'importe quel exposant, y compris les fiches legacy
@@ -112,6 +130,8 @@ export default function ExhibitorManagePage() {
     exhibitorId ? [exhibitorId] : [],
   );
   const completion = exhibitorId ? completionMap?.[exhibitorId] : undefined;
+  const { data: exhibitorLeads = [] } = useExhibitorLeads(exhibitorId);
+  const leadsToProcess = exhibitorLeads.filter((l) => (l.status ?? 'new') === 'new').length;
   const { unread: supportUnread, clear: clearSupportUnread } = useSupportUnread(
     'exhibitor',
     exhibitorId,
@@ -251,6 +271,16 @@ export default function ExhibitorManagePage() {
                     >
                       <Icon className="h-4 w-4 shrink-0" />
                       <span>{s.label}</span>
+                      {s.key === 'rendezvous' && leadsToProcess > 0 && (
+                        <Badge
+                          className={cn(
+                            'ml-auto h-5 px-1.5 text-[11px]',
+                            isActive && 'bg-primary-foreground text-primary hover:bg-primary-foreground',
+                          )}
+                        >
+                          {leadsToProcess}
+                        </Badge>
+                      )}
                       {s.key === 'aide' && supportUnread > 0 && (
                         <Badge variant="destructive" className="ml-auto h-5 px-1.5 text-[11px]">
                           {supportUnread}
@@ -296,6 +326,14 @@ export default function ExhibitorManagePage() {
                   (profile.future_participations_count ?? 0) > 0
                 }
                 onGoToSalons={() => setActiveSection('salons')}
+                onGoToRendezvous={() => setActiveSection('rendezvous')}
+              />
+            )}
+
+            {activeSection === 'rendezvous' && (
+              <ExhibitorLeadsSection
+                exhibitorId={profile.exhibitor_id}
+                onGoToNovelties={() => setActiveSection('nouveautes')}
               />
             )}
 

@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertCircle,
+  ArrowRight,
+  BarChart3,
   CalendarCheck,
   Clock,
   Download,
@@ -11,7 +13,6 @@ import {
   MapPin,
   Rocket,
   Sparkles,
-  Users,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -19,32 +20,12 @@ import { fr } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import NoveltyDetailView from '@/components/novelty/NoveltyDetailView';
-import NoveltyLeadsDisplay from '@/components/novelty/NoveltyLeadsDisplay';
-import LeadCaptureCard from '@/components/novelty/LeadCaptureCard';
 import { EditNoveltyDialog } from '@/components/novelty/EditNoveltyDialog';
 import { EventPremiumStatus } from '@/components/agenda/EventPremiumStatus';
-import { ExhibitorMeetingRequests } from '@/components/agenda/ExhibitorMeetingRequests';
-import { usePremiumEntitlement } from '@/hooks/usePremiumEntitlement';
 import { useMyNovelties, type MyNovelty } from '@/hooks/useMyNovelties';
-
-function NoveltyLeadCapture({ novelty }: { novelty: MyNovelty }) {
-  const { data: entitlement } = usePremiumEntitlement(novelty.exhibitors.id, novelty.events.id);
-
-  return (
-    <LeadCaptureCard
-      isPremium={entitlement?.isPremium ?? false}
-      exhibitorId={novelty.exhibitors.id}
-      eventId={novelty.events.id}
-      eventName={novelty.events.nom_event}
-      eventDate={novelty.events.date_debut}
-      eventSlug={novelty.events.slug}
-    />
-  );
-}
 
 function statusLabel(status: string) {
   if (status === 'published') return 'Publiée';
@@ -59,6 +40,7 @@ interface ExhibitorNoveltiesSectionProps {
   exhibitorPublicSlug: string | null;
   hasUpcomingParticipation: boolean;
   onGoToSalons: () => void;
+  onGoToRendezvous: () => void;
 }
 
 export default function ExhibitorNoveltiesSection({
@@ -68,6 +50,7 @@ export default function ExhibitorNoveltiesSection({
   exhibitorPublicSlug,
   hasUpcomingParticipation,
   onGoToSalons,
+  onGoToRendezvous,
 }: ExhibitorNoveltiesSectionProps) {
   const { data: allNovelties = [], isLoading } = useMyNovelties();
   const [editingNovelty, setEditingNovelty] = useState<MyNovelty | null>(null);
@@ -225,14 +208,17 @@ export default function ExhibitorNoveltiesSection({
                   />
                 </Card>
 
-                {/* Leads */}
+                {/* Performances (les listes de contacts sont dans l'onglet Rendez-vous) */}
                 <Card className="p-6 space-y-4">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <h3 className="text-base font-semibold flex items-center gap-2">
-                      <Users className="h-5 w-5" />
-                      Leads
-                      <Badge variant="secondary">{novelty.stats?.total_leads || 0}</Badge>
+                      <BarChart3 className="h-5 w-5" />
+                      Performances
                     </h3>
+                    <Button variant="outline" size="sm" onClick={onGoToRendezvous}>
+                      Voir les contacts
+                      <ArrowRight className="h-4 w-4 ml-1.5" />
+                    </Button>
                   </div>
 
                   <div className="flex items-center gap-6 flex-wrap">
@@ -264,27 +250,12 @@ export default function ExhibitorNoveltiesSection({
                       </div>
                     </div>
                   </div>
-
-                  <NoveltyLeadCapture novelty={novelty} />
-
-                  <Separator />
-
-                  <NoveltyLeadsDisplay
-                    noveltyId={novelty.id}
-                    exhibitorId={novelty.exhibitors.id}
-                    eventId={novelty.events.id}
-                  />
                 </Card>
               </div>
             );
           })}
         </div>
       )}
-
-      {/* Demandes de rendez-vous */}
-      <div id="rendezvous">
-        <ExhibitorMeetingRequests />
-      </div>
 
       {editingNovelty && (
         <EditNoveltyDialog
