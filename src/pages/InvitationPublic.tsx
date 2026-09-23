@@ -4,6 +4,9 @@ import { Helmet } from 'react-helmet-async';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+
 import { supabase } from '@/integrations/supabase/client';
 import { track } from '@/lib/analytics';
 import { InvitationInactiveView, InvitationPageView } from '@/components/invitation/InvitationPageView';
@@ -81,20 +84,31 @@ export default function InvitationPublic() {
       </Helmet>
 
       {isLoading ? (
-        <div className="min-h-[70vh] flex items-center justify-center bg-surface-inverse">
+        // Chargement neutre : on ne sait pas encore si la page est active (sans menu) ou non (avec menu).
+        <div className="min-h-screen flex items-center justify-center bg-surface-inverse">
           <Loader2 className="h-8 w-8 animate-spin text-inverse-primary" aria-label="Chargement" />
         </div>
-      ) : isError || !data ? (
-        <div className="min-h-[70vh] flex flex-col items-center justify-center gap-4 px-4 text-center">
-          <p className="text-muted-foreground">Impossible de charger cette invitation pour le moment.</p>
-          <button type="button" onClick={() => refetch()} className="text-sm font-semibold text-primary hover:underline">
-            Réessayer
-          </button>
-        </div>
-      ) : data.active ? (
+      ) : data?.active ? (
+        // Page d'invitation active : mise en page dédiée (hero + pied propres), validée telle quelle.
         <InvitationPageView data={data} onSubmit={submit} />
       ) : (
-        <InvitationInactiveView data={data} />
+        // Erreur, lien introuvable ou page inactive : menu et pied du site.
+        <div className="min-h-screen bg-background flex flex-col">
+          <Header />
+          <main className="flex-1">
+            {isError || !data ? (
+              <div className="min-h-[70vh] flex flex-col items-center justify-center gap-4 px-4 text-center">
+                <p className="text-muted-foreground">Impossible de charger cette invitation pour le moment.</p>
+                <button type="button" onClick={() => refetch()} className="text-sm font-semibold text-primary hover:underline">
+                  Réessayer
+                </button>
+              </div>
+            ) : (
+              <InvitationInactiveView data={data} />
+            )}
+          </main>
+          <Footer />
+        </div>
       )}
     </>
   );

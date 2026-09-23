@@ -221,7 +221,7 @@ export function buildLinkedInPost(opts: {
 }) {
   const lines = [
     `Nous serons au ${opts.eventName} ${opts.dates}.`,
-    opts.noveltyTitle ? `Nous y présenterons ${opts.noveltyTitle}, en avant-première.` : null,
+    opts.noveltyTitle ? `Au programme sur notre stand, en avant-première : « ${opts.noveltyTitle} ».` : null,
     '',
     'Envie d’échanger sur votre projet ? Réservez dès maintenant un moment avec notre équipe sur le stand :',
     opts.url,
@@ -240,7 +240,7 @@ export function buildEmailTemplate(opts: {
     body: [
       'Bonjour,',
       '',
-      `Nous serons présents au ${opts.eventName} ${opts.dates}${opts.noveltyTitle ? ` et y présenterons ${opts.noveltyTitle}` : ''}.`,
+      `Nous serons présents au ${opts.eventName} ${opts.dates}.${opts.noveltyTitle ? ` Au programme sur notre stand, en avant-première : « ${opts.noveltyTitle} ».` : ''}`,
       'Nous serions ravis de vous y retrouver. Vous pouvez choisir dès maintenant le jour et le moment qui vous conviennent :',
       opts.url,
       '',

@@ -247,7 +247,7 @@ export default function InvitationEditor({ exhibitorId, row, onBack }: Invitatio
       </Dialog>
 
       <Dialog open={!!published} onOpenChange={(o) => !o && (setPublished(null), onBack())}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg grid-cols-[minmax(0,1fr)] content-start">
           <DialogHeader>
             <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-violet-soft">
               <PartyPopper className="h-6 w-6 text-primary" />

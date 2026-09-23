@@ -51,7 +51,7 @@ export default function SharePanel({ row, compact = false }: { row: InvitationOv
   };
 
   return (
-    <div className="space-y-3">
+    <div className="w-full min-w-0 space-y-3">
       <div className="flex items-stretch gap-2">
         <div className="flex-1 min-w-0 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-foreground truncate font-mono">
           {url.replace('https://', '')}
@@ -87,7 +87,7 @@ export default function SharePanel({ row, compact = false }: { row: InvitationOv
       {open === 'linkedin' && (
         <div className="rounded-lg border border-border p-3 space-y-2">
           <p className="text-xs font-medium text-muted-foreground">Texte de post suggéré (copié automatiquement au clic sur « Partager »)</p>
-          <Textarea readOnly value={post} rows={6} className="text-sm resize-none" />
+          <Textarea readOnly value={post} rows={7} className="text-sm resize-none break-words" />
           <Button size="sm" variant="ghost" onClick={() => doCopy('post', post, 'invitation_copy_text')} className="gap-1.5">
             {copied === 'post' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             {copied === 'post' ? 'Copié' : 'Copier le texte'}
@@ -99,7 +99,7 @@ export default function SharePanel({ row, compact = false }: { row: InvitationOv
         <div className="rounded-lg border border-border p-3 space-y-2">
           <p className="text-xs font-medium text-muted-foreground">Objet</p>
           <p className="text-sm font-medium">{email.subject}</p>
-          <Textarea readOnly value={email.body} rows={8} className="text-sm resize-none" />
+          <Textarea readOnly value={email.body} rows={9} className="text-sm resize-none break-words" />
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
