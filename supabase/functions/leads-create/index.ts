@@ -16,6 +16,8 @@ const baseFields = {
   role: z.string().optional(),
   phone: z.string().optional(),
   notes: z.string().optional(),
+  // Lot 2 page d'invitation : creneau souhaite, texte libre affiche a l'exposant (D3).
+  preferred_slot: z.string().trim().max(60).optional(),
 };
 
 const schema = z.union([
@@ -25,6 +27,8 @@ const schema = z.union([
     exhibitor_ref: z.string().min(1), // UUID exhibitors.id OR legacy id_exposant
     event_id: z.string().uuid(),
     lead_type: z.literal('meeting_request'),
+    // Lot 2 : present uniquement quand la demande vient d'une page d'invitation.
+    invitation_slug: z.string().trim().min(1).max(200).optional(),
   }),
 ]);
 
@@ -48,7 +52,31 @@ type ContactFields = {
   role?: string;
   phone?: string;
   notes?: string;
+  preferred_slot?: string;
 };
+
+/**
+ * Lien vers l'onglet Rendez-vous de l'espace exposant. Repli sur l'ancien lien
+ * /agenda (qui redirige deja vers l'espace exposant) si le slug public est introuvable.
+ */
+async function resolveManageUrl(admin: any, exhibitorId: string): Promise<string> {
+  const fallback = 'https://lotexpo.com/agenda?tab=exposant&section=rendezvous';
+  try {
+    const { data } = await admin
+      .from('exhibitor_public_identities')
+      .select('public_slug')
+      .eq('exhibitor_id', exhibitorId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    const slug = (data?.public_slug ?? '').trim();
+    return slug ? `https://lotexpo.com/exposants/${encodeURIComponent(slug)}/gerer?section=rendezvous` : fallback;
+  } catch (e) {
+    console.error('[lead_manage_url] lookup failed', { exhibitor_id: exhibitorId, error: String(e) });
+    return fallback;
+  }
+}
 
 /**
  * Shared notification + email block, used by BOTH anchors:
@@ -68,6 +96,7 @@ async function notifyLeadRecipients(opts: {
   noveltyId: string | null;
   noveltyTitle: string | null;
   displayName?: string | null;
+  fromInvitation?: boolean;
 }) {
   const { admin, supabaseUrl, serviceKey, leadId, data, isMeeting, exhibitorId, eventId, noveltyId, noveltyTitle } = opts;
   const notifType = isMeeting ? 'new_lead_rdv' : 'new_lead_brochure';
@@ -232,12 +261,20 @@ async function notifyLeadRecipients(opts: {
       let ctaUrl: string;
       let preheader: string;
 
-      if (isExhibitorAnchor) {
+      const manageUrl = await resolveManageUrl(admin, exhibitorId);
+
+      if (isExhibitorAnchor && opts.fromInvitation) {
+        subject = "Nouvelle demande de rendez-vous via votre page d'invitation";
+        heading = '📅 Nouvelle demande de rendez-vous';
+        intro = `${escapeHtml(actorName)} a demandé un rendez-vous via votre page d'invitation${eventName ? ` pour le salon ${escapeHtml(eventName)}` : ''}. Pensez à lui confirmer l'horaire exact.`;
+        ctaUrl = manageUrl;
+        preheader = `Demande reçue via votre page d'invitation.`;
+      } else if (isExhibitorAnchor) {
         const company = (opts.displayName ?? '').trim();
         subject = 'Nouvelle demande de rendez-vous sur Lotexpo';
         heading = '📅 Nouvelle demande de rendez-vous';
         intro = `Un visiteur de Lotexpo souhaite prendre rendez-vous avec ${escapeHtml(company || 'votre entreprise')}${eventName ? ` sur le salon ${escapeHtml(eventName)}` : ''}.`;
-        ctaUrl = 'https://lotexpo.com/agenda?tab=exposant&section=rendezvous';
+        ctaUrl = manageUrl;
         preheader = `Nouvelle demande de rendez-vous sur votre salon.`;
       } else {
         subject = isMeeting
@@ -247,7 +284,7 @@ async function notifyLeadRecipients(opts: {
         intro = isMeeting
           ? `Un visiteur de Lotexpo souhaite prendre rendez-vous au sujet de votre nouveauté${title ? ` ${escapeHtml(title)}` : ''}${eventName ? ` (événement ${escapeHtml(eventName)})` : ''}.`
           : `Un visiteur de Lotexpo vient de télécharger la brochure de votre nouveauté${title ? ` ${escapeHtml(title)}` : ''}${eventName ? ` (événement ${escapeHtml(eventName)})` : ''}.`;
-        ctaUrl = 'https://lotexpo.com/agenda?tab=exposant&section=novelties&id=' + noveltyId + '#leads';
+        ctaUrl = manageUrl;
         preheader = isMeeting ? `Nouvelle demande de rendez-vous sur votre nouveauté.` : `Un visiteur a téléchargé la brochure de votre nouveauté.`;
       }
 
@@ -263,6 +300,8 @@ async function notifyLeadRecipients(opts: {
             [`Email`, data.email],
             ...(data.company ? [[`Société`, data.company]] : []),
             ...(isExhibitorAnchor && eventName ? [[`Salon`, eventName]] : []),
+            ...(isMeeting && data.preferred_slot ? [[`Créneau souhaité`, data.preferred_slot]] : []),
+            ...(data.role ? [[`Fonction`, data.role]] : []),
             ...(isMeeting && data.notes ? [[`Message`, data.notes]] : []),
           ] as Array<[string, string]>),
         ],
@@ -365,6 +404,33 @@ serve(async (req) => {
       // exhibitor_id ALWAYS comes from the RPC, never from the client payload.
       const exhibitorId: string = target.exhibitor_id;
 
+      // Lot 2 : demande venue d'une page d'invitation. La page doit etre publiee,
+      // active (Nouveaute publiee, salon non termine) et correspondre au meme
+      // couple exposant / salon. Sinon refus explicite, jamais d'insertion silencieuse.
+      let leadSource: 'site' | 'invitation_page' = 'site';
+      if (data.invitation_slug) {
+        const invSlug = String(data.invitation_slug).toLowerCase();
+        const { data: inv, error: invErr } = await admin
+          .from('exhibitor_invitation_pages')
+          .select('exhibitor_id, event_id')
+          .eq('slug', invSlug)
+          .eq('status', 'published')
+          .maybeSingle();
+        const { data: page, error: pageErr } = await admin.rpc('get_invitation_page', { p_slug: invSlug });
+        const pageActive = (page as any)?.active === true;
+        if (invErr || pageErr || !inv || !pageActive || inv.exhibitor_id !== exhibitorId || inv.event_id !== data.event_id) {
+          console.warn('[rdv_invitation_refused]', {
+            slug: invSlug, exhibitor_id: exhibitorId, event_id: data.event_id,
+            found: !!inv, active: pageActive, error: invErr?.message ?? pageErr?.message ?? null,
+          });
+          return new Response(
+            JSON.stringify({ error: 'invitation_inactive' }),
+            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        leadSource = 'invitation_page';
+      }
+
       const { data: existingLead } = await admin
         .from('leads')
         .select('id')
@@ -396,6 +462,8 @@ serve(async (req) => {
           role: data.role || null,
           phone: data.phone || null,
           notes: data.notes || null,
+          preferred_slot: data.preferred_slot || null,
+          source: leadSource,
           user_id: authUserId,
         }])
         .select()
@@ -425,7 +493,7 @@ serve(async (req) => {
         );
       }
 
-      console.log('[rdv_exhibitor_lead_created]', { exhibitor_id: exhibitorId, event_id: data.event_id, lead_id: lead.id, actor_email: data.email });
+      console.log('[rdv_exhibitor_lead_created]', { exhibitor_id: exhibitorId, event_id: data.event_id, lead_id: lead.id, actor_email: data.email, source: leadSource });
 
       await notifyLeadRecipients({
         admin, supabaseUrl, serviceKey,
@@ -437,6 +505,7 @@ serve(async (req) => {
         noveltyId: null,
         noveltyTitle: null,
         displayName: target.display_name,
+        fromInvitation: leadSource === 'invitation_page',
       });
 
       return new Response(
@@ -539,6 +608,8 @@ serve(async (req) => {
         role: data.role || null,
         phone: data.phone || null,
         notes: data.notes || null,
+        preferred_slot: data.lead_type === 'meeting_request' ? (data.preferred_slot || null) : null,
+        source: 'site',
         user_id: authUserId,
       }])
       .select()
