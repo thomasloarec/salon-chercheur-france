@@ -18,6 +18,13 @@ import type { InvitationPageData, MeetingRequestInput, MeetingRequestResult } fr
  * Envoi : edge leads-create forme B avec invitation_slug (lot 2).
  * Non indexée (décision D5). Aperçu LinkedIn servi aux robots par /api/invitation-og (lot 6).
  */
+/** « au salon Sommet de l'élevage », « au Salon de l'Agriculture » (même règle que api/invitation-og.js). */
+function salonPhrase(name?: string | null) {
+  const n = (name ?? '').trim();
+  if (!n) return 'à un salon';
+  return /^salon\b/i.test(n) ? `au ${n}` : `au salon ${n}`;
+}
+
 export default function InvitationPublic() {
   const { slug = '' } = useParams<{ slug: string }>();
 
@@ -67,7 +74,7 @@ export default function InvitationPublic() {
   };
 
   const title = data?.active
-    ? `${data.exhibitor?.name} vous invite sur ${data.event?.name}`
+    ? `${data.exhibitor?.name} vous invite ${salonPhrase(data.event?.name)}`
     : 'Invitation | Lotexpo';
   const description = data?.active
     ? `${data.novelty?.title ? `${data.novelty.title}. ` : ''}Réservez votre rendez-vous sur le stand${data.stand ? ` ${data.stand}` : ''}.`

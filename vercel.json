@@ -45,13 +45,6 @@
     },
     {
       "source": "/invitation/:slug",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": ".*(LinkedInBot|linkedinbot|facebookexternalhit|Facebot|Twitterbot|Slackbot|WhatsApp|TelegramBot|Discordbot|SkypeUriPreview|MicrosoftPreview|Teams|Googlebot|bingbot|Applebot|Pinterest|redditbot|Embedly).*"
-        }
-      ],
       "destination": "/api/invitation-og?slug=:slug"
     },
     {
