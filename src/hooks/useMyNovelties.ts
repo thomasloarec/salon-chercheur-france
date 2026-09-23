@@ -48,15 +48,13 @@ export interface MyNovelty {
   };
 }
 
-export const useMyNovelties = () => {
+export const useMyNovelties = (exhibitorId?: string) => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['my-novelties', user?.id],
+    queryKey: ['my-novelties', exhibitorId ?? user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
-
-  const { data, error } = await supabase
+      let query = supabase
         .from('novelties')
         .select(`
           id, slug, title, type, status, created_at, media_urls, is_premium,
@@ -66,10 +64,20 @@ export const useMyNovelties = () => {
           novelty_stats ( route_users_count, saves_count, reminders_count, popularity_score ),
           leads ( id, lead_type ),
           novelty_likes ( id )
-        `)
-        .eq('created_by', user.id)
+        `);
+
+      if (exhibitorId) {
+        query = query.eq('exhibitor_id', exhibitorId);
+      } else {
+        if (!user?.id) return [];
+        query = query.eq('created_by', user.id);
+      }
+
+      query = query
         .in('status', ['draft', 'under_review', 'published'])
         .order('created_at', { ascending: false });
+
+      const { data, error } = await query;
 
       if (error) throw error;
       
