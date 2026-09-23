@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Award, Building2, CalendarCheck, CalendarDays, ExternalLink, LifeBuoy, Sparkles, Users } from 'lucide-react';
+import { Award, Building2, CalendarCheck, CalendarDays, ExternalLink, LifeBuoy, MailOpen, Sparkles, Users } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -24,6 +24,7 @@ import ExhibitorSalonsSection from '@/components/exhibitor/manage/ExhibitorSalon
 import ExhibitorNoveltiesSection from '@/components/exhibitor/manage/ExhibitorNoveltiesSection';
 import ExhibitorTeamSection from '@/components/exhibitor/manage/ExhibitorTeamSection';
 import ExhibitorLeadsSection from '@/components/exhibitor/manage/ExhibitorLeadsSection';
+import ExhibitorInvitationsSection from '@/components/exhibitor/manage/ExhibitorInvitationsSection';
 import { useExhibitorLeads } from '@/hooks/useExhibitorLeads';
 import SupportChatPanel from '@/components/support/SupportChatPanel';
 import { useSupportUnread } from '@/components/support/useSupportUnread';
@@ -34,9 +35,9 @@ const TIER_LABEL: Record<ExhibitorTier, string> = {
   or: 'Or',
 };
 
-type SectionKey = 'fiche' | 'salons' | 'nouveautes' | 'rendezvous' | 'equipe' | 'aide';
+type SectionKey = 'fiche' | 'salons' | 'nouveautes' | 'invitations' | 'rendezvous' | 'equipe' | 'aide';
 
-const SECTION_KEYS: SectionKey[] = ['fiche', 'salons', 'nouveautes', 'rendezvous', 'equipe', 'aide'];
+const SECTION_KEYS: SectionKey[] = ['fiche', 'salons', 'nouveautes', 'invitations', 'rendezvous', 'equipe', 'aide'];
 
 const SECTIONS: {
   key: SectionKey;
@@ -68,6 +69,13 @@ const SECTIONS: {
     title: 'Vos nouveautés',
     description:
       'Suivez vos nouveautés telles qu\u2019elles apparaissent sur le site et leurs performances.',
+  },
+  {
+    key: 'invitations',
+    label: 'Invitations',
+    icon: MailOpen,
+    title: "Vos pages d'invitation",
+    description: 'Invitez votre réseau sur chacun de vos salons et recevez les rendez-vous avant l\u2019ouverture.',
   },
   {
     key: 'rendezvous',
@@ -330,10 +338,20 @@ export default function ExhibitorManagePage() {
               />
             )}
 
+            {activeSection === 'invitations' && (
+              <ExhibitorInvitationsSection
+                exhibitorId={profile.exhibitor_id}
+                onGoToNovelties={() => setActiveSection('nouveautes')}
+                onGoToSalons={() => setActiveSection('salons')}
+                onGoToRendezvous={() => setActiveSection('rendezvous')}
+              />
+            )}
+
             {activeSection === 'rendezvous' && (
               <ExhibitorLeadsSection
                 exhibitorId={profile.exhibitor_id}
                 onGoToNovelties={() => setActiveSection('nouveautes')}
+                onGoToInvitations={() => setActiveSection('invitations')}
               />
             )}
 

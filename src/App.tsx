@@ -16,6 +16,7 @@ import Events from '@/pages/Events';
 import Home from '@/pages/Home';
 import EventPage from '@/pages/EventPage';
 import OrganizerSalonPage from '@/pages/OrganizerSalonPage';
+import InvitationPublic from '@/pages/InvitationPublic';
 import Favorites from '@/pages/Favorites';
 import Profile from '@/pages/Profile';
 import Auth from '@/pages/Auth';
@@ -156,6 +157,7 @@ function App() {
             <Route path="/exposants" element={<Exposants />} />
             <Route path="/exposants/:slug" element={<ExhibitorProfile />} />
             <Route path="/exposants/:slug/gerer" element={<ExhibitorManagePage />} />
+            <Route path="/invitation/:slug" element={<InvitationPublic />} />
             <Route path="/premium" element={<Exposants />} />
             <Route path="/publier-nouveaute" element={<PublierNouveaute />} />
             <Route path="/publier-nouveaute/exposant" element={<SelectionExposant />} />

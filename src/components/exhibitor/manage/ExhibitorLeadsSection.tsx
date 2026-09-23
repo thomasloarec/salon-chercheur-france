@@ -91,9 +91,10 @@ function Segmented<T extends string>({ label, value, options, onChange }: Segmen
 interface ExhibitorLeadsSectionProps {
   exhibitorId: string;
   onGoToNovelties: () => void;
+  onGoToInvitations?: () => void;
 }
 
-export default function ExhibitorLeadsSection({ exhibitorId, onGoToNovelties }: ExhibitorLeadsSectionProps) {
+export default function ExhibitorLeadsSection({ exhibitorId, onGoToNovelties, onGoToInvitations }: ExhibitorLeadsSectionProps) {
   const { data: leads = [], isLoading, isError, refetch } = useExhibitorLeads(exhibitorId);
   const setStatus = useSetLeadStatus(exhibitorId);
 
@@ -225,9 +226,14 @@ export default function ExhibitorLeadsSection({ exhibitorId, onGoToNovelties }: 
           Les demandes de rendez-vous et les téléchargements de brochure de vos Nouveautés
           arriveront ici, avec les coordonnées de vos contacts.
         </p>
-        <Button variant="outline" onClick={onGoToNovelties}>
-          Voir mes nouveautés
-        </Button>
+        <div className="flex flex-wrap justify-center gap-2">
+          {onGoToInvitations && (
+            <Button onClick={onGoToInvitations}>Créer ma page d'invitation</Button>
+          )}
+          <Button variant="outline" onClick={onGoToNovelties}>
+            Voir mes nouveautés
+          </Button>
+        </div>
       </Card>
     );
   }
