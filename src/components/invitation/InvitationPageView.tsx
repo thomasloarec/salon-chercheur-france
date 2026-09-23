@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { getExhibitorLogoUrl } from '@/utils/exhibitorLogo';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -46,12 +47,38 @@ function Eyebrow({ children, inverse = false }: { children: React.ReactNode; inv
   );
 }
 
-function ExhibitorLogo({ name, url, size = 'lg' }: { name: string; url?: string | null; size?: 'sm' | 'lg' }) {
+/**
+ * Logo exposant : logo téléversé, sinon favicon du site (même règle que le reste
+ * du site via getExhibitorLogoUrl), sinon initiale. Le service de favicons renvoie
+ * un globe générique de 16 px quand le domaine n'en publie pas : on le remplace
+ * alors par l'initiale.
+ */
+function ExhibitorLogo({
+  name,
+  url,
+  website,
+  size = 'lg',
+}: {
+  name: string;
+  url?: string | null;
+  website?: string | null;
+  size?: 'sm' | 'lg';
+}) {
   const box = size === 'lg' ? 'h-16 w-16 sm:h-20 sm:w-20' : 'h-9 w-9';
-  if (url) {
+  const resolved = getExhibitorLogoUrl(url, website);
+  const [failed, setFailed] = useState(false);
+  if (resolved && !failed) {
     return (
       <div className={cn(box, 'shrink-0 rounded-2xl bg-white p-2 shadow-sm flex items-center justify-center overflow-hidden')}>
-        <img src={url} alt={`Logo ${name}`} className="max-h-full max-w-full object-contain" />
+        <img
+          src={resolved}
+          alt={`Logo ${name}`}
+          className="max-h-full max-w-full object-contain"
+          onError={() => setFailed(true)}
+          onLoad={(e) => {
+            if (!url && e.currentTarget.naturalWidth < 24) setFailed(true);
+          }}
+        />
       </div>
     );
   }
@@ -182,7 +209,7 @@ export function InvitationPageView({ data, onSubmit, preview = false }: Invitati
         <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-10 pb-12 lg:pt-16 lg:pb-20 grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-center">
           <div className="min-w-0">
             <div className="flex items-center gap-4">
-              <ExhibitorLogo name={exhibitor.name} url={exhibitor.logo_url} />
+              <ExhibitorLogo name={exhibitor.name} url={exhibitor.logo_url} website={exhibitor.website} />
               <div className="min-w-0">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-inverse/20 bg-inverse/5 px-3 py-1 text-xs font-semibold">
                   <Sparkles className="h-3.5 w-3.5 text-inverse-primary" aria-hidden />

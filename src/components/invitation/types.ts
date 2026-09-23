@@ -20,6 +20,8 @@ export interface InvitationPageData {
     id?: string;
     name: string;
     logo_url?: string | null;
+    /** Repli favicon quand aucun logo n'est téléversé (lot 7). */
+    website?: string | null;
     public_slug?: string | null;
   };
   event?: {
