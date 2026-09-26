@@ -16,7 +16,9 @@ const SYSTEM_PROMPT = `Tu es un expert en analyse d'entreprises B2B dans le sect
 Réponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans explication, sans backticks.
 La langue de sortie doit être le français.`;
 
-const TAXO_SECTEURS = `Agroalimentaire & Boissons : Agriculture & élevage | Agroalimentaire & transformation alimentaire | Boissons, vins & spiritueux | Horticulture & production végétale | Machines & équipements agricoles | Nutrition & alimentation animale | Restauration & services alimentaires
+const TAXO_SECTEURS = `Agriculture & Élevage : Agriculture & élevage | Horticulture & production végétale | Machines & équipements agricoles | Nutrition & alimentation animale
+
+Agroalimentaire & Boissons : Agroalimentaire & transformation alimentaire | Boissons, vins & spiritueux | Restauration & services alimentaires
 
 Automobile & Mobilité : Aéronautique & aérospatial | Automobile & motos | Cycle & micromobilité | Équipementiers & pièces | Ferroviaire | Maritime & naval | Mobilité & services de transport
 

@@ -267,7 +267,8 @@ async function runTool(admin: any, name: string, input: any) {
 }
 
 // ===== R1 : circuit intelligence anonyme (post-réponse, non bloquant) =====
-const CLASSIFY_TAXO = `Agroalimentaire & Boissons : Agriculture & élevage | Agroalimentaire & transformation alimentaire | Boissons, vins & spiritueux | Horticulture & production végétale | Machines & équipements agricoles | Nutrition & alimentation animale | Restauration & services alimentaires
+const CLASSIFY_TAXO = `Agriculture & Élevage : Agriculture & élevage | Horticulture & production végétale | Machines & équipements agricoles | Nutrition & alimentation animale
+Agroalimentaire & Boissons : Agroalimentaire & transformation alimentaire | Boissons, vins & spiritueux | Restauration & services alimentaires
 Automobile & Mobilité : Aéronautique & aérospatial | Automobile & motos | Cycle & micromobilité | Équipementiers & pièces | Ferroviaire | Maritime & naval | Mobilité & services de transport
 BTP & Construction : Construction, bâtiment & gros œuvre | Matériaux de construction & revêtements | Menuiserie, fermetures & aménagement | Rénovation & second œuvre | Travaux publics & aménagement extérieur
 Commerce & Distribution : Commerce de détail & retail | Distribution & commerce de gros | Import / export | Logistique, transport & supply chain
