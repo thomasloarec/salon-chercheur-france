@@ -48,6 +48,7 @@ Chaque page de hub secteur liste l'ensemble des salons du secteur avec filtrage 
 Format URL : https://lotexpo.com/secteur/{slug-secteur}
 
 Exemples :
+- /secteur/agriculture-elevage
 - /secteur/agroalimentaire-boissons
 - /secteur/automobile-mobilite
 - /secteur/btp-construction
@@ -56,6 +57,7 @@ Exemples :
 - /secteur/education-formation
 - /secteur/energie-environnement
 - /secteur/industrie-production
+- /secteur/medias-communication
 
 ## Pages de référence par ville
 

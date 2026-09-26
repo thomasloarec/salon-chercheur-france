@@ -1,4 +1,6 @@
 import {
+  Tractor,
+  Newspaper,
   Car,
   Store,
   Sparkles,
@@ -19,6 +21,8 @@ import {
 } from "lucide-react";
 
 export const sectorIconMap: Record<string, LucideIcon> = {
+  "agriculture-elevage": Tractor,
+  "medias-communication": Newspaper,
   "automobile-mobilite": Car,
   "commerce-distribution": Store,
   "cosmetique-bien-etre": Sparkles,

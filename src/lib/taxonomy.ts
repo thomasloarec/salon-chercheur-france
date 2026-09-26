@@ -3,6 +3,7 @@ export type TaxoOption = { value: string; label: string };
 
 // ⚠️ Slugs figés (kebab-case, sans accents)
 export const CANONICAL_SECTORS: TaxoOption[] = [
+  { value: "agriculture-elevage", label: "Agriculture & Élevage" },
   { value: "agroalimentaire-boissons", label: "Agroalimentaire & Boissons" },
   { value: "automobile-mobilite", label: "Automobile & Mobilité" }, // ← canonique
   { value: "btp-construction", label: "BTP & Construction" },
@@ -11,6 +12,7 @@ export const CANONICAL_SECTORS: TaxoOption[] = [
   { value: "education-formation", label: "Éducation & Formation" },
   { value: "energie-environnement", label: "Énergie & Environnement" },
   { value: "industrie-production", label: "Industrie & Production" },
+  { value: "medias-communication", label: "Médias & Communication" },
   { value: "mode-textile", label: "Mode & Textile" },
   { value: "sante-medical", label: "Santé & Médical" },
   { value: "technologie-innovation", label: "Technologie & Innovation" },
@@ -57,6 +59,7 @@ export function sectorLabelToSlug(label: string): string | null {
 }
 
 export const SECTOR_DB_LABELS: Record<string, string[]> = {
+  "agriculture-elevage": ["Agriculture & Élevage"],
   "agroalimentaire-boissons": ["Agroalimentaire & Boissons"],
   "automobile-mobilite": ["Automobile & Mobilité"], // NB: BdD = singulier confirmé
   "btp-construction": ["BTP & Construction"],
@@ -65,6 +68,7 @@ export const SECTOR_DB_LABELS: Record<string, string[]> = {
   "education-formation": ["Éducation & Formation"],
   "energie-environnement": ["Énergie & Environnement"],
   "industrie-production": ["Industrie & Production"],
+  "medias-communication": ["Médias & Communication"],
   "mode-textile": ["Mode & Textile"],
   "sante-medical": ["Santé & Médical"],
   "technologie-innovation": ["Technologie & Innovation"],

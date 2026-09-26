@@ -107,7 +107,7 @@ export interface TaxonomySector {
   subSectors: { id: string; name: string; slug: string | null }[];
 }
 
-/** Référentiel complet (lecture publique) : 15 secteurs, 73 sous-secteurs. */
+/** Référentiel complet (lecture publique) : 17 secteurs, 73 sous-secteurs. */
 export function useTaxonomyTree() {
   return useQuery({
     queryKey: ['taxonomy-tree'],

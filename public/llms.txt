@@ -16,6 +16,7 @@ Lotexpo référence, classe et met à jour l'ensemble des salons professionnels 
 
 ## Salons par secteur d'activité
 
+- Agriculture & Élevage : https://lotexpo.com/secteur/agriculture-elevage
 - Agroalimentaire & Boissons : https://lotexpo.com/secteur/agroalimentaire-boissons
 - Automobile & Mobilité : https://lotexpo.com/secteur/automobile-mobilite
 - BTP & Construction : https://lotexpo.com/secteur/btp-construction
@@ -24,6 +25,7 @@ Lotexpo référence, classe et met à jour l'ensemble des salons professionnels 
 - Éducation & Formation : https://lotexpo.com/secteur/education-formation
 - Énergie & Environnement : https://lotexpo.com/secteur/energie-environnement
 - Industrie & Production : https://lotexpo.com/secteur/industrie-production
+- Médias & Communication : https://lotexpo.com/secteur/medias-communication
 
 ## Salons par ville
 

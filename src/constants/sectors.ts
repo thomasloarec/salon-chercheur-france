@@ -1,12 +1,15 @@
 
 // Informations pour chaque secteur.
-// Les couleurs ont été retirées : les 15 secteurs partagent désormais les mêmes classes,
+// Les couleurs ont été retirées : les 17 secteurs partagent désormais les mêmes classes,
 // portées côté composant (bg-muted / text-muted-foreground).
 export const SECTOR_CONFIG: Record<string, {
   description: string;
 }> = {
+  'Agriculture & Élevage': {
+    description: "Agriculture, élevage, machinisme agricole, productions végétales et viticulture"
+  },
   'Agroalimentaire & Boissons': {
-    description: "Industrie alimentaire, agriculture, viticulture et boissons"
+    description: "Industrie alimentaire, transformation, boissons et restauration"
   },
   'Automobile & Mobilité': {
     description: "Secteur automobile, transports et nouvelles mobilités"
@@ -25,6 +28,9 @@ export const SECTOR_CONFIG: Record<string, {
   },
   'Industrie & Production': {
     description: "Industrie manufacturière, mécanique et production"
+  },
+  'Médias & Communication': {
+    description: "Presse, audiovisuel, édition, publicité et communication"
   },
   'Santé & Médical': {
     description: "Secteur médical, pharmaceutique et biotechnologies"

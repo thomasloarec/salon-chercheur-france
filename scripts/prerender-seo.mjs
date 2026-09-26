@@ -1190,7 +1190,27 @@ async function main() {
     'energie-environnement', 'industrie-production', 'mode-textile',
     'sante-medical', 'technologie-innovation', 'tourisme-evenementiel',
     'finance-assurance-immobilier', 'services-entreprises-rh', 'secteur-public-collectivites',
+    'agriculture-elevage', 'medias-communication',
   ];
+  const SECTOR_LABELS = {
+    'agriculture-elevage': 'Agriculture & Élevage',
+    'agroalimentaire-boissons': 'Agroalimentaire & Boissons',
+    'automobile-mobilite': 'Automobile & Mobilité',
+    'btp-construction': 'BTP & Construction',
+    'commerce-distribution': 'Commerce & Distribution',
+    'cosmetique-bien-etre': 'Cosmétique & Bien-être',
+    'education-formation': 'Éducation & Formation',
+    'energie-environnement': 'Énergie & Environnement',
+    'finance-assurance-immobilier': 'Finance, Assurance & Immobilier',
+    'industrie-production': 'Industrie & Production',
+    'medias-communication': 'Médias & Communication',
+    'mode-textile': 'Mode & Textile',
+    'sante-medical': 'Santé & Médical',
+    'secteur-public-collectivites': 'Secteur Public & Collectivités',
+    'services-entreprises-rh': 'Services aux Entreprises & RH',
+    'technologie-innovation': 'Technologie & Innovation',
+    'tourisme-evenementiel': 'Tourisme & Événementiel',
+  };
   const today = new Date().toISOString().slice(0, 10);
   const upcoming = events.filter((e) => e.date_fin && e.date_fin >= today || (!e.date_fin && e.date_debut && e.date_debut >= today));
   for (const slug of CANONICAL_SECTORS) {
@@ -1200,7 +1220,7 @@ async function main() {
         const list = Array.isArray(sec) ? sec : (typeof sec === 'string' ? [sec] : []);
         return list.some((s) => slugify(String(s)) === slug);
       }).sort((a, b) => (a.date_debut || '').localeCompare(b.date_debut || ''));
-      const label = matches[0] ? firstSector(matches[0].secteur) : slug.replace(/-/g, ' ');
+      const label = SECTOR_LABELS[slug] || (matches[0] ? firstSector(matches[0].secteur) : slug.replace(/-/g, ' '));
       const built = buildSector(slug, label, matches);
       await writeRoute(`/secteur/${slug}`, applyToShell(baseTemplate, built));
       stats.sectors++;
