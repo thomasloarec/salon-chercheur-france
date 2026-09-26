@@ -26,13 +26,15 @@ Commerce & Distribution : Commerce de détail & retail | Distribution & commerce
 
 Cosmétique & Bien-être : Bien-être & soins | Cosmétiques & produits de beauté | Parfumerie
 
-Éducation & Formation : Enseignement & éducation | Formation professionnelle | Médias & édition spécialisée
+Éducation & Formation : Enseignement & éducation | Formation professionnelle
 
 Énergie & Environnement : Eau, assainissement & traitement | Énergies renouvelables & transition énergétique | Environnement & développement durable | Gestion des déchets & recyclage
 
 Finance, Assurance & Immobilier : Assurance | Capital-investissement | Gestion de patrimoine & d'actifs | Immobilier | Services financiers & investissement
 
 Industrie & Production : Automatisation & robotique industrielle | Bois & transformation du bois | Chimie, matériaux & composites | Électronique & composants | Emballage & conditionnement | Machines-outils & équipements industriels | Mécanique de précision & usinage | Métallurgie & travail des métaux | Plasturgie & transformation des plastiques | Sous-traitance industrielle
+
+Médias & Communication : Médias & édition spécialisée
 
 Mode & Textile : Accessoires & maroquinerie | Bijouterie, joaillerie & luxe | Chaussure | Mode & habillement | Textile & confection
 
