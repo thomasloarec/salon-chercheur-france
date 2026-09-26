@@ -2,6 +2,9 @@
 
 const SECTOR_NAME_TO_SLUG: Record<string, string> = {
   // Exact matches
+  "agriculture & élevage": "agriculture-elevage",
+  "agriculture-elevage": "agriculture-elevage",
+
   "automobile & mobilité": "automobile-mobilite",
   "automobile-mobilite": "automobile-mobilite",
   
@@ -19,6 +22,9 @@ const SECTOR_NAME_TO_SLUG: Record<string, string> = {
   
   "industrie & production": "industrie-production",
   "industrie-production": "industrie-production",
+
+  "médias & communication": "medias-communication",
+  "medias-communication": "medias-communication",
   
   "mode & textile": "mode-textile",
   "mode-textile": "mode-textile",

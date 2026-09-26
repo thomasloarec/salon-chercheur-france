@@ -173,6 +173,7 @@ const CANONICAL_SECTORS = [
   'energie-environnement', 'industrie-production', 'mode-textile',
   'sante-medical', 'technologie-innovation', 'tourisme-evenementiel',
   'finance-assurance-immobilier', 'services-entreprises-rh', 'secteur-public-collectivites',
+  'agriculture-elevage', 'medias-communication',
 ];
 const uniqSectors = Array.from(new Set(CANONICAL_SECTORS));
 if (uniqSectors.length !== CANONICAL_SECTORS.length) {
