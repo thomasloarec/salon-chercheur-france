@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AddNoveltyButton from '@/components/novelty/AddNoveltyButton';
 import DarkTexturePanel from '@/components/event/DarkTexturePanel';
@@ -16,6 +18,8 @@ interface NoveltyExampleEmptyStateProps {
  * d'entrée quasi nul (« l'IA rédige, vous validez »). Un seul moment animé :
  * la démo « PDF -> nouveauté », en CSS pur. Le PDF y est une démonstration,
  * jamais un prérequis.
+ * Lien secondaire « Voir des exemples » vers /nouveautes (nouvel onglet) pour
+ * l'exposant en manque d'inspiration, sans ajouter de texte à l'encart.
  */
 export default function NoveltyExampleEmptyState({
   event,
@@ -29,7 +33,7 @@ export default function NoveltyExampleEmptyState({
 
   const proof =
     count > 1
-      ? `${count} exposants sont listés sur ce salon. Aucun n’a encore publié : la première place est libre.`
+      ? `${count} exposants listés, aucun n’a encore publié. La première place est libre.`
       : count === 1
         ? 'Un exposant est listé sur ce salon. La première place est libre.'
         : 'Les visiteurs qui consultent cette page préparent déjà leur venue.';
@@ -73,11 +77,7 @@ export default function NoveltyExampleEmptyState({
           <div className="flex flex-col items-start gap-4">
             <span className="nx-badge inline-flex items-center gap-2 overflow-hidden rounded-full border border-inverse-primary/40 bg-inverse-primary/15 px-3 py-1.5 text-xs font-semibold text-inverse">
               <span className="h-1.5 w-1.5 rounded-full bg-inverse-primary" />
-              Création par IA · Nouveau
-            </span>
-
-            <span className="text-xs font-medium uppercase tracking-[0.14em] text-inverse/70">
-              Espace exposants
+              Espace exposants · Création par IA
             </span>
 
             <h2 className="heading-display text-2xl leading-tight text-inverse sm:text-3xl">
@@ -85,22 +85,33 @@ export default function NoveltyExampleEmptyState({
             </h2>
 
             <p className="text-base leading-relaxed text-inverse/85 sm:text-lg">
-              Vous présentez un produit ou une solution sur ce salon ? Notre IA rédige votre
-              nouveauté à votre place : claire, percutante, prête à publier. Vous relisez, vous
-              ajustez, c'est en ligne.
+              Vous exposez un produit ou une solution ? Notre IA rédige votre nouveauté, prête à
+              publier.
             </p>
 
             <p className="text-base font-medium leading-snug text-inverse sm:text-lg">{proof}</p>
 
-            <AddNoveltyButton
-              event={event}
-              label="Créer ma nouveauté avec l'IA"
-              size="lg"
-              className="nx-cta"
-            />
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              <AddNoveltyButton
+                event={event}
+                label="Créer ma nouveauté avec l'IA"
+                size="lg"
+                className="nx-cta"
+              />
+              <Link
+                to="/nouveautes"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Voir des exemples de nouveautés publiées par d'autres exposants (nouvel onglet)"
+                className="group inline-flex items-center gap-1.5 text-sm font-medium text-inverse/85 underline-offset-4 transition-colors hover:text-inverse hover:underline"
+              >
+                Voir des exemples
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </div>
 
             <p className="text-xs text-inverse/75">
-              Gratuit · Vous validez avant publication · Visible avant l'ouverture
+              Gratuit · Vous validez avant publication
             </p>
           </div>
 
