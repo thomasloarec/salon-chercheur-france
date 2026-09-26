@@ -121,6 +121,8 @@ const SECTOR_REWRITES: Record<string, string> = {
   'Numérique & Digital': 'le numérique',
   'Automobile & Mobilité': "l'automobile et la mobilité",
   'Aéronautique & Spatial': "l'aéronautique et le spatial",
+  'Agriculture & Élevage': "l'agriculture et l'élevage",
+  'Médias & Communication': 'les médias et la communication',
 };
 
 function humanizeSector(raw: string): string {

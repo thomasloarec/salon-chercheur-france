@@ -16,7 +16,9 @@ const SYSTEM_PROMPT = `Tu es un expert en analyse d'entreprises B2B dans le sect
 Réponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans explication, sans backticks.
 La langue de sortie doit être le français.`;
 
-const TAXO_SECTEURS = `Agroalimentaire & Boissons : Agriculture & élevage | Agroalimentaire & transformation alimentaire | Boissons, vins & spiritueux | Horticulture & production végétale | Machines & équipements agricoles | Nutrition & alimentation animale | Restauration & services alimentaires
+const TAXO_SECTEURS = `Agriculture & Élevage : Agriculture & élevage | Horticulture & production végétale | Machines & équipements agricoles | Nutrition & alimentation animale
+
+Agroalimentaire & Boissons : Agroalimentaire & transformation alimentaire | Boissons, vins & spiritueux | Restauration & services alimentaires
 
 Automobile & Mobilité : Aéronautique & aérospatial | Automobile & motos | Cycle & micromobilité | Équipementiers & pièces | Ferroviaire | Maritime & naval | Mobilité & services de transport
 
@@ -26,13 +28,15 @@ Commerce & Distribution : Commerce de détail & retail | Distribution & commerce
 
 Cosmétique & Bien-être : Bien-être & soins | Cosmétiques & produits de beauté | Parfumerie
 
-Éducation & Formation : Enseignement & éducation | Formation professionnelle | Médias & édition spécialisée
+Éducation & Formation : Enseignement & éducation | Formation professionnelle
 
 Énergie & Environnement : Eau, assainissement & traitement | Énergies renouvelables & transition énergétique | Environnement & développement durable | Gestion des déchets & recyclage
 
 Finance, Assurance & Immobilier : Assurance | Capital-investissement | Gestion de patrimoine & d'actifs | Immobilier | Services financiers & investissement
 
 Industrie & Production : Automatisation & robotique industrielle | Bois & transformation du bois | Chimie, matériaux & composites | Électronique & composants | Emballage & conditionnement | Machines-outils & équipements industriels | Mécanique de précision & usinage | Métallurgie & travail des métaux | Plasturgie & transformation des plastiques | Sous-traitance industrielle
+
+Médias & Communication : Médias & édition spécialisée
 
 Mode & Textile : Accessoires & maroquinerie | Bijouterie, joaillerie & luxe | Chaussure | Mode & habillement | Textile & confection
 
@@ -58,7 +62,7 @@ ${TAXO_SECTEURS}
 Génère un objet JSON avec exactement ces clés :
 {
   "resume_court": "2 à 3 phrases maximum présentant l'entreprise, ses activités principales et sa valeur ajoutée pour un visiteur de salon professionnel",
-  "macro": "une seule des 15 macros ci-dessus (le domaine dominant)",
+  "macro": "une seule des 17 macros ci-dessus (le domaine dominant)",
   "sous_secteurs": ["1 à 3 sous-secteurs de la liste, le plus pertinent en premier"],
   "produits_services": ["produit ou service 1", "produit ou service 2", "produit ou service 3"],
   "mots_cles_metier": ["mot-clé 1", "mot-clé 2", "mot-clé 3", "mot-clé 4"],
@@ -66,7 +70,7 @@ Génère un objet JSON avec exactement ces clés :
   "type_interet": ["achat", "partenariat", "veille"]
 }
 
-Règles secteurs : "macro" = exactement UNE des 15 macros. "sous_secteurs" = 1 à 3 pris dans TOUTE la liste (tu peux combiner des sous-secteurs de macros différentes si l'activité est transverse). N'ajoute un 2e/3e sous-secteur QUE si l'activité le justifie clairement ; ne sur-interprète pas un mot isolé comme "premium" ou "énergie". Recopie les noms EXACTEMENT (accents, casse, ponctuation). N'invente JAMAIS de macro ni de sous-secteur hors liste.
+Règles secteurs : "macro" = exactement UNE des 17 macros. "sous_secteurs" = 1 à 3 pris dans TOUTE la liste (tu peux combiner des sous-secteurs de macros différentes si l'activité est transverse). N'ajoute un 2e/3e sous-secteur QUE si l'activité le justifie clairement ; ne sur-interprète pas un mot isolé comme "premium" ou "énergie". Recopie les noms EXACTEMENT (accents, casse, ponctuation). N'invente JAMAIS de macro ni de sous-secteur hors liste.
 
 Pour type_interet, choisis parmi : achat, partenariat, veille, recrutement, formation, innovation.
 Si les informations sont insuffisantes pour un champ, utilise un tableau vide [] ou une chaîne vide "".`;
