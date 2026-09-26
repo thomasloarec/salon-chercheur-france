@@ -62,7 +62,7 @@ ${TAXO_SECTEURS}
 Génère un objet JSON avec exactement ces clés :
 {
   "resume_court": "2 à 3 phrases maximum présentant l'entreprise, ses activités principales et sa valeur ajoutée pour un visiteur de salon professionnel",
-  "macro": "une seule des 15 macros ci-dessus (le domaine dominant)",
+  "macro": "une seule des 17 macros ci-dessus (le domaine dominant)",
   "sous_secteurs": ["1 à 3 sous-secteurs de la liste, le plus pertinent en premier"],
   "produits_services": ["produit ou service 1", "produit ou service 2", "produit ou service 3"],
   "mots_cles_metier": ["mot-clé 1", "mot-clé 2", "mot-clé 3", "mot-clé 4"],
@@ -70,7 +70,7 @@ Génère un objet JSON avec exactement ces clés :
   "type_interet": ["achat", "partenariat", "veille"]
 }
 
-Règles secteurs : "macro" = exactement UNE des 15 macros. "sous_secteurs" = 1 à 3 pris dans TOUTE la liste (tu peux combiner des sous-secteurs de macros différentes si l'activité est transverse). N'ajoute un 2e/3e sous-secteur QUE si l'activité le justifie clairement ; ne sur-interprète pas un mot isolé comme "premium" ou "énergie". Recopie les noms EXACTEMENT (accents, casse, ponctuation). N'invente JAMAIS de macro ni de sous-secteur hors liste.
+Règles secteurs : "macro" = exactement UNE des 17 macros. "sous_secteurs" = 1 à 3 pris dans TOUTE la liste (tu peux combiner des sous-secteurs de macros différentes si l'activité est transverse). N'ajoute un 2e/3e sous-secteur QUE si l'activité le justifie clairement ; ne sur-interprète pas un mot isolé comme "premium" ou "énergie". Recopie les noms EXACTEMENT (accents, casse, ponctuation). N'invente JAMAIS de macro ni de sous-secteur hors liste.
 
 Pour type_interet, choisis parmi : achat, partenariat, veille, recrutement, formation, innovation.
 Si les informations sont insuffisantes pour un champ, utilise un tableau vide [] ou une chaîne vide "".`;
