@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ChevronDown, Loader2, X, PanelRightOpen, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, ChevronDown, X, PanelRightOpen, CheckCircle2 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,21 +10,18 @@ import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import NoveltyDetailView from '@/components/novelty/NoveltyDetailView';
 import NoveltyAiAssistant, { type NoveltyAngle } from '@/components/novelty/NoveltyAiAssistant';
+import PublishNoveltyDialog, {
+  type PublishError,
+  type PublishPhase,
+  type PublishStep,
+  type PublishStepStatus,
+} from '@/components/novelty/PublishNoveltyDialog';
 
 const TITLE_MIN = 3;
 const TITLE_MAX = 120;
@@ -41,6 +38,22 @@ const sanitizeFileName = (name: string) =>
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-zA-Z0-9._-]/g, '-')
     .toLowerCase();
+
+const formatSize = (bytes: number) =>
+  bytes >= 1024 * 1024
+    ? `${(bytes / (1024 * 1024)).toFixed(1).replace('.', ',')} Mo`
+    : `${Math.max(1, Math.round(bytes / 1024))} Ko`;
+
+/** Erreur « métier » affichée telle quelle dans la popup. */
+class PublishFlowError extends Error {
+  constructor(
+    public title: string,
+    public description: string,
+    public retryable: boolean,
+  ) {
+    super(description);
+  }
+}
 
 interface PickedImage {
   file: File;
@@ -86,8 +99,6 @@ export default function AtelierNouveaute() {
   const exhibitorId = exhibitorIdInitial || createdExhibitorId || '';
   const hasExhibitorToCreate = !exhibitorIdInitial && !!resolvedExhibitor?.name;
 
-  const [publishStep, setPublishStep] = useState<string | null>(null);
-
   const [title, setTitle] = useState('');
   const [type, setType] = useState('');
   const [reason, setReason] = useState('');
@@ -99,10 +110,29 @@ export default function AtelierNouveaute() {
   const [audienceInput, setAudienceInput] = useState('');
   const [audienceTags, setAudienceTags] = useState<string[]>([]);
   const [extrasOpen, setExtrasOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [successOpen, setSuccessOpen] = useState(false);
-  const [pdfNudgeOpen, setPdfNudgeOpen] = useState(false);
-  const pdfInputRef = useRef<HTMLInputElement>(null);
+
+  /* ------- Popup de publication (document -> publishing -> success | error) ------- */
+  const [publishPhase, setPublishPhase] = useState<PublishPhase>('closed');
+  const [publishSteps, setPublishSteps] = useState<PublishStep[]>([]);
+  const [publishError, setPublishError] = useState<PublishError | null>(null);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const publishing = publishPhase === 'publishing';
+  const runningRef = useRef(false);
+  // Étapes déjà réussies : un « Réessayer » reprend là où ça a échoué.
+  const accountCreatedRef = useRef(false);
+  const participationDoneRef = useRef(false);
+  const uploadedUrlsRef = useRef<WeakMap<File, string>>(new WeakMap());
+
+  // Protection fermeture d'onglet / rechargement pendant la publication.
+  useEffect(() => {
+    if (!publishing) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [publishing]);
 
   useEffect(() => {
     return () => images.forEach((i) => URL.revokeObjectURL(i.previewUrl));
@@ -125,10 +155,17 @@ export default function AtelierNouveaute() {
 
   /* ------- Source UNIQUE de création de l'exposant (IA ou publication) ------- */
   const createdIdRef = useRef<string | null>(null);
-  const ensureExhibitor = useCallback(async (): Promise<string | null> => {
+  // Version « qui lève » : utilisée par la publication (erreur affichée dans la popup).
+  const ensureExhibitorOrThrow = useCallback(async (): Promise<string> => {
     const current = exhibitorIdInitial || createdExhibitorId || createdIdRef.current;
     if (current) return current;
-    if (!resolvedExhibitor?.name || !eventId) return null;
+    if (!resolvedExhibitor?.name || !eventId) {
+      throw new PublishFlowError(
+        'Entreprise introuvable',
+        "Nous n'avons pas pu identifier votre entreprise. Revenez à l'étape précédente puis réessayez.",
+        false,
+      );
+    }
     const { data: created, error } = await supabase.functions.invoke('exhibitors-manage', {
       body: {
         action: 'create',
@@ -143,17 +180,31 @@ export default function AtelierNouveaute() {
       },
     });
     if (error || !created?.id) {
-      toast({
-        title: "Création de l'entreprise impossible",
-        description: error?.message || 'Réessayez dans un instant.',
-        variant: 'destructive',
-      });
-      return null;
+      throw new PublishFlowError(
+        "Création de l'entreprise impossible",
+        error?.message || 'Réessayez dans un instant.',
+        true,
+      );
     }
     createdIdRef.current = created.id as string;
     setCreatedExhibitorId(created.id as string);
     return created.id as string;
   }, [exhibitorIdInitial, createdExhibitorId, resolvedExhibitor, eventId]);
+
+  // Version « toast » : utilisée par l'assistant IA (comportement inchangé).
+  const ensureExhibitor = useCallback(async (): Promise<string | null> => {
+    try {
+      return await ensureExhibitorOrThrow();
+    } catch (e: any) {
+      if (e instanceof PublishFlowError && !e.retryable) return null;
+      toast({
+        title: "Création de l'entreprise impossible",
+        description: e?.description || e?.message || 'Réessayez dans un instant.',
+        variant: 'destructive',
+      });
+      return null;
+    }
+  }, [ensureExhibitorOrThrow]);
 
   const { data: exhibitor } = useQuery({
     queryKey: ['atelier-exhibitor', exhibitorId],
@@ -239,26 +290,21 @@ export default function AtelierNouveaute() {
     });
   };
 
+  const validatePdf = (file: File): string | null => {
+    if (file.type !== 'application/pdf') return 'Le document doit être un PDF';
+    if (file.size > MAX_PDF_SIZE) return 'Le PDF dépasse 20 Mo';
+    return null;
+  };
+
+  // PDF choisi depuis le canevas (comportement inchangé : toast si invalide).
   const handlePdf = (file: File | null) => {
     if (!file) return setBrochure(null);
-    if (file.type !== 'application/pdf') {
-      toast({ title: 'Le document doit être un PDF', variant: 'destructive' });
-      return;
-    }
-    if (file.size > MAX_PDF_SIZE) {
-      toast({ title: 'Le PDF dépasse 20 Mo', variant: 'destructive' });
+    const err = validatePdf(file);
+    if (err) {
+      toast({ title: err, variant: 'destructive' });
       return;
     }
     setBrochure(file);
-  };
-
-  // Interception avant publication : incite à joindre un PDF si absent
-  const handlePublishClick = () => {
-    if (brochure) {
-      handlePublish();
-      return;
-    }
-    setPdfNudgeOpen(true);
   };
 
   const addTag = () => {
@@ -303,64 +349,167 @@ export default function AtelierNouveaute() {
   if (images.length === 0) missing.push('Ajoutez au moins une image');
 
   const canPublish =
-    missing.length === 0 && !!eventId && (!!exhibitorId || hasExhibitorToCreate) && !submitting;
+    missing.length === 0 && !!eventId && (!!exhibitorId || hasExhibitorToCreate) && !publishing;
 
   /* ---------------- Publication ---------------- */
 
+  // Envoi d'un fichier ; mémorisé pour ne pas le renvoyer lors d'un « Réessayer ».
   const uploadFile = async (file: File, folder: 'images' | 'brochures') => {
-    const filePath = `${folder}/${Date.now()}-${sanitizeFileName(file.name)}`;
+    const cached = uploadedUrlsRef.current.get(file);
+    if (cached) return cached;
+    const filePath = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${sanitizeFileName(file.name)}`;
     const { error } = await supabase.storage.from('novelties').upload(filePath, file);
-    if (error) throw error;
+    if (error) {
+      throw new PublishFlowError(
+        folder === 'images' ? "L'envoi des images a échoué" : "L'envoi de la brochure a échoué",
+        'La connexion a peut-être été interrompue. Vérifiez votre réseau puis réessayez.',
+        true,
+      );
+    }
     const { data } = supabase.storage.from('novelties').getPublicUrl(filePath);
+    uploadedUrlsRef.current.set(file, data.publicUrl);
     return data.publicUrl;
   };
 
-  const handlePublish = async () => {
-    if (!canPublish) return;
-    setSubmitting(true);
+  const setStep = (key: string, status: PublishStepStatus, detail?: string | null) =>
+    setPublishSteps((prev) =>
+      prev.map((s) =>
+        s.key === key ? { ...s, status, ...(detail !== undefined ? { detail } : {}) } : s,
+      ),
+    );
+
+  const errorFromResponse = (status: number, json: any): PublishFlowError => {
+    if (status === 403 && json?.code === 'EXHIBITOR_ALREADY_MANAGED') {
+      return new PublishFlowError(
+        'Entreprise déjà administrée',
+        "Cette entreprise est déjà gérée par une autre personne. Demandez-lui de vous ajouter à l'équipe pour publier.",
+        false,
+      );
+    }
+    if (status === 403) {
+      return new PublishFlowError(
+        'Quota atteint',
+        json?.message || 'Vous avez atteint le nombre de nouveautés autorisées pour ce salon.',
+        false,
+      );
+    }
+    if (status === 400) {
+      const details = json?.details as Record<string, string[]> | undefined;
+      const lisible = details
+        ? Object.entries(details)
+            .map(([k, v]) => `${k} : ${v.join(', ')}`)
+            .join(' · ')
+        : json?.message || 'Certaines informations sont invalides.';
+      return new PublishFlowError('Publication refusée', lisible, false);
+    }
+    return new PublishFlowError(
+      'Publication impossible',
+      json?.message || `Erreur ${status}. Réessayez dans un instant.`,
+      true,
+    );
+  };
+
+  /**
+   * Publication complète, pilotée par la popup.
+   * `brochureOverride` : PDF choisi à l'instant dans la popup (l'état React n'est pas
+   * encore à jour à ce moment-là) ; `null` = publier sans document ; absent = état courant.
+   */
+  const runPublish = async (opts: { brochureOverride?: File | null } = {}) => {
+    if (runningRef.current) return;
+    if (!(missing.length === 0 && !!eventId && (!!exhibitorId || hasExhibitorToCreate))) return;
+    runningRef.current = true;
+
+    const brochureFile = opts.brochureOverride !== undefined ? opts.brochureOverride : brochure;
+    const needsAccount = !isRealUser && !!identity?.email;
+    const needsExhibitor = hasExhibitorToCreate;
+    const needsParticipation = resolvedExhibitor?.needs_participation === true;
+    const exhibitorAlreadyCreated = !!(createdExhibitorId || createdIdRef.current);
+
+    // Liste des étapes réellement nécessaires ; celles déjà réussies sont cochées d'emblée.
+    const steps: PublishStep[] = [];
+    if (needsAccount || accountCreatedRef.current) {
+      steps.push({
+        key: 'account',
+        label: 'Création de votre compte',
+        status: accountCreatedRef.current ? 'done' : 'pending',
+      });
+    }
+    if (needsExhibitor) {
+      steps.push({
+        key: 'exhibitor',
+        label: 'Création de votre entreprise',
+        status: exhibitorAlreadyCreated ? 'done' : 'pending',
+      });
+    }
+    if (needsParticipation) {
+      steps.push({
+        key: 'participation',
+        label: 'Rattachement au salon',
+        status: participationDoneRef.current ? 'done' : 'pending',
+      });
+    }
+    steps.push({
+      key: 'images',
+      label: images.length > 1 ? 'Envoi des images' : "Envoi de l'image",
+      status: 'pending',
+      detail: images.length > 1 ? `(0/${images.length})` : null,
+    });
+    if (brochureFile) {
+      steps.push({
+        key: 'brochure',
+        label: 'Envoi de votre brochure',
+        status: 'pending',
+        detail: `${brochureFile.name} · ${formatSize(brochureFile.size)}`,
+      });
+    }
+    steps.push({ key: 'save', label: 'Enregistrement de votre nouveauté', status: 'pending' });
+
+    setPublishSteps(steps);
+    setPublishError(null);
+    setPdfError(null);
+    setPublishPhase('publishing');
+
     try {
-      /* ── Étape 1 — Créer le compte si l'utilisateur n'est pas connecté ── */
-      if (!isRealUser && identity?.email) {
-        setPublishStep('Création de votre compte…');
+      /* ── Étape 1 : compte (si visiteur non connecté) ── */
+      if (needsAccount && !accountCreatedRef.current) {
+        setStep('account', 'active');
         const { error: signUpError } = await supabase.auth.signUp({
-          email: identity.email,
+          email: identity!.email,
           password: Math.random().toString(36).slice(-12),
           options: {
             emailRedirectTo: `${window.location.origin}/`,
             data: {
-              first_name: identity.first_name,
-              last_name: identity.last_name,
-              phone: identity.phone,
-              role: identity.role,
+              first_name: identity!.first_name,
+              last_name: identity!.last_name,
+              phone: identity!.phone,
+              role: identity!.role,
             },
           },
         });
         if (signUpError) {
-          toast({
-            title: "Inscription impossible",
-            description:
-              signUpError.message ||
-              "Cette adresse est peut-être déjà utilisée. Connectez-vous puis réessayez.",
-            variant: 'destructive',
-          });
-          return;
+          throw new PublishFlowError(
+            'Inscription impossible',
+            signUpError.message ||
+              'Cette adresse est peut-être déjà utilisée. Connectez-vous puis réessayez.',
+            false,
+          );
         }
-        await supabase.auth.resetPasswordForEmail(identity.email, {
+        accountCreatedRef.current = true;
+        await supabase.auth.resetPasswordForEmail(identity!.email, {
           redirectTo: `${window.location.origin}/`,
         });
+        setStep('account', 'done');
       }
 
-      /* ── Étape 2 — Créer l'exposant si nouveau (une seule fois, sans logo ni stand) ── */
-      if (!exhibitorIdInitial && !createdExhibitorId && !createdIdRef.current) {
-        setPublishStep('Création de votre entreprise…');
-      }
-      const finalExhibitorId = await ensureExhibitor();
-      if (!finalExhibitorId) return;
+      /* ── Étape 2 : entreprise (si nouvelle, une seule fois) ── */
+      if (needsExhibitor && !exhibitorAlreadyCreated) setStep('exhibitor', 'active');
+      const finalExhibitorId = await ensureExhibitorOrThrow();
+      if (needsExhibitor) setStep('exhibitor', 'done');
       const pendingExhibitorId: string | null = exhibitorIdInitial ? null : finalExhibitorId;
 
-      /* ── Étape 3 — Participation si l'exposant vient du catalogue ── */
-      if (resolvedExhibitor?.needs_participation === true && finalExhibitorId) {
-        setPublishStep('Rattachement au salon…');
+      /* ── Étape 3 : participation (exposant du catalogue) ── */
+      if (needsParticipation && !participationDoneRef.current) {
+        setStep('participation', 'active');
         const { error: ensureError } = await supabase.functions.invoke('exhibitors-manage', {
           body: {
             action: 'ensure_participation',
@@ -371,16 +520,39 @@ export default function AtelierNouveaute() {
         });
         // Échec non bloquant : le filet serveur de novelties-create le refera.
         if (ensureError) console.error('[atelier] ensure_participation a échoué', ensureError);
+        participationDoneRef.current = true;
+        setStep('participation', 'done');
       }
 
-      /* ── Étape 4 — Publier la nouveauté ── */
-      setPublishStep('Envoi de votre nouveauté…');
-      const imageUrls: string[] = [];
-      for (const img of images) {
-        imageUrls.push(await uploadFile(img.file, 'images'));
-      }
-      const brochureUrl = brochure ? await uploadFile(brochure, 'brochures') : null;
+      /* ── Étape 4 : fichiers, en parallèle ── */
+      let imagesDone = 0;
+      const total = images.length;
+      setStep('images', 'active');
+      if (brochureFile) setStep('brochure', 'active');
 
+      const imagesPromise = Promise.all(
+        images.map(async (img) => {
+          const url = await uploadFile(img.file, 'images');
+          imagesDone += 1;
+          if (total > 1) setStep('images', 'active', `(${imagesDone}/${total})`);
+          return url;
+        }),
+      ).then((urls) => {
+        setStep('images', 'done');
+        return urls;
+      });
+
+      const brochurePromise = brochureFile
+        ? uploadFile(brochureFile, 'brochures').then((url) => {
+            setStep('brochure', 'done');
+            return url;
+          })
+        : Promise.resolve(null);
+
+      const [imageUrls, brochureUrl] = await Promise.all([imagesPromise, brochurePromise]);
+
+      /* ── Étape 5 : enregistrement ── */
+      setStep('save', 'active');
       const payload: Record<string, unknown> = {
         event_id: eventId,
         exhibitor_id: finalExhibitorId,
@@ -398,68 +570,77 @@ export default function AtelierNouveaute() {
 
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData?.session?.access_token || null;
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/novelties-create`,
-        {
+      let res: Response;
+      try {
+        res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/novelties-create`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           },
           body: JSON.stringify(payload),
-        },
-      );
+        });
+      } catch {
+        throw new PublishFlowError(
+          'Connexion interrompue',
+          "Nous n'avons pas pu joindre Lotexpo. Vérifiez votre réseau puis réessayez.",
+          true,
+        );
+      }
       let json: any = null;
       try {
         json = await res.json();
       } catch {
         /* pas de corps JSON */
       }
+      if (!res.ok) throw errorFromResponse(res.status, json);
 
-      if (!res.ok) {
-        if (res.status === 403 && json?.code === 'EXHIBITOR_ALREADY_MANAGED') {
-          toast({
-            title: 'Entreprise déjà administrée',
-            description:
-              "Cette entreprise est déjà gérée par une autre personne. Demandez-lui de vous ajouter à l'équipe pour publier.",
-            variant: 'destructive',
-          });
-        } else if (res.status === 403) {
-          toast({
-            title: 'Quota atteint',
-            description:
-              json?.message || 'Vous avez atteint le nombre de nouveautés autorisées pour ce salon.',
-            variant: 'destructive',
-          });
-        } else if (res.status === 400) {
-          const details = json?.details as Record<string, string[]> | undefined;
-          const lisible = details
-            ? Object.entries(details)
-                .map(([k, v]) => `${k} : ${v.join(', ')}`)
-                .join(' · ')
-            : json?.message || 'Certaines informations sont invalides.';
-          toast({ title: 'Publication refusée', description: lisible, variant: 'destructive' });
-        } else {
-          toast({
-            title: 'Publication impossible',
-            description: json?.message || `Erreur ${res.status}`,
-            variant: 'destructive',
-          });
-        }
-        return;
-      }
-
-      setSuccessOpen(true);
+      setStep('save', 'done');
+      // Court temps d'arrêt pour que la dernière coche soit visible.
+      await new Promise((r) => setTimeout(r, 500));
+      setPublishPhase('success');
     } catch (e: any) {
-      toast({
-        title: 'Une erreur est survenue',
-        description: e?.message || 'Réessayez dans un instant.',
-        variant: 'destructive',
-      });
+      const err =
+        e instanceof PublishFlowError
+          ? e
+          : new PublishFlowError(
+              'Une erreur est survenue',
+              e?.message || 'Réessayez dans un instant.',
+              true,
+            );
+      setPublishError({ title: err.title, description: err.description, retryable: err.retryable });
+      setPublishPhase('error');
     } finally {
-      setSubmitting(false);
-      setPublishStep(null);
+      runningRef.current = false;
     }
+  };
+
+  // Clic sur « Publier ma nouveauté » : popup document si pas de PDF, sinon publication directe.
+  const handlePublishClick = () => {
+    if (!canPublish) return;
+    setPdfError(null);
+    if (brochure) {
+      runPublish();
+      return;
+    }
+    setPublishPhase('document');
+  };
+
+  // PDF choisi dans la popup : validé, enregistré, puis publication enchaînée aussitôt.
+  const handleDialogPdf = (file: File) => {
+    const err = validatePdf(file);
+    if (err) {
+      setPdfError(err);
+      return;
+    }
+    setBrochure(file);
+    runPublish({ brochureOverride: file });
+  };
+
+  const closePublishDialog = () => {
+    setPublishPhase('closed');
+    setPublishError(null);
+    setPdfError(null);
   };
 
   /* ---------------- États bloquants ---------------- */
@@ -512,8 +693,7 @@ export default function AtelierNouveaute() {
         disabled={!canPublish}
         className="h-11 w-full bg-[#6b51ff] text-sm font-semibold text-white shadow-sm hover:bg-[#5b43e6]"
       >
-        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {submitting ? publishStep || 'Publication en cours…' : 'Publier ma nouveauté'}
+        Publier ma nouveauté
       </Button>
     </div>
   ) : (
@@ -702,73 +882,22 @@ export default function AtelierNouveaute() {
         </div>
       </MainLayout>
 
-      <AlertDialog open={successOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Votre nouveauté a bien été transmise</AlertDialogTitle>
-            <AlertDialogDescription>
-              Elle va être examinée par l'équipe Lotexpo sous 24 h avant sa mise en ligne.
-              Vous serez informé dès qu'elle sera publiée.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction
-              onClick={() => {
-                setSuccessOpen(false);
-                navigate(event?.slug ? `/events/${event.slug}` : '/nouveautes');
-              }}
-            >
-              Compris
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Incitation à joindre un PDF avant publication */}
-      <input
-        type="file"
-        accept="application/pdf"
-        className="hidden"
-        ref={pdfInputRef}
-        onChange={(e) => {
-          const f = e.target.files?.[0] ?? null;
-          if (f) handlePdf(f);
-          e.target.value = '';
+      {/* Popup unique de publication : document -> publication -> succès | erreur */}
+      <PublishNoveltyDialog
+        phase={publishPhase}
+        steps={publishSteps}
+        error={publishError}
+        pdfError={pdfError}
+        onPdfSelected={handleDialogPdf}
+        onPublishWithoutPdf={() => runPublish({ brochureOverride: null })}
+        onCancelDocument={closePublishDialog}
+        onRetry={() => runPublish()}
+        onBackToEdit={closePublishDialog}
+        onSuccessAck={() => {
+          setPublishPhase('closed');
+          navigate(event?.slug ? `/events/${event.slug}` : '/nouveautes');
         }}
       />
-      <AlertDialog open={pdfNudgeOpen} onOpenChange={setPdfNudgeOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Publier sans document à télécharger ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Vous êtes sur le point de publier sans document téléchargeable. Chaque visiteur qui
-              télécharge votre brochure devient un contact que vous pouvez recontacter avant le
-              salon. Sans document, vous vous privez de ce canal de prise de contact.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="sm:justify-between">
-            <Button
-              variant="ghost"
-              className="text-muted-foreground"
-              onClick={() => {
-                setPdfNudgeOpen(false);
-                handlePublish();
-              }}
-            >
-              Publier sans document
-            </Button>
-            <Button
-              className="bg-[#6b51ff] text-white hover:bg-[#5b43e6]"
-              onClick={() => {
-                setPdfNudgeOpen(false);
-                setTimeout(() => pdfInputRef.current?.click(), 0);
-              }}
-            >
-              Importer un PDF
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
