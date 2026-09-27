@@ -287,8 +287,32 @@ Deno.serve(async (req) => {
     }
   }
 
-  // --- Frein anti-rafale (jamais pour le service_role) ---
+  // --- Administrateurs plateforme : aucune limite (on garde une trace pour le diagnostic) ---
+  let callerIsAdmin = false;
   if (callerUserId) {
+    try {
+      const { data: isAdminData, error: isAdminError } = await supabase.rpc('has_role', {
+        _user_id: callerUserId,
+        _role: 'admin',
+      });
+      if (isAdminError) {
+        console.error('[novelty-ai-draft] has_role failed:', isAdminError.message);
+      }
+      callerIsAdmin = isAdminData === true;
+    } catch (e) {
+      console.error('[novelty-ai-draft] has_role threw:', e instanceof Error ? e.message : String(e));
+      callerIsAdmin = false;
+    }
+    if (callerIsAdmin) {
+      const { error: logErr } = await supabase
+        .from('novelty_ai_generation_log')
+        .insert({ user_id: callerUserId, action });
+      if (logErr) console.error('[novelty-ai-draft] admin log insert failed:', logErr.message);
+    }
+  }
+
+  // --- Frein anti-rafale (jamais pour le service_role ni pour un administrateur) ---
+  if (callerUserId && !callerIsAdmin) {
     const { data: rate, error: rateErr } = await supabase.rpc('novelty_ai_rate_check', {
       p_user_id: callerUserId,
       p_action: action,
@@ -297,6 +321,7 @@ Deno.serve(async (req) => {
       console.error('[novelty-ai-draft] rate check failed:', rateErr.message);
       // En cas de panne du frein, on n'empêche pas l'utilisateur légitime de travailler.
     } else if (rate && (rate as any).autorise === false) {
+      console.warn('[novelty-ai-draft] frein_anti_rafale', { user: callerUserId, action });
       return jsonResp({
         error: 'frein_anti_rafale',
         minutes_avant_reouverture: (rate as any).minutes_avant_reouverture ?? 60,
