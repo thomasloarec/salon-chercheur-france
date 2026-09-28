@@ -178,7 +178,7 @@ const Header = () => {
                 Salons
               </NavLink>
               <NavLink
-                to="/exposants"
+                to="/nouveautes"
                 className={({ isActive }) => mobileNavLinkClass(isActive)}
                 onClick={() => setIsMenuOpen(false)}
               >
