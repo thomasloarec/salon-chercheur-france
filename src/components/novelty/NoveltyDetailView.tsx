@@ -223,6 +223,8 @@ export interface NoveltyDetailViewNovelty {
   event_slug?: string | null;
   event_name?: string | null;
   event_date_debut?: string | null;
+  /** Date de fin du salon : sert à savoir si le salon est terminé (repli sur la date de début). */
+  event_date_fin?: string | null;
   event_ville?: string | null;
 }
 
@@ -329,9 +331,15 @@ export default function NoveltyDetailView({
           ? 'J-1'
           : `J-${daysUntil}`;
 
-  const isPastEvent = novelty.event_date_debut
-    ? new Date(novelty.event_date_debut).getTime() < new Date().setHours(0, 0, 0, 0)
-    : false;
+  // Salon terminé = date de FIN passée. Un salon en cours garde ses actions (rendez-vous,
+  // stand à voir). Date civile lue en heure locale (new Date('AAAA-MM-JJ') serait en UTC).
+  const isPastEvent = (() => {
+    const last = novelty.event_date_fin || novelty.event_date_debut;
+    if (!last) return false;
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(last);
+    const end = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(last);
+    return end.getTime() < new Date().setHours(0, 0, 0, 0);
+  })();
 
   const hasBrochure = !!(novelty.doc_url || novelty.resource_url);
 
