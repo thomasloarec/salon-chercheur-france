@@ -23,6 +23,7 @@ import type { NoveltyWatchRow } from "@/hooks/useNoveltiesWatch";
  *
  * Actions : « Découvrir » (fiche détail). « Enregistrer » n'apparaît que si la page
  * fournit onToggleSave (branché sur le like existant au run F1.3).
+ * Run F1.3 : badge « Nouveau » (isNew) et signal d'ouverture de fiche (onOpen, mesure).
  * La provenance (exposant ou Lotexpo) n'est jamais affichée au public.
  */
 
@@ -37,6 +38,10 @@ interface NoveltyCardV2Props {
   onToggleSave?: (novelty: NoveltyWatchRow) => void;
   saved?: boolean;
   savePending?: boolean;
+  /** Publiée depuis la dernière visite du visiteur sur la page. */
+  isNew?: boolean;
+  /** Appelé à l'ouverture de la fiche (mesure). */
+  onOpen?: (novelty: NoveltyWatchRow) => void;
   className?: string;
 }
 
@@ -59,6 +64,8 @@ export default function NoveltyCardV2({
   onToggleSave,
   saved = false,
   savePending = false,
+  isNew = false,
+  onOpen,
   className,
 }: NoveltyCardV2Props) {
   const [imageFailed, setImageFailed] = useState(false);
@@ -79,6 +86,7 @@ export default function NoveltyCardV2({
     imageFailed ||
     novelty.display_mode === "typographic" ||
     (novelty.display_mode !== "photo" && imageTooSmall);
+  const handleOpen = () => onOpen?.(novelty);
 
   return (
     <article
@@ -87,8 +95,14 @@ export default function NoveltyCardV2({
         className,
       )}
     >
+      {isNew && (
+        <span className="absolute right-3 top-3 z-10 rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground shadow-sm">
+          Nouveau
+        </span>
+      )}
+
       {/* ------------------------------ Média 4:5 ------------------------------ */}
-      <Link to={href} tabIndex={-1} aria-hidden className="block">
+      <Link to={href} tabIndex={-1} aria-hidden className="block" onClick={handleOpen}>
         {typographic ? (
           <div className="relative aspect-[4/5] overflow-hidden bg-surface-inverse text-inverse">
             <div
@@ -141,7 +155,7 @@ export default function NoveltyCardV2({
               : "mt-1.5 line-clamp-3 text-base font-semibold leading-snug text-foreground"
           }
         >
-          <Link to={href} tabIndex={-1} className="transition-colors hover:text-primary">
+          <Link to={href} tabIndex={-1} className="transition-colors hover:text-primary" onClick={handleOpen}>
             {novelty.title}
           </Link>
         </h3>
@@ -181,7 +195,7 @@ export default function NoveltyCardV2({
 
         <div className="mt-auto flex gap-2 pt-4">
           <Button asChild size="sm" className="flex-1 gap-1.5">
-            <Link to={href} aria-label={`Découvrir : ${novelty.title}`}>
+            <Link to={href} aria-label={`Découvrir : ${novelty.title}`} onClick={handleOpen}>
               Découvrir
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
@@ -191,7 +205,7 @@ export default function NoveltyCardV2({
               type="button"
               size="sm"
               variant="outline"
-              className="gap-1.5"
+              className={cn("gap-1.5", saved && "border-primary/50 text-primary hover:text-primary")}
               aria-pressed={saved}
               disabled={savePending}
               onClick={() => onToggleSave(novelty)}
