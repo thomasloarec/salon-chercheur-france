@@ -112,10 +112,13 @@ async function fetchNoveltiesWatch({ filters }: FetchOpts): Promise<NoveltyWatch
   const rows = (data ?? []).filter((row: any) => {
     if (!row.exhibitors || !row.events) return false;
 
-    // Salons à venir uniquement (date_debut >= today)
+    // Salons en cours ou à venir : on garde la nouveauté tant que le salon
+    // n'est pas terminé (date_fin >= today). Repli sur date_debut si date_fin manque.
     const dateDebut = row.events.date_debut ? new Date(row.events.date_debut) : null;
     if (!dateDebut || isNaN(dateDebut.getTime())) return false;
-    if (dateDebut < today) return false;
+    const dateFinRaw = row.events.date_fin ? new Date(row.events.date_fin) : null;
+    const dateFin = dateFinRaw && !isNaN(dateFinRaw.getTime()) ? dateFinRaw : dateDebut;
+    if (dateFin < today) return false;
 
     // Horizon temporel
     if (horizon) {
