@@ -74,17 +74,23 @@ export function useExhibitorAdmin(exhibitorId?: string) {
       // Get stats
       const { data: novelties, error: noveltiesError } = await supabase
         .from('novelties')
-        .select(`
-          id,
-          novelty_likes (count)
-        `)
+        .select('id')
         .eq('exhibitor_id', exhibitorId)
         .eq('status', 'published');
 
       if (noveltiesError) throw noveltiesError;
 
+      // Enregistrements : totaux via fonction sécurisée (lot B6). Corrige aussi l'ancien calcul,
+      // qui comptait 1 par nouveauté quelle que soit la valeur réelle.
+      let totalLikes = 0;
+      const noveltyIds = (novelties ?? []).map((n) => n.id);
+      if (noveltyIds.length > 0) {
+        const { data: likesData } = await (supabase as any).rpc('get_novelty_likes_counts', { p_novelty_ids: noveltyIds });
+        totalLikes = ((likesData || []) as { likes_count: number }[]).reduce((sum, row) => sum + (row.likes_count || 0), 0);
+      }
+
       const stats: ExhibitorStats = {
-        total_likes: novelties.reduce((sum, n) => sum + (n.novelty_likes?.length || 0), 0),
+        total_likes: totalLikes,
         total_downloads: leads.filter(l => l.lead_type === 'resource_download').length,
         total_meetings: leads.filter(l => l.lead_type === 'meeting_request').length,
         novelties_count: novelties.length,

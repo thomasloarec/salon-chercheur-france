@@ -111,17 +111,15 @@ export const useNoveltyLikesCount = (noveltyId: string) => {
   return useQuery({
     queryKey: ['novelty-likes-count', noveltyId],
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from('novelty_likes')
-        .select('*', { count: 'exact', head: true })
-        .eq('novelty_id', noveltyId);
+      // Total via fonction sécurisée (lot B6 : novelty_likes n'est plus lisible publiquement).
+      const { data, error } = await supabase.rpc('get_novelty_likes_count', { novelty_uuid: noveltyId });
 
       if (error) {
         console.error('Error fetching likes count:', error);
         return 0;
       }
 
-      return count || 0;
+      return typeof data === 'number' ? data : 0;
     },
     enabled: !!noveltyId,
     staleTime: 30_000,
