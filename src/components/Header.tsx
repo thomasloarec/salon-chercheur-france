@@ -21,7 +21,7 @@ const FEATURE_ITEMS = [
   { to: '/recherche-ia', label: 'Recherche IA', icon: Sparkles, description: 'Trouvez le bon salon avec l’IA' },
   { to: '/radar-crm', label: 'Radar CRM', icon: Radar, description: 'Suivez vos comptes sur les salons' },
   { to: '/directeur-commercial', label: 'Directeurs commerciaux', icon: Target, description: 'Testez la prospection salon sans importer vos données' },
-  { to: '/nouveautes', label: 'Nouveautés', icon: Calendar, description: 'Les dernières innovations exposées' },
+  { to: '/exposants', label: 'Exposants', icon: Users, description: 'Les entreprises présentes sur les salons' },
 ];
 
 const Header = () => {
@@ -95,11 +95,11 @@ const Header = () => {
               <span>Salons</span>
             </NavLink>
             <NavLink
-              to="/exposants"
+              to="/nouveautes"
               className={({ isActive }) => navLinkClass(isActive)}
             >
-              <Users className="h-4 w-4" />
-              <span>Exposants</span>
+              <Lightbulb className="h-4 w-4" />
+              <span>Avant-première</span>
             </NavLink>
             {session && isAdmin && (
               <NavLink
@@ -182,7 +182,7 @@ const Header = () => {
                 className={({ isActive }) => mobileNavLinkClass(isActive)}
                 onClick={() => setIsMenuOpen(false)}
               >
-                Exposants
+                Avant-première
               </NavLink>
               {session && isAdmin && (
                 <NavLink

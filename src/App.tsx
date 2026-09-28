@@ -153,7 +153,7 @@ function App() {
               <Route path="/organisateurs" element={<Organisateurs />} />
               <Route path="/events/:slug" element={<EventPage />} />
               <Route path="/events/:slug/gerer" element={<OrganizerSalonPage />} />
-            <Route path="/nouveautes" element={<Nouveautes />} />
+            <Route path="/nouveautes" element={<NouveautesV2 />} />
             <Route path="/nouveautes-apercu" element={<NouveautesV2 preview />} />
             <Route path="/nouveautes/:slug" element={<NoveltyDetail />} />
             <Route path="/exposants" element={<Exposants />} />
