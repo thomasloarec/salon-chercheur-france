@@ -7468,6 +7468,52 @@ export type Database = {
           },
         ]
       }
+      novelty_spotlights: {
+        Row: {
+          created_at: string
+          ends_on: string
+          id: string
+          novelty_id: string
+          starts_on: string
+        }
+        Insert: {
+          created_at?: string
+          ends_on: string
+          id?: string
+          novelty_id: string
+          starts_on: string
+        }
+        Update: {
+          created_at?: string
+          ends_on?: string
+          id?: string
+          novelty_id?: string
+          starts_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "novelty_spotlights_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "novelties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_spotlights_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "public_novelties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_spotlights_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: false
+            referencedRelation: "v_novelty_visit_signals"
+            referencedColumns: ["novelty_id"]
+          },
+        ]
+      }
       novelty_stats: {
         Row: {
           novelty_id: string
