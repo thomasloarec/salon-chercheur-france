@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { ArrowDown, ArrowUpRight, CalendarCheck, Search, X } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, CalendarCheck, Search, X } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import NoveltyCardV2 from "@/components/novelty/NoveltyCardV2";
+import NoveltyFeaturedCard from "@/components/novelty/NoveltyFeaturedCard";
+import ExhibitorPublishBand from "@/components/novelty/ExhibitorPublishBand";
 import { useNoveltiesWatch, type NoveltyWatchRow } from "@/hooks/useNoveltiesWatch";
 import { CANONICAL_SECTORS } from "@/lib/noveltiesWatchOptions";
 import { useSavedNovelties } from "@/hooks/useSavedNovelties";
+import { pickFeaturedNovelty, useActiveSpotlights } from "@/hooks/useFeaturedNovelty";
 import { trackEvent } from "@/lib/consent/gtag";
 import { useToast } from "@/hooks/use-toast";
 
@@ -21,6 +24,8 @@ import { useToast } from "@/hooks/use-toast";
  * Run F1.3 : « Enregistrer » (like existant) avec reprise après connexion via ?enregistrer=<id>,
  * lien « Mon agenda » avec compteur, « Nouveau depuis votre dernière visite », événements Google Analytics
  * (trackEvent : envoyés seulement si le visiteur a accepté les cookies de mesure).
+ * Run F1.4 : nouveauté « À la une » dans l'en-tête (choix admin, sinon repli automatique ; jamais
+ * répétée plus bas), module exposant en bas de page, archives des salons terminés (?archives=1).
  */
 
 type Period = "all" | "week" | "month" | "later";
@@ -113,7 +118,9 @@ function gaNoveltyParams(n: NoveltyWatchRow): Record<string, string> {
 interface CardActions {
   savedIds: Set<string>;
   savePending: boolean;
-  onToggleSave: (n: NoveltyWatchRow) => void;
+  /** Absent dans les archives : on n'enregistre pas une nouveauté d'un salon terminé. */
+  onToggleSave?: (n: NoveltyWatchRow) => void;
+  archived: boolean;
   isNew: (n: NoveltyWatchRow) => boolean;
   onOpen: (n: NoveltyWatchRow) => void;
   onPublishClick: (source: string) => void;
@@ -133,14 +140,23 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
   const query = searchParams.get("q") ?? "";
   const sectorParam = searchParams.get("secteur");
   const periodParam = (searchParams.get("periode") as Period | null) ?? "all";
-  const period: Period = PERIOD_OPTIONS.some((p) => p.value === periodParam) ? periodParam : "all";
+  const archives = searchParams.get("archives") === "1";
+  const period: Period =
+    !archives && PERIOD_OPTIONS.some((p) => p.value === periodParam) ? periodParam : "all";
 
-  const { data: rows = [], isLoading, error, refetch, isFetching } = useNoveltiesWatch({
+  const { data: watchRows = [], isLoading, error, refetch, isFetching } = useNoveltiesWatch({
     sectors: [],
     type: null,
     horizon: null,
     region: null,
+    includePast: archives,
   });
+  // Archives : uniquement les salons terminés. Sinon : salons en cours ou à venir (le hook exclut le passé).
+  const rows = useMemo(
+    () => (archives ? watchRows.filter((r) => r.timing === "past") : watchRows),
+    [watchRows, archives],
+  );
+  const { data: spotlights = [] } = useActiveSpotlights(!archives);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -253,8 +269,9 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
   const cardActions: CardActions = {
     savedIds,
     savePending: isPending,
-    onToggleSave,
-    isNew,
+    onToggleSave: archives ? undefined : onToggleSave,
+    archived: archives,
+    isNew: (n: NoveltyWatchRow) => !archives && isNew(n),
     onOpen,
     onPublishClick,
   };
@@ -263,6 +280,16 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
     const next = new URLSearchParams(searchParams);
     ["q", "secteur", "periode"].forEach((k) => next.delete(k));
     setSearchParams(next, { replace: true });
+  };
+
+  const setArchives = (on: boolean) => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("periode");
+    if (on) next.set("archives", "1");
+    else next.delete("archives");
+    setSearchParams(next);
+    if (on) trackEvent("novelties_archives_open", {});
+    document.getElementById("decouvrir")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const sectorLabel = CANONICAL_SECTORS.find((s) => s.value === sectorParam)?.label ?? null;
@@ -314,10 +341,18 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
     );
   }, [beforeSector, sectorLabel]);
 
+  // Nouveauté « À la une » : choix admin actif, sinon repli automatique (jamais en archives)
+  const featured = useMemo(
+    () => (archives ? null : pickFeaturedNovelty(rows, spotlights, sectorLabel)),
+    [archives, rows, spotlights, sectorLabel],
+  );
+  const featuredId = featured?.novelty.id ?? null;
+
   const groups = useMemo(() => {
     const map = new Map<string, SalonGroup>();
     for (const n of filtered) {
       if (!n.events) continue;
+      if (n.id === featuredId) continue; // déjà affichée dans l'en-tête
       const g = map.get(n.event_id);
       if (g) {
         g.items.push(n);
@@ -333,14 +368,22 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
         items: [n],
       });
     }
+    const direction = archives ? -1 : 1; // archives : du plus récent au plus ancien
     return Array.from(map.values()).sort(
       (a, b) =>
-        (a.start?.getTime() ?? Infinity) - (b.start?.getTime() ?? Infinity) ||
+        direction * ((a.start?.getTime() ?? Infinity) - (b.start?.getTime() ?? Infinity)) ||
         a.event.nom_event.localeCompare(b.event.nom_event, "fr"),
     );
-  }, [filtered]);
+  }, [filtered, featuredId, archives]);
 
-  const newCount = useMemo(() => filtered.filter(isNew).length, [filtered, isNew]);
+  const newCount = useMemo(
+    () => (archives ? 0 : filtered.filter(isNew).length),
+    [archives, filtered, isNew],
+  );
+  const upcomingSalonCount = useMemo(
+    () => (archives ? 0 : new Set(rows.map((r) => r.event_id)).size),
+    [archives, rows],
+  );
 
   return (
     <>
@@ -377,7 +420,11 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
                 "radial-gradient(80% 70% at 30% 40%, transparent, hsl(var(--surface-inverse) / 0.9))",
             }}
           />
-          <div className="relative mx-auto max-w-6xl px-4 py-14 md:px-6 md:py-20">
+          <div
+            className={`relative mx-auto grid max-w-6xl gap-10 px-4 py-14 md:px-6 md:py-20 ${
+              featured ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center" : ""
+            }`}
+          >
             <div className="max-w-2xl">
               <p className="mb-4 text-xs font-bold uppercase tracking-[0.15em] text-inverse-primary">
                 L’avant-première des salons
@@ -390,7 +437,7 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
                 Découvrez ce que les exposants préparent. Repérez ce qui vous intéresse.
                 Rencontrez-les sur leur stand.
               </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <Button asChild size="lg" className="gap-2">
                   <a href="#decouvrir">
                     Explorer les nouveautés
@@ -417,18 +464,48 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
                 ))}
               </ol>
             </div>
+            {featured && (
+              <div id={`nouveaute-${featured.novelty.id}`} className="scroll-mt-24">
+                <NoveltyFeaturedCard
+                  novelty={featured.novelty}
+                  saved={savedIds.has(featured.novelty.id)}
+                  savePending={isPending}
+                  onToggleSave={onToggleSave}
+                  onOpen={onOpen}
+                />
+              </div>
+            )}
           </div>
         </section>
 
         {/* ============================= DÉCOUVERTE ============================= */}
         <section id="decouvrir" className="scroll-mt-20 bg-muted/30">
           <div className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-14">
-            <p className="text-xs font-bold uppercase tracking-[0.15em] text-primary">
-              À découvrir sur les prochains salons
-            </p>
-            <h2 className="heading-display mt-2 text-3xl text-foreground md:text-4xl">
-              Qu’est-ce qui vous intéresse ?
-            </h2>
+            {archives ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setArchives(false)}
+                  className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                >
+                  <ArrowLeft className="h-4 w-4" aria-hidden />
+                  Revenir aux salons à venir
+                </button>
+                <p className="text-xs font-bold uppercase tracking-[0.15em] text-primary">Archives</p>
+                <h2 className="heading-display mt-2 text-3xl text-foreground md:text-4xl">
+                  Ce qui a été présenté sur les salons terminés
+                </h2>
+              </>
+            ) : (
+              <>
+                <p className="text-xs font-bold uppercase tracking-[0.15em] text-primary">
+                  À découvrir sur les prochains salons
+                </p>
+                <h2 className="heading-display mt-2 text-3xl text-foreground md:text-4xl">
+                  Qu’est-ce qui vous intéresse ?
+                </h2>
+              </>
+            )}
 
             {/* Recherche et période */}
             <div className="mt-6 flex flex-col gap-3 md:flex-row">
@@ -446,7 +523,7 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
                   className="h-12 w-full rounded-lg border border-input bg-background pl-11 pr-4 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </label>
-              <label className="md:w-64">
+              <label className={archives ? "hidden" : "md:w-64"}>
                 <span className="sr-only">Période</span>
                 <select
                   value={period}
@@ -558,7 +635,11 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
                   <p className="font-medium text-foreground">
                     {hasFilters
                       ? "Aucune nouveauté ne correspond à votre recherche."
-                      : "Aucune nouveauté n’est encore publiée pour les salons à venir."}
+                      : archives
+                        ? "Aucune nouveauté archivée pour le moment."
+                        : featured
+                          ? "Pas d’autre nouveauté pour les salons à venir pour l’instant."
+                          : "Aucune nouveauté n’est encore publiée pour les salons à venir."}
                   </p>
                   {hasFilters && (
                     <Button className="mt-4" variant="outline" onClick={resetFilters}>
@@ -570,8 +651,29 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
                 groups.map((g) => <SalonGroupBlock key={g.eventId} group={g} actions={cardActions} />)
               )}
             </div>
+
+            {!archives && !isLoading && !error && (
+              <div className="mt-14 border-t border-border pt-6">
+                <button
+                  type="button"
+                  onClick={() => setArchives(true)}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                >
+                  Voir les nouveautés des salons terminés
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                </button>
+              </div>
+            )}
           </div>
         </section>
+
+        {!archives && (
+          <ExhibitorPublishBand
+            noveltyCount={rows.length}
+            salonCount={upcomingSalonCount}
+            onPublishClick={onPublishClick}
+          />
+        )}
       </main>
 
       <Footer />
@@ -622,14 +724,16 @@ function SalonGroupBlock({ group, actions }: { group: SalonGroup; actions: CardA
             </p>
           </div>
         </div>
-        <Link
-          to={`/publier-nouveaute/exposant?event=${event.id}`}
-          onClick={() => actions.onPublishClick("salon")}
-          className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-        >
-          Vous exposez ici ? Publiez votre nouveauté
-          <ArrowUpRight className="h-4 w-4" aria-hidden />
-        </Link>
+        {!actions.archived && (
+          <Link
+            to={`/publier-nouveaute/exposant?event=${event.id}`}
+            onClick={() => actions.onPublishClick("salon")}
+            className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+          >
+            Vous exposez ici ? Publiez votre nouveauté
+            <ArrowUpRight className="h-4 w-4" aria-hidden />
+          </Link>
+        )}
       </div>
 
       <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3">
