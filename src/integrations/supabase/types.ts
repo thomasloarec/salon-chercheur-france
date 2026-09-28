@@ -6829,6 +6829,7 @@ export type Database = {
           created_by: string | null
           demo_slots: Json | null
           details: string | null
+          display_mode: string | null
           doc_url: string | null
           event_id: string
           exhibitor_id: string
@@ -6837,6 +6838,7 @@ export type Database = {
           is_premium: boolean | null
           is_test: boolean
           media_urls: string[] | null
+          origin: string
           pending_exhibitor_id: string | null
           reason_1: string | null
           reason_2: string | null
@@ -6857,6 +6859,7 @@ export type Database = {
           created_by?: string | null
           demo_slots?: Json | null
           details?: string | null
+          display_mode?: string | null
           doc_url?: string | null
           event_id: string
           exhibitor_id: string
@@ -6865,6 +6868,7 @@ export type Database = {
           is_premium?: boolean | null
           is_test?: boolean
           media_urls?: string[] | null
+          origin: string
           pending_exhibitor_id?: string | null
           reason_1?: string | null
           reason_2?: string | null
@@ -6885,6 +6889,7 @@ export type Database = {
           created_by?: string | null
           demo_slots?: Json | null
           details?: string | null
+          display_mode?: string | null
           doc_url?: string | null
           event_id?: string
           exhibitor_id?: string
@@ -6893,6 +6898,7 @@ export type Database = {
           is_premium?: boolean | null
           is_test?: boolean
           media_urls?: string[] | null
+          origin?: string
           pending_exhibitor_id?: string | null
           reason_1?: string | null
           reason_2?: string | null
