@@ -12,6 +12,7 @@ interface LeadFormProps {
   onClose: () => void;
   noveltyId: string;
   leadType: 'brochure_download' | 'meeting_request';
+  /** Ignoré depuis le lot B6-4 : le téléchargement passe par le lien signé renvoyé par leads-create. */
   brochureUrl?: string;
   onSuccess?: () => void;
 }
@@ -21,7 +22,6 @@ export default function LeadForm({
   onClose, 
   noveltyId, 
   leadType, 
-  brochureUrl,
   onSuccess 
 }: LeadFormProps) {
   const [formData, setFormData] = useState({
@@ -40,22 +40,13 @@ export default function LeadForm({
     e.preventDefault();
     
     try {
-      const result = await createLead.mutateAsync({
+      // Brochure : le téléchargement est déclenché par useCreateLead avec le lien signé
+      // renvoyé par leads-create (lot B6-4), jamais avec l'adresse stockée de la nouveauté.
+      await createLead.mutateAsync({
         novelty_id: noveltyId,
         lead_type: leadType,
         ...formData
       });
-
-      // If brochure download, trigger download
-      if (leadType === 'brochure_download' && brochureUrl) {
-        const link = document.createElement('a');
-        link.href = brochureUrl;
-        link.download = brochureUrl.split('/').pop() || 'brochure.pdf';
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
 
       onSuccess?.();
       onClose();

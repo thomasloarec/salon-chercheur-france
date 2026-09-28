@@ -354,9 +354,37 @@ export default function AtelierNouveaute() {
   /* ---------------- Publication ---------------- */
 
   // Envoi d'un fichier ; mémorisé pour ne pas le renvoyer lors d'un « Réessayer ».
+  // Images : stockage public « novelties », adresse publique.
+  // Brochure (lot B6-4) : stockage privé « novelty-resources », chemin brochures/<id utilisateur>/….pdf ;
+  // elle n'est téléchargeable qu'après le formulaire, par lien signé temporaire.
   const uploadFile = async (file: File, folder: 'images' | 'brochures') => {
     const cached = uploadedUrlsRef.current.get(file);
     if (cached) return cached;
+    if (folder === 'brochures') {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id;
+      const base =
+        sanitizeFileName(file.name)
+          .replace(/\.pdf$/i, '')
+          .replace(/\.{2,}/g, '.')
+          .replace(/^[.-]+|[.-]+$/g, '')
+          .slice(0, 80) || 'brochure';
+      const brochurePath = `brochures/${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${base}.pdf`;
+      const { error: brochureError } = userId
+        ? await supabase.storage
+            .from('novelty-resources')
+            .upload(brochurePath, file, { contentType: 'application/pdf' })
+        : { error: new Error('Session introuvable') };
+      if (brochureError) {
+        throw new PublishFlowError(
+          "L'envoi de la brochure a échoué",
+          'La connexion a peut-être été interrompue. Vérifiez votre réseau puis réessayez.',
+          true,
+        );
+      }
+      uploadedUrlsRef.current.set(file, brochurePath);
+      return brochurePath;
+    }
     const filePath = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${sanitizeFileName(file.name)}`;
     const { error } = await supabase.storage.from('novelties').upload(filePath, file);
     if (error) {
