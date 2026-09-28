@@ -1,7 +1,7 @@
-import { useMemo } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { ArrowDown, ArrowUpRight, Search, X } from "lucide-react";
+import { ArrowDown, ArrowUpRight, CalendarCheck, Search, X } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import NoveltyCardV2 from "@/components/novelty/NoveltyCardV2";
 import { useNoveltiesWatch, type NoveltyWatchRow } from "@/hooks/useNoveltiesWatch";
 import { CANONICAL_SECTORS } from "@/lib/noveltiesWatchOptions";
+import { useSavedNovelties } from "@/hooks/useSavedNovelties";
+import { trackEvent } from "@/lib/consent/gtag";
+import { useToast } from "@/hooks/use-toast";
 
 /**
  * Refonte de la page Nouveautés, run F1.1 : structure, recherche, filtres et groupes par salon.
  * Accessible pour recette sur /nouveautes-apercu (noindex). La page publique /nouveautes
  * reste l'ancienne tant que la bascule (F1.4) n'est pas faite.
  * Run F1.2 : cartes NoveltyCardV2 (4:5, repli composition texte) ; défilement horizontal sur téléphone.
+ * Run F1.3 : « Enregistrer » (like existant) avec reprise après connexion via ?enregistrer=<id>,
+ * lien « Mon agenda » avec compteur, « Nouveau depuis votre dernière visite », événements Google Analytics
+ * (trackEvent : envoyés seulement si le visiteur a accepté les cookies de mesure).
  */
 
 type Period = "all" | "week" | "month" | "later";
@@ -27,6 +33,29 @@ const PERIOD_OPTIONS: { value: Period; label: string }[] = [
 ];
 
 const GROUP_VISIBLE = 3;
+
+/** Date de la dernière visite : localStorage entre deux visites, sessionStorage pendant la visite. */
+const LAST_VISIT_KEY = "lotexpo:nouveautes:last-visit";
+const VISIT_BASELINE_KEY = "lotexpo:nouveautes:visit-baseline";
+
+/**
+ * Renvoie la date de la visite précédente (ou null à la toute première visite).
+ * La référence est figée pour toute la session de navigation : les badges « Nouveau »
+ * ne disparaissent pas quand on ouvre une fiche puis revient sur la page.
+ */
+function readVisitBaseline(): number | null {
+  try {
+    const inSession = sessionStorage.getItem(VISIT_BASELINE_KEY);
+    if (inSession !== null) return inSession ? Number(inSession) || null : null;
+    const previous = localStorage.getItem(LAST_VISIT_KEY);
+    const prevMs = previous ? Date.parse(previous) : NaN;
+    sessionStorage.setItem(VISIT_BASELINE_KEY, isNaN(prevMs) ? "" : String(prevMs));
+    localStorage.setItem(LAST_VISIT_KEY, new Date().toISOString());
+    return isNaN(prevMs) ? null : prevMs;
+  } catch {
+    return null;
+  }
+}
 
 /** Date civile « AAAA-MM-JJ » lue en heure locale. */
 function parseDay(value: string | null | undefined): Date | null {
@@ -72,6 +101,24 @@ function formatRange(start: Date | null, end: Date | null): string {
   return `du ${dayLabel(start)} ${month(start)} au ${dayLabel(end)} ${month(end)} ${end.getFullYear()}`;
 }
 
+/** Paramètres Google Analytics d'une nouveauté (valeurs limitées à 100 caractères par GA4). */
+function gaNoveltyParams(n: NoveltyWatchRow): Record<string, string> {
+  return {
+    novelty_id: n.id,
+    novelty_title: (n.title ?? "").slice(0, 100),
+    salon_name: (n.events?.nom_event ?? "").slice(0, 100),
+  };
+}
+
+interface CardActions {
+  savedIds: Set<string>;
+  savePending: boolean;
+  onToggleSave: (n: NoveltyWatchRow) => void;
+  isNew: (n: NoveltyWatchRow) => boolean;
+  onOpen: (n: NoveltyWatchRow) => void;
+  onPublishClick: (source: string) => void;
+}
+
 interface SalonGroup {
   eventId: string;
   event: NonNullable<NoveltyWatchRow["events"]>;
@@ -95,11 +142,121 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
     region: null,
   });
 
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { toast } = useToast();
+  const { user, authLoading, savedIds, savedLoaded, toggle, isPending } = useSavedNovelties();
+  const [visitBaseline] = useState<number | null>(() => readVisitBaseline());
+
   const setParam = (key: string, value: string | null) => {
     const next = new URLSearchParams(searchParams);
     if (value && value !== "all") next.set(key, value);
     else next.delete(key);
     setSearchParams(next, { replace: true });
+    if (key === "secteur" || key === "periode") {
+      trackEvent("novelties_filter", { filter_type: key, filter_value: value || "tous" });
+    }
+  };
+
+  const isNew = useCallback(
+    (n: NoveltyWatchRow) => {
+      if (!visitBaseline) return false;
+      const created = Date.parse(n.created_at);
+      return !isNaN(created) && created > visitBaseline;
+    },
+    [visitBaseline],
+  );
+
+  const onOpen = useCallback((n: NoveltyWatchRow) => {
+    trackEvent("novelty_open", gaNoveltyParams(n));
+  }, []);
+
+  const onPublishClick = useCallback((source: string) => {
+    trackEvent("publish_click", { source });
+  }, []);
+
+  /** Enregistre ou retire. Sans compte : connexion, puis retour ici avec ?enregistrer=<id>. */
+  const saveNovelty = useCallback(
+    async (n: NoveltyWatchRow, resumed: boolean) => {
+      try {
+        const { liked } = await toggle(n.id);
+        trackEvent(liked ? "novelty_save" : "novelty_unsave", {
+          ...gaNoveltyParams(n),
+          resumed_after_login: resumed ? "yes" : "no",
+        });
+        toast(
+          liked
+            ? {
+                title: "Nouveauté enregistrée",
+                description: "Retrouvez-la dans Mon agenda. Le salon est ajouté à vos favoris.",
+              }
+            : { title: "Retirée de Mon agenda" },
+        );
+      } catch (e: any) {
+        toast({
+          title: "Erreur",
+          description: e?.message || "Impossible d'enregistrer cette nouveauté.",
+          variant: "destructive",
+        });
+      }
+    },
+    [toggle, toast],
+  );
+
+  const onToggleSave = useCallback(
+    (n: NoveltyWatchRow) => {
+      if (!user) {
+        trackEvent("novelty_save_login_required", gaNoveltyParams(n));
+        const next = new URLSearchParams(searchParams);
+        next.set("enregistrer", n.id);
+        const back = `${location.pathname}?${next.toString()}`;
+        navigate(`/auth?redirect=${encodeURIComponent(back)}`);
+        return;
+      }
+      void saveNovelty(n, false);
+    },
+    [user, searchParams, location.pathname, navigate, saveNovelty],
+  );
+
+  // Reprise après connexion : on AJOUTE seulement si ce n'est pas déjà enregistré
+  // (le like est un interrupteur : sans ce contrôle, un double retour le retirerait).
+  const pendingSaveId = searchParams.get("enregistrer");
+  const resumeHandled = useRef(false);
+  useEffect(() => {
+    if (!pendingSaveId || resumeHandled.current || authLoading) return;
+    const clearParam = () => {
+      const next = new URLSearchParams(searchParams);
+      next.delete("enregistrer");
+      setSearchParams(next, { replace: true });
+    };
+    if (!user) {
+      // Connexion abandonnée : on nettoie l'adresse, sans rien enregistrer.
+      resumeHandled.current = true;
+      clearParam();
+      return;
+    }
+    if (!savedLoaded || isLoading) return;
+    resumeHandled.current = true;
+    clearParam();
+    const row = rows.find((r) => r.id === pendingSaveId);
+    if (!row) return;
+    window.setTimeout(() => {
+      document.getElementById(`nouveaute-${row.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 150);
+    if (savedIds.has(row.id)) {
+      toast({ title: "Déjà dans Mon agenda" });
+      return;
+    }
+    void saveNovelty(row, true);
+  }, [pendingSaveId, authLoading, user, savedLoaded, isLoading, rows, savedIds, searchParams, setSearchParams, saveNovelty, toast]);
+
+  const cardActions: CardActions = {
+    savedIds,
+    savePending: isPending,
+    onToggleSave,
+    isNew,
+    onOpen,
+    onPublishClick,
   };
 
   const resetFilters = () => {
@@ -183,6 +340,8 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
     );
   }, [filtered]);
 
+  const newCount = useMemo(() => filtered.filter(isNew).length, [filtered, isNew]);
+
   return (
     <>
       <Helmet>
@@ -244,7 +403,9 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
                   variant="outline"
                   className="border-inverse/40 bg-transparent text-inverse hover:bg-inverse/10 hover:text-inverse"
                 >
-                  <Link to="/publier-nouveaute">Publier gratuitement ma nouveauté</Link>
+                  <Link to="/publier-nouveaute" onClick={() => onPublishClick("en-tete")}>
+                    Publier gratuitement ma nouveauté
+                  </Link>
                 </Button>
               </div>
               <ol className="mt-10 flex flex-wrap gap-x-6 gap-y-2 border-t border-inverse/15 pt-5 text-sm text-inverse-muted">
@@ -341,17 +502,36 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
                 <p className="text-foreground" aria-live="polite">
                   {filtered.length} nouveauté{filtered.length > 1 ? "s" : ""} · {groups.length} salon
                   {groups.length > 1 ? "s" : ""}
+                  {newCount > 0 && (
+                    <span className="ml-2 font-medium text-primary">
+                      · {newCount} nouvelle{newCount > 1 ? "s" : ""} depuis votre dernière visite
+                    </span>
+                  )}
                 </p>
-                {hasFilters && (
-                  <button
-                    type="button"
-                    onClick={resetFilters}
-                    className="inline-flex items-center gap-1 text-primary hover:underline"
-                  >
-                    <X className="h-4 w-4" aria-hidden />
-                    Réinitialiser les filtres
-                  </button>
-                )}
+                <div className="flex flex-wrap items-center gap-4">
+                  {hasFilters && (
+                    <button
+                      type="button"
+                      onClick={resetFilters}
+                      className="inline-flex items-center gap-1 text-primary hover:underline"
+                    >
+                      <X className="h-4 w-4" aria-hidden />
+                      Réinitialiser les filtres
+                    </button>
+                  )}
+                  {user && (
+                    <Link
+                      to="/agenda"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 font-medium text-foreground hover:border-primary/40"
+                    >
+                      <CalendarCheck className="h-4 w-4 text-primary" aria-hidden />
+                      Mon agenda
+                      <span className="tabular-nums text-muted-foreground">
+                        {savedLoaded ? savedIds.size : "…"}
+                      </span>
+                    </Link>
+                  )}
+                </div>
               </div>
             )}
 
@@ -387,7 +567,7 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
                   )}
                 </div>
               ) : (
-                groups.map((g) => <SalonGroupBlock key={g.eventId} group={g} />)
+                groups.map((g) => <SalonGroupBlock key={g.eventId} group={g} actions={cardActions} />)
               )}
             </div>
           </div>
@@ -399,7 +579,7 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
   );
 }
 
-function SalonGroupBlock({ group }: { group: SalonGroup }) {
+function SalonGroupBlock({ group, actions }: { group: SalonGroup; actions: CardActions }) {
   const { event, start, end, running, items } = group;
   const visible = items.slice(0, GROUP_VISIBLE);
   const hasMore = items.length > GROUP_VISIBLE;
@@ -444,6 +624,7 @@ function SalonGroupBlock({ group }: { group: SalonGroup }) {
         </div>
         <Link
           to={`/publier-nouveaute/exposant?event=${event.id}`}
+          onClick={() => actions.onPublishClick("salon")}
           className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
         >
           Vous exposez ici ? Publiez votre nouveauté
@@ -453,8 +634,15 @@ function SalonGroupBlock({ group }: { group: SalonGroup }) {
 
       <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3">
         {visible.map((n) => (
-          <div key={n.id} className="w-[80%] shrink-0 snap-start sm:w-auto">
-            <NoveltyCardV2 novelty={n} />
+          <div key={n.id} id={`nouveaute-${n.id}`} className="w-[80%] shrink-0 scroll-mt-24 snap-start sm:w-auto">
+            <NoveltyCardV2
+              novelty={n}
+              saved={actions.savedIds.has(n.id)}
+              savePending={actions.savePending}
+              onToggleSave={actions.onToggleSave}
+              isNew={actions.isNew(n)}
+              onOpen={actions.onOpen}
+            />
           </div>
         ))}
       </div>
