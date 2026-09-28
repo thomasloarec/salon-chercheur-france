@@ -44,6 +44,64 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+/**
+ * Lot B6-4 : les brochures sont dans le stockage privé « novelty-resources », dossier brochures/.
+ * novelties.doc_url contient ce chemin (nouveau format) ou, pendant la transition, une ancienne
+ * adresse de stockage Supabase. La réponse ne renvoie jamais l'adresse stockée : seulement un lien
+ * signé temporaire (1 h) qui déclenche le téléchargement.
+ */
+const BROCHURE_BUCKET = 'novelty-resources';
+const BROCHURE_PREFIX = 'brochures/';
+const BROCHURE_LINK_TTL_SECONDS = 3600;
+
+function brochureStorageRef(docUrl: string): { bucket: string; path: string } | null {
+  const raw = String(docUrl ?? '').trim();
+  if (!raw) return null;
+  if (!/^https?:\/\//i.test(raw)) {
+    return { bucket: BROCHURE_BUCKET, path: raw.replace(/^\/+/, '') };
+  }
+  try {
+    const u = new URL(raw);
+    const m = u.pathname.match(/^\/storage\/v1\/object\/(?:public|sign|authenticated)\/([^/]+)\/(.+)$/);
+    if (!m) return null;
+    return { bucket: m[1], path: decodeURIComponent(m[2]) };
+  } catch {
+    return null;
+  }
+}
+
+/** Nom du fichier téléchargé, en ASCII : « Brochure-Titre-de-la-nouveaute.pdf ». */
+function brochureFileName(title: string | null | undefined): string {
+  const base = String(title ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+  return base ? `Brochure-${base}.pdf` : 'Brochure.pdf';
+}
+
+// deno-lint-ignore no-explicit-any
+async function createBrochureDownloadUrl(admin: any, docUrl: string, title: string | null | undefined): Promise<string | null> {
+  const ref = brochureStorageRef(docUrl);
+  const allowed = !!ref
+    && (ref.bucket === BROCHURE_BUCKET || ref.bucket === 'novelties')
+    && ref.path.startsWith(BROCHURE_PREFIX)
+    && !ref.path.includes('..');
+  if (!ref || !allowed) {
+    console.warn('[brochure_path_refused]', { bucket: ref?.bucket ?? null, path: ref?.path ?? null });
+    return null;
+  }
+  const { data, error } = await admin.storage
+    .from(ref.bucket)
+    .createSignedUrl(ref.path, BROCHURE_LINK_TTL_SECONDS, { download: brochureFileName(title) });
+  if (error || !data?.signedUrl) {
+    console.error('[brochure_signed_url_error]', { bucket: ref.bucket, path: ref.path, error: error?.message ?? null });
+    return null;
+  }
+  return data.signedUrl;
+}
+
 type ContactFields = {
   first_name: string;
   last_name: string;
@@ -522,7 +580,7 @@ serve(async (req) => {
     // Verify novelty exists and get brochure URL
     const { data: novelty, error: noveltyError } = await admin
       .from('novelties')
-      .select('id, title, doc_url, exhibitor_id, event_id')
+      .select('id, title, status, doc_url, exhibitor_id, event_id')
       .eq('id', data.novelty_id)
       .single();
 
@@ -539,6 +597,25 @@ serve(async (req) => {
         JSON.stringify({ error: "No brochure available for this novelty" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Lot B6-4 : brochure servie uniquement pour une nouveauté publiée, par lien signé
+    // temporaire préparé avant tout enregistrement (pas de contact créé sans brochure).
+    let brochureDownloadUrl: string | null = null;
+    if (data.lead_type === 'brochure_download') {
+      if (novelty.status !== 'published') {
+        return new Response(
+          JSON.stringify({ error: "Novelty not found" }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      brochureDownloadUrl = await createBrochureDownloadUrl(admin, novelty.doc_url, novelty.title);
+      if (!brochureDownloadUrl) {
+        return new Response(
+          JSON.stringify({ error: "Brochure temporarily unavailable" }),
+          { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // Deduplication check: case-insensitive email matching
@@ -573,8 +650,8 @@ serve(async (req) => {
         message: 'Lead already exists'
       };
 
-      if (data.lead_type === 'brochure_download' && novelty.doc_url) {
-        duplicateResponse.download_url = novelty.doc_url;
+      if (data.lead_type === 'brochure_download' && brochureDownloadUrl) {
+        duplicateResponse.download_url = brochureDownloadUrl;
       }
 
       return new Response(
@@ -643,8 +720,8 @@ serve(async (req) => {
       message: data.lead_type === 'brochure_download' ? 'Brochure download recorded' : 'Meeting request created'
     };
 
-    if (data.lead_type === 'brochure_download' && novelty.doc_url) {
-      response.download_url = novelty.doc_url;
+    if (data.lead_type === 'brochure_download' && brochureDownloadUrl) {
+      response.download_url = brochureDownloadUrl;
     }
 
     // Fire notifications + email — ONLY on real creation (not duplicate).

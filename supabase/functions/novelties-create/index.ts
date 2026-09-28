@@ -13,7 +13,9 @@ const schema = z.object({
   novelty_type: z.string().min(1),
   reason: z.string().min(10).max(1000),
   images: z.array(z.string().url()).min(1).max(3),
-  brochure_pdf: url.optional().nullable(),
+  // Lot B6-4 : chemin dans le stockage privé « novelty-resources » (brochures/<id utilisateur>/…).
+  // Une adresse complète reste acceptée pendant la transition.
+  brochure_pdf: z.union([url, z.string().regex(/^brochures\/[A-Za-z0-9._\/-]+\.pdf$/i)]).optional().nullable(),
   stand_info: z.string().max(200).optional().nullable(),
   pending_exhibitor_id: uuid.optional().nullable(),
   reason_2: z.string().max(1000).optional().nullable(),
@@ -100,6 +102,19 @@ serve(async (req) => {
       );
     }
     const data = parsed.data;
+
+    // Lot B6-4 : une brochure déposée dans le stockage privé doit l'avoir été par l'auteur de la demande.
+    if (
+      data.brochure_pdf
+      && !/^https?:\/\//i.test(data.brochure_pdf)
+      && (!data.brochure_pdf.startsWith(`brochures/${authenticatedUserId}/`) || data.brochure_pdf.includes('..'))
+    ) {
+      console.error("[novelties-create] Brochure path refused:", data.brochure_pdf);
+      return new Response(
+        JSON.stringify({ error: "Invalid brochure path", code: "BROCHURE_PATH_INVALID" }),
+        { status: 400, headers: corsHeaders() }
+      );
+    }
 
     // Validate novelty type
     const noveltyType = data.novelty_type.trim();
