@@ -65,22 +65,21 @@ export const EditNoveltyDialog = ({ novelty, open, onOpenChange }: EditNoveltyDi
     return urls;
   };
 
+  // Lot B6-4 : brochure dans le stockage privé ; doc_url reçoit le chemin (brochures/<id utilisateur>/….pdf).
+  // Les visiteurs la téléchargent via le formulaire, par lien signé temporaire (leads-create).
   const uploadPDF = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${crypto.randomUUID()}.${fileExt}`;
-    const filePath = `${novelty.exhibitor_id}/${fileName}`;
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData?.session?.user?.id;
+    if (!userId) throw new Error('Session introuvable');
+    const filePath = `brochures/${userId}/${Date.now()}-${crypto.randomUUID()}.pdf`;
 
     const { error: uploadError } = await supabase.storage
       .from('novelty-resources')
-      .upload(filePath, file);
+      .upload(filePath, file, { contentType: 'application/pdf' });
 
     if (uploadError) throw uploadError;
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('novelty-resources')
-      .getPublicUrl(filePath);
-
-    return publicUrl;
+    return filePath;
   };
 
   const handleUpdate = async () => {

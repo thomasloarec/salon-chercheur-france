@@ -116,13 +116,17 @@ export function useCreateLead() {
     },
     onSuccess: (data, variables) => {
       if (variables.lead_type === 'brochure_download') {
-        // Trigger download if URL provided
-        if (data.download_url) {
-          // Create a temporary link to trigger download
+        // Lot B6-4 : leads-create renvoie un lien signé temporaire (1 h) qui déclenche le
+        // téléchargement sans quitter la page. Toute autre adresse s'ouvre dans un nouvel onglet.
+        if (data?.download_url) {
+          const downloadUrl = String(data.download_url);
           const link = document.createElement('a');
-          link.href = data.download_url;
-          link.target = '_blank';
-          link.download = ''; // Browser will determine filename
+          link.href = downloadUrl;
+          if (!downloadUrl.includes('/storage/v1/object/sign/')) {
+            link.target = '_blank';
+            link.rel = 'noopener';
+          }
+          link.download = ''; // Nom fixé par le lien signé
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
