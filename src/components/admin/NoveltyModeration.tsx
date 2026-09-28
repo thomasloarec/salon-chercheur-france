@@ -100,7 +100,7 @@ export default function NoveltyModeration() {
         .select(`
           id, title, type, status, created_at, created_by, media_urls, doc_url,
           exhibitor_id, event_id, reason_1, reason_2, reason_3,
-          stand_info, audience_tags, availability, is_premium, updated_at,
+          stand_info, audience_tags, availability, is_premium, updated_at, origin, display_mode,
           exhibitors!novelties_exhibitor_id_fkey ( id, name, slug, logo_url ),
           events!inner ( id, nom_event, slug, ville )
         `)
@@ -165,6 +165,32 @@ export default function NoveltyModeration() {
 
   const handlePublish = (id: string) => updateStatusMutation.mutate({ id, status: 'published' });
   const handleReject = (id: string) => updateStatusMutation.mutate({ id, status: 'rejected' });
+
+  // Mode d'affichage du média dans les cartes publiques (refonte Nouveautés, lot B2).
+  // NULL = automatique. On relit la ligne modifiée : si aucune ligne ne revient,
+  // l'écriture a été bloquée en silence (droits) et on le signale au lieu d'un faux succès.
+  const updateDisplayModeMutation = useMutation({
+    mutationFn: async ({ id, mode }: { id: string; mode: 'photo' | 'typographic' | null }) => {
+      const { data, error } = await supabase
+        .from('novelties')
+        .update({ display_mode: mode } as any)
+        .eq('id', id)
+        .select('id');
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('Mise à jour refusée : aucune ligne modifiée (droits insuffisants ?).');
+      }
+      return data[0];
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-novelties'] });
+      queryClient.invalidateQueries({ queryKey: ['novelties:watch'] });
+      toast({ title: 'Affichage mis à jour' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Erreur', description: error?.message || 'Impossible de modifier l’affichage.', variant: 'destructive' });
+    },
+  });
 
   const handleGrantPremium = (exhibitorId: string, eventId: string) => {
     grantPremium({ exhibitor_id: exhibitorId, event_id: eventId, max_novelties: 5, leads_unlimited: true, csv_export: true });
@@ -299,7 +325,50 @@ export default function NoveltyModeration() {
                     {getStatusBadge(novelty.status)}
                     <Badge variant="outline">{novelty.type}</Badge>
                     <PremiumStatusBadge exhibitorId={novelty.exhibitor_id} eventId={novelty.event_id} />
+                    {(novelty as any).origin === 'exhibitor' && (
+                      <Badge variant="outline">Publiée par l’exposant</Badge>
+                    )}
+                    {(novelty as any).origin === 'lotexpo' && (
+                      <Badge variant="outline">Préparée par Lotexpo</Badge>
+                    )}
                   </div>
+
+                  {/* Affichage dans les cartes publiques (refonte Nouveautés, lot B2) */}
+                  <Card>
+                    <CardContent className="p-4 space-y-2">
+                      <h4 className="font-semibold text-sm">Affichage dans les cartes</h4>
+                      <p className="text-xs text-muted-foreground">
+                        « Composition texte » pour un logo seul, une image trop petite ou illisible.
+                        « Automatique » : photo si une image existe, sinon composition texte.
+                      </p>
+                      <div className="grid grid-cols-3 gap-1.5" role="group" aria-label="Mode d’affichage du média">
+                        {([
+                          { value: null, label: 'Automatique' },
+                          { value: 'photo', label: 'Photo' },
+                          { value: 'typographic', label: 'Composition texte' },
+                        ] as const).map((opt) => {
+                          const current = ((novelty as any).display_mode ?? null) as 'photo' | 'typographic' | null;
+                          const active = current === opt.value;
+                          return (
+                            <Button
+                              key={opt.label}
+                              type="button"
+                              size="sm"
+                              variant={active ? 'default' : 'outline'}
+                              aria-pressed={active}
+                              disabled={updateDisplayModeMutation.isPending}
+                              onClick={() => {
+                                if (!active) updateDisplayModeMutation.mutate({ id: novelty.id, mode: opt.value });
+                              }}
+                              className="h-auto whitespace-normal py-2 text-xs"
+                            >
+                              {opt.label}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
 
                   {/* Event info */}
                   <Card>
