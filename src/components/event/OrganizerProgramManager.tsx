@@ -76,6 +76,7 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   const grouped = useMemo(() => {
     const map = new Map<string, ProgramSession[]>();
@@ -86,6 +87,12 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
     }
     return [...map.entries()];
   }, [sessions]);
+  const effectiveDay = selectedDay && (selectedDay === '__all__' || grouped.some(([day]) => day === selectedDay))
+    ? selectedDay
+    : grouped[0]?.[0];
+  const visibleGroups = effectiveDay === '__all__'
+    ? grouped
+    : grouped.filter(([day]) => day === effectiveDay);
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ['event-program-admin', eventId] });
@@ -297,13 +304,44 @@ const OrganizerProgramManager: React.FC<{ eventId: string }> = ({ eventId }) => 
         </div>
       )}
 
+      {grouped.length > 1 && (
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrer le programme par jour">
+          <Button
+            type="button"
+            variant={effectiveDay === '__all__' ? 'default' : 'outline'}
+            size="sm"
+            className="h-auto rounded-full"
+            aria-pressed={effectiveDay === '__all__'}
+            onClick={() => setSelectedDay('__all__')}
+          >
+            Tout afficher
+          </Button>
+          {grouped.map(([day, daySessions], i) => (
+            <Button
+              key={day}
+              type="button"
+              variant={effectiveDay === day ? 'default' : 'outline'}
+              size="sm"
+              className="h-auto rounded-full py-1.5"
+              aria-pressed={effectiveDay === day}
+              onClick={() => setSelectedDay(day)}
+            >
+              <span className="flex flex-col items-start leading-tight">
+                <span className="text-xs font-normal opacity-80">{formatDay(day === '__none__' ? null : day)}</span>
+                <span>{day === '__none__' ? 'Sans date' : `Jour ${i + 1}`} · {daySessions.length}</span>
+              </span>
+            </Button>
+          ))}
+        </div>
+      )}
+
       {total === 0 ? (
         <Card className="p-8 text-center text-sm text-muted-foreground">
           Construisez le programme de votre événement en ajoutant vos sessions une par une.
         </Card>
       ) : (
         <div className="space-y-8">
-          {grouped.map(([day, daySessions]) => (
+          {visibleGroups.map(([day, daySessions]) => (
             <div key={day}>
               <h3 className="heading-display text-lg mb-3">
                 {formatDay(day === '__none__' ? null : day)}
