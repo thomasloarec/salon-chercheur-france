@@ -148,15 +148,13 @@ export const useInfiniteNovelties = (params: UseInfiniteNoveltiesParams = {}) =>
       if (validData.length > 0) {
         const noveltyIds = validData.map(n => n.id);
         
-        // Fetch likes
-        const { data: likesData } = await supabase
-          .from('novelty_likes')
-          .select('novelty_id')
-          .in('novelty_id', noveltyIds);
-        
-        // Count likes per novelty
-        likesCountMap = (likesData || []).reduce((acc, like) => {
-          acc[like.novelty_id] = (acc[like.novelty_id] || 0) + 1;
+        // Compteurs d'enregistrements via une fonction sécurisée (lot B6 : la table
+        // novelty_likes n'est plus lisible publiquement, on ne récupère que des totaux).
+        const { data: likesData } = await (supabase as any).rpc('get_novelty_likes_counts', {
+          p_novelty_ids: noveltyIds,
+        });
+        likesCountMap = ((likesData || []) as { novelty_id: string; likes_count: number }[]).reduce((acc, row) => {
+          acc[row.novelty_id] = row.likes_count;
           return acc;
         }, {} as Record<string, number>);
 

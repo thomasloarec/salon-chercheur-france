@@ -62,8 +62,7 @@ export const useMyNovelties = (exhibitorId?: string) => {
           exhibitors!novelties_exhibitor_id_fkey ( id, name, slug, logo_url ),
           events!inner ( id, nom_event, slug, ville, date_debut, date_fin ),
           novelty_stats ( route_users_count, saves_count, reminders_count, popularity_score ),
-          leads ( id, lead_type ),
-          novelty_likes ( id )
+          leads ( id, lead_type )
         `);
 
       if (exhibitorId) {
@@ -80,12 +79,22 @@ export const useMyNovelties = (exhibitorId?: string) => {
       const { data, error } = await query;
 
       if (error) throw error;
-      
+
+      // Enregistrements : totaux via fonction sécurisée (lot B6 : novelty_likes n'est plus lisible publiquement).
+      const ids = (data ?? []).map((n: any) => n.id);
+      const likesMap: Record<string, number> = {};
+      if (ids.length > 0) {
+        const { data: likesData } = await (supabase as any).rpc('get_novelty_likes_counts', { p_novelty_ids: ids });
+        for (const row of (likesData || []) as { novelty_id: string; likes_count: number }[]) {
+          likesMap[row.novelty_id] = row.likes_count;
+        }
+      }
+
       // Calculate stats with leads
       return data?.map(novelty => ({
         ...novelty,
         stats: {
-          likes: novelty.novelty_likes?.length || 0,
+          likes: likesMap[novelty.id] || 0,
           brochure_leads: novelty.leads?.filter((l: any) => l.lead_type === 'resource_download').length || 0,
           meeting_leads: novelty.leads?.filter((l: any) => l.lead_type === 'meeting_request').length || 0,
           total_leads: novelty.leads?.length || 0,
