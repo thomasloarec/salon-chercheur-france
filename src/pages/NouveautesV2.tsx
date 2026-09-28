@@ -6,7 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import NoveltyMiniCard from "@/components/novelty/NoveltyMiniCard";
+import NoveltyCardV2 from "@/components/novelty/NoveltyCardV2";
 import { useNoveltiesWatch, type NoveltyWatchRow } from "@/hooks/useNoveltiesWatch";
 import { CANONICAL_SECTORS } from "@/lib/noveltiesWatchOptions";
 
@@ -14,7 +14,7 @@ import { CANONICAL_SECTORS } from "@/lib/noveltiesWatchOptions";
  * Refonte de la page Nouveautés, run F1.1 : structure, recherche, filtres et groupes par salon.
  * Accessible pour recette sur /nouveautes-apercu (noindex). La page publique /nouveautes
  * reste l'ancienne tant que la bascule (F1.4) n'est pas faite.
- * Les cartes sont provisoirement les NoveltyMiniCard existantes (remplacées au run F1.2).
+ * Run F1.2 : cartes NoveltyCardV2 (4:5, repli composition texte) ; défilement horizontal sur téléphone.
  */
 
 type Period = "all" | "week" | "month" | "later";
@@ -451,9 +451,11 @@ function SalonGroupBlock({ group }: { group: SalonGroup }) {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3">
         {visible.map((n) => (
-          <NoveltyMiniCard key={n.id} novelty={n} hideEvent className="h-full" />
+          <div key={n.id} className="w-[80%] shrink-0 snap-start sm:w-auto">
+            <NoveltyCardV2 novelty={n} />
+          </div>
         ))}
       </div>
 
