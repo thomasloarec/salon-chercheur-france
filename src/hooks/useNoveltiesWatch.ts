@@ -44,6 +44,8 @@ export interface NoveltyWatchRow {
     nom_event: string;
     slug: string;
     ville: string | null;
+    /** Lieu du salon (ex. « Paris Expo Porte de Versailles »), si connu. */
+    nom_lieu?: string | null;
     date_debut: string | null;
     date_fin: string | null;
     type_event: string | null;
@@ -162,7 +164,7 @@ async function fetchNoveltiesWatch({ filters }: FetchOpts): Promise<NoveltyWatch
       id, title, type, slug, reason_1, summary, audience_tags, origin, display_mode, is_test,
       media_urls, doc_url, created_at, event_id, exhibitor_id,
       events!inner (
-        id, slug, nom_event, date_debut, date_fin, type_event, secteur, visible, is_test, ville, code_postal
+        id, slug, nom_event, date_debut, date_fin, type_event, secteur, visible, is_test, ville, code_postal, nom_lieu
       ),
       exhibitors!novelties_exhibitor_id_fkey ( id, name, slug, logo_url, website )
     `)

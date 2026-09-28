@@ -14347,6 +14347,13 @@ export type Database = {
         Args: { novelty_uuid: string }
         Returns: number
       }
+      get_novelty_likes_counts: {
+        Args: { p_novelty_ids: string[] }
+        Returns: {
+          likes_count: number
+          novelty_id: string
+        }[]
+      }
       get_or_create_my_crm_notification_preferences: {
         Args: never
         Returns: {

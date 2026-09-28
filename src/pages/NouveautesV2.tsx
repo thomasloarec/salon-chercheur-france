@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, CalendarCheck, Search, X } from "lucide-react";
@@ -24,8 +24,10 @@ import { useToast } from "@/hooks/use-toast";
  * Run F1.3 : « Enregistrer » (like existant) avec reprise après connexion via ?enregistrer=<id>,
  * lien « Mon agenda » avec compteur, « Nouveau depuis votre dernière visite », événements Google Analytics
  * (trackEvent : envoyés seulement si le visiteur a accepté les cookies de mesure).
- * Run F1.4 : nouveauté « À la une » dans l'en-tête (choix admin, sinon repli automatique ; jamais
- * répétée plus bas), module exposant en bas de page, archives des salons terminés (?archives=1).
+ * Run F1.4 : nouveauté « À la une » dans l'en-tête (choix admin, sinon repli automatique ; elle reste
+ * aussi dans le groupe de son salon, correctif C2), module exposant, archives (?archives=1).
+ * Correctif C2 : défilement doux vers les nouveautés ; dates de début et de fin du salon ;
+ * « Dernier jour » ; lieu et ville sous le nom du salon.
  */
 
 type Period = "all" | "week" | "month" | "later";
@@ -282,6 +284,17 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
     setSearchParams(next, { replace: true });
   };
 
+  /** « Explorer les nouveautés » : défilement doux (instantané si le visiteur réduit les animations). */
+  const scrollToDiscover = (e: MouseEvent<HTMLAnchorElement>) => {
+    const target = document.getElementById("decouvrir");
+    if (!target) return;
+    e.preventDefault();
+    const reduceMotion =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  };
+
   const setArchives = (on: boolean) => {
     const next = new URLSearchParams(searchParams);
     next.delete("periode");
@@ -346,13 +359,11 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
     () => (archives ? null : pickFeaturedNovelty(rows, spotlights, sectorLabel)),
     [archives, rows, spotlights, sectorLabel],
   );
-  const featuredId = featured?.novelty.id ?? null;
 
   const groups = useMemo(() => {
     const map = new Map<string, SalonGroup>();
     for (const n of filtered) {
       if (!n.events) continue;
-      if (n.id === featuredId) continue; // déjà affichée dans l'en-tête
       const g = map.get(n.event_id);
       if (g) {
         g.items.push(n);
@@ -374,7 +385,7 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
         direction * ((a.start?.getTime() ?? Infinity) - (b.start?.getTime() ?? Infinity)) ||
         a.event.nom_event.localeCompare(b.event.nom_event, "fr"),
     );
-  }, [filtered, featuredId, archives]);
+  }, [filtered, archives]);
 
   const newCount = useMemo(
     () => (archives ? 0 : filtered.filter(isNew).length),
@@ -439,7 +450,7 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <Button asChild size="lg" className="gap-2">
-                  <a href="#decouvrir">
+                  <a href="#decouvrir" onClick={scrollToDiscover}>
                     Explorer les nouveautés
                     <ArrowDown className="h-4 w-4" aria-hidden />
                   </a>
@@ -681,8 +692,32 @@ export default function NouveautesV2({ preview = false }: { preview?: boolean })
   );
 }
 
+/** Mois abrégé (« sept », « oct »), suivi de l'année sur deux chiffres si ce n'est pas l'année en cours. */
+function monthLabel(d: Date): string {
+  const m = d.toLocaleDateString("fr-FR", { month: "short" }).replace(".", "");
+  return d.getFullYear() === new Date().getFullYear() ? m : `${m} ${String(d.getFullYear()).slice(2)}`;
+}
+
+function DateTile({ d }: { d: Date }) {
+  return (
+    <span className="flex min-w-[2.5rem] flex-col items-center leading-none">
+      <span className="heading-display text-2xl text-foreground">{String(d.getDate()).padStart(2, "0")}</span>
+      <span className="mt-1 whitespace-nowrap text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {monthLabel(d)}
+      </span>
+    </span>
+  );
+}
+
+function sameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
 function SalonGroupBlock({ group, actions }: { group: SalonGroup; actions: CardActions }) {
   const { event, start, end, running, items } = group;
+  const multiDay = !!(start && end && !sameDay(start, end));
+  const lastDay = running && !!end && sameDay(end, new Date());
+  const place = [event.nom_lieu?.trim(), event.ville?.trim()].filter(Boolean).join(" · ");
   const visible = items.slice(0, GROUP_VISIBLE);
   const hasMore = items.length > GROUP_VISIBLE;
   const headingId = `salon-${group.eventId}`;
@@ -692,13 +727,19 @@ function SalonGroupBlock({ group, actions }: { group: SalonGroup; actions: CardA
       <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-4">
           {start && (
-            <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-lg border bg-background">
-              <span className="heading-display text-2xl leading-none text-foreground">
-                {String(start.getDate()).padStart(2, "0")}
-              </span>
-              <span className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {start.toLocaleDateString("fr-FR", { month: "short" }).replace(".", "")}
-              </span>
+            <div
+              className="flex h-16 shrink-0 items-center gap-1.5 rounded-lg border bg-background px-2.5"
+              role="img"
+              aria-label={formatRange(start, end)}
+              title={formatRange(start, end)}
+            >
+              <DateTile d={start} />
+              {multiDay && end && (
+                <>
+                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                  <DateTile d={end} />
+                </>
+              )}
             </div>
           )}
           <div className="min-w-0">
@@ -714,14 +755,11 @@ function SalonGroupBlock({ group, actions }: { group: SalonGroup; actions: CardA
               </h3>
               {running && (
                 <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-                  En cours
+                  {lastDay ? "Dernier jour" : "En cours"}
                 </span>
               )}
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {formatRange(start, end)}
-              {event.ville ? ` · ${event.ville}` : ""}
-            </p>
+            {place && <p className="mt-1 text-sm text-muted-foreground">{place}</p>}
           </div>
         </div>
         {!actions.archived && (
