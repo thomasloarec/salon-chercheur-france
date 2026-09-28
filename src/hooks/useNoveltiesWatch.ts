@@ -8,12 +8,18 @@ import { regionSlugFromPostal } from "@/lib/postalToRegion";
  *
  * Différences clés vs useNoveltiesList :
  * - Ne dédoublonne PAS par événement (toutes les nouveautés publiées sont retournées).
- * - Filtre uniquement sur les salons à venir (date_debut >= aujourd'hui).
- * - Supporte un horizon temporel 30 / 60 / 90 jours.
+ * - Par défaut : salons en cours ou à venir (date_fin >= aujourd'hui, repli sur date_debut).
+ *   Avec `includePast: true`, les salons terminés sont aussi renvoyés (archives).
+ * - Supporte un horizon temporel 30 / 60 / 90 jours (calculé sur date_debut).
  * - Trie par date d'événement la plus proche, puis date de publication.
+ * - Exclut explicitement les contenus de test, y compris pour un administrateur
+ *   (l'admin voit ainsi exactement ce que voit le public).
+ * - Résout le stand depuis `participation` (source unique), en UNE requête groupée.
  *
  * Réutilise la même structure de données que useNoveltiesList pour rester compatible.
  */
+
+export type NoveltyTiming = "upcoming" | "running" | "past";
 
 export interface NoveltyWatchRow {
   id: string;
@@ -44,6 +50,18 @@ export interface NoveltyWatchRow {
     code_postal: string | null;
     secteur: any;
   } | null;
+  /** Phrase d'intérêt concrète (champ `summary`). */
+  summary?: string | null;
+  /** Publics visés, tels que saisis. */
+  audience_tags?: string[] | null;
+  /** Provenance fixée à la création : exhibitor | lotexpo | unknown. */
+  origin?: "exhibitor" | "lotexpo" | "unknown" | null;
+  /** Mode d'affichage du média : photo | typographic | null (automatique). */
+  display_mode?: "photo" | "typographic" | null;
+  /** Stand(s) connus pour ce couple exposant + salon, depuis `participation`. Vide = à confirmer. */
+  stands?: string[];
+  /** Position du salon par rapport à aujourd'hui. */
+  timing?: NoveltyTiming;
 }
 
 export type WatchHorizon = 30 | 60 | 90 | null;
@@ -53,6 +71,8 @@ export interface NoveltyWatchFilters {
   type: string | null;
   horizon: WatchHorizon;
   region: string | null;
+  /** true = inclure aussi les salons terminés (archives). Défaut : false. */
+  includePast?: boolean;
 }
 
 interface FetchOpts {
@@ -79,15 +99,70 @@ function parseEventSectors(secteur: unknown): string[] {
   return [];
 }
 
+/**
+ * Une date de salon « AAAA-MM-JJ » est une date CIVILE : on la lit en heure
+ * locale (minuit local). `new Date("2026-09-28")` la lirait en UTC, soit 02:00
+ * à Paris, et un salon ouvert aujourd'hui passerait pour « à venir ».
+ */
+function toDate(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * Stands par couple (salon, exposant), en une seule requête.
+ * Une erreur ici ne doit jamais faire échouer la page : on renvoie une map vide.
+ */
+async function fetchStands(rows: any[]): Promise<Map<string, string[]>> {
+  const map = new Map<string, string[]>();
+  if (rows.length === 0) return map;
+
+  const eventIds = Array.from(new Set(rows.map((r) => r.event_id).filter(Boolean)));
+  const exhibitorIds = Array.from(new Set(rows.map((r) => r.exhibitor_id).filter(Boolean)));
+  if (eventIds.length === 0 || exhibitorIds.length === 0) return map;
+
+  // Découpage par paquets pour garder des URL courtes quand le catalogue grandit.
+  const CHUNK = 100;
+  const results: any[] = [];
+  for (let e = 0; e < eventIds.length; e += CHUNK) {
+    for (let x = 0; x < exhibitorIds.length; x += CHUNK) {
+      const { data, error } = await supabase
+        .from("participation")
+        .select("id_event, exhibitor_id, stand_exposant")
+        .in("id_event", eventIds.slice(e, e + CHUNK))
+        .in("exhibitor_id", exhibitorIds.slice(x, x + CHUNK));
+      if (error) {
+        console.error("⚠️ useNoveltiesWatch stands error (non bloquant):", error);
+        return map;
+      }
+      results.push(...(data ?? []));
+    }
+  }
+
+  for (const p of results) {
+    const stand = typeof p.stand_exposant === "string" ? p.stand_exposant.trim() : "";
+    if (!stand) continue;
+    const key = `${p.id_event}|${p.exhibitor_id}`;
+    const list = map.get(key) ?? [];
+    if (!list.some((s) => s.toLowerCase() === stand.toLowerCase())) list.push(stand);
+    map.set(key, list);
+  }
+  return map;
+}
+
 async function fetchNoveltiesWatch({ filters }: FetchOpts): Promise<NoveltyWatchRow[]> {
   const { sectors, type, horizon, region } = filters;
+  const includePast = filters.includePast === true;
 
   let q = supabase
     .from("novelties")
     .select(`
-      id, title, type, slug, reason_1, media_urls, doc_url, created_at, event_id, exhibitor_id,
+      id, title, type, slug, reason_1, summary, audience_tags, origin, display_mode, is_test,
+      media_urls, doc_url, created_at, event_id, exhibitor_id,
       events!inner (
-        id, slug, nom_event, date_debut, date_fin, type_event, secteur, visible, ville, code_postal
+        id, slug, nom_event, date_debut, date_fin, type_event, secteur, visible, is_test, ville, code_postal
       ),
       exhibitors!novelties_exhibitor_id_fkey ( id, name, slug, logo_url, website )
     `)
@@ -109,16 +184,18 @@ async function fetchNoveltiesWatch({ filters }: FetchOpts): Promise<NoveltyWatch
 
   const sectorLabels = sectors.length > 0 ? sectors.flatMap((s) => sectorSlugToDbLabels(s)) : [];
 
-  const rows = (data ?? []).filter((row: any) => {
+  const kept = (data ?? []).filter((row: any) => {
     if (!row.exhibitors || !row.events) return false;
+
+    // Contenus de test exclus pour tout le monde, admin compris
+    if (row.is_test === true || row.events.is_test === true) return false;
 
     // Salons en cours ou à venir : on garde la nouveauté tant que le salon
     // n'est pas terminé (date_fin >= today). Repli sur date_debut si date_fin manque.
-    const dateDebut = row.events.date_debut ? new Date(row.events.date_debut) : null;
-    if (!dateDebut || isNaN(dateDebut.getTime())) return false;
-    const dateFinRaw = row.events.date_fin ? new Date(row.events.date_fin) : null;
-    const dateFin = dateFinRaw && !isNaN(dateFinRaw.getTime()) ? dateFinRaw : dateDebut;
-    if (dateFin < today) return false;
+    const dateDebut = toDate(row.events.date_debut);
+    if (!dateDebut) return false;
+    const dateFin = toDate(row.events.date_fin) ?? dateDebut;
+    if (!includePast && dateFin < today) return false;
 
     // Horizon temporel
     if (horizon) {
@@ -143,7 +220,21 @@ async function fetchNoveltiesWatch({ filters }: FetchOpts): Promise<NoveltyWatch
     }
 
     return true;
-  }) as NoveltyWatchRow[];
+  }) as any[];
+
+  const stands = await fetchStands(kept);
+
+  const rows: NoveltyWatchRow[] = kept.map((row: any) => {
+    const dateDebut = toDate(row.events.date_debut) as Date;
+    const dateFin = toDate(row.events.date_fin) ?? dateDebut;
+    const timing: NoveltyTiming =
+      dateFin < today ? "past" : dateDebut <= today ? "running" : "upcoming";
+    return {
+      ...row,
+      stands: stands.get(`${row.event_id}|${row.exhibitor_id}`) ?? [],
+      timing,
+    } as NoveltyWatchRow;
+  });
 
   // Tri : date d'événement la plus proche, puis date de publication décroissante
   rows.sort((a, b) => {
@@ -164,6 +255,7 @@ export function useNoveltiesWatch(filters: NoveltyWatchFilters) {
       filters.type ?? "all",
       filters.horizon ?? "all",
       filters.region ?? "all",
+      filters.includePast ? "with-past" : "current",
     ],
     queryFn: () => fetchNoveltiesWatch({ filters }),
     staleTime: 60_000,
