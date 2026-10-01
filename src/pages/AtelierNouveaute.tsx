@@ -24,7 +24,7 @@ import PublishNoveltyDialog, {
 } from '@/components/novelty/PublishNoveltyDialog';
 
 const TITLE_MIN = 3;
-const TITLE_MAX = 120;
+const TITLE_MAX = 70;
 const REASON_MIN = 10;
 const REASON_MAX = 1000;
 const MAX_IMAGES = 3;
@@ -341,7 +341,7 @@ export default function AtelierNouveaute() {
 
   const missing: string[] = [];
   if (title.trim().length < TITLE_MIN) missing.push('Écrivez un titre (3 caractères minimum)');
-  if (title.trim().length > TITLE_MAX) missing.push('Le titre dépasse 120 caractères');
+  if (title.trim().length > TITLE_MAX) missing.push(`Le titre dépasse ${TITLE_MAX} caractères, raccourcissez-le`);
   if (reason.trim().length < REASON_MIN)
     missing.push('Dites pourquoi venir la voir (10 caractères minimum)');
   if (reason.trim().length > REASON_MAX) missing.push('La raison dépasse 1000 caractères');

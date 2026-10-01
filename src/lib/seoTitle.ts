@@ -35,3 +35,35 @@ export function buildSeoTitle(
   if (budget < 3) return full.slice(0, max);
   return `${head}${cutWords(cleanBase, budget)} ${brandSuffix}`;
 }
+
+/**
+ * <title> d'une page Nouveauté. Au lieu de couper le titre au milieu, on
+ * retire d'abord le salon, puis l'exposant ; la coupe sur un mot entier
+ * n'est que le dernier recours. Miroir strict de noveltySeoTitle() dans
+ * scripts/prerender-seo.mjs.
+ *   1. « {titre} — {exposant} à {salon} | Lotexpo »
+ *   2. « {titre} — {exposant} | Lotexpo »
+ *   3. « {titre} | Lotexpo »
+ *   4. titre coupé sur un mot entier + « | Lotexpo »
+ */
+export function buildNoveltySeoTitle(
+  title: string,
+  exhibitorName?: string | null,
+  eventName?: string | null,
+  max = 70,
+): string {
+  const clean = (s?: string | null) => String(s || '').replace(/\s+/g, ' ').trim();
+  const t = clean(title);
+  const ex = clean(exhibitorName);
+  const ev = clean(eventName);
+  const suffix = '| Lotexpo';
+  const candidates: string[] = [];
+  if (ex && ev) candidates.push(`${t} — ${ex} à ${ev}`);
+  if (ex) candidates.push(`${t} — ${ex}`);
+  candidates.push(t);
+  for (const c of candidates) {
+    const full = `${c} ${suffix}`;
+    if (full.length <= max) return full;
+  }
+  return buildSeoTitle(t, suffix, max);
+}

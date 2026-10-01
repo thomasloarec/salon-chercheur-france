@@ -85,7 +85,7 @@ export const step1Schema = z.object({
 export const step2Schema = z.object({
   title: z.string()
     .min(3, 'Titre requis (min 3 caractères)')
-    .max(120, 'Titre trop long (max 120 caractères)'),
+    .max(70, 'Titre trop long (max 70 caractères)'),
   
   type: z.enum(NOVELTY_TYPES).refine(
     (value) => NOVELTY_TYPES.includes(value),

@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import NotFoundSEO from '@/components/seo/NotFoundSEO';
-import { buildSeoTitle } from '@/lib/seoTitle';
+import { buildNoveltySeoTitle } from '@/lib/seoTitle';
 import LeadForm from '@/components/novelty/LeadForm';
 import NoveltyDetailView from '@/components/novelty/NoveltyDetailView';
 import NoveltyComments from '@/components/novelty/NoveltyComments';
@@ -107,11 +107,10 @@ export default function NoveltyDetail() {
       }.`).slice(0, 160);
   // Title identique au pré-rendu : socle tronqué sur un mot entier AVANT le
   // suffixe « | Lotexpo » (60/70 max), suffixe jamais coupé (« | Lot »).
-  const pageTitle = buildSeoTitle(
-    `${novelty.title} — ${exhibitorName}${
-      novelty.event_name ? ` à ${novelty.event_name}` : ''
-    }`,
-    '| Lotexpo',
+  const pageTitle = buildNoveltySeoTitle(
+    novelty.title,
+    novelty.exhibitor_display_name || '',
+    novelty.event_name || '',
     70,
   );
   const ogImage = images[0] || `${SITE_ORIGIN}/og-exhibitor-default.png`;
