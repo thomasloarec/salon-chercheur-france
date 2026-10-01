@@ -90,6 +90,23 @@ function seoTitle(base, brandSuffix, max, prefix = '') {
   if (budget < 3) return full.slice(0, max);
   return `${head}${cutWords(cleanBase, budget)} ${brandSuffix}`;
 }
+function noveltySeoTitle(title, exhibitorName, eventName, max = 70) {
+  // Miroir strict de buildNoveltySeoTitle() dans src/lib/seoTitle.ts.
+  const clean = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+  const t = clean(title);
+  const ex = clean(exhibitorName);
+  const ev = clean(eventName);
+  const suffix = '| Lotexpo';
+  const candidates = [];
+  if (ex && ev) candidates.push(`${t} — ${ex} à ${ev}`);
+  if (ex) candidates.push(`${t} — ${ex}`);
+  candidates.push(t);
+  for (const c of candidates) {
+    const full = `${c} ${suffix}`;
+    if (full.length <= max) return full;
+  }
+  return seoTitle(t, suffix, max);
+}
 function safeJsonLd(obj) {
   return JSON.stringify(obj).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 }
@@ -842,11 +859,7 @@ function buildNovelty(n) {
   const canonical = `${SITE_ORIGIN}/nouveautes/${slug}`;
   const robots = indexable ? 'index, follow' : 'noindex, follow';
 
-  const title = seoTitle(
-    `${n.title} — ${exhibitorName}${eventName ? ` à ${eventName}` : ''}`,
-    '| Lotexpo',
-    70,
-  );
+  const title = noveltySeoTitle(n.title, n.exhibitor_display_name || '', eventName, 70);
 
   // Description: summary → details → reasons (cleaned + truncated).
   const reasons = [n.reason_1, n.reason_2, n.reason_3].filter(Boolean).join(' ');

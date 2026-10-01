@@ -514,8 +514,8 @@ export default function NoveltyDetailView({
             placeholder="Votre titre"
             ariaLabel="Titre de la nouveauté"
             min={3}
-            max={120}
-            hint="3 à 120 caractères"
+            max={70}
+            hint="Idéalement 45 à 60 caractères, 70 maximum"
             awaiting
             className="heading-display text-2xl font-bold leading-tight tracking-tight md:text-3xl"
           />

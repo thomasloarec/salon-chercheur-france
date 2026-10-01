@@ -1,4 +1,4 @@
-import { buildSeoTitle, cutWords } from '@/lib/seoTitle';
+import { buildSeoTitle, buildNoveltySeoTitle, cutWords } from '@/lib/seoTitle';
 
 describe('cutWords', () => {
   it('ne coupe pas un texte plus court que la limite', () => {
@@ -58,5 +58,39 @@ describe('buildSeoTitle', () => {
     expect(buildSeoTitle('Nom   double   espaces', '| Lotexpo', 70)).toBe(
       'Nom double espaces | Lotexpo',
     );
+  });
+});
+
+describe('buildNoveltySeoTitle', () => {
+  it('garde exposant et salon quand tout tient dans 70', () => {
+    expect(buildNoveltySeoTitle('Banc CAP9110 compact', 'CAPELEC', 'Equip Auto', 70)).toBe(
+      'Banc CAP9110 compact — CAPELEC à Equip Auto | Lotexpo',
+    );
+  });
+
+  it('retire le salon avant de couper le titre', () => {
+    expect(
+      buildNoveltySeoTitle('Bornes de recharge VE : de la pré-étude', 'TECHNOCITY', 'Salon des Maires et des Collectivités Locales', 70),
+    ).toBe('Bornes de recharge VE : de la pré-étude — TECHNOCITY | Lotexpo');
+  });
+
+  it("retire l'exposant avant de couper le titre", () => {
+    const t = 'SKIDEAU, skid mobile de filtration et UV pour l\'aquaculture';
+    expect(buildNoveltySeoTitle(t, 'AWS (ATLANTIC WATER SYSTEMS)', 'Aquaculture Expo', 70)).toBe(`${t} | Lotexpo`);
+  });
+
+  it('coupe sur un mot entier en dernier recours, suffixe complet', () => {
+    const title = buildNoveltySeoTitle(
+      'Un titre beaucoup trop long qui dépasse largement la limite de soixante-dix caractères',
+      'Exposant',
+      'Salon',
+      70,
+    );
+    expect(title.length).toBeLessThanOrEqual(70);
+    expect(title.endsWith('| Lotexpo')).toBe(true);
+  });
+
+  it("fonctionne sans exposant ni salon", () => {
+    expect(buildNoveltySeoTitle('Titre seul', null, null, 70)).toBe('Titre seul | Lotexpo');
   });
 });
