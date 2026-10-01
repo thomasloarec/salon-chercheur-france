@@ -21,7 +21,9 @@ export function RadarCrmSidebar() {
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const { ongoingEvents, loading, matchedCompanies, futureGroups, pastGroups } = useRadarWorkspace();
-  const live = ongoingEvents[0] ?? null;
+  // Un seul salon en cours : accès direct. Plusieurs : le hub les présente tous au même niveau.
+  const live = ongoingEvents.length === 1 ? ongoingEvents[0] : null;
+  const liveCount = ongoingEvents.length;
 
   const onResults = location.pathname === '/radar-crm/results';
 
@@ -102,9 +104,11 @@ export function RadarCrmSidebar() {
                     {!collapsed && (
                       <span className="flex-1 min-w-0">
                         <span className="block truncate">Mode Salon</span>
-                        {live?.nom_event && (
+                        {live?.nom_event ? (
                           <span className="block text-[11px] text-muted-foreground truncate">{live.nom_event}</span>
-                        )}
+                        ) : liveCount > 1 ? (
+                          <span className="block text-[11px] text-primary truncate">{liveCount} salons en cours</span>
+                        ) : null}
                       </span>
                     )}
                   </Link>

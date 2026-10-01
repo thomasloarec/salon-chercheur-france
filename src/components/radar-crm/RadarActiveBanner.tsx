@@ -39,8 +39,9 @@ const RadarActiveBanner: React.FC<{
 
   // État « salon en cours aujourd'hui » — traitement distinct (live, mode terrain).
   if (ongoing.length > 0) {
-    const live = ongoing[0];
-    const others = ongoing.slice(1);
+    // Tous les salons en cours au même niveau (ordre alphabétique), aucun n'est mis en avant.
+    const lives = [...ongoing].sort((x, y) => x.nom_event.localeCompare(y.nom_event, 'fr'));
+    const several = lives.length > 1;
     return (
       <Card className="bg-primary/5 border-primary/40 shadow-none">
         <CardContent className="py-6 md:py-7 px-5 md:px-6 space-y-5">
@@ -49,36 +50,28 @@ const RadarActiveBanner: React.FC<{
               <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 animate-ping" />
               <span className="relative inline-flex h-3 w-3 rounded-full bg-primary" />
             </span>
-            <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-primary">Salon en cours aujourd'hui</p>
-              <p className="font-display text-lg md:text-xl font-semibold text-foreground leading-tight mt-1">
-                {live.nom_event}{live.ville ? <span className="text-muted-foreground font-normal"> · {live.ville}</span> : null}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {live.company_count} de vos comptes exposent ici.
-              </p>
-            </div>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-primary mt-1">
+              {several ? `${lives.length} salons en cours aujourd'hui` : "Salon en cours aujourd'hui"}
+            </p>
           </div>
 
-          <Button onClick={() => onEnterTerrain(live.event_id)} className="w-full sm:w-auto">
-            <Radar className="h-4 w-4 mr-2" /> Entrer en mode salon
-          </Button>
-
-          {others.length > 0 && (
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-1">
-              <span className="text-xs text-muted-foreground">Autres salons en cours :</span>
-              {others.map((o) => (
-                <button
-                  key={o.event_id}
-                  type="button"
-                  onClick={() => onEnterTerrain(o.event_id)}
-                  className="text-xs text-primary hover:underline font-medium"
-                >
-                  {o.nom_event}
-                </button>
-              ))}
-            </div>
-          )}
+          <ul className={several ? 'grid grid-cols-1 sm:grid-cols-2 gap-3' : 'space-y-3'}>
+            {lives.map((ev) => (
+              <li key={ev.event_id} className="rounded-lg border border-primary/20 bg-card p-4 flex flex-col gap-3">
+                <div className="min-w-0">
+                  <p className="font-display text-lg font-semibold text-foreground leading-snug break-words">
+                    {ev.nom_event}{ev.ville ? <span className="text-muted-foreground font-normal"> · {ev.ville}</span> : null}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {ev.company_count} de vos comptes {ev.company_count > 1 ? 'exposent' : 'expose'} ici.
+                  </p>
+                </div>
+                <Button onClick={() => onEnterTerrain(ev.event_id)} className="mt-auto w-full min-h-[44px]">
+                  <Radar className="h-4 w-4 mr-2" /> Entrer en mode salon
+                </Button>
+              </li>
+            ))}
+          </ul>
 
           <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1.5">
             <Mail className="h-3.5 w-3.5 text-primary shrink-0" />
