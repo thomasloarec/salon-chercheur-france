@@ -202,32 +202,30 @@ const CompanyAccountCard: React.FC<{
         <div className="flex items-start gap-3">
           <CompanyAvatar company={company} size="md" />
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <p className="font-display font-semibold text-base text-foreground truncate min-w-0" title={company.company_name}>
-                {company.company_name}
-              </p>
-              {!needsQualification && (
-                editStatus ? (
-                  <span className="shrink-0">
-                    <RelationshipSelect status={relationship} onChange={applyStatus} />
-                  </span>
+            <p className="font-display font-semibold text-base leading-snug text-foreground line-clamp-2 break-words" title={company.company_name}>
+              {company.company_name}
+            </p>
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 min-w-0">
+              <ExternalLink className="h-3 w-3 shrink-0" />
+              <span className="truncate">{company.normalized_domain ?? company.website_raw ?? ''}</span>
+            </p>
+            {!needsQualification && (
+              <div className="mt-2">
+                {editStatus ? (
+                  <RelationshipSelect status={relationship} onChange={applyStatus} />
                 ) : (
                   <button
                     type="button"
                     onClick={() => setEditStatus(true)}
                     title="Modifier le statut"
-                    className="shrink-0 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 hover:bg-muted/70 transition-colors"
+                    className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 hover:bg-muted/70 transition-colors"
                   >
                     <span className={cn('h-1.5 w-1.5 rounded-full', meta.dot)} aria-hidden="true" />
                     <span className="text-[11px] font-medium text-foreground">{meta.label}</span>
                   </button>
-                )
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
-              <ExternalLink className="h-3 w-3" />
-              {company.normalized_domain ?? company.website_raw ?? ''}
-            </p>
+                )}
+              </div>
+            )}
           </div>
           {/* Contrôles triage étoile / ignorer */}
           <div className="flex items-center gap-0.5 shrink-0">

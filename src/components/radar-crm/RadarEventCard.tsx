@@ -129,26 +129,31 @@ const EventCard: React.FC<{
   const body = (
     <div className="p-5 md:p-6 flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <button
               type="button"
               onClick={onView}
               disabled={!group.slug}
               title={group.nom_event}
-              className="group flex items-center gap-1 min-w-0 text-left text-[17px] font-medium leading-snug text-foreground hover:underline disabled:opacity-60 disabled:hover:no-underline"
+              className="group flex w-full items-start gap-1 min-w-0 text-left text-[17px] font-medium leading-snug text-foreground hover:underline disabled:opacity-60 disabled:hover:no-underline"
             >
-              <span className="truncate">{group.nom_event}</span>
-              <ExternalLink className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <span className="min-w-0 line-clamp-2 break-words">{group.nom_event}</span>
+              <ExternalLink className="mt-1 h-3 w-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] text-muted-foreground mt-1">
-              <span className="flex items-center gap-1">
-                <Calendar className="h-3.5 w-3.5" />
-                {formatDate(group.date_debut)}{group.date_fin ? ` — ${formatDate(group.date_fin)}` : ''}
+            <div className="flex flex-col gap-0.5 text-[13px] text-muted-foreground mt-1.5 sm:flex-row sm:flex-wrap sm:gap-x-3">
+              <span className="flex items-start gap-1.5">
+                <Calendar className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>{formatDate(group.date_debut)}{group.date_fin ? ` au ${formatDate(group.date_fin)}` : ''}</span>
               </span>
-              {place && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{place}</span>}
+              {place && (
+                <span className="flex items-start gap-1.5 min-w-0">
+                  <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span className="min-w-0 line-clamp-2 break-words">{place}</span>
+                </span>
+              )}
             </div>
           </div>
-          <div className="flex shrink-0 items-start gap-3">
+          <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-start sm:gap-3">
             {deadline && (
               <Badge className={cn(
                 'shrink-0 border-none',
@@ -160,7 +165,7 @@ const EventCard: React.FC<{
             {hasParticipants && (
               <div className="flex flex-col items-end gap-1">
                 <ParticipantsRow participants={participants} />
-                <span className="text-[12px] text-muted-foreground whitespace-nowrap">{participationLabel}</span>
+                <span className="hidden sm:inline text-[12px] text-muted-foreground whitespace-nowrap">{participationLabel}</span>
               </div>
             )}
           </div>

@@ -603,6 +603,30 @@ export type Database = {
         }
         Relationships: []
       }
+      archive_salons_retires: {
+        Row: {
+          archived_at: string
+          batch: string
+          id: number
+          row_data: Json
+          source_table: string
+        }
+        Insert: {
+          archived_at?: string
+          batch: string
+          id?: number
+          row_data: Json
+          source_table: string
+        }
+        Update: {
+          archived_at?: string
+          batch?: string
+          id?: number
+          row_data?: Json
+          source_table?: string
+        }
+        Relationships: []
+      }
       blog_articles: {
         Row: {
           article_type: string
@@ -8306,6 +8330,10 @@ export type Database = {
       }
       outreach_campaigns: {
         Row: {
+          apollo_checked_at: string | null
+          apollo_credits: number
+          apollo_requalif_at: string | null
+          apollo_result: string | null
           campaign_status: string | null
           claim_status: string
           claim_step: number
@@ -8342,6 +8370,10 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          apollo_checked_at?: string | null
+          apollo_credits?: number
+          apollo_requalif_at?: string | null
+          apollo_result?: string | null
           campaign_status?: string | null
           claim_status?: string
           claim_step?: number
@@ -8378,6 +8410,10 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          apollo_checked_at?: string | null
+          apollo_credits?: number
+          apollo_requalif_at?: string | null
+          apollo_result?: string | null
           campaign_status?: string | null
           claim_status?: string
           claim_step?: number
@@ -8537,11 +8573,14 @@ export type Database = {
       }
       outreach_contacts: {
         Row: {
+          apollo_person_id: string | null
           contact_email: string
           contact_status: string
+          country: string | null
           created_at: string
           department_guess: string | null
           email_sent_count: number
+          email_status: string | null
           first_name: string | null
           full_name: string | null
           hunter_confidence: number | null
@@ -8553,15 +8592,19 @@ export type Database = {
           last_reply_at: string | null
           last_sent_at: string | null
           outreach_campaign_id: string
+          persona: string | null
           source: string
           updated_at: string
         }
         Insert: {
+          apollo_person_id?: string | null
           contact_email: string
           contact_status?: string
+          country?: string | null
           created_at?: string
           department_guess?: string | null
           email_sent_count?: number
+          email_status?: string | null
           first_name?: string | null
           full_name?: string | null
           hunter_confidence?: number | null
@@ -8573,15 +8616,19 @@ export type Database = {
           last_reply_at?: string | null
           last_sent_at?: string | null
           outreach_campaign_id: string
+          persona?: string | null
           source?: string
           updated_at?: string
         }
         Update: {
+          apollo_person_id?: string | null
           contact_email?: string
           contact_status?: string
+          country?: string | null
           created_at?: string
           department_guess?: string | null
           email_sent_count?: number
+          email_status?: string | null
           first_name?: string | null
           full_name?: string | null
           hunter_confidence?: number | null
@@ -8593,6 +8640,7 @@ export type Database = {
           last_reply_at?: string | null
           last_sent_at?: string | null
           outreach_campaign_id?: string
+          persona?: string | null
           source?: string
           updated_at?: string
         }
@@ -12799,10 +12847,12 @@ export type Database = {
           claimed_count: number | null
           company_name: string | null
           contact_email: string | null
+          date_debut: string | null
           first_name: string | null
           id: string | null
           next_send_at: string | null
           nom_event: string | null
+          persona: string | null
           public_slug: string | null
         }
         Relationships: []
@@ -12967,6 +13017,17 @@ export type Database = {
         Row: {
           nb_exposants: number | null
           raw_label: string | null
+        }
+        Relationships: []
+      }
+      v_mesure_revendication_profil: {
+        Row: {
+          apres_lot3: boolean | null
+          envoyes: number | null
+          persona: string | null
+          revendiques: number | null
+          source: string | null
+          taux_pct: number | null
         }
         Relationships: []
       }
@@ -14028,6 +14089,7 @@ export type Database = {
         }[]
       }
       detect_exposant_domain_duplicates: { Args: never; Returns: number }
+      domain_is_foreign: { Args: { p_domain: string }; Returns: boolean }
       embed_pending_events: {
         Args: { p_max_batches?: number }
         Returns: number
@@ -14973,6 +15035,11 @@ export type Database = {
       organizer_stage_lines: {
         Args: { p_import_id: string; p_rows: Json }
         Returns: Json
+      }
+      outreach_apply_apollo_contact: { Args: { p: Json }; Returns: Json }
+      outreach_persona: {
+        Args: { p_department?: string; p_first_name: string; p_title: string }
+        Returns: string
       }
       outreach_unsubscribe: {
         Args: {
