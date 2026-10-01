@@ -3,6 +3,7 @@ import { ChevronRight, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { type EventGroup } from '@/types/radar';
 import { ParticipantAvatar } from '@/components/radar-crm/RadarParticipants';
+import RadarCalendarAgenda from '@/components/radar-crm/RadarCalendarAgenda';
 import {
   parseYmd, addDays, mondayOf, isoWeekNumber, weekKey, isoDayIndex, diffDays,
   weekRangeLabel, monthLabel, dayMonthLabel,
@@ -215,7 +216,16 @@ const RadarCalendarView: React.FC<{
   };
 
   return (
-    <div className="rounded-lg border bg-muted/30 p-3 sm:p-4" style={{ ['--wk-label' as string]: '56px' }}>
+    <>
+    {/* Mobile : agenda vertical lisible (la grille 7 jours est illisible sous 640 px). */}
+    <div className="sm:hidden rounded-lg border bg-muted/30 p-3">
+      <RadarCalendarAgenda
+        groups={groups}
+        highlightedEventId={highlightedEventId}
+        onSelectEvent={onSelectEvent}
+      />
+    </div>
+    <div className="hidden sm:block rounded-lg border bg-muted/30 p-3 sm:p-4" style={{ ['--wk-label' as string]: '56px' }}>
       <style>{`@media (min-width: 640px){ .radar-cal { --wk-label: 76px; } }`}</style>
       <div className="radar-cal">
         <div
@@ -252,6 +262,7 @@ const RadarCalendarView: React.FC<{
         })}
       </div>
     </div>
+    </>
   );
 };
 
