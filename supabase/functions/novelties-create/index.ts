@@ -9,7 +9,7 @@ const schema = z.object({
   event_id: uuid,
   exhibitor_id: uuid,
   // created_by is intentionally NOT accepted from the payload — extracted from JWT
-  title: z.string().min(3).max(200),
+  title: z.string().min(3).max(70),
   novelty_type: z.string().min(1),
   reason: z.string().min(10).max(1000),
   images: z.array(z.string().url()).min(1).max(3),
