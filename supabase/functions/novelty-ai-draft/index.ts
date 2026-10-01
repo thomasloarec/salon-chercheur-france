@@ -112,7 +112,7 @@ OUVERTURE
 Ne commence jamais par la participation au salon ni par le nom de l'entreprise. Commence par l'élément le plus intéressant dont tu disposes réellement : une question, une situation reconnaissable, un fait vérifié de la source, une possibilité nouvelle. Les trois angles que tu produis doivent avoir des ouvertures de NATURES DIFFÉRENTES, pas trois variantes de la même question.
 
 TROUVABILITÉ
-Le titre et le résumé sont utilisés pour retrouver cette Nouveauté dans un moteur de recherche. Ils doivent contenir le vocabulaire métier concret : ce dont il s'agit, le domaine, la désignation si elle existe. La narration et la mise en tension vivent dans reason_1, pas dans le titre. Un titre uniquement interrogatif et sans vocabulaire métier est une faute.
+Le titre et le résumé sont utilisés pour retrouver cette Nouveauté dans un moteur de recherche. Ils doivent contenir le vocabulaire métier concret : ce dont il s'agit, le domaine, la désignation si elle existe. La narration et la mise en tension vivent dans reason_1, pas dans le titre. Le titre est court et dense : le nom de l'exposant et celui du salon sont ajoutés automatiquement autour de lui sur la page, ne les répète pas. Un titre uniquement interrogatif et sans vocabulaire métier est une faute.
 
 NOTE D'EXPERT
 Pour chaque angle, tu ajoutes une note courte adressée à l'exposant, comme le ferait un expert en storytelling qui explique son choix. Une ou deux phrases, pas davantage.
@@ -126,7 +126,7 @@ Si la matière fournie est pauvre et ne permet pas une histoire solide, dis-le h
 RÈGLE ABSOLUE de la note : elle ne parle QUE de tes choix d'écriture. Elle n'ajoute AUCUN fait sur l'entreprise, aucun bénéfice, aucun chiffre, aucune promesse qui ne serait pas déjà dans le texte de l'exposant. Elle commente la forme, pas le fond.
 
 FORMAT
-- title : 60 à 90 caractères, sans nom de salon, sans date, sans point final, avec du vocabulaire métier concret.
+- title : 45 à 60 caractères, 70 au grand maximum (limite dure du site, un titre plus long est refusé). Sans nom de salon, sans date, sans nom d'exposant, sans point final. L'objet concret (désignation, produit, démonstration, sujet) et le vocabulaire métier dans les premiers mots. Si c'est trop long, retire d'abord les compléments décoratifs, jamais la désignation. Compte les caractères avant de répondre.
 - reason_1 : 200 à 500 caractères. C'est là que se joue la narration.
 - reason_2, reason_3 : 100 à 300 caractères, ou null si la matière ne les porte pas.
 - summary : une phrase, 100 à 160 caractères, concrète.
@@ -523,6 +523,11 @@ Deno.serve(async (req) => {
     if (temps_utilises.includes('obstacle') && !obstacleSourceAnalyse) {
       angle.alerte = 'obstacle_non_source';
       if (!alertes.includes('obstacle_non_source')) alertes.push('obstacle_non_source');
+    }
+    // Titre au-delà de la limite dure du site (70) : signalé, jamais tronqué.
+    if (typeof angle.title === 'string' && angle.title.trim().length > 70) {
+      angle.alerte_titre = 'titre_trop_long';
+      if (!alertes.includes('titre_trop_long')) alertes.push('titre_trop_long');
     }
     return angle;
   });
