@@ -15107,6 +15107,10 @@ export type Database = {
       radar_notify_salons_debrief: { Args: never; Returns: number }
       radar_notify_salons_live: { Args: never; Returns: number }
       radar_notify_tasks_due: { Args: never; Returns: number }
+      radar_purge_stale_imports: {
+        Args: { p_account_id: string; p_keep_import_id: string }
+        Returns: number
+      }
       radar_set_primary_space: {
         Args: { p_account_id: string; p_user_id: string }
         Returns: undefined
