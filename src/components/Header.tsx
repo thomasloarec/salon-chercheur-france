@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Menu, X, Calendar, Search, Users, Settings, LogOut, Radar, Sparkles, Lightbulb, Target } from 'lucide-react';
+import { Menu, X, Search, Users, Settings, Radar, Sparkles, Lightbulb, Target } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useAdminPendingCounts } from '@/hooks/useAdminPendingCounts';
 import UserMenu from './UserMenu';
-import { USER_MENU_ITEMS } from '@/config/userMenuItems';
+import MobileNavDrawer from './MobileNavDrawer';
 import {
   NavigationMenu,
   NavigationMenuList,
@@ -38,11 +38,6 @@ const Header = () => {
 
   const navLinkClass = (isActive: boolean) =>
     `text-sm text-muted-foreground hover:text-primary transition-colors flex items-center space-x-1 ${
-      isActive ? 'text-primary font-medium' : ''
-    }`;
-
-  const mobileNavLinkClass = (isActive: boolean) =>
-    `block px-3 py-2 text-sm text-muted-foreground hover:text-primary transition-colors ${
       isActive ? 'text-primary font-medium' : ''
     }`;
 
@@ -144,138 +139,31 @@ const Header = () => {
 
           {/* Mobile menu button */}
           <div className="md:hidden">
-            <Button variant="ghost" size="sm" type="button" onClick={toggleMenu}>
+            <Button
+              variant="ghost"
+              size="icon"
+              type="button"
+              onClick={toggleMenu}
+              aria-label={isMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+              aria-expanded={isMenuOpen}
+              className="h-11 w-11"
+            >
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-border/60">
-              <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
-                Fonctionnalités
-              </p>
-              {FEATURE_ITEMS.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) => `${mobileNavLinkClass(isActive)} pl-6`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <span className="inline-flex items-center gap-2">
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                  </span>
-                </NavLink>
-              ))}
-              <NavLink
-                to="/salons"
-                className={({ isActive }) => mobileNavLinkClass(isActive)}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Salons
-              </NavLink>
-              <NavLink
-                to="/nouveautes"
-                className={({ isActive }) => mobileNavLinkClass(isActive)}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Avant-première
-              </NavLink>
-              {session && isAdmin && (
-                <NavLink
-                  to="/admin"
-                  className={({ isActive }) =>
-                    `block px-3 py-2 text-muted-foreground hover:text-primary transition-colors flex items-center space-x-1 ${
-                      isActive ? 'text-primary font-medium' : ''
-                    }`
-                  }
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <span>Admin</span>
-                  <Badge variant="secondary" className="ml-1 text-xs">dev</Badge>
-                  {adminPendingTotal > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="ml-1 h-5 min-w-[1.25rem] px-1.5 rounded-full text-[10px] font-semibold flex items-center justify-center"
-                      aria-label={`${adminPendingTotal} notification(s) en attente`}
-                    >
-                      {adminPendingTotal > 99 ? '99+' : adminPendingTotal}
-                    </Badge>
-                  )}
-                </NavLink>
-              )}
-              <div className="border-t border-border/60 pt-2">
-                {isRealUser ? (
-                  <div className="space-y-1">
-                    <p className="px-3 py-2 text-sm text-muted-foreground">{user.email}</p>
-                    {USER_MENU_ITEMS.map((item) => (
-                      <NavLink
-                        key={item.to}
-                        to={item.to}
-                        className={({ isActive }) =>
-                          `block px-3 py-2 pl-6 text-muted-foreground hover:text-primary transition-colors ${isActive ? 'text-primary font-medium' : ''}`
-                        }
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <span className="flex items-center gap-2">
-                          <item.icon className="h-4 w-4" />
-                          {item.label}
-                        </span>
-                      </NavLink>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => { setIsMenuOpen(false); signOut(); }}
-                      className="block w-full text-left px-3 py-2 pl-6 text-muted-foreground hover:text-destructive transition-colors"
-                    >
-                      <span className="flex items-center gap-2">
-                        <LogOut className="h-4 w-4" />
-                        Se déconnecter
-                      </span>
-                    </button>
-                    <Link
-                      to="/recherche-ia"
-                      onClick={() => setIsMenuOpen(false)}
-                      className="block px-3 pt-2"
-                    >
-                      <Button
-                        type="button"
-                        className="w-full rounded-xl shadow-[0_4px_14px_-4px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_18px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 bg-primary text-primary-foreground hover:bg-primary/90"
-                      >
-                        Essayer l'IA
-                        <Sparkles className="ml-2 h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="px-3 py-2 flex flex-col gap-2">
-                    <Link
-                      to="/auth?tab=signin"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <Button variant="ghost" className="w-full" type="button">Se connecter</Button>
-                    </Link>
-                    <Link
-                      to="/recherche-ia"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <Button
-                        type="button"
-                        className="w-full rounded-xl shadow-[0_4px_14px_-4px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_18px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 bg-primary text-primary-foreground hover:bg-primary/90"
-                      >
-                        Essayer l'IA
-                        <Sparkles className="ml-2 h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Mobile Navigation : tiroir plein écran */}
+        <MobileNavDrawer
+          open={isMenuOpen}
+          onOpenChange={setIsMenuOpen}
+          features={FEATURE_ITEMS}
+          isRealUser={!!isRealUser}
+          email={user?.email}
+          isAdmin={!!(session && isAdmin)}
+          adminPendingTotal={adminPendingTotal}
+          onSignOut={signOut}
+        />
       </div>
     </header>
   );
