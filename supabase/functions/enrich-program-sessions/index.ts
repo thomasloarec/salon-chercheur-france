@@ -12,7 +12,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const PROMPT_VERSION = 'v1';
+const PROMPT_VERSION = 'v2';
 const MODEL = getAnthropicModelFast();
 const BATCH_LIMIT = 80;
 const CONCURRENCY = 5;
@@ -84,14 +84,14 @@ ${subs.map((x) => x.name).join(' | ')}
 
 RÈGLES
 1. N'invente aucun fait, chiffre, nom ou résultat. Utilise uniquement le titre, la description, le type, le parcours et les intervenants.
-2. is_suggestible = false si la session est logistique (accueil, pause, déjeuner, cocktail, visite libre), protocolaire sans sujet (ouverture officielle, inauguration, remise de prix), ou si on ne peut pas savoir de quoi elle parle (titre vague comme « Conférence plénière », « Partner session », « Formation partie 2 », sans description ni intervenants qui précisent le sujet). Donne alors unsuggestible_reason parmi : logistique, protocolaire, titre_vague, contenu_insuffisant ; et laisse les autres champs vides.
+2. is_suggestible = false si la session est logistique (accueil, pause, déjeuner, cocktail, visite libre, séance de dédicace, visite d'un stand ou d'un véhicule), protocolaire sans sujet (ouverture officielle, inauguration, remise de prix), ou si on ne peut pas savoir de quoi elle parle (titre vague comme « Conférence plénière », « Partner session », « Formation partie 2 », sans description ni intervenants qui précisent le sujet). Donne alors unsuggestible_reason parmi : logistique, protocolaire, titre_vague, contenu_insuffisant ; et laisse les autres champs vides.
 3. summary : une phrase de 160 caractères maximum qui dit concrètement de quoi parle la session et pour qui. Ne répète pas le nom du salon. Pas de tiret cadratin. Pas de superlatif.
 4. themes : 0 à 3 codes, uniquement si la session traite réellement du thème (une simple mention ne suffit pas).
 5. sous_secteurs : 0 à 3 noms exacts de la liste, les secteurs d'activité concernés par le contenu de la session (pas forcément ceux du salon).
 6. roles : 1 à 4 codes, les métiers à qui la session sera le plus utile.
 7. niveau : decouverte, approfondi ou tous.
 8. problemes : 0 à 3 phrases courtes (80 caractères maximum) qui formulent les questions ou problèmes traités, comme un professionnel les formulerait.
-9. mots_cles : 3 à 8 termes utiles pour retrouver la session, y compris des synonymes absents du titre.
+9. mots_cles : 3 à 8 termes utiles pour retrouver la session, y compris des synonymes absents du titre. N'ajoute aucun nom propre (organisme, programme public, marque, produit) qui ne figure pas dans les informations fournies.
 
 RÉPONSE
 Uniquement un objet JSON, sans texte autour :
