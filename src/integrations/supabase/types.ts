@@ -627,6 +627,54 @@ export type Database = {
         }
         Relationships: []
       }
+      assistant_roles: {
+        Row: {
+          code: string
+          created_at: string
+          description: string
+          label: string
+          position: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description: string
+          label: string
+          position?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string
+          label?: string
+          position?: number
+        }
+        Relationships: []
+      }
+      assistant_themes: {
+        Row: {
+          code: string
+          created_at: string
+          description: string
+          label: string
+          position: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description: string
+          label: string
+          position?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string
+          label?: string
+          position?: number
+        }
+        Relationships: []
+      }
       blog_articles: {
         Row: {
           article_type: string
@@ -10590,6 +10638,94 @@ export type Database = {
         }
         Relationships: []
       }
+      session_embeddings: {
+        Row: {
+          embedded_at: string
+          embedding: string
+          session_id: string
+        }
+        Insert: {
+          embedded_at?: string
+          embedding: string
+          session_id: string
+        }
+        Update: {
+          embedded_at?: string
+          embedding?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_embeddings_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "event_program_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_enrichment: {
+        Row: {
+          content_hash: string
+          enriched_at: string
+          event_id: string
+          is_suggestible: boolean
+          keywords: string[]
+          level: string | null
+          model: string | null
+          problems: string[]
+          prompt_version: string
+          role_codes: string[]
+          session_id: string
+          sub_sector_ids: string[]
+          summary: string | null
+          theme_codes: string[]
+          unsuggestible_reason: string | null
+        }
+        Insert: {
+          content_hash: string
+          enriched_at?: string
+          event_id: string
+          is_suggestible: boolean
+          keywords?: string[]
+          level?: string | null
+          model?: string | null
+          problems?: string[]
+          prompt_version: string
+          role_codes?: string[]
+          session_id: string
+          sub_sector_ids?: string[]
+          summary?: string | null
+          theme_codes?: string[]
+          unsuggestible_reason?: string | null
+        }
+        Update: {
+          content_hash?: string
+          enriched_at?: string
+          event_id?: string
+          is_suggestible?: boolean
+          keywords?: string[]
+          level?: string | null
+          model?: string | null
+          problems?: string[]
+          prompt_version?: string
+          role_codes?: string[]
+          session_id?: string
+          sub_sector_ids?: string[]
+          summary?: string | null
+          theme_codes?: string[]
+          unsuggestible_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_enrichment_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "event_program_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_health_incidents: {
         Row: {
           category: string | null
@@ -14102,6 +14238,10 @@ export type Database = {
         Args: { p_max_batches?: number }
         Returns: number
       }
+      embed_pending_sessions: {
+        Args: { p_max_batches?: number }
+        Returns: number
+      }
       ensure_exhibitor_public_identity: {
         Args: { p_exhibitor_id?: string; p_legacy_exposant_id?: string }
         Returns: string
@@ -15374,6 +15514,21 @@ export type Database = {
           nom_event: string
           secteur: Json
           ville: string
+        }[]
+      }
+      select_sessions_to_enrich: {
+        Args: { p_limit?: number; p_prompt_version?: string }
+        Returns: {
+          content_hash: string
+          description: string
+          event_id: string
+          event_secteurs: Json
+          nom_event: string
+          session_id: string
+          session_type: string
+          speakers: Json
+          title: string
+          track: string
         }[]
       }
       seo_eligible_events: {
