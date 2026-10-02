@@ -229,3 +229,6 @@ verify_jwt = false
 # Appelée par un administrateur connecté depuis l'admin : JWT requis.
 # Le rôle admin est vérifié en plus dans le code.
 verify_jwt = true
+
+[functions.enrich-program-sessions]
+verify_jwt = false
