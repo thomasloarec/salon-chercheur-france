@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ToastAction } from '@/components/ui/toast';
+import { ToastAction, type ToastActionElement } from '@/components/ui/toast';
 import type { AssistantItem } from './types';
 
 const ERROR_MSG = 'Action impossible pour le moment. Réessayez.';
@@ -41,7 +41,7 @@ export function useAssistantActions(options: { onProposeDistance?: () => void } 
   );
 
   const undoAction = (onClick: () => void) =>
-    React.createElement(ToastAction, { altText: 'Annuler', onClick }, 'Annuler');
+    React.createElement(ToastAction, { altText: 'Annuler', onClick }, 'Annuler') as unknown as ToastActionElement;
 
   const undoFeedback = useCallback(
     async (feedbackId: string) => {
@@ -150,7 +150,7 @@ export function useAssistantActions(options: { onProposeDistance?: () => void } 
                   ToastAction,
                   { altText: 'Régler la distance', onClick: onProposeDistance },
                   'Régler la distance',
-                )
+                ) as unknown as ToastActionElement
               : undefined,
           });
         } else {
