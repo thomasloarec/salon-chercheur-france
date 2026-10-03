@@ -16,6 +16,7 @@ import { useAssistantFeed } from '@/components/assistant/useAssistantFeed';
 import AssistantEventCard from '@/components/assistant/AssistantEventCard';
 import RegionPicker from '@/components/assistant/RegionPicker';
 import { claimParam, savePendingClaim } from '@/components/assistant/claim';
+import { requestLoginLink } from '@/components/assistant/loginLink';
 
 // ---------------------------------------------------------------------------------------------
 // Types et utilitaires
@@ -563,20 +564,17 @@ export default function AssistantOnboarding() {
     setBusy7('email');
     setError7(null);
     try {
-      const emailRedirectTo = await prepareClaim();
-      const { error } = await supabase.auth.signInWithOtp({
-        email: e,
-        options: { emailRedirectTo, shouldCreateUser: true },
-      });
-      if (error) {
-        const rate = (error as any).status === 429 || /rate|limit|seconds/i.test(error.message ?? '');
-        setError7(rate ? "Trop d'envois en peu de temps. Réessayez dans une minute." : 'Envoi impossible pour le moment. Réessayez.');
+      const full = await prepareClaim();
+      const next = full.startsWith(window.location.origin) ? full.slice(window.location.origin.length) : '/agenda';
+      const err = await requestLoginLink(e, next);
+      if (err) {
+        setError7(err);
       } else {
         setSentTo(e);
         setResendIn(60);
       }
     } catch {
-      setError7('Envoi impossible pour le moment. Réessayez.');
+      setError7('Envoi impossible pour le moment. Réessayez dans un instant.');
     } finally {
       setBusy7(null);
     }
@@ -1059,7 +1057,7 @@ export default function AssistantOnboarding() {
           <div className="space-y-4 rounded-xl bg-card p-5">
             <p className="text-[17px] text-foreground">
               Vérifiez votre boîte mail. Un lien de connexion vous attend à <span className="break-all font-semibold">{sentTo}</span>. Il est
-              valable une heure.
+              valable une heure. Pensez à regarder dans les courriers indésirables.
             </p>
             <Button variant="outline" className="min-h-11" disabled={resendIn > 0 || busy7 !== null} onClick={sendLink}>
               {resendIn > 0 ? `Renvoyer le lien (${resendIn} s)` : 'Renvoyer le lien'}
