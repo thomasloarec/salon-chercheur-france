@@ -48,7 +48,7 @@ export default function AgendaAssistantBlocks({ kept, others, profileId }: Props
   return (
     <div className="space-y-6">
       {keptSorted.length > 0 && (
-        <div className="rounded-xl bg-violet-soft/50 p-5">
+        <div className="rounded-xl bg-violet-soft/50 p-4 sm:p-5">
           <h4 className="mb-4 flex items-center gap-2 text-[17px] font-bold text-foreground">
             <CheckCircle2 className="h-5 w-5 text-primary" aria-hidden="true" />
             Conférences retenues
@@ -60,18 +60,24 @@ export default function AgendaAssistantBlocks({ kept, others, profileId }: Props
               const end = timeLabel(s.end_time);
               const hours = start && end ? `${start} – ${end}` : start || end;
               const meta = [hours, s.location].filter(Boolean).join(' · ');
+              const day = dayLabel(s.day_date);
               return (
                 <div
                   key={s.feedback_id}
-                  className="flex flex-wrap items-center gap-4 rounded-[10px] border-2 border-primary bg-card px-4 py-3.5"
+                  className="flex flex-col gap-2 rounded-[10px] border-2 border-primary bg-card px-4 py-3.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4"
                 >
-                  <div className="w-24 shrink-0 text-center">
+                  <div className="flex items-baseline gap-2 sm:hidden">
+                    <span className="text-[20px] font-bold leading-none text-foreground">{start || '—'}</span>
+                    {day && <span className="text-[13px] font-semibold text-muted-foreground">· {day}</span>}
+                  </div>
+                  <div className="hidden w-24 shrink-0 text-center sm:block">
                     <div className="text-[22px] font-bold leading-none text-foreground">{start || '—'}</div>
-                    <div className="mt-1 text-[13px] font-semibold text-muted-foreground">{dayLabel(s.day_date)}</div>
+                    <div className="mt-1 text-[13px] font-semibold text-muted-foreground">{day}</div>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[17px] font-bold leading-tight text-foreground">{s.title}</p>
-                    {meta && <p className="mt-1 text-sm text-muted-foreground">{meta}</p>}
+                    <p className="break-words text-[17px] font-bold leading-tight text-foreground">{s.title}</p>
+                    {meta && <p className="mt-1 hidden text-sm text-muted-foreground sm:block">{meta}</p>}
+                    {s.location && <p className="mt-1 text-sm text-muted-foreground sm:hidden">{s.location}</p>}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     {s.registration_url && (
@@ -106,7 +112,7 @@ export default function AgendaAssistantBlocks({ kept, others, profileId }: Props
           </h4>
           <div className="space-y-3">
             {shownOthers.map((it) => (
-              <div key={it.match_id} className="rounded-[10px] border border-border p-4">
+              <div key={it.match_id} className="rounded-[10px] border border-border p-3 sm:p-4">
                 <AssistantItemCard item={it} profileId={profileId} compact />
               </div>
             ))}

@@ -98,34 +98,41 @@ export default function AssistantItemCard({ item, profileId, readOnly, compact, 
       title
     );
 
+  const hours = [timeLabel(s?.start_time), timeLabel(s?.end_time)].filter(Boolean).join(' – ');
+  const day = dayLabel(s?.day_date);
+  const mobileTitleCls = isSession ? 'text-[18px]' : 'text-[17px]';
+  const desktopTitleCls = compact ? 'sm:text-[17px]' : 'sm:text-[21px]';
+
   return (
-    <div className="flex gap-4 py-4">
+    <div className="flex flex-col gap-3 py-4 sm:flex-row sm:gap-4">
       {isSession ? (
-        <div className="w-16 shrink-0 text-center sm:w-20">
+        <div className="hidden w-20 shrink-0 text-center sm:block">
           <div className="text-[22px] font-bold leading-tight text-foreground">{timeLabel(s?.start_time)}</div>
-          <div className="text-xs text-muted-foreground">{dayLabel(s?.day_date)}</div>
+          <div className="text-xs text-muted-foreground">{day}</div>
         </div>
       ) : (
-        <div className={cn('shrink-0 overflow-hidden rounded-lg', compact ? 'w-[90px]' : 'w-[120px]')}>
+        <div className={cn('hidden shrink-0 overflow-hidden rounded-lg sm:block', compact ? 'w-[90px]' : 'w-[120px]')}>
           <NoveltyImage src={n?.image_url} alt={title} type="novelty" ratioClassName="aspect-[3/4]" fit="contain" />
         </div>
       )}
 
       <div className="min-w-0 flex-1 space-y-2">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+        <div className="flex flex-wrap items-center gap-1.5 text-sm sm:gap-x-2 sm:gap-y-1">
           {isSession ? (
             <>
               <span className="rounded bg-primary px-2 py-0.5 text-xs font-bold uppercase text-primary-foreground">
                 {sessionTypeLabel(s?.session_type)}
               </span>
-              <span className="text-muted-foreground">
-                {[
-                  [timeLabel(s?.start_time), timeLabel(s?.end_time)].filter(Boolean).join(' – '),
-                  s?.location,
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
-              </span>
+              {hours && (
+                <span className="font-bold text-foreground sm:font-normal sm:text-muted-foreground">{hours}</span>
+              )}
+              {day && <span className="text-muted-foreground sm:hidden">· {day}</span>}
+              {s?.location && (
+                <span className="text-muted-foreground">
+                  {hours || day ? '· ' : ''}
+                  {s.location}
+                </span>
+              )}
             </>
           ) : (
             <>
@@ -145,7 +152,22 @@ export default function AssistantItemCard({ item, profileId, readOnly, compact, 
           )}
         </div>
 
-        <h3 className={cn('font-bold leading-snug text-foreground', titleCls)}>{titleNode}</h3>
+        <div className="flex items-start gap-3 sm:block">
+          {!isSession && (
+            <div className="w-[72px] shrink-0 overflow-hidden rounded-lg sm:hidden">
+              <NoveltyImage src={n?.image_url} alt="" type="novelty" ratioClassName="aspect-[3/4]" fit="contain" />
+            </div>
+          )}
+          <h3
+            className={cn(
+              'min-w-0 flex-1 break-words font-bold leading-snug text-foreground',
+              mobileTitleCls,
+              desktopTitleCls,
+            )}
+          >
+            {titleNode}
+          </h3>
+        </div>
         {item.promise && <p className="line-clamp-2 text-[15px] text-muted-foreground">{item.promise}</p>}
 
         {item.reason ? (
@@ -154,16 +176,16 @@ export default function AssistantItemCard({ item, profileId, readOnly, compact, 
               <Target className="h-4 w-4" aria-hidden />
               Pourquoi pour vous
             </div>
-            <p className="text-[15px] text-foreground">{item.reason}</p>
+            <p className="break-words text-[15px] text-foreground">{item.reason}</p>
           </div>
         ) : item.kept ? (
           <p className="text-[15px] text-muted-foreground">Vous l'avez ajoutée à votre agenda.</p>
         ) : null}
 
         {!readOnly && (
-          <div className="flex flex-wrap items-center gap-2 pt-1">
+          <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:flex-wrap sm:items-center">
             {item.kept ? (
-              <>
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex min-h-11 items-center gap-1.5 rounded-md bg-violet-soft px-3 text-sm font-medium text-primary">
                   <Check className="h-4 w-4" aria-hidden />
                   Dans votre agenda
@@ -171,21 +193,26 @@ export default function AssistantItemCard({ item, profileId, readOnly, compact, 
                 <Button type="button" variant="ghost" className="min-h-11" onClick={() => actions.removeFromAgenda(item)}>
                   Retirer
                 </Button>
-              </>
+              </div>
             ) : (
               <>
-                <Button type="button" className="min-h-11 gap-2" onClick={() => actions.addToAgenda(item)}>
+                <Button type="button" className="min-h-11 w-full gap-2 sm:w-auto" onClick={() => actions.addToAgenda(item)}>
                   <CalendarPlus className="h-4 w-4" aria-hidden />
                   Ajouter à mon agenda
                 </Button>
                 {s?.registration_url && profileId && (
-                  <Button type="button" variant="outline" className="min-h-11" onClick={() => actions.register(item, profileId)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="min-h-11 w-full sm:w-auto"
+                    onClick={() => actions.register(item, profileId)}
+                  >
                     S'inscrire
                   </Button>
                 )}
                 {n?.can_request_meeting && n.exhibitor_id && (
                   <div
-                    className="[&_button]:min-h-11"
+                    className="w-full sm:w-auto [&_button]:min-h-11 [&_button]:w-full sm:[&_button]:w-auto"
                     onClickCapture={(e) => {
                       if (profileId && (e.target as HTMLElement).closest('button') === e.currentTarget.querySelector('button')) {
                         void actions.meetingIntent(item, profileId);
@@ -206,7 +233,7 @@ export default function AssistantItemCard({ item, profileId, readOnly, compact, 
               <Button
                 type="button"
                 variant="ghost"
-                className="ml-auto min-h-11 text-muted-foreground"
+                className="min-h-11 self-start text-muted-foreground sm:ml-auto sm:self-auto"
                 onClick={handleNotForMe}
               >
                 Pas pour moi

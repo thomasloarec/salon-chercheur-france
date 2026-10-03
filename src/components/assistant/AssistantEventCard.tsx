@@ -77,11 +77,11 @@ export default function AssistantEventCard({ suggestion, profileId, readOnly, on
           </div>
         </div>
         {!readOnly && (
-          <div className="flex flex-wrap gap-2 sm:flex-col sm:items-end">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-col sm:items-end">
             <Button
               type="button"
               variant="secondary"
-              className="min-h-11 bg-background text-foreground hover:bg-background/90"
+              className="min-h-11 w-full bg-background text-foreground hover:bg-background/90 sm:w-auto"
               onClick={() => actions.addEventToAgenda(event.id)}
             >
               Ajouter le salon
@@ -92,7 +92,7 @@ export default function AssistantEventCard({ suggestion, profileId, readOnly, on
                   <Button
                     type="button"
                     variant="outline"
-                    className="min-h-11 gap-1 border-inverse-muted bg-transparent text-inverse hover:bg-inverse/10 hover:text-inverse"
+                    className="min-h-11 w-full gap-1 border-inverse-muted bg-transparent text-inverse hover:bg-inverse/10 hover:text-inverse sm:w-auto"
                   >
                     Je n'irai pas
                     <ChevronDown className="h-4 w-4" aria-hidden />
@@ -114,7 +114,7 @@ export default function AssistantEventCard({ suggestion, profileId, readOnly, on
           </div>
         )}
       </header>
-      <div className="divide-y divide-border bg-card px-4 sm:px-6">
+      <div className="divide-y divide-border bg-card px-3 sm:px-6">
         {items.map((it) => (
           <AssistantItemCard
             key={it.match_id}
