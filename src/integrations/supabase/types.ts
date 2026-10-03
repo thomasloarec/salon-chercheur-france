@@ -627,6 +627,196 @@ export type Database = {
         }
         Relationships: []
       }
+      assistant_matches: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          item_id: string
+          item_type: string
+          model: string | null
+          piste_id: string | null
+          profile_id: string
+          reason: string | null
+          reviewed_at: string | null
+          role_match: boolean
+          score: number | null
+          sector_match: boolean
+          similarity: number | null
+          status: string
+          theme_match: boolean
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          item_id: string
+          item_type: string
+          model?: string | null
+          piste_id?: string | null
+          profile_id: string
+          reason?: string | null
+          reviewed_at?: string | null
+          role_match?: boolean
+          score?: number | null
+          sector_match?: boolean
+          similarity?: number | null
+          status?: string
+          theme_match?: boolean
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+          model?: string | null
+          piste_id?: string | null
+          profile_id?: string
+          reason?: string | null
+          reviewed_at?: string | null
+          role_match?: boolean
+          score?: number | null
+          sector_match?: boolean
+          similarity?: number | null
+          status?: string
+          theme_match?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_matches_piste_id_fkey"
+            columns: ["piste_id"]
+            isOneToOne: false
+            referencedRelation: "assistant_pistes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_matches_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "assistant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assistant_pistes: {
+        Row: {
+          active: boolean
+          created_at: string
+          embedding: string | null
+          id: string
+          is_generic: boolean
+          label: string
+          model: string | null
+          position: number
+          profile_id: string
+          role_codes: string[]
+          sector_ids: string[]
+          sub_sector_ids: string[]
+          theme_codes: string[]
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          is_generic?: boolean
+          label: string
+          model?: string | null
+          position?: number
+          profile_id: string
+          role_codes?: string[]
+          sector_ids?: string[]
+          sub_sector_ids?: string[]
+          theme_codes?: string[]
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          is_generic?: boolean
+          label?: string
+          model?: string | null
+          position?: number
+          profile_id?: string
+          role_codes?: string[]
+          sector_ids?: string[]
+          sub_sector_ids?: string[]
+          theme_codes?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_pistes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "assistant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assistant_profiles: {
+        Row: {
+          city: string | null
+          company_description: string | null
+          company_name: string | null
+          created_at: string
+          goals: string[]
+          id: string
+          interests: string[]
+          is_test: boolean
+          label: string | null
+          radius_km: number | null
+          role_code: string | null
+          sector_ids: string[]
+          sub_sector_ids: string[]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          city?: string | null
+          company_description?: string | null
+          company_name?: string | null
+          created_at?: string
+          goals?: string[]
+          id?: string
+          interests?: string[]
+          is_test?: boolean
+          label?: string | null
+          radius_km?: number | null
+          role_code?: string | null
+          sector_ids?: string[]
+          sub_sector_ids?: string[]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          city?: string | null
+          company_description?: string | null
+          company_name?: string | null
+          created_at?: string
+          goals?: string[]
+          id?: string
+          interests?: string[]
+          is_test?: boolean
+          label?: string | null
+          radius_km?: number | null
+          role_code?: string | null
+          sector_ids?: string[]
+          sub_sector_ids?: string[]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_profiles_role_code_fkey"
+            columns: ["role_code"]
+            isOneToOne: false
+            referencedRelation: "assistant_roles"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       assistant_roles: {
         Row: {
           code: string
@@ -650,6 +840,96 @@ export type Database = {
           position?: number
         }
         Relationships: []
+      }
+      assistant_suggestions: {
+        Row: {
+          best_score: number | null
+          computed_at: string
+          event_id: string
+          id: string
+          match_ids: string[]
+          pepite_count: number
+          profile_id: string
+          status: string
+        }
+        Insert: {
+          best_score?: number | null
+          computed_at?: string
+          event_id: string
+          id?: string
+          match_ids?: string[]
+          pepite_count?: number
+          profile_id: string
+          status?: string
+        }
+        Update: {
+          best_score?: number | null
+          computed_at?: string
+          event_id?: string
+          id?: string
+          match_ids?: string[]
+          pepite_count?: number
+          profile_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_suggestions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "admin_events_exhibitor_coverage"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_suggestions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "assistant_suggestions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "assistant_suggestions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_suggestions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_suggestions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_salons_email_missing"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "assistant_suggestions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_suggestions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "assistant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       assistant_themes: {
         Row: {
@@ -7198,6 +7478,82 @@ export type Database = {
           },
           {
             foreignKeyName: "novelty_embeddings_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: true
+            referencedRelation: "v_novelty_visit_signals"
+            referencedColumns: ["novelty_id"]
+          },
+        ]
+      }
+      novelty_enrichment: {
+        Row: {
+          content_hash: string
+          enriched_at: string
+          event_id: string
+          is_suggestible: boolean
+          keywords: string[]
+          level: string | null
+          model: string | null
+          novelty_id: string
+          problems: string[]
+          prompt_version: string
+          role_codes: string[]
+          sub_sector_ids: string[]
+          summary: string | null
+          theme_codes: string[]
+          unsuggestible_reason: string | null
+        }
+        Insert: {
+          content_hash: string
+          enriched_at?: string
+          event_id: string
+          is_suggestible: boolean
+          keywords?: string[]
+          level?: string | null
+          model?: string | null
+          novelty_id: string
+          problems?: string[]
+          prompt_version: string
+          role_codes?: string[]
+          sub_sector_ids?: string[]
+          summary?: string | null
+          theme_codes?: string[]
+          unsuggestible_reason?: string | null
+        }
+        Update: {
+          content_hash?: string
+          enriched_at?: string
+          event_id?: string
+          is_suggestible?: boolean
+          keywords?: string[]
+          level?: string | null
+          model?: string | null
+          novelty_id?: string
+          problems?: string[]
+          prompt_version?: string
+          role_codes?: string[]
+          sub_sector_ids?: string[]
+          summary?: string | null
+          theme_codes?: string[]
+          unsuggestible_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "novelty_enrichment_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: true
+            referencedRelation: "novelties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_enrichment_novelty_id_fkey"
+            columns: ["novelty_id"]
+            isOneToOne: true
+            referencedRelation: "public_novelties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_enrichment_novelty_id_fkey"
             columns: ["novelty_id"]
             isOneToOne: true
             referencedRelation: "v_novelty_visit_signals"
@@ -13973,6 +14329,26 @@ export type Database = {
         Args: { p_version?: number }
         Returns: number
       }
+      assistant_candidates: {
+        Args: {
+          p_days_from?: number
+          p_days_to?: number
+          p_k?: number
+          p_min_similarity?: number
+          p_profile_id: string
+        }
+        Returns: {
+          event_id: string
+          item_id: string
+          item_type: string
+          passes: boolean
+          piste_id: string
+          role_match: boolean
+          sector_match: boolean
+          similarity: number
+          theme_match: boolean
+        }[]
+      }
       build_all_event_profiles: {
         Args: never
         Returns: {
@@ -14226,6 +14602,10 @@ export type Database = {
       }
       detect_exposant_domain_duplicates: { Args: never; Returns: number }
       domain_is_foreign: { Args: { p_domain: string }; Returns: boolean }
+      embed_assistant_pistes: {
+        Args: { p_profile_id?: string }
+        Returns: number
+      }
       embed_pending_events: {
         Args: { p_max_batches?: number }
         Returns: number
@@ -15514,6 +15894,26 @@ export type Database = {
           nom_event: string
           secteur: Json
           ville: string
+        }[]
+      }
+      select_novelties_to_enrich: {
+        Args: { p_limit?: number; p_prompt_version?: string }
+        Returns: {
+          audience_tags: string[]
+          content_hash: string
+          details: string
+          event_id: string
+          event_secteurs: Json
+          exhibitor_name: string
+          nom_event: string
+          novelty_id: string
+          novelty_type: string
+          reason_1: string
+          reason_2: string
+          reason_3: string
+          stand_info: string
+          summary: string
+          title: string
         }[]
       }
       select_sessions_to_enrich: {
