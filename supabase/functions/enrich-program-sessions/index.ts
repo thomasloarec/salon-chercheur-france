@@ -12,12 +12,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const PROMPT_VERSION = 'v2';
+const PROMPT_VERSION = 'v3';
 const MODEL = getAnthropicModelFast();
 const BATCH_LIMIT = 80;
 const CONCURRENCY = 5;
 const NO_LLM_TYPES = new Set(['networking', 'remise_prix']);
-const REASONS = new Set(['type_non_contenu', 'logistique', 'protocolaire', 'titre_vague', 'contenu_insuffisant']);
+const REASONS = new Set(['type_non_contenu', 'logistique', 'protocolaire', 'titre_vague', 'contenu_insuffisant', 'sans_promesse']);
 const LEVELS = new Set(['decouverte', 'approfondi', 'tous']);
 
 type SessionRow = {
@@ -85,6 +85,16 @@ ${subs.map((x) => x.name).join(' | ')}
 RÈGLES
 1. N'invente aucun fait, chiffre, nom ou résultat. Utilise uniquement le titre, la description, le type, le parcours et les intervenants.
 2. is_suggestible = false si la session est logistique (accueil, pause, déjeuner, cocktail, visite libre, séance de dédicace, visite d'un stand ou d'un véhicule), protocolaire sans sujet (ouverture officielle, inauguration, remise de prix), ou si on ne peut pas savoir de quoi elle parle (titre vague comme « Conférence plénière », « Partner session », « Formation partie 2 », sans description ni intervenants qui précisent le sujet). Donne alors unsuggestible_reason parmi : logistique, protocolaire, titre_vague, contenu_insuffisant ; et laisse les autres champs vides.
+2 bis. PROMESSE CONCRÈTE. Un professionnel assiste à une session pour apprendre quelque chose de précis ou pour entendre quelqu'un de précis. is_suggestible = false avec unsuggestible_reason = sans_promesse si, à partir du titre, de la description et des intervenants, on ne peut pas dire concrètement ce qu'il y apprendra, verra ou pratiquera, ni qui il y entendra. Cas typiques :
+- titre d'ambiance ou poétique, sans description qui explique le contenu (exemple : « Cooking show : pâtisserie créative » décrit seulement par « Quand les classiques prennent des formes inattendues ») ;
+- seul le nom d'une personne, sans sa fonction ni son organisation, et sans contenu précis ;
+- propos culturel ou grand public sans apport pour un professionnel (exemple : « Les fermentations, le bon par le temps : comprendre comment le temps transforme les produits du quotidien ») ;
+- développement personnel ou motivation générale (syndrome de l'imposteur, écrire son livre, croire en soi) ;
+- présentation institutionnelle ou anniversaire d'un réseau, d'un label ou d'une organisation ;
+- « enjeux » d'un sujet très large, sans description ni intervenant qui précise l'angle ;
+- concours, jeu ou animation.
+Un atelier ou une démonstration dont la description cite des techniques, des produits ou des gestes précis a une promesse concrète. Un intervenant dont la fonction et l'organisation font autorité sur le sujet compte comme une promesse (« entendre le directeur des achats d'Airbus »).
+2 ter. promesse : si la session est suggérable, une phrase de 140 caractères maximum qui commence par un verbe à l'infinitif (Apprendre, Comprendre, Voir, Découvrir, Pratiquer, Comparer, Entendre) et dit concrètement ce que le participant en retire. Exemple : « Apprendre les gestes de base de la pâte filo, du sirop d'oranger et de la pistache, en atelier de 8 places ». Uniquement des éléments présents dans les informations fournies.
 3. summary : une phrase de 160 caractères maximum qui dit concrètement de quoi parle la session et pour qui. Ne répète pas le nom du salon. Pas de tiret cadratin. Pas de superlatif.
 4. themes : 0 à 3 codes, uniquement si la session traite réellement du thème (une simple mention ne suffit pas).
 5. sous_secteurs : 0 à 3 noms exacts de la liste, les secteurs d'activité concernés par le contenu de la session (pas forcément ceux du salon).
@@ -95,7 +105,7 @@ RÈGLES
 
 RÉPONSE
 Uniquement un objet JSON, sans texte autour :
-{"is_suggestible": true, "unsuggestible_reason": null, "summary": "...", "themes": [], "sous_secteurs": [], "roles": [], "niveau": "tous", "problemes": [], "mots_cles": []}`;
+{"is_suggestible": true, "unsuggestible_reason": null, "promesse": "...", "summary": "...", "themes": [], "sous_secteurs": [], "roles": [], "niveau": "tous", "problemes": [], "mots_cles": []}`;
 }
 
 function parseJson(text: string): Record<string, unknown> | null {
@@ -195,7 +205,7 @@ Deno.serve(async (req) => {
     if (NO_LLM_TYPES.has(s.session_type || '')) {
       record = {
         session_id: s.session_id, event_id: s.event_id, content_hash: s.content_hash,
-        is_suggestible: false, unsuggestible_reason: 'type_non_contenu', summary: null,
+        is_suggestible: false, unsuggestible_reason: 'type_non_contenu', summary: null, promise: null,
         theme_codes: [], sub_sector_ids: [], role_codes: [], level: null, problems: [], keywords: [],
         model: null, prompt_version: PROMPT_VERSION, enriched_at: new Date().toISOString(),
       };
@@ -216,6 +226,7 @@ Deno.serve(async (req) => {
           ? out.unsuggestible_reason : 'contenu_insuffisant';
       }
       const summaryRaw = typeof out.summary === 'string' ? out.summary.replace(/—/g, ',').trim() : '';
+      const promiseRaw = typeof out.promesse === 'string' ? out.promesse.replace(/—/g, ',').replace(/\s+/g, ' ').trim() : '';
       const level = typeof out.niveau === 'string' && LEVELS.has(out.niveau) ? out.niveau : 'tous';
 
       record = {
@@ -223,6 +234,7 @@ Deno.serve(async (req) => {
         is_suggestible: suggestible,
         unsuggestible_reason: reason,
         summary: suggestible && summaryRaw ? clip(summaryRaw, 200) : null,
+        promise: suggestible && promiseRaw ? clip(promiseRaw, 180) : null,
         theme_codes: suggestible ? strArray(out.themes, 3, 40).filter((c) => themeCodes.has(c)) : [],
         sub_sector_ids: suggestible
           ? strArray(out.sous_secteurs, 3, 120).map((n) => subByName.get(norm(n))).filter((x): x is string => !!x)
