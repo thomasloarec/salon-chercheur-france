@@ -243,3 +243,8 @@ verify_jwt = false
 # Authentification vérifiée dans le code (getClaims sur le header Authorization) : une session
 # anonyme suffit, et c'est elle qui porte le quota (assistant_engine_run_allowed).
 verify_jwt = false
+
+[functions.program-pdf-extract]
+# Authentification vérifiée dans le code (getUser sur le header Authorization) : propriétaire de
+# l'événement ou admin. Traitement lourd en tâche de fond (EdgeRuntime.waitUntil), réponse 202 immédiate.
+verify_jwt = false
