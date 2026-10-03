@@ -627,6 +627,33 @@ export type Database = {
         }
         Relationships: []
       }
+      assistant_engine_runs: {
+        Row: {
+          created_at: string
+          id: number
+          is_anonymous: boolean
+          mode: string
+          profile_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          is_anonymous?: boolean
+          mode: string
+          profile_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          is_anonymous?: boolean
+          mode?: string
+          profile_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       assistant_feedback: {
         Row: {
           created_at: string
@@ -830,6 +857,7 @@ export type Database = {
           replaced_by: string | null
           role_codes: string[]
           sector_ids: string[]
+          short_label: string | null
           sub_sector_ids: string[]
           theme_codes: string[]
           tuned_at: string | null
@@ -849,6 +877,7 @@ export type Database = {
           replaced_by?: string | null
           role_codes?: string[]
           sector_ids?: string[]
+          short_label?: string | null
           sub_sector_ids?: string[]
           theme_codes?: string[]
           tuned_at?: string | null
@@ -868,6 +897,7 @@ export type Database = {
           replaced_by?: string | null
           role_codes?: string[]
           sector_ids?: string[]
+          short_label?: string | null
           sub_sector_ids?: string[]
           theme_codes?: string[]
           tuned_at?: string | null
@@ -885,14 +915,17 @@ export type Database = {
       assistant_profiles: {
         Row: {
           city: string | null
+          claim_token: string
           company_description: string | null
           company_name: string | null
+          company_ref: string | null
           created_at: string
           goals: string[]
           id: string
           interests: string[]
           is_test: boolean
           label: string | null
+          onboarded_at: string | null
           radius_km: number | null
           refresh_attempts: number
           refresh_dispatched_at: string | null
@@ -906,14 +939,17 @@ export type Database = {
         }
         Insert: {
           city?: string | null
+          claim_token?: string
           company_description?: string | null
           company_name?: string | null
+          company_ref?: string | null
           created_at?: string
           goals?: string[]
           id?: string
           interests?: string[]
           is_test?: boolean
           label?: string | null
+          onboarded_at?: string | null
           radius_km?: number | null
           refresh_attempts?: number
           refresh_dispatched_at?: string | null
@@ -927,14 +963,17 @@ export type Database = {
         }
         Update: {
           city?: string | null
+          claim_token?: string
           company_description?: string | null
           company_name?: string | null
+          company_ref?: string | null
           created_at?: string
           goals?: string[]
           id?: string
           interests?: string[]
           is_test?: boolean
           label?: string | null
+          onboarded_at?: string | null
           radius_km?: number | null
           refresh_attempts?: number
           refresh_dispatched_at?: string | null
@@ -14485,6 +14524,18 @@ export type Database = {
         Args: { p_version?: number }
         Returns: number
       }
+      assistant_add_event_to_agenda: {
+        Args: { p_event_id: string }
+        Returns: Json
+      }
+      assistant_add_to_agenda: {
+        Args: { p_item_id: string; p_item_type: string }
+        Returns: Json
+      }
+      assistant_can_access_profile: {
+        Args: { p_profile_id: string }
+        Returns: boolean
+      }
       assistant_candidates: {
         Args: {
           p_days_from?: number
@@ -14505,18 +14556,50 @@ export type Database = {
           theme_match: boolean
         }[]
       }
+      assistant_claim_profile: {
+        Args: { p_claim_token: string; p_profile_id: string }
+        Returns: Json
+      }
+      assistant_company_context: {
+        Args: { p_company_ref: string }
+        Returns: Json
+      }
+      assistant_delete_my_piste: { Args: { p_piste_id: string }; Returns: Json }
       assistant_dispatch_refresh: {
         Args: { p_limit?: number }
         Returns: number
+      }
+      assistant_engine_run_allowed: {
+        Args: {
+          p_is_anonymous: boolean
+          p_mode: string
+          p_profile_id?: string
+          p_user_id: string
+        }
+        Returns: Json
       }
       assistant_feedback_weight: {
         Args: { p_created_at: string }
         Returns: number
       }
+      assistant_my_feed: { Args: { p_profile_id?: string }; Returns: Json }
+      assistant_my_profile_id: { Args: never; Returns: string }
+      assistant_named_sector: {
+        Args: { p_item_id: string; p_item_type: string; p_profile_id: string }
+        Returns: string
+      }
+      assistant_pepite_json: {
+        Args: {
+          m: Database["public"]["Tables"]["assistant_matches"]["Row"]
+          p_profile_id: string
+        }
+        Returns: Json
+      }
       assistant_profile_adjustments: {
         Args: { p_profile_id: string }
         Returns: Json
       }
+      assistant_public_demo: { Args: never; Returns: Json }
       assistant_record_feedback: {
         Args: {
           p_event_id?: string
@@ -14524,6 +14607,7 @@ export type Database = {
           p_item_type?: string
           p_profile_id: string
           p_reason?: string
+          p_sector_id?: string
           p_signal: string
           p_source?: string
         }
@@ -14533,9 +14617,37 @@ export type Database = {
         Args: { p_event_id: string; p_profile_id: string }
         Returns: undefined
       }
+      assistant_remove_from_agenda: {
+        Args: { p_item_id: string; p_item_type: string }
+        Returns: Json
+      }
+      assistant_set_my_distance: {
+        Args: { p_city: string; p_radius_km: number }
+        Returns: Json
+      }
       assistant_tune_pistes: { Args: { p_profile_id: string }; Returns: number }
       assistant_undo_feedback: {
         Args: { p_feedback_id: string }
+        Returns: Json
+      }
+      assistant_update_my_piste: {
+        Args: { p_label: string; p_piste_id: string }
+        Returns: Json
+      }
+      assistant_upsert_my_profile: {
+        Args: {
+          p_city?: string
+          p_company_description: string
+          p_company_name: string
+          p_company_ref: string
+          p_goals: string[]
+          p_interests: string[]
+          p_label: string
+          p_onboarded?: boolean
+          p_radius_km?: number
+          p_role_code: string
+          p_sub_sector_ids: string[]
+        }
         Returns: Json
       }
       build_all_event_profiles: {
