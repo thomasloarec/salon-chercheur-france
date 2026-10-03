@@ -1,4 +1,4 @@
 // Le parcours de création de l'assistant (/agenda/creer) arrive au lot 3d.
-// Tant que ce drapeau vaut false : pas de bandeau « Créer mon assistant », pas de lien « Modifier ».
+// Drapeau actif depuis le lot 3d : bandeau « Créer mon assistant » et lien « Modifier » visibles.
 export const ASSISTANT_ONBOARDING_PATH = '/agenda/creer';
-export const ASSISTANT_ONBOARDING_READY = false;
+export const ASSISTANT_ONBOARDING_READY = true;
