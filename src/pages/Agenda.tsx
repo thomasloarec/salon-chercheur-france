@@ -13,6 +13,12 @@ import { useVisitPlansForUser } from '@/hooks/useVisitPlan';
 import { VisitorDashboard } from '@/components/agenda/VisitorDashboard';
 import { fetchExhibitorPublicSlugs } from '@/lib/exhibitorPublicSlug';
 import { getDaysUntilStart, getEventTemporalState } from '@/lib/eventCapabilities';
+import { Search } from 'lucide-react';
+import { useAssistantFeed } from '@/components/assistant/useAssistantFeed';
+import AssistantSearchBar from '@/components/assistant/AssistantSearchBar';
+import AssistantDiscoverSection from '@/components/assistant/AssistantDiscoverSection';
+import { ASSISTANT_ONBOARDING_PATH, ASSISTANT_ONBOARDING_READY } from '@/components/assistant/config';
+import type { AssistantItem, AssistantKeptSession } from '@/components/assistant/types';
 
 /* Format de plage de dates, identique à celui d'EventCard. */
 function formatDateRange(start: string, end?: string | null) {
@@ -50,6 +56,23 @@ const Agenda = () => {
   const { data: likedNovelties = [] } = useLikedNovelties();
   const { data: memberships = [], isLoading: membershipsLoading } = useMyExhibitors();
   const { data: visitPlans = [] } = useVisitPlansForUser();
+  const { data: assistantFeed } = useAssistantFeed();
+  const hasAssistant = assistantFeed?.has_profile === true;
+
+  const keptByEvent = useMemo(() => {
+    const out: Record<string, AssistantKeptSession[]> = {};
+    for (const k of assistantFeed?.kept_sessions ?? []) (out[k.event_id] ??= []).push(k);
+    return out;
+  }, [assistantFeed]);
+
+  const othersByEvent = useMemo(() => {
+    const out: Record<string, AssistantItem[]> = {};
+    for (const g of assistantFeed?.agenda_pepites ?? []) {
+      const items = (g.pepites ?? []).filter((i) => i.kept === false);
+      if (items.length) out[g.event_id] = items;
+    }
+    return out;
+  }, [assistantFeed]);
 
   // Les anciens liens « espace exposant » redirigent vers la nouvelle page de
   // gestion de l'entreprise (ou vers le profil si l'utilisateur en gère
@@ -327,13 +350,49 @@ const Agenda = () => {
         </div>
       </section>
 
+      {hasAssistant && assistantFeed && (
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-10">
+          <AssistantSearchBar pistes={assistantFeed.pistes ?? []} status={assistantFeed.status} />
+          <AssistantDiscoverSection
+            suggestions={assistantFeed.suggestions ?? []}
+            profileId={assistantFeed.profile?.id}
+            refreshing={assistantFeed.status?.refreshing}
+          />
+        </div>
+      )}
+
       {/* ============================= CONTENU ============================= */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {hasAssistant && (
+          <div className="mb-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="heading-display text-[30px] leading-tight text-foreground">Mes salons</h2>
+              <span className="inline-flex items-center rounded-full bg-surface-inverse px-2.5 py-0.5 text-sm font-bold text-inverse">
+                {upcomingEvents.length}
+              </span>
+            </div>
+            <p className="mt-1 text-base text-muted-foreground">
+              Votre agenda. Sous chaque salon : vos conférences retenues et ce qui reste à ne pas manquer.
+            </p>
+          </div>
+        )}
+        {!hasAssistant && assistantFeed && ASSISTANT_ONBOARDING_READY && (
+          <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl bg-violet-soft p-5">
+            <Search className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+            <p className="flex-1 text-base text-foreground">
+              Créer mon assistant : 90 secondes, et je vous signale ce qui vaut le déplacement.
+            </p>
+            <Button asChild className="min-h-11">
+              <Link to={ASSISTANT_ONBOARDING_PATH}>Créer mon assistant</Link>
+            </Button>
+          </div>
+        )}
         <VisitorDashboard
           events={upcomingEvents}
           pastEvents={pastEvents}
           likedNovelties={likedNovelties}
           isLoading={isLoading}
+          assistant={hasAssistant ? { profileId: assistantFeed?.profile?.id, keptByEvent, othersByEvent } : undefined}
         />
       </div>
     </AgendaShell>
