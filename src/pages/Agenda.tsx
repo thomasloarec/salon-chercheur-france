@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import RegionsDialog from '@/components/assistant/RegionsDialog';
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight, CalendarRange, MapPin, Radio, Sparkles, Store } from 'lucide-react';
@@ -57,6 +58,7 @@ const Agenda = () => {
   const { data: memberships = [], isLoading: membershipsLoading } = useMyExhibitors();
   const { data: visitPlans = [] } = useVisitPlansForUser();
   const { data: assistantFeed } = useAssistantFeed();
+  const [regionsOpen, setRegionsOpen] = useState(false);
   const hasAssistant = assistantFeed?.has_profile === true;
 
   const keptByEvent = useMemo(() => {
@@ -352,11 +354,22 @@ const Agenda = () => {
 
       {hasAssistant && assistantFeed && (
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-10">
-          <AssistantSearchBar pistes={assistantFeed.pistes ?? []} status={assistantFeed.status} />
+          <AssistantSearchBar
+            pistes={assistantFeed.pistes ?? []}
+            status={assistantFeed.status}
+            regionCodes={assistantFeed.profile?.region_codes ?? []}
+            onEditRegions={() => setRegionsOpen(true)}
+          />
           <AssistantDiscoverSection
             suggestions={assistantFeed.suggestions ?? []}
             profileId={assistantFeed.profile?.id}
             refreshing={assistantFeed.status?.refreshing}
+            onProposeDistance={() => setRegionsOpen(true)}
+          />
+          <RegionsDialog
+            open={regionsOpen}
+            onOpenChange={setRegionsOpen}
+            initial={assistantFeed.profile?.region_codes ?? []}
           />
         </div>
       )}

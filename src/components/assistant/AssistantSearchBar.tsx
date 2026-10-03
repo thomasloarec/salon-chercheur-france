@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, MapPin, Search } from 'lucide-react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ASSISTANT_ONBOARDING_PATH, ASSISTANT_ONBOARDING_READY } from './config';
@@ -7,6 +7,8 @@ import { ASSISTANT_ONBOARDING_PATH, ASSISTANT_ONBOARDING_READY } from './config'
 interface Props {
   pistes: { id: string; short_label: string }[];
   status?: { refreshing: boolean; refreshed_at: string | null };
+  regionCodes?: string[];
+  onEditRegions?: () => void;
 }
 
 const MAX_CHIPS = 6;
@@ -19,7 +21,9 @@ function updatedLabel(iso: string): string | null {
   }
 }
 
-export default function AssistantSearchBar({ pistes, status }: Props) {
+export default function AssistantSearchBar({ pistes, status, regionCodes, onEditRegions }: Props) {
+  const nRegions = regionCodes?.length ?? 0;
+  const regionLabel = nRegions === 0 ? 'Partout en France' : `${nRegions} région${nRegions > 1 ? 's' : ''}`;
   const shown = pistes.slice(0, MAX_CHIPS);
   const rest = pistes.length - shown.length;
   const updated = !status?.refreshing && status?.refreshed_at ? updatedLabel(status.refreshed_at) : null;
@@ -46,6 +50,16 @@ export default function AssistantSearchBar({ pistes, status }: Props) {
         <span className="inline-flex h-8 items-center rounded-full bg-background px-3 text-sm font-semibold text-primary">
           +{rest}
         </span>
+      )}
+      {onEditRegions && (
+        <button
+          type="button"
+          onClick={onEditRegions}
+          className="relative inline-flex h-8 items-center gap-1.5 rounded-full border border-primary-foreground bg-transparent px-3 text-sm font-semibold text-primary-foreground before:absolute before:-inset-y-1.5 before:inset-x-0 before:content-[''] hover:bg-primary-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground"
+        >
+          <MapPin className="h-4 w-4" aria-hidden="true" />
+          {regionLabel}
+        </button>
       )}
       {ASSISTANT_ONBOARDING_READY && (
         <Link
