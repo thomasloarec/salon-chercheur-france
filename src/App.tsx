@@ -49,6 +49,7 @@ import AdminRadarCrm from '@/pages/admin/AdminRadarCrm';
 import CmoDashboardPage from '@/pages/admin/CmoDashboardPage';
 import AssistantApercu from '@/pages/admin/AssistantApercu';
 import AssistantOnboarding from '@/pages/AssistantOnboarding';
+import ConnexionLien from '@/pages/ConnexionLien';
 import AssistantClaimHandler from '@/components/assistant/AssistantClaimHandler';
 import RadarCrm from '@/pages/RadarCrm';
 import RadarOverviewPage from '@/pages/radar/RadarOverviewPage';
@@ -230,6 +231,7 @@ function App() {
               <Route path="/favorites" element={<Favorites />} />
               <Route path="/agenda" element={<Agenda />} />
               <Route path="/agenda/creer" element={<AssistantOnboarding />} />
+              <Route path="/connexion" element={<ConnexionLien />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/cgu" element={<CGU />} />
               <Route path="/mentions-legales" element={<MentionsLegales />} />

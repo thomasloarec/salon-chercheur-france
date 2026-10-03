@@ -1142,6 +1142,27 @@ export type Database = {
         }
         Relationships: []
       }
+      auth_login_link_requests: {
+        Row: {
+          created_at: string
+          email_hash: string
+          id: number
+          ip_hash: string
+        }
+        Insert: {
+          created_at?: string
+          email_hash: string
+          id?: never
+          ip_hash: string
+        }
+        Update: {
+          created_at?: string
+          email_hash?: string
+          id?: never
+          ip_hash?: string
+        }
+        Relationships: []
+      }
       blog_articles: {
         Row: {
           article_type: string
