@@ -232,3 +232,9 @@ verify_jwt = true
 
 [functions.enrich-program-sessions]
 verify_jwt = false
+
+[functions.enrich-novelties]
+verify_jwt = false
+
+[functions.assistant-pepites]
+verify_jwt = false
