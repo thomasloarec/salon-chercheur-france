@@ -15,6 +15,7 @@ type Phase = 'select' | 'extracting' | 'preview' | 'applying' | 'error';
 interface ImportResult {
   champs_detectes?: string[];
   champs_non_detectes?: string[];
+  avertissements?: string[];
   speakers?: any[];
   sessions?: any[];
 }
@@ -227,6 +228,17 @@ const ProgramPdfImportDialog: React.FC<{
                   Ce PDF ne contenait pas : {nonDetectes.map(champLabel).join(', ')}. Ces champs
                   resteront vides ; vous pourrez les compléter à la main dans l'éditeur.
                 </p>
+              </div>
+            )}
+
+            {(result?.avertissements ?? []).length > 0 && (
+              <div className="space-y-1 rounded-lg border border-warning/40 bg-warning-surface p-3 text-sm text-warning-foreground">
+                {(result?.avertissements ?? []).map((a, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <p>{a}</p>
+                  </div>
+                ))}
               </div>
             )}
 
