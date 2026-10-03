@@ -7,11 +7,12 @@ interface Props {
   suggestions: AssistantSuggestion[];
   profileId?: string;
   refreshing?: boolean;
+  onProposeDistance?: () => void;
 }
 
 const INITIAL = 3;
 
-export default function AssistantDiscoverSection({ suggestions, profileId, refreshing }: Props) {
+export default function AssistantDiscoverSection({ suggestions, profileId, refreshing, onProposeDistance }: Props) {
   const headingId = useId();
   const [expanded, setExpanded] = useState(false);
   const shown = expanded ? suggestions : suggestions.slice(0, INITIAL);
@@ -42,7 +43,12 @@ export default function AssistantDiscoverSection({ suggestions, profileId, refre
       ) : (
         <div className="space-y-5">
           {shown.map((s) => (
-            <AssistantEventCard key={s.event.id} suggestion={s} profileId={profileId} />
+            <AssistantEventCard
+              key={s.event.id}
+              suggestion={s}
+              profileId={profileId}
+              onProposeDistance={onProposeDistance}
+            />
           ))}
           {!expanded && rest > 0 && (
             <Button variant="outline" className="min-h-11" onClick={() => setExpanded(true)}>

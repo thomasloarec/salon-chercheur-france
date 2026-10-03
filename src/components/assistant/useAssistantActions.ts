@@ -148,8 +148,8 @@ export function useAssistantActions(options: { onProposeDistance?: () => void } 
             action: onProposeDistance
               ? React.createElement(
                   ToastAction,
-                  { altText: 'Régler la distance', onClick: onProposeDistance },
-                  'Régler la distance',
+                  { altText: 'Choisir mes régions', onClick: onProposeDistance },
+                  'Choisir mes régions',
                 ) as unknown as ToastActionElement
               : undefined,
           });

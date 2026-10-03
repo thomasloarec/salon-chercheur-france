@@ -48,6 +48,8 @@ import AdminIaVisite from '@/pages/AdminIaVisite';
 import AdminRadarCrm from '@/pages/admin/AdminRadarCrm';
 import CmoDashboardPage from '@/pages/admin/CmoDashboardPage';
 import AssistantApercu from '@/pages/admin/AssistantApercu';
+import AssistantOnboarding from '@/pages/AssistantOnboarding';
+import AssistantClaimHandler from '@/components/assistant/AssistantClaimHandler';
 import RadarCrm from '@/pages/RadarCrm';
 import RadarOverviewPage from '@/pages/radar/RadarOverviewPage';
 import RadarAccountsPage from '@/pages/radar/RadarAccountsPage';
@@ -146,6 +148,7 @@ function App() {
               <ScrollToTop />
               <AnalyticsTracker />
                 <PendingVisitRedirect />
+                <AssistantClaimHandler />
               <div className="App">
                 <Routes>
                 <Route path="/embed/salon/:slug" element={<SalonEmbedPage />} />
@@ -226,6 +229,7 @@ function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/favorites" element={<Favorites />} />
               <Route path="/agenda" element={<Agenda />} />
+              <Route path="/agenda/creer" element={<AssistantOnboarding />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/cgu" element={<CGU />} />
               <Route path="/mentions-legales" element={<MentionsLegales />} />
