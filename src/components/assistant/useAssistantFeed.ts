@@ -9,6 +9,7 @@ export function useAssistantFeed() {
   return useQuery({
     queryKey: ['assistant-feed', session?.user?.id],
     enabled: !!session,
+    refetchInterval: (query) => (query.state.data?.status?.refreshing ? 15000 : false),
     queryFn: async (): Promise<AssistantFeed> => {
       const { data, error } = await (supabase as any).rpc('assistant_my_feed');
       if (error) throw error;

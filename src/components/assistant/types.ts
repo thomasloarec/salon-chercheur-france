@@ -61,3 +61,5 @@ export interface AssistantFeed {
     location: string | null; registration_url: string | null;
   }[];
 }
+
+export type AssistantKeptSession = NonNullable<AssistantFeed['kept_sessions']>[number];

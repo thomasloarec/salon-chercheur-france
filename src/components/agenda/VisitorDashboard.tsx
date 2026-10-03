@@ -18,7 +18,10 @@ import {
   Route,
   Sparkles,
   Store,
+  Target,
 } from 'lucide-react';
+import AgendaAssistantBlocks from '@/components/assistant/AgendaAssistantBlocks';
+import type { AssistantItem, AssistantKeptSession } from '@/components/assistant/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -139,6 +142,11 @@ interface VisitorDashboardProps {
   pastEvents?: any[];
   likedNovelties: any[];
   isLoading?: boolean;
+  assistant?: {
+    profileId?: string;
+    keptByEvent: Record<string, AssistantKeptSession[]>;
+    othersByEvent: Record<string, AssistantItem[]>;
+  };
 }
 
 export function VisitorDashboard({
@@ -146,6 +154,7 @@ export function VisitorDashboard({
   pastEvents = [],
   likedNovelties,
   isLoading,
+  assistant,
 }: VisitorDashboardProps) {
   // Une ligne ouverte par défaut : la première (le salon le plus proche).
   const [openOverrides, setOpenOverrides] = useState<Record<string, boolean>>({});
@@ -351,6 +360,9 @@ export function VisitorDashboard({
                     onToggle={() => toggleRow(event.id, isOpen)}
                     noveltiesExpanded={expandedNovelties.has(event.id)}
                     onToggleNovelties={() => toggleNovelties(event.id)}
+                    assistantKept={assistant?.keptByEvent[event.id] ?? []}
+                    assistantOthers={assistant?.othersByEvent[event.id] ?? []}
+                    assistantProfileId={assistant?.profileId}
                   />
                 </RevealItem>
               );
@@ -377,6 +389,9 @@ function AgendaEventRow({
   onToggle,
   noveltiesExpanded,
   onToggleNovelties,
+  assistantKept = [],
+  assistantOthers = [],
+  assistantProfileId,
 }: {
   event: any;
   plan?: VisitPlan;
@@ -387,6 +402,9 @@ function AgendaEventRow({
   onToggle: () => void;
   noveltiesExpanded: boolean;
   onToggleNovelties: () => void;
+  assistantKept?: AssistantKeptSession[];
+  assistantOthers?: AssistantItem[];
+  assistantProfileId?: string;
 }) {
   const state = getEventTemporalState(event.date_debut, event.date_fin);
   const ongoing = state === 'en_cours' || state === 'imminent';
@@ -397,8 +415,11 @@ function AgendaEventRow({
   const capabilities = getEventCapabilities(event, exhibitorCount);
 
   const planCount = (plan?.prioritaires?.length || 0) + (plan?.optionnels?.length || 0);
-  const hasPersonalMetrics = planCount > 0 || novelties.length > 0;
-  const hasPanel = !!plan || novelties.length > 0 || capabilities.canPrepareVisit;
+  const keptCount = assistantKept.length;
+  const hasPersonalMetrics = keptCount > 0 || planCount > 0 || novelties.length > 0;
+  const hasPanel =
+    !!plan || novelties.length > 0 || capabilities.canPrepareVisit
+    || keptCount > 0 || assistantOthers.length > 0;
 
   const displayedNovelties = noveltiesExpanded ? novelties : novelties.slice(0, 3);
 
@@ -496,12 +517,34 @@ function AgendaEventRow({
               )}
             </div>
           )}
+
+          {assistantOthers.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
+                <Target className="h-3 w-3 shrink-0" />
+                {assistantOthers.length} à ne pas manquer pour vous
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Rail : MES chiffres */}
         <div className="col-span-full flex flex-col gap-3 border-t border-border/60 pt-3 min-[1040px]:col-span-1 min-[1040px]:w-[240px] min-[1040px]:border-l min-[1040px]:border-t-0 min-[1040px]:pl-6 min-[1040px]:pt-0">
           {hasPersonalMetrics && (
             <div className="flex items-center gap-4 min-[1040px]:justify-end">
+              {keptCount > 0 && (
+                <div className="flex flex-col leading-none">
+                  <span className="heading-display text-2xl tabular-nums text-foreground">
+                    {keptCount}
+                  </span>
+                  <span className="mt-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                    {keptCount > 1 ? 'conférences retenues' : 'conférence retenue'}
+                  </span>
+                </div>
+              )}
+              {keptCount > 0 && (planCount > 0 || novelties.length > 0) && (
+                <span aria-hidden="true" className="h-8 w-px bg-border" />
+              )}
               {planCount > 0 && (
                 <div className="flex flex-col leading-none">
                   <span className="heading-display text-2xl tabular-nums text-foreground">
@@ -563,6 +606,11 @@ function AgendaEventRow({
       {/* Panneau déplié */}
       {hasPanel && isOpen && (
         <div className="animate-panel-in space-y-7 border-t border-border/60 bg-muted/20 px-4 py-6">
+          <AgendaAssistantBlocks
+            kept={assistantKept}
+            others={assistantOthers}
+            profileId={assistantProfileId}
+          />
           {/* Parcours de visite */}
           {plan && (
             <div>
