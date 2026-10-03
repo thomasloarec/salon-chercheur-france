@@ -248,3 +248,8 @@ verify_jwt = false
 # Authentification vérifiée dans le code (getUser sur le header Authorization) : propriétaire de
 # l'événement ou admin. Traitement lourd en tâche de fond (EdgeRuntime.waitUntil), réponse 202 immédiate.
 verify_jwt = false
+
+[functions.assistant-login-link]
+# Point d'entrée public : la personne n'a pas encore de compte. Sécurité en code : limites d'envoi par
+# adresse et par IP (empreintes), chemin de retour interne uniquement, réponse identique compte existant ou non.
+verify_jwt = false
