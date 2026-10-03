@@ -11,7 +11,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const PROMPT_VERSION = 'v1';
+const PROMPT_VERSION = 'v2';
 const MODEL = getAnthropicModelFast();
 const BATCH_LIMIT = 60;
 const CONCURRENCY = 5;
@@ -87,6 +87,7 @@ ${subs.map((x) => x.name).join(' | ')}
 RÈGLES
 1. N'invente aucun fait, chiffre, nom ou résultat. Utilise uniquement les informations ci-dessus.
 2. is_suggestible = false seulement si on ne peut pas savoir ce que présente l'entreprise (titre vague et aucun texte qui précise). Donne alors unsuggestible_reason parmi : titre_vague, contenu_insuffisant ; et laisse les autres champs vides.
+2 bis. promesse : si la Nouveauté est suggérable, une phrase de 140 caractères maximum qui commence par un verbe à l'infinitif (Voir, Découvrir, Tester, Comparer, Apprendre) et dit concrètement ce que le visiteur verra ou pourra faire sur le stand. Exemple : « Voir en démonstration une grue sur remorque 100 % électrique tractable par un véhicule léger ». Uniquement des éléments présents dans les informations fournies.
 3. summary : une phrase de 160 caractères maximum qui dit concrètement ce qui est présenté et pour qui. Ne répète pas le nom du salon. Pas de tiret cadratin. Pas de superlatif ni de ton publicitaire.
 4. themes : 0 à 3 codes, uniquement si la Nouveauté relève réellement du thème.
 5. sous_secteurs : 1 à 3 noms exacts de la liste : les secteurs d'activité des clients à qui la Nouveauté s'adresse, et le secteur de l'entreprise si c'est pertinent.
@@ -97,7 +98,7 @@ RÈGLES
 
 RÉPONSE
 Uniquement un objet JSON, sans texte autour :
-{"is_suggestible": true, "unsuggestible_reason": null, "summary": "...", "themes": [], "sous_secteurs": [], "roles": [], "niveau": "tous", "problemes": [], "mots_cles": []}`;
+{"is_suggestible": true, "unsuggestible_reason": null, "promesse": "...", "summary": "...", "themes": [], "sous_secteurs": [], "roles": [], "niveau": "tous", "problemes": [], "mots_cles": []}`;
 }
 
 function parseJson(text: string): Record<string, unknown> | null {
@@ -208,6 +209,7 @@ Deno.serve(async (req) => {
         ? out.unsuggestible_reason : 'contenu_insuffisant';
     }
     const summaryRaw = typeof out.summary === 'string' ? out.summary.replace(/—/g, ',').trim() : '';
+    const promiseRaw = typeof out.promesse === 'string' ? out.promesse.replace(/—/g, ',').replace(/\s+/g, ' ').trim() : '';
     const level = typeof out.niveau === 'string' && LEVELS.has(out.niveau) ? out.niveau : 'tous';
 
     const record = {
@@ -215,6 +217,7 @@ Deno.serve(async (req) => {
       is_suggestible: suggestible,
       unsuggestible_reason: reason,
       summary: suggestible && summaryRaw ? clip(summaryRaw, 200) : null,
+      promise: suggestible && promiseRaw ? clip(promiseRaw, 180) : null,
       theme_codes: suggestible ? strArray(out.themes, 3, 40).filter((c) => themeCodes.has(c)) : [],
       sub_sector_ids: suggestible
         ? strArray(out.sous_secteurs, 3, 120).map((x) => subByName.get(norm(x))).filter((x): x is string => !!x)

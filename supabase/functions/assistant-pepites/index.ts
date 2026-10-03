@@ -43,7 +43,7 @@ type Candidate = {
 };
 type Item = {
   key: string; type: 'session' | 'novelty'; id: string; event_id: string; title: string;
-  summary: string; problems: string[]; extra: string; when: string;
+  summary: string; promise: string; problems: string[]; extra: string; when: string;
 };
 
 function json(body: unknown, status = 200) {
@@ -55,6 +55,14 @@ function json(body: unknown, status = 200) {
 
 function norm(s: string): string {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+// Clé de doublon : ignore les marqueurs de rediffusion (« (V1) », « (V2) », « - session 2 »…)
+function titleKey(t: string): string {
+  return norm(t)
+    .replace(/\b(v|version|session|seance|partie|part)\s*\d+\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function clean(t: string | null | undefined, max: number): string {
@@ -207,11 +215,21 @@ async function buildPistes(supabase: SupabaseClient, anthropicKey: string, p: Pr
   const ins = await supabase.from('assistant_pistes').insert(rows);
   if (ins.error) throw new Error(ins.error.message);
 
-  const emb = await supabase.rpc('embed_assistant_pistes', { p_profile_id: p.id });
-  if (emb.error) throw new Error(`Vecteurs des pistes : ${emb.error.message}`);
-  if ((emb.data as number) < rows.length) {
-    throw new Error(`Vecteurs des pistes : ${emb.data} calculés sur ${rows.length}`);
+  // Le service de vecteurs peut ne pas répondre ponctuellement : jusqu'à 3 tentatives.
+  let lastErr = '';
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const emb = await supabase.rpc('embed_assistant_pistes', { p_profile_id: p.id });
+    if (!emb.error) {
+      const left = await supabase.from('assistant_pistes').select('id', { count: 'exact', head: true })
+        .eq('profile_id', p.id).is('embedding', null);
+      if (!left.error && (left.count ?? 0) === 0) { lastErr = ''; break; }
+      lastErr = `${left.count ?? '?'} pistes sans vecteur`;
+    } else {
+      lastErr = emb.error.message;
+    }
+    if (attempt < 3) await new Promise((r) => setTimeout(r, 2000 * attempt));
   }
+  if (lastErr) throw new Error(`Vecteurs des pistes : ${lastErr}`);
   return rows.map((r) => ({ label: r.label, themes: r.theme_codes, generique: r.is_generic }));
 }
 
@@ -225,7 +243,7 @@ async function loadItems(supabase: SupabaseClient, sessionIds: string[], novelty
     const [sRes, eRes, spRes] = await Promise.all([
       supabase.from('event_program_sessions')
         .select('id,event_id,title,description,session_type,day_date,start_time').in('id', sessionIds),
-      supabase.from('session_enrichment').select('session_id,summary,problems').in('session_id', sessionIds),
+      supabase.from('session_enrichment').select('session_id,summary,promise,problems').in('session_id', sessionIds),
       supabase.from('event_program_session_speakers')
         .select('session_id,position,event_program_speakers(full_name,job_title,company)')
         .in('session_id', sessionIds),
@@ -246,12 +264,13 @@ async function loadItems(supabase: SupabaseClient, sessionIds: string[], novelty
       }
     }
     for (const s of (sRes.data ?? []) as Record<string, string | null>[]) {
-      const e = enr.get(s.id as string) as unknown as { summary: string | null; problems: string[] | null } | undefined;
+      const e = enr.get(s.id as string) as unknown as { summary: string | null; promise: string | null; problems: string[] | null } | undefined;
       const sp = speakers.get(s.id as string) ?? [];
       items.set(`session:${s.id}`, {
         key: `session:${s.id}`, type: 'session', id: s.id as string, event_id: s.event_id as string,
         title: clean(s.title, 200),
         summary: clean(e?.summary || s.description, 300),
+        promise: clean(e?.promise, 200),
         problems: (e?.problems ?? []).slice(0, 3),
         extra: [clean(s.description, 400) ? `Description : ${clean(s.description, 400)}` : '',
                 sp.length ? `Intervenants : ${sp.join(' ; ')}` : ''].filter(Boolean).join('\n'),
@@ -264,18 +283,19 @@ async function loadItems(supabase: SupabaseClient, sessionIds: string[], novelty
     const [nRes, eRes] = await Promise.all([
       supabase.from('novelties')
         .select('id,event_id,title,summary,type,reason_1,exhibitors!novelties_exhibitor_id_fkey(name)').in('id', noveltyIds),
-      supabase.from('novelty_enrichment').select('novelty_id,summary,problems').in('novelty_id', noveltyIds),
+      supabase.from('novelty_enrichment').select('novelty_id,summary,promise,problems').in('novelty_id', noveltyIds),
     ]);
     if (nRes.error) throw new Error(nRes.error.message);
     if (eRes.error) throw new Error(eRes.error.message);
     const enr = new Map(((eRes.data ?? []) as Record<string, unknown>[]).map((r) => [r.novelty_id as string, r]));
     for (const n of (nRes.data ?? []) as Record<string, unknown>[]) {
-      const e = enr.get(n.id as string) as unknown as { summary: string | null; problems: string[] | null } | undefined;
+      const e = enr.get(n.id as string) as unknown as { summary: string | null; promise: string | null; problems: string[] | null } | undefined;
       const ex = n.exhibitors as { name?: string } | null;
       items.set(`novelty:${n.id}`, {
         key: `novelty:${n.id}`, type: 'novelty', id: n.id as string, event_id: n.event_id as string,
         title: clean(n.title as string, 200),
         summary: clean(e?.summary || (n.summary as string), 300),
+        promise: clean(e?.promise, 200),
         problems: (e?.problems ?? []).slice(0, 3),
         extra: [ex?.name ? `Entreprise : ${ex.name}` : '',
                 clean(n.reason_1 as string, 300) ? `Argument : ${clean(n.reason_1 as string, 300)}` : '']
@@ -291,6 +311,7 @@ function reviewPrompt(p: Profile, refs: Refs, list: { idx: number; item: Item; s
   const blocks = list.map(({ idx, item, salon, date }) => [
     `[${idx}] ${item.type === 'session' ? 'Conférence' : 'Nouveauté'} · ${salon} (${date})`,
     `Titre : ${item.title}`,
+    item.promise ? `Ce que le participant en retire : ${item.promise}` : '',
     item.summary ? `Résumé : ${item.summary}` : '',
     item.problems.length ? `Questions traitées : ${item.problems.join(' ; ')}` : '',
     item.extra,
@@ -311,9 +332,10 @@ BARÈME (score de 0 à 100)
 - 0 à 39 : sans rapport avec lui.
 Une conférence générique (IA, RSE, management, cybersécurité…) qui ne parle ni de son secteur ni de son métier : 60 au maximum.
 Une Nouveauté vaut surtout s'il peut l'utiliser, l'acheter ou la proposer dans son activité.
+Une session dont on ne sait pas concrètement ce qu'on y apprendra, verra ou pratiquera, ou qui reste culturelle ou grand public : 50 au maximum.
 
 RAISON
-Pour chaque élément, une phrase de 160 caractères maximum, adressée à lui avec « vous », qui dit pourquoi c'est utile pour lui. Elle s'appuie uniquement sur le profil et sur le contenu de l'élément : aucun fait inventé, pas de tiret cadratin, pas de superlatif, ne mentionne ni le score ni la façon dont l'élément a été trouvé.
+Pour chaque élément, une phrase de 160 caractères maximum, adressée à lui avec « vous », qui dit pourquoi c'est utile pour lui. Elle s'appuie uniquement sur le profil et sur le contenu de l'élément : aucun fait inventé, en français correct avec tous les accents, pas de tiret cadratin, pas de superlatif, ne mentionne ni le score ni la façon dont l'élément a été trouvé.
 
 RÉPONSE
 Uniquement un objet JSON, sans texte autour, avec une entrée par élément :
@@ -355,7 +377,7 @@ async function runMatch(
   for (const c of passing) {
     const it = items.get(`${c.item_type}:${c.item_id}`);
     if (!it) continue;
-    const tk = `${c.event_id}|${c.item_type}|${norm(it.title)}`;
+    const tk = `${c.event_id}|${c.item_type}|${titleKey(it.title)}`;
     if (seenTitle.has(tk)) { duplicates++; continue; }
     seenTitle.add(tk);
     toReview.push(c);
