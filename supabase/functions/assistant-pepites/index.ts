@@ -561,7 +561,28 @@ async function runMatch(
     }
   }
   const passing = [...best.values()].filter((c) => c.passes).sort((a, b) => b.similarity - a.similarity);
-  const failing = [...best.values()].filter((c) => !c.passes);
+
+  // Une pépite que l'utilisateur a ajoutée à son agenda (ou pour laquelle il s'est inscrit ou a demandé un
+  // rendez-vous) reste une pépite : elle n'est pas relue et garde sa note et sa raison d'origine.
+  type Prev = { item_type: 'session' | 'novelty'; item_id: string; piste_id: string | null; event_id: string;
+    similarity: number | null; sector_match: boolean; role_match: boolean; theme_match: boolean;
+    score: number | null; reason: string | null; status: string; model: string | null; reviewed_at: string | null };
+  const likedRes = await supabase.from('assistant_feedback').select('item_type,item_id')
+    .eq('profile_id', p.id).in('signal', ['agenda', 'inscription', 'rdv']).is('undone_at', null);
+  if (likedRes.error) throw new Error(likedRes.error.message);
+  const likedKeys = new Set(((likedRes.data ?? []) as { item_type: string; item_id: string }[])
+    .map((x) => `${x.item_type}:${x.item_id}`));
+  const prevByKey = new Map<string, Prev>();
+  if (likedKeys.size) {
+    const ids = [...likedKeys].map((k) => k.split(':')[1]);
+    const prevRes = await supabase.from('assistant_matches')
+      .select('item_type,item_id,piste_id,event_id,similarity,sector_match,role_match,theme_match,score,reason,status,model,reviewed_at')
+      .eq('profile_id', p.id).in('item_id', ids);
+    if (prevRes.error) throw new Error(prevRes.error.message);
+    for (const x of (prevRes.data ?? []) as Prev[]) prevByKey.set(`${x.item_type}:${x.item_id}`, x);
+  }
+  const excludedEvents = new Set(adj.excluded_event_ids);
+  const failing = [...best.values()].filter((c) => !c.passes && !likedKeys.has(`${c.item_type}:${c.item_id}`));
 
   const items = await loadItems(
     supabase,
@@ -597,6 +618,7 @@ async function runMatch(
     const it = items.get(`${c.item_type}:${c.item_id}`);
     if (!it) continue;
     const tk = `${c.event_id}|${c.item_type}|${titleKey(it.title)}`;
+    if (likedKeys.has(`${c.item_type}:${c.item_id}`)) { seenTitle.add(tk); continue; }
     if (refusedTitle.has(tk)) { refusedReplays++; continue; }
     if (seenTitle.has(tk)) { duplicates++; continue; }
     seenTitle.add(tk);
@@ -661,6 +683,24 @@ async function runMatch(
         model: r ? r.model : null, reviewed_at: r ? now : null,
       };
     }),
+    // pépites aimées : conservées telles quelles (sauf salon refusé depuis)
+    ...[...likedKeys].flatMap((k) => {
+      const c = best.get(k);
+      const prev = prevByKey.get(k);
+      const eventId = c?.event_id ?? prev?.event_id;
+      if (!eventId || excludedEvents.has(eventId)) return [];
+      const keep = prev && prev.status === 'retained';
+      const [itemType, itemId] = k.split(':') as ['session' | 'novelty', string];
+      return [{
+        profile_id: p.id, piste_id: c?.piste_id ?? prev?.piste_id ?? null, item_type: itemType, item_id: itemId,
+        event_id: eventId, similarity: c?.similarity ?? prev?.similarity ?? null,
+        sector_match: c?.sector_match ?? prev?.sector_match ?? false,
+        role_match: c?.role_match ?? prev?.role_match ?? false,
+        theme_match: c?.theme_match ?? prev?.theme_match ?? false,
+        score: keep ? prev!.score : null, reason: keep ? prev!.reason : null, status: 'retained',
+        model: keep ? prev!.model : null, reviewed_at: keep ? prev!.reviewed_at : null,
+      }];
+    }),
     // éléments écartés par le croisement : gardés pour le diagnostic, jamais montrés
     ...failing.map((c) => ({
       profile_id: p.id, piste_id: c.piste_id, item_type: c.item_type, item_id: c.item_id, event_id: c.event_id,
@@ -715,6 +755,7 @@ async function runMatch(
     passent_le_croisement: passing.length,
     doublons_de_titre: duplicates,
     rediffusions_refusees: refusedReplays,
+    pepites_aimees_conservees: likedKeys.size,
     relus: reviews.size,
     retenus: inserted.filter((x) => x.status === 'retained').length,
     erreurs_relecture: reviewErrors,
