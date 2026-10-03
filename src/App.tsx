@@ -47,6 +47,7 @@ import AdminSeoAudit from '@/pages/AdminSeoAudit';
 import AdminIaVisite from '@/pages/AdminIaVisite';
 import AdminRadarCrm from '@/pages/admin/AdminRadarCrm';
 import CmoDashboardPage from '@/pages/admin/CmoDashboardPage';
+import AssistantApercu from '@/pages/admin/AssistantApercu';
 import RadarCrm from '@/pages/RadarCrm';
 import RadarOverviewPage from '@/pages/radar/RadarOverviewPage';
 import RadarAccountsPage from '@/pages/radar/RadarAccountsPage';
@@ -191,6 +192,7 @@ function App() {
               <Route path="events/:id" element={<AdminEventDetail />} />
               <Route path="events/by-text/:id_event_text" element={<AdminEventByText />} />
               <Route path="novelties" element={<AdminNoveltiesPage />} />
+              <Route path="assistant-apercu" element={<AssistantApercu />} />
               <Route path="blog" element={<AdminBlog />} />
               <Route path="blog/new" element={<AdminBlogEdit />} />
               <Route path="blog/edit/:id" element={<AdminBlogEdit />} />
