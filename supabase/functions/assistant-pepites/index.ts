@@ -1,8 +1,14 @@
 // supabase/functions/assistant-pepites/index.ts
 // Assistant « Pépites » : le moteur de pépites pour UN profil (lot 2b, boucle d'apprentissage au lot 4).
-// Appelée par le serveur (service_role) ou à la main par un admin. Aucune page du site ne l'appelle encore.
+// Appelée par le serveur (service_role), par un admin, ou (lot 3) par l'utilisateur pour SON assistant,
+// y compris pendant l'onboarding sous une session anonyme. Quotas par 24 h : assistant_engine_run_allowed.
 //
-// Corps : { "profile_id": "...", "step": "all" | "pistes" | "match" | "adapt", "days_from": 0, "days_to": 60 }
+// Corps : { "profile_id": "...", "step": "all" | "pistes" | "match" | "adapt", "days_from": 0, "days_to": 60,
+//           "preview": false }
+//   profile_id : facultatif pour l'utilisateur (son assistant est retrouvé), obligatoire pour le serveur
+//   preview    : relecture plafonnée à 45 éléments (onboarding) ; toujours vrai pour une session anonyme.
+//                Après un aperçu, un compte reçoit la recherche complète par la tâche planifiée.
+//   L'utilisateur ne peut lancer que « all », « pistes » ou « match » sur la fenêtre par défaut.
 //   pistes : l'IA tire 3 à 5 pistes du profil, puis leurs vecteurs sont calculés (RPC embed_assistant_pistes)
 //   match  : présélection + croisement (RPC assistant_candidates, qui applique les retours de l'utilisateur),
 //            relecture IA (score 0-100 + raison, avec les derniers retours), écriture des pépites
@@ -11,7 +17,7 @@
 //            deux fois pour « Pas ce sujet », ajuste les vecteurs des pistes (RPC assistant_tune_pistes), puis match
 //   all    : pistes puis match (défaut)
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
-import { callAnthropic, getAnthropicModelStrong } from '../_shared/anthropic.ts';
+import { callAnthropic, getAnthropicModelFast, getAnthropicModelStrong } from '../_shared/anthropic.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,11 +25,13 @@ const corsHeaders = {
 };
 
 const MODEL = getAnthropicModelStrong();
+const MODEL_FAST = getAnthropicModelFast();
 const RETAIN_SCORE = 70;        // une pépite est retenue à partir de ce score
 const STRONG_SCORE = 90;        // une seule pépite suffit si elle atteint ce score et croise le secteur
 const REVIEW_CHUNK = 15;        // éléments relus par appel à Claude
 const REVIEW_CONCURRENCY = 4;
 const MAX_REVIEWED = 90;        // plafond d'éléments relus par profil
+const PREVIEW_MAX_REVIEWED = 45; // aperçu de l'onboarding (trois paquets relus en parallèle)
 const WEAK_RETAIN_SCORE = 80;   // seuil pour une piste affaiblie par des « Pas pour moi » répétés
 const GOAL_LABELS: Record<string, string> = {
   fournisseurs: 'trouver des fournisseurs ou des solutions',
@@ -34,7 +42,7 @@ const GOAL_LABELS: Record<string, string> = {
 };
 
 type Profile = {
-  id: string; label: string | null; company_name: string | null; company_description: string | null;
+  id: string; user_id: string | null; label: string | null; company_name: string | null; company_description: string | null;
   sector_ids: string[]; sub_sector_ids: string[]; role_code: string | null;
   interests: string[]; goals: string[];
 };
@@ -192,10 +200,11 @@ RÈGLES
 6. roles : 1 à 3 codes : le rôle du profil et, si utile, les rôles proches.
 7. generique : true si la piste est surtout un thème transversal (IA, cybersécurité, RSE, financement, recrutement, réglementation…) appliqué à son activité ; false si c'est un sujet propre à son métier ou à son secteur (exemple : maladies de la vigne).
 8. N'invente rien sur l'entreprise.
+9. court : 2 à 4 mots qui nomment le sujet de la piste, affichés sur un bouton (exemple : « IA et conception »). Sans article au début, sans tiret cadratin.
 
 RÉPONSE
 Uniquement un objet JSON, sans texte autour :
-{"pistes": [{"label": "...", "themes": [], "sous_secteurs": [], "roles": [], "generique": false}]}`;
+{"pistes": [{"label": "...", "court": "...", "themes": [], "sous_secteurs": [], "roles": [], "generique": false}]}`;
 }
 
 async function buildPistes(supabase: SupabaseClient, anthropicKey: string, p: Profile, refs: Refs) {
@@ -223,7 +232,7 @@ async function buildPistes(supabase: SupabaseClient, anthropicKey: string, p: Pr
     const subIds = [...new Set(subs.map((s) => s.id))];
     const sectorIds = [...new Set(subs.map((s) => s.sector_id))];
     return {
-      profile_id: p.id, position: i, label,
+      profile_id: p.id, position: i, label, short_label: shortLabel(x.court),
       theme_codes: themes, sub_sector_ids: subIds, sector_ids: sectorIds, role_codes: roles,
       // une piste générique sans thème reconnu ne pourrait jamais passer le croisement
       is_generic: x.generique === true && themes.length > 0,
@@ -232,13 +241,64 @@ async function buildPistes(supabase: SupabaseClient, anthropicKey: string, p: Pr
   }).filter((r) => r.label.length >= 5);
   if (rows.length === 0) throw new Error('Claude pistes : aucune piste exploitable');
 
-  const del = await supabase.from('assistant_pistes').delete().eq('profile_id', p.id);
-  if (del.error) throw new Error(del.error.message);
+  // Les anciennes pistes qui portent des retours sont désactivées (leurs retours restent attachés) ;
+  // les autres sont supprimées.
+  const fbRes = await supabase.from('assistant_feedback').select('piste_id')
+    .eq('profile_id', p.id).not('piste_id', 'is', null);
+  if (fbRes.error) throw new Error(fbRes.error.message);
+  const withFeedback = [...new Set(((fbRes.data ?? []) as { piste_id: string }[]).map((f) => f.piste_id))];
+  if (withFeedback.length) {
+    const off = await supabase.from('assistant_pistes').update({ active: false })
+      .eq('profile_id', p.id).in('id', withFeedback);
+    if (off.error) throw new Error(off.error.message);
+  }
+  let del = supabase.from('assistant_pistes').delete().eq('profile_id', p.id);
+  if (withFeedback.length) del = del.not('id', 'in', `(${withFeedback.join(',')})`);
+  const delRes = await del;
+  if (delRes.error) throw new Error(delRes.error.message);
   const ins = await supabase.from('assistant_pistes').insert(rows);
   if (ins.error) throw new Error(ins.error.message);
 
   await embedPistes(supabase, p.id);
-  return rows.map((r) => ({ label: r.label, themes: r.theme_codes, generique: r.is_generic }));
+  return rows.map((r) => ({ label: r.label, court: r.short_label, themes: r.theme_codes, generique: r.is_generic }));
+}
+
+// Libellé court d'une piste (bouton « Pas ce sujet (…) ») : 2 à 4 mots, 40 caractères au plus.
+function shortLabel(v: unknown): string | null {
+  if (typeof v !== 'string') return null;
+  const t = v.replace(/—/g, ',').replace(/[«»"]/g, '').replace(/\s+/g, ' ').trim().replace(/[.,;:]+$/g, '');
+  if (t.length < 3) return null;
+  const words = t.split(' ').slice(0, 5).join(' ');
+  return clip(words, 40) || null;
+}
+
+// Les pistes sans libellé court (modifiées par l'utilisateur, ou créées avant le lot 3) en reçoivent un,
+// en un seul appel au modèle rapide. Sans réponse exploitable, le site affiche le libellé complet.
+async function fillShortLabels(supabase: SupabaseClient, anthropicKey: string, profileId: string) {
+  const r = await supabase.from('assistant_pistes').select('id,label')
+    .eq('profile_id', profileId).eq('active', true).is('short_label', null);
+  if (r.error) throw new Error(r.error.message);
+  const list = (r.data ?? []) as { id: string; label: string }[];
+  if (list.length === 0) return 0;
+  const res = await callAnthropic({
+    apiKey: anthropicKey, model: MODEL_FAST, maxTokens: 400, caller: 'assistant-pepites:court',
+    userMessage: `Pour chaque sujet ci-dessous, donne un libellé de 2 à 4 mots qui le nomme, affiché sur un bouton (exemple : « IA et conception »). En français, sans article au début, sans tiret cadratin.
+
+${list.map((x, i) => `${i + 1}. ${x.label}`).join('\n')}
+
+Uniquement un objet JSON, sans texte autour : {"courts": [{"i": 1, "court": "..."}]}`,
+  });
+  const out = res.ok && res.text ? parseJson(res.text) : null;
+  const courts = Array.isArray(out?.courts) ? (out!.courts as Record<string, unknown>[]) : [];
+  let n = 0;
+  for (const c of courts) {
+    const j = Number(c.i);
+    const s = shortLabel(c.court);
+    if (!Number.isInteger(j) || j < 1 || j > list.length || !s) continue;
+    const up = await supabase.from('assistant_pistes').update({ short_label: s }).eq('id', list[j - 1].id);
+    if (!up.error) n++;
+  }
+  return n;
 }
 
 // Le service de vecteurs peut ne pas répondre ponctuellement : jusqu'à 3 tentatives.
@@ -328,10 +388,11 @@ RÈGLES
 6. roles : 1 à 3 codes.
 7. generique : true si la piste est surtout un thème transversal appliqué à son activité ; sinon false.
 8. N'invente rien sur l'entreprise.
+9. court : 2 à 4 mots qui nomment le sujet de la piste, affichés sur un bouton. Sans article au début, sans tiret cadratin.
 
 RÉPONSE
 Uniquement un objet JSON, sans texte autour :
-{"piste": {"label": "...", "themes": [], "sous_secteurs": [], "roles": [], "generique": false}}`;
+{"piste": {"label": "...", "court": "...", "themes": [], "sous_secteurs": [], "roles": [], "generique": false}}`;
 }
 
 // Remplace les pistes refusées deux fois pour « Pas ce sujet ». L'ancienne piste est désactivée (jamais
@@ -399,7 +460,7 @@ async function replacePistes(
       if (roles.length === 0 && p.role_code) roles = [p.role_code];
       if (label.length >= 5) {
         const ins = await supabase.from('assistant_pistes').insert({
-          profile_id: p.id, position: old.position, label,
+          profile_id: p.id, position: old.position, label, short_label: shortLabel(x.court),
           theme_codes: themes, sub_sector_ids: [...new Set(subs.map((s) => s.id))],
           sector_ids: [...new Set(subs.map((s) => s.sector_id))], role_codes: roles,
           is_generic: x.generique === true && themes.length > 0,
@@ -542,14 +603,14 @@ Uniquement un objet JSON, sans texte autour, avec une entrée par élément :
 
 async function runMatch(
   supabase: SupabaseClient, anthropicKey: string, p: Profile, refs: Refs, daysFrom: number, daysTo: number,
-  adj: Adjustments,
+  adj: Adjustments, maxReviewed: number,
 ) {
   const cRes = await supabase.rpc('assistant_candidates', {
     p_profile_id: p.id, p_k: 25, p_min_similarity: 0.30, p_days_from: daysFrom, p_days_to: daysTo,
   });
   if (cRes.error) throw new Error(`Présélection : ${cRes.error.message}`);
+  // Présélection vide possible (profil très spécialisé, période creuse) : on écrit alors un résultat vide.
   const cands = (cRes.data ?? []) as Candidate[];
-  if (cands.length === 0) throw new Error('Présélection vide : le profil a-t-il des pistes avec vecteur ?');
 
   // Un élément peut venir de plusieurs pistes : on garde la meilleure ligne (passe d'abord, puis similarité).
   const best = new Map<string, Candidate>();
@@ -623,7 +684,7 @@ async function runMatch(
     if (seenTitle.has(tk)) { duplicates++; continue; }
     seenTitle.add(tk);
     toReview.push(c);
-    if (toReview.length >= MAX_REVIEWED) break;
+    if (toReview.length >= maxReviewed) break;
   }
 
   const eventIds = [...new Set(toReview.map((c) => c.event_id))];
@@ -777,38 +838,72 @@ Deno.serve(async (req) => {
     return json({ error: 'Missing required secrets' }, 500);
   }
 
-  // Auth : service_role ou admin authentifié
+  // Auth : service_role, admin, ou l'utilisateur lui-même (session anonyme comprise) pour SON assistant
   const authHeader = req.headers.get('Authorization') || '';
   if (!authHeader.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
   const token = authHeader.slice('Bearer '.length);
+  const supabase = createClient(supabaseUrl, serviceKey);
+  let caller: 'service' | 'admin' | 'owner' = 'service';
+  let callerId = '';
+  let callerAnonymous = false;
   if (token !== serviceKey) {
     const authClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
     const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims?.sub) return json({ error: 'Unauthorized' }, 401);
-    const adminCheck = createClient(supabaseUrl, serviceKey);
-    const { data: isAdmin, error: roleError } = await adminCheck.rpc('has_role', {
-      _user_id: claimsData.claims.sub,
+    const claims = claimsData?.claims as Record<string, unknown> | undefined;
+    if (claimsError || typeof claims?.sub !== 'string') return json({ error: 'Unauthorized' }, 401);
+    callerId = claims.sub;
+    callerAnonymous = claims.is_anonymous === true;
+    const { data: isAdmin, error: roleError } = await supabase.rpc('has_role', {
+      _user_id: callerId,
       _role: 'admin',
     });
-    if (roleError || !isAdmin) return json({ error: 'Forbidden: admin only' }, 403);
+    if (roleError) return json({ error: 'Unauthorized' }, 401);
+    caller = isAdmin === true && !callerAnonymous ? 'admin' : 'owner';
   }
 
   let body: Record<string, unknown> = {};
   try { body = await req.json(); } catch { /* corps vide */ }
-  const profileId = typeof body.profile_id === 'string' ? body.profile_id : '';
-  const step = body.step === 'pistes' || body.step === 'match' || body.step === 'adapt' ? body.step : 'all';
-  const daysFrom = typeof body.days_from === 'number' ? Math.max(0, Math.min(365, body.days_from)) : 0;
-  const daysTo = typeof body.days_to === 'number' ? Math.max(daysFrom, Math.min(365, body.days_to)) : 60;
-  if (!/^[0-9a-f-]{36}$/i.test(profileId)) return json({ error: 'profile_id manquant ou invalide' }, 400);
+  let profileId = typeof body.profile_id === 'string' ? body.profile_id : '';
+  let step = body.step === 'pistes' || body.step === 'match' || body.step === 'adapt' ? body.step : 'all';
+  let daysFrom = typeof body.days_from === 'number' ? Math.max(0, Math.min(365, body.days_from)) : 0;
+  let daysTo = typeof body.days_to === 'number' ? Math.max(daysFrom, Math.min(365, body.days_to)) : 60;
+  const preview = body.preview === true || callerAnonymous;
+  if (caller === 'owner') {
+    // l'utilisateur ne règle ni la fenêtre ni l'étape « adapt » (réservée à la tâche planifiée)
+    if (step === 'adapt') step = 'match';
+    daysFrom = 0;
+    daysTo = 60;
+  }
+  if (profileId && !/^[0-9a-f-]{36}$/i.test(profileId)) return json({ error: 'profile_id invalide' }, 400);
+  if (!profileId && caller !== 'owner') return json({ error: 'profile_id manquant' }, 400);
 
-  const supabase = createClient(supabaseUrl, serviceKey);
   try {
-    const pRes = await supabase.from('assistant_profiles')
-      .select('id,label,company_name,company_description,sector_ids,sub_sector_ids,role_code,interests,goals')
-      .eq('id', profileId).maybeSingle();
+    let q = supabase.from('assistant_profiles')
+      .select('id,user_id,label,company_name,company_description,sector_ids,sub_sector_ids,role_code,interests,goals');
+    q = profileId ? q.eq('id', profileId) : q.eq('user_id', callerId);
+    const pRes = await q.maybeSingle();
     if (pRes.error) return json({ error: pRes.error.message }, 500);
-    if (!pRes.data) return json({ error: 'Profil introuvable' }, 404);
+    if (!pRes.data) return json({ error: 'Assistant introuvable' }, 404);
     const p = pRes.data as Profile;
+    profileId = p.id;
+    if (caller === 'owner' && p.user_id !== callerId) return json({ error: 'Accès refusé' }, 403);
+
+    // Quota par 24 h (le coût de l'IA) : seulement pour l'utilisateur lui-même
+    if (caller === 'owner') {
+      const quota = await supabase.rpc('assistant_engine_run_allowed', {
+        p_user_id: callerId, p_is_anonymous: callerAnonymous,
+        p_mode: step === 'pistes' ? 'pistes' : `engine_${step}`, p_profile_id: p.id,
+      });
+      if (quota.error) return json({ error: quota.error.message }, 500);
+      if ((quota.data as { allowed?: boolean } | null)?.allowed !== true) {
+        return json({
+          error: callerAnonymous
+            ? 'Vous avez atteint la limite de recherches pour aujourd\'hui. Créez votre compte pour continuer.'
+            : 'Vous avez atteint la limite de recherches pour aujourd\'hui. Réessayez demain.',
+          code: 'quota',
+        }, 429);
+      }
+    }
 
     const refs = await loadRefs(supabase);
     if (refs.themes.length === 0 || refs.roles.length === 0 || refs.subs.length === 0) {
@@ -816,7 +911,7 @@ Deno.serve(async (req) => {
     }
 
     const startedAt = new Date().toISOString();
-    const result: Record<string, unknown> = { profile_id: p.id, label: p.label, model: MODEL, step };
+    const result: Record<string, unknown> = { profile_id: p.id, label: p.label, model: MODEL, step, preview };
     if (step === 'all' || step === 'pistes') result.pistes = await buildPistes(supabase, anthropicKey, p, refs);
 
     let adj: Adjustments = EMPTY_ADJ;
@@ -827,6 +922,18 @@ Deno.serve(async (req) => {
       if (tune.error) throw new Error(`Ajustement des pistes : ${tune.error.message}`);
       result.pistes_ajustees = tune.data;
       adj = await loadAdjustments(supabase, p.id);
+    }
+    if (step !== 'pistes') {
+      // pistes modifiées par l'utilisateur : vecteur à recalculer avant la présélection
+      const missing = await supabase.from('assistant_pistes').select('id', { count: 'exact', head: true })
+        .eq('profile_id', p.id).eq('active', true).is('embedding', null);
+      if (missing.error) throw new Error(missing.error.message);
+      if ((missing.count ?? 0) > 0) await embedPistes(supabase, p.id);
+    }
+    try {
+      result.libelles_courts = await fillShortLabels(supabase, anthropicKey, p.id);
+    } catch (e) {
+      console.error('[assistant-pepites] libellés courts', (e as Error).message);
     }
     if (step !== 'pistes') {
       result.retours = {
@@ -840,10 +947,28 @@ Deno.serve(async (req) => {
         proposer_distance: adj.propose_distance,
       };
       result.fenetre = { days_from: daysFrom, days_to: daysTo };
-      result.moteur = await runMatch(supabase, anthropicKey, p, refs, daysFrom, daysTo, adj);
+      result.moteur = await runMatch(supabase, anthropicKey, p, refs, daysFrom, daysTo, adj,
+        preview ? PREVIEW_MAX_REVIEWED : MAX_REVIEWED);
       const mark = await supabase.from('assistant_profiles')
         .update({ refreshed_at: startedAt, refresh_attempts: 0 }).eq('id', p.id);
       if (mark.error) console.error('[assistant-pepites] refreshed_at', mark.error.message);
+      // Après un aperçu, un compte reçoit la recherche complète par la tâche planifiée (quelques minutes).
+      // Une session anonyme l'aura au rattachement de son assistant à un compte.
+      if (preview && caller === 'owner' && !callerAnonymous) {
+        const full = await supabase.from('assistant_profiles')
+          .update({ refresh_requested_at: new Date().toISOString(), refresh_attempts: 0 }).eq('id', p.id);
+        if (full.error) console.error('[assistant-pepites] refresh_requested_at', full.error.message);
+      }
+    }
+    if (caller === 'owner') {
+      // l'utilisateur relit ensuite son fil (assistant_my_feed) : réponse courte, sans diagnostic
+      const m = result.moteur as { retenus?: number; salons_suggeres?: unknown[] } | undefined;
+      return json({
+        ok: true, profile_id: p.id, step, preview,
+        pistes: result.pistes ?? null,
+        pepites: m?.retenus ?? null,
+        salons: m?.salons_suggeres?.length ?? null,
+      });
     }
     return json(result);
   } catch (e) {
