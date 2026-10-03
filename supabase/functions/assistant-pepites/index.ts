@@ -1,11 +1,14 @@
 // supabase/functions/assistant-pepites/index.ts
-// Assistant « Pépites », lot 2b : le moteur de pépites pour UN profil.
+// Assistant « Pépites » : le moteur de pépites pour UN profil (lot 2b, boucle d'apprentissage au lot 4).
 // Appelée par le serveur (service_role) ou à la main par un admin. Aucune page du site ne l'appelle encore.
 //
-// Corps : { "profile_id": "...", "step": "all" | "pistes" | "match", "days_from": 0, "days_to": 60 }
+// Corps : { "profile_id": "...", "step": "all" | "pistes" | "match" | "adapt", "days_from": 0, "days_to": 60 }
 //   pistes : l'IA tire 3 à 5 pistes du profil, puis leurs vecteurs sont calculés (RPC embed_assistant_pistes)
-//   match  : présélection + croisement (RPC assistant_candidates), relecture IA (score 0-100 + raison),
-//            écriture des pépites (assistant_matches) et des salons suggérés (assistant_suggestions)
+//   match  : présélection + croisement (RPC assistant_candidates, qui applique les retours de l'utilisateur),
+//            relecture IA (score 0-100 + raison, avec les derniers retours), écriture des pépites
+//            (assistant_matches) et des salons suggérés (assistant_suggestions)
+//   adapt  : après des retours (tâche planifiée assistant-refresh-feedback) : remplace les pistes refusées
+//            deux fois pour « Pas ce sujet », ajuste les vecteurs des pistes (RPC assistant_tune_pistes), puis match
 //   all    : pistes puis match (défaut)
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { callAnthropic, getAnthropicModelStrong } from '../_shared/anthropic.ts';
@@ -21,6 +24,7 @@ const STRONG_SCORE = 90;        // une seule pépite suffit si elle atteint ce s
 const REVIEW_CHUNK = 15;        // éléments relus par appel à Claude
 const REVIEW_CONCURRENCY = 4;
 const MAX_REVIEWED = 90;        // plafond d'éléments relus par profil
+const WEAK_RETAIN_SCORE = 80;   // seuil pour une piste affaiblie par des « Pas pour moi » répétés
 const GOAL_LABELS: Record<string, string> = {
   fournisseurs: 'trouver des fournisseurs ou des solutions',
   clients: 'rencontrer des clients ou prospects',
@@ -44,6 +48,24 @@ type Candidate = {
 type Item = {
   key: string; type: 'session' | 'novelty'; id: string; event_id: string; title: string;
   summary: string; promise: string; problems: string[]; extra: string; when: string;
+};
+type Recent = { signal: string; reason: string | null; item_type: string | null; title: string | null; piste: string | null };
+type Adjustments = {
+  excluded_items: { item_type: 'session' | 'novelty'; item_id: string }[];
+  excluded_event_ids: string[];
+  excluded_series_ids: string[];
+  blocked_sector_ids: string[];
+  replace_piste_ids: string[];
+  weak_piste_ids: string[];
+  require_sector: boolean;
+  propose_distance: boolean;
+  recent: Recent[];
+  feedback_count: number;
+};
+const EMPTY_ADJ: Adjustments = {
+  excluded_items: [], excluded_event_ids: [], excluded_series_ids: [], blocked_sector_ids: [],
+  replace_piste_ids: [], weak_piste_ids: [], require_sector: false, propose_distance: false,
+  recent: [], feedback_count: 0,
 };
 
 function json(body: unknown, status = 200) {
@@ -215,13 +237,18 @@ async function buildPistes(supabase: SupabaseClient, anthropicKey: string, p: Pr
   const ins = await supabase.from('assistant_pistes').insert(rows);
   if (ins.error) throw new Error(ins.error.message);
 
-  // Le service de vecteurs peut ne pas répondre ponctuellement : jusqu'à 3 tentatives.
+  await embedPistes(supabase, p.id);
+  return rows.map((r) => ({ label: r.label, themes: r.theme_codes, generique: r.is_generic }));
+}
+
+// Le service de vecteurs peut ne pas répondre ponctuellement : jusqu'à 3 tentatives.
+async function embedPistes(supabase: SupabaseClient, profileId: string) {
   let lastErr = '';
   for (let attempt = 1; attempt <= 3; attempt++) {
-    const emb = await supabase.rpc('embed_assistant_pistes', { p_profile_id: p.id });
+    const emb = await supabase.rpc('embed_assistant_pistes', { p_profile_id: profileId });
     if (!emb.error) {
       const left = await supabase.from('assistant_pistes').select('id', { count: 'exact', head: true })
-        .eq('profile_id', p.id).is('embedding', null);
+        .eq('profile_id', profileId).eq('active', true).is('embedding', null);
       if (!left.error && (left.count ?? 0) === 0) { lastErr = ''; break; }
       lastErr = `${left.count ?? '?'} pistes sans vecteur`;
     } else {
@@ -230,7 +257,166 @@ async function buildPistes(supabase: SupabaseClient, anthropicKey: string, p: Pr
     if (attempt < 3) await new Promise((r) => setTimeout(r, 2000 * attempt));
   }
   if (lastErr) throw new Error(`Vecteurs des pistes : ${lastErr}`);
-  return rows.map((r) => ({ label: r.label, themes: r.theme_codes, generique: r.is_generic }));
+}
+
+// ---------------------------------------------------------------------------------------------
+// Retours de l'utilisateur
+// ---------------------------------------------------------------------------------------------
+async function loadAdjustments(supabase: SupabaseClient, profileId: string): Promise<Adjustments> {
+  const res = await supabase.rpc('assistant_profile_adjustments', { p_profile_id: profileId });
+  if (res.error) throw new Error(`Retours : ${res.error.message}`);
+  const a = (res.data ?? {}) as Partial<Adjustments>;
+  return {
+    excluded_items: Array.isArray(a.excluded_items) ? a.excluded_items : [],
+    excluded_event_ids: Array.isArray(a.excluded_event_ids) ? a.excluded_event_ids : [],
+    excluded_series_ids: Array.isArray(a.excluded_series_ids) ? a.excluded_series_ids : [],
+    blocked_sector_ids: Array.isArray(a.blocked_sector_ids) ? a.blocked_sector_ids : [],
+    replace_piste_ids: Array.isArray(a.replace_piste_ids) ? a.replace_piste_ids : [],
+    weak_piste_ids: Array.isArray(a.weak_piste_ids) ? a.weak_piste_ids : [],
+    require_sector: a.require_sector === true,
+    propose_distance: a.propose_distance === true,
+    recent: Array.isArray(a.recent) ? a.recent : [],
+    feedback_count: typeof a.feedback_count === 'number' ? a.feedback_count : 0,
+  };
+}
+
+function recentLine(r: Recent): string {
+  const t = `« ${clean(r.title, 160)} »`;
+  if (r.signal === 'agenda') return `- A ajouté à son agenda : ${t}`;
+  if (r.signal === 'inscription') return `- S'est inscrit : ${t}`;
+  if (r.signal === 'rdv') return `- A demandé un rendez-vous : ${t}`;
+  if (r.reason === 'sujet') return `- N'en veut pas (pas ce sujet) : ${t}`;
+  if (r.reason === 'secteur') return `- N'en veut pas (pas son secteur) : ${t}`;
+  if (r.reason === 'trop_general') return `- N'en veut pas (trop général pour lui) : ${t}`;
+  return `- N'en veut pas : ${t}`;
+}
+
+function replacementPrompt(
+  p: Profile, refs: Refs, oldLabel: string, refused: string[], liked: string[], others: string[], dropped: string[],
+): string {
+  return `Tu prépares la recherche d'un assistant qui signale à un professionnel les conférences et les Nouveautés d'exposants qui valent le déplacement pour lui sur les salons professionnels.
+
+PROFIL
+${profileText(p, refs)}
+
+PISTE À REMPLACER
+« ${oldLabel} »
+Il a refusé plusieurs éléments trouvés par cette piste en répondant « Pas ce sujet » :
+${refused.map((t) => `- « ${t} »`).join('\n') || '- (titres indisponibles)'}
+${liked.length ? `Il a apprécié, sur cette piste :\n${liked.map((t) => `- « ${t} »`).join('\n')}\n` : ''}
+AUTRES PISTES ACTIVES (ne pas les répéter)
+${others.map((t) => `- ${t}`).join('\n') || '- aucune'}
+${dropped.length ? `\nPISTES DÉJÀ ÉCARTÉES (ne pas y revenir)\n${dropped.map((t) => `- ${t}`).join('\n')}\n` : ''}
+THÈMES TRANSVERSAUX (codes autorisés)
+${refs.themes.map((t) => `${t.code} : ${t.label}`).join('\n')}
+
+RÔLES (codes autorisés)
+${refs.roles.map((r) => `${r.code} : ${r.label}`).join('\n')}
+
+SOUS-SECTEURS (noms autorisés, à recopier exactement)
+${refs.subs.map((x) => x.name).join(' | ')}
+
+TA TÂCHE
+Propose UNE nouvelle piste qui sert toujours ses centres d'intérêt déclarés, mais sous un angle différent de ce qu'il a refusé. Déduis de ses refus ce qui ne l'intéresse pas (le sujet lui-même, ou seulement l'angle) et évite-le. Si aucun angle sérieux ne reste, réponds {"piste": null}.
+
+RÈGLES
+1. La piste croise un centre d'intérêt du profil avec son activité, son secteur ou son métier.
+2. N'ajoute aucun sujet qu'il n'a pas exprimé et qui ne découle pas directement de son métier.
+3. label : 6 à 16 mots, en français, sans tiret cadratin.
+4. themes : 0 à 2 codes, seulement si la piste relève vraiment du thème.
+5. sous_secteurs : 1 à 3 noms exacts de la liste.
+6. roles : 1 à 3 codes.
+7. generique : true si la piste est surtout un thème transversal appliqué à son activité ; sinon false.
+8. N'invente rien sur l'entreprise.
+
+RÉPONSE
+Uniquement un objet JSON, sans texte autour :
+{"piste": {"label": "...", "themes": [], "sous_secteurs": [], "roles": [], "generique": false}}`;
+}
+
+// Remplace les pistes refusées deux fois pour « Pas ce sujet ». L'ancienne piste est désactivée (jamais
+// supprimée) : ses retours restent attachés et elle sert de contre-exemple pour les remplacements suivants.
+async function replacePistes(
+  supabase: SupabaseClient, anthropicKey: string, p: Profile, refs: Refs, adj: Adjustments,
+) {
+  const done: { ancienne: string; nouvelle: string | null }[] = [];
+  if (adj.replace_piste_ids.length === 0) return done;
+
+  const pRes = await supabase.from('assistant_pistes')
+    .select('id,position,label,active').eq('profile_id', p.id);
+  if (pRes.error) throw new Error(pRes.error.message);
+  const pistes = (pRes.data ?? []) as { id: string; position: number; label: string; active: boolean }[];
+
+  const themeCodes = new Set(refs.themes.map((t) => t.code));
+  const roleCodes = new Set(refs.roles.map((r) => r.code));
+  const subByName = new Map(refs.subs.map((x) => [norm(x.name), x]));
+
+  for (const pisteId of adj.replace_piste_ids) {
+    const old = pistes.find((x) => x.id === pisteId && x.active);
+    if (!old) continue;
+
+    const fbRes = await supabase.from('assistant_feedback')
+      .select('signal,reason,item_type,item_id').eq('profile_id', p.id).eq('piste_id', pisteId).is('undone_at', null);
+    if (fbRes.error) throw new Error(fbRes.error.message);
+    const fbs = (fbRes.data ?? []) as { signal: string; reason: string | null; item_type: string; item_id: string }[];
+    const sIds = fbs.filter((f) => f.item_type === 'session').map((f) => f.item_id);
+    const nIds = fbs.filter((f) => f.item_type === 'novelty').map((f) => f.item_id);
+    const titles = new Map<string, string>();
+    if (sIds.length) {
+      const r = await supabase.from('event_program_sessions').select('id,title').in('id', sIds);
+      for (const x of (r.data ?? []) as { id: string; title: string }[]) titles.set(x.id, clean(x.title, 160));
+    }
+    if (nIds.length) {
+      const r = await supabase.from('novelties').select('id,title').in('id', nIds);
+      for (const x of (r.data ?? []) as { id: string; title: string }[]) titles.set(x.id, clean(x.title, 160));
+    }
+    const refused = fbs.filter((f) => f.signal === 'pas_pour_moi' && f.reason === 'sujet')
+      .map((f) => titles.get(f.item_id)).filter((t): t is string => !!t);
+    const liked = fbs.filter((f) => ['agenda', 'inscription', 'rdv'].includes(f.signal))
+      .map((f) => titles.get(f.item_id)).filter((t): t is string => !!t);
+    const others = pistes.filter((x) => x.active && x.id !== pisteId).map((x) => x.label);
+    const dropped = pistes.filter((x) => !x.active).map((x) => x.label);
+
+    const res = await callAnthropic({
+      apiKey: anthropicKey, model: MODEL,
+      userMessage: replacementPrompt(p, refs, old.label, refused, liked, others, dropped),
+      maxTokens: 800, caller: 'assistant-pepites:replace',
+    });
+    if (!res.ok || !res.text) throw new Error(`Claude remplacement : ${res.error || 'réponse vide'}`);
+    const out = parseJson(res.text);
+    if (!out || !('piste' in out)) throw new Error('Claude remplacement : JSON invalide');
+
+    let newId: string | null = null;
+    let newLabel: string | null = null;
+    const x = out.piste as Record<string, unknown> | null;
+    if (x && typeof x.label === 'string') {
+      const label = clip(clean(x.label.replace(/—/g, ','), 200), 160);
+      const themes = strArray(x.themes, 2, 40).filter((c) => themeCodes.has(c));
+      let subs = strArray(x.sous_secteurs, 3, 120)
+        .map((n) => subByName.get(norm(n))).filter((s): s is SubSector => !!s);
+      if (subs.length === 0) subs = refs.subs.filter((s) => p.sub_sector_ids.includes(s.id));
+      let roles = strArray(x.roles, 3, 40).filter((c) => roleCodes.has(c));
+      if (roles.length === 0 && p.role_code) roles = [p.role_code];
+      if (label.length >= 5) {
+        const ins = await supabase.from('assistant_pistes').insert({
+          profile_id: p.id, position: old.position, label,
+          theme_codes: themes, sub_sector_ids: [...new Set(subs.map((s) => s.id))],
+          sector_ids: [...new Set(subs.map((s) => s.sector_id))], role_codes: roles,
+          is_generic: x.generique === true && themes.length > 0,
+          active: true, origin: 'replacement', model: res.model,
+        }).select('id').single();
+        if (ins.error) throw new Error(ins.error.message);
+        newId = (ins.data as { id: string }).id;
+        newLabel = label;
+      }
+    }
+    const upd = await supabase.from('assistant_pistes')
+      .update({ active: false, replaced_by: newId }).eq('id', pisteId);
+    if (upd.error) throw new Error(upd.error.message);
+    done.push({ ancienne: old.label, nouvelle: newLabel });
+  }
+  if (done.some((d) => d.nouvelle)) await embedPistes(supabase, p.id);
+  return done;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -307,7 +493,9 @@ async function loadItems(supabase: SupabaseClient, sessionIds: string[], novelty
   return items;
 }
 
-function reviewPrompt(p: Profile, refs: Refs, list: { idx: number; item: Item; salon: string; date: string }[]): string {
+function reviewPrompt(
+  p: Profile, refs: Refs, list: { idx: number; item: Item; salon: string; date: string }[], recent: Recent[],
+): string {
   const blocks = list.map(({ idx, item, salon, date }) => [
     `[${idx}] ${item.type === 'session' ? 'Conférence' : 'Nouveauté'} · ${salon} (${date})`,
     `Titre : ${item.title}`,
@@ -317,11 +505,18 @@ function reviewPrompt(p: Profile, refs: Refs, list: { idx: number; item: Item; s
     item.extra,
   ].filter(Boolean).join('\n')).join('\n\n');
 
+  const retours = recent.filter((r) => r.title).map(recentLine);
+  const retoursBlock = retours.length ? `
+SES DERNIERS RETOURS (du plus récent au plus ancien)
+${retours.join('\n')}
+Ces retours précisent ses goûts. Rapproche ta note de ce qu'il a apprécié et éloigne-la de ce qu'il a refusé, pour la même raison, uniquement pour des éléments vraiment proches. Un retour ne dit rien des éléments sans rapport.
+` : '';
+
   return `Tu es l'assistant d'un professionnel. Tu juges si chaque conférence ou Nouveauté d'exposant ci-dessous vaut le déplacement pour lui, sur un salon professionnel.
 
 PROFIL
 ${profileText(p, refs)}
-
+${retoursBlock}
 ÉLÉMENTS À JUGER
 ${blocks}
 
@@ -344,6 +539,7 @@ Uniquement un objet JSON, sans texte autour, avec une entrée par élément :
 
 async function runMatch(
   supabase: SupabaseClient, anthropicKey: string, p: Profile, refs: Refs, daysFrom: number, daysTo: number,
+  adj: Adjustments,
 ) {
   const cRes = await supabase.rpc('assistant_candidates', {
     p_profile_id: p.id, p_k: 25, p_min_similarity: 0.30, p_days_from: daysFrom, p_days_to: daysTo,
@@ -370,14 +566,35 @@ async function runMatch(
     passing.filter((c) => c.item_type === 'novelty').map((c) => c.item_id),
   );
 
+  // Une pépite refusée ne revient pas sous une autre séance (rediffusion du même titre dans le même salon).
+  const refusedTitle = new Set<string>();
+  const exSess = adj.excluded_items.filter((x) => x.item_type === 'session').map((x) => x.item_id);
+  const exNov = adj.excluded_items.filter((x) => x.item_type === 'novelty').map((x) => x.item_id);
+  if (exSess.length) {
+    const r = await supabase.from('event_program_sessions').select('event_id,title').in('id', exSess);
+    if (r.error) throw new Error(r.error.message);
+    for (const x of (r.data ?? []) as { event_id: string; title: string }[]) {
+      refusedTitle.add(`${x.event_id}|session|${titleKey(clean(x.title, 200))}`);
+    }
+  }
+  if (exNov.length) {
+    const r = await supabase.from('novelties').select('event_id,title').in('id', exNov);
+    if (r.error) throw new Error(r.error.message);
+    for (const x of (r.data ?? []) as { event_id: string; title: string }[]) {
+      refusedTitle.add(`${x.event_id}|novelty|${titleKey(clean(x.title, 200))}`);
+    }
+  }
+
   // Une conférence rejouée à plusieurs horaires dans un même salon = une seule pépite.
   const seenTitle = new Set<string>();
   const toReview: Candidate[] = [];
   let duplicates = 0;
+  let refusedReplays = 0;
   for (const c of passing) {
     const it = items.get(`${c.item_type}:${c.item_id}`);
     if (!it) continue;
     const tk = `${c.event_id}|${c.item_type}|${titleKey(it.title)}`;
+    if (refusedTitle.has(tk)) { refusedReplays++; continue; }
     if (seenTitle.has(tk)) { duplicates++; continue; }
     seenTitle.add(tk);
     toReview.push(c);
@@ -408,7 +625,7 @@ async function runMatch(
         };
       });
       const res = await callAnthropic({
-        apiKey: anthropicKey, model: MODEL, userMessage: reviewPrompt(p, refs, list),
+        apiKey: anthropicKey, model: MODEL, userMessage: reviewPrompt(p, refs, list, adj.recent),
         maxTokens: 3000, caller: 'assistant-pepites:review',
       });
       const out = res.ok && res.text ? parseJson(res.text) : null;
@@ -428,14 +645,16 @@ async function runMatch(
 
   // Écriture des pépites (on repart de zéro pour ce profil)
   const now = new Date().toISOString();
+  const weak = new Set(adj.weak_piste_ids);
   const rows = [
     ...toReview.map((c) => {
       const r = reviews.get(`${c.item_type}:${c.item_id}`);
+      const threshold = weak.has(c.piste_id) ? WEAK_RETAIN_SCORE : RETAIN_SCORE;
       return {
         profile_id: p.id, piste_id: c.piste_id, item_type: c.item_type, item_id: c.item_id, event_id: c.event_id,
         similarity: c.similarity, sector_match: c.sector_match, role_match: c.role_match, theme_match: c.theme_match,
         score: r ? r.score : null, reason: r ? r.reason : null,
-        status: r ? (r.score >= RETAIN_SCORE ? 'retained' : 'rejected') : 'candidate',
+        status: r ? (r.score >= threshold ? 'retained' : 'rejected') : 'candidate',
         model: r ? r.model : null, reviewed_at: r ? now : null,
       };
     }),
@@ -477,6 +696,7 @@ async function runMatch(
     .filter((s): s is NonNullable<typeof s> => !!s);
 
   // Les salons qui ne sont plus suggérés et n'ont encore rien déclenché disparaissent.
+  // (Les salons refusés par « Je n'irai pas » n'arrivent jamais ici : la présélection les exclut.)
   const keep = suggestions.map((s) => s.event_id);
   let delSugg = supabase.from('assistant_suggestions').delete().eq('profile_id', p.id).eq('status', 'pending');
   if (keep.length) delSugg = delSugg.not('event_id', 'in', `(${keep.join(',')})`);
@@ -491,6 +711,7 @@ async function runMatch(
     candidats: best.size,
     passent_le_croisement: passing.length,
     doublons_de_titre: duplicates,
+    rediffusions_refusees: refusedReplays,
     relus: reviews.size,
     retenus: inserted.filter((x) => x.status === 'retained').length,
     erreurs_relecture: reviewErrors,
@@ -531,7 +752,7 @@ Deno.serve(async (req) => {
   let body: Record<string, unknown> = {};
   try { body = await req.json(); } catch { /* corps vide */ }
   const profileId = typeof body.profile_id === 'string' ? body.profile_id : '';
-  const step = body.step === 'pistes' || body.step === 'match' ? body.step : 'all';
+  const step = body.step === 'pistes' || body.step === 'match' || body.step === 'adapt' ? body.step : 'all';
   const daysFrom = typeof body.days_from === 'number' ? Math.max(0, Math.min(365, body.days_from)) : 0;
   const daysTo = typeof body.days_to === 'number' ? Math.max(daysFrom, Math.min(365, body.days_to)) : 60;
   if (!/^[0-9a-f-]{36}$/i.test(profileId)) return json({ error: 'profile_id manquant ou invalide' }, 400);
@@ -550,11 +771,35 @@ Deno.serve(async (req) => {
       return json({ error: 'Référentiels vides : arrêt sans écriture' }, 500);
     }
 
+    const startedAt = new Date().toISOString();
     const result: Record<string, unknown> = { profile_id: p.id, label: p.label, model: MODEL, step };
     if (step === 'all' || step === 'pistes') result.pistes = await buildPistes(supabase, anthropicKey, p, refs);
-    if (step === 'all' || step === 'match') {
+
+    let adj: Adjustments = EMPTY_ADJ;
+    if (step !== 'pistes') adj = await loadAdjustments(supabase, p.id);
+    if (step === 'adapt') {
+      result.pistes_remplacees = await replacePistes(supabase, anthropicKey, p, refs, adj);
+      const tune = await supabase.rpc('assistant_tune_pistes', { p_profile_id: p.id });
+      if (tune.error) throw new Error(`Ajustement des pistes : ${tune.error.message}`);
+      result.pistes_ajustees = tune.data;
+      adj = await loadAdjustments(supabase, p.id);
+    }
+    if (step !== 'pistes') {
+      result.retours = {
+        nombre: adj.feedback_count,
+        elements_exclus: adj.excluded_items.length,
+        salons_exclus: adj.excluded_event_ids.length,
+        series_exclues: adj.excluded_series_ids.length,
+        secteurs_bloques: adj.blocked_sector_ids.length,
+        pistes_affaiblies: adj.weak_piste_ids.length,
+        secteur_exige: adj.require_sector,
+        proposer_distance: adj.propose_distance,
+      };
       result.fenetre = { days_from: daysFrom, days_to: daysTo };
-      result.moteur = await runMatch(supabase, anthropicKey, p, refs, daysFrom, daysTo);
+      result.moteur = await runMatch(supabase, anthropicKey, p, refs, daysFrom, daysTo, adj);
+      const mark = await supabase.from('assistant_profiles')
+        .update({ refreshed_at: startedAt, refresh_attempts: 0 }).eq('id', p.id);
+      if (mark.error) console.error('[assistant-pepites] refreshed_at', mark.error.message);
     }
     return json(result);
   } catch (e) {

@@ -627,6 +627,121 @@ export type Database = {
         }
         Relationships: []
       }
+      assistant_feedback: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          item_id: string | null
+          item_sector_ids: string[]
+          item_type: string | null
+          piste_id: string | null
+          piste_label: string | null
+          profile_id: string
+          reason: string | null
+          series_id: string | null
+          signal: string
+          source: string
+          undone_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          item_id?: string | null
+          item_sector_ids?: string[]
+          item_type?: string | null
+          piste_id?: string | null
+          piste_label?: string | null
+          profile_id: string
+          reason?: string | null
+          series_id?: string | null
+          signal: string
+          source?: string
+          undone_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          item_id?: string | null
+          item_sector_ids?: string[]
+          item_type?: string | null
+          piste_id?: string | null
+          piste_label?: string | null
+          profile_id?: string
+          reason?: string | null
+          series_id?: string | null
+          signal?: string
+          source?: string
+          undone_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_feedback_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "admin_events_exhibitor_coverage"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_feedback_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "assistant_feedback_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "assistant_feedback_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_feedback_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_feedback_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_salons_email_missing"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "assistant_feedback_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_feedback_piste_id_fkey"
+            columns: ["piste_id"]
+            isOneToOne: false
+            referencedRelation: "assistant_pistes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_feedback_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "assistant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assistant_matches: {
         Row: {
           created_at: string
@@ -704,46 +819,58 @@ export type Database = {
           active: boolean
           created_at: string
           embedding: string | null
+          embedding_tuned: string | null
           id: string
           is_generic: boolean
           label: string
           model: string | null
+          origin: string
           position: number
           profile_id: string
+          replaced_by: string | null
           role_codes: string[]
           sector_ids: string[]
           sub_sector_ids: string[]
           theme_codes: string[]
+          tuned_at: string | null
         }
         Insert: {
           active?: boolean
           created_at?: string
           embedding?: string | null
+          embedding_tuned?: string | null
           id?: string
           is_generic?: boolean
           label: string
           model?: string | null
+          origin?: string
           position?: number
           profile_id: string
+          replaced_by?: string | null
           role_codes?: string[]
           sector_ids?: string[]
           sub_sector_ids?: string[]
           theme_codes?: string[]
+          tuned_at?: string | null
         }
         Update: {
           active?: boolean
           created_at?: string
           embedding?: string | null
+          embedding_tuned?: string | null
           id?: string
           is_generic?: boolean
           label?: string
           model?: string | null
+          origin?: string
           position?: number
           profile_id?: string
+          replaced_by?: string | null
           role_codes?: string[]
           sector_ids?: string[]
           sub_sector_ids?: string[]
           theme_codes?: string[]
+          tuned_at?: string | null
         }
         Relationships: [
           {
@@ -767,6 +894,10 @@ export type Database = {
           is_test: boolean
           label: string | null
           radius_km: number | null
+          refresh_attempts: number
+          refresh_dispatched_at: string | null
+          refresh_requested_at: string | null
+          refreshed_at: string | null
           role_code: string | null
           sector_ids: string[]
           sub_sector_ids: string[]
@@ -784,6 +915,10 @@ export type Database = {
           is_test?: boolean
           label?: string | null
           radius_km?: number | null
+          refresh_attempts?: number
+          refresh_dispatched_at?: string | null
+          refresh_requested_at?: string | null
+          refreshed_at?: string | null
           role_code?: string | null
           sector_ids?: string[]
           sub_sector_ids?: string[]
@@ -801,6 +936,10 @@ export type Database = {
           is_test?: boolean
           label?: string | null
           radius_km?: number | null
+          refresh_attempts?: number
+          refresh_dispatched_at?: string | null
+          refresh_requested_at?: string | null
+          refreshed_at?: string | null
           role_code?: string | null
           sector_ids?: string[]
           sub_sector_ids?: string[]
@@ -12522,6 +12661,17 @@ export type Database = {
         }
         Relationships: []
       }
+      assistant_feedback_violations: {
+        Row: {
+          created_at: string | null
+          event_id: string | null
+          item_id: string | null
+          item_type: string | null
+          probleme: string | null
+          profile_id: string | null
+        }
+        Relationships: []
+      }
       crm_radar_participations_view: {
         Row: {
           date_debut: string | null
@@ -14354,6 +14504,39 @@ export type Database = {
           similarity: number
           theme_match: boolean
         }[]
+      }
+      assistant_dispatch_refresh: {
+        Args: { p_limit?: number }
+        Returns: number
+      }
+      assistant_feedback_weight: {
+        Args: { p_created_at: string }
+        Returns: number
+      }
+      assistant_profile_adjustments: {
+        Args: { p_profile_id: string }
+        Returns: Json
+      }
+      assistant_record_feedback: {
+        Args: {
+          p_event_id?: string
+          p_item_id?: string
+          p_item_type?: string
+          p_profile_id: string
+          p_reason?: string
+          p_signal: string
+          p_source?: string
+        }
+        Returns: Json
+      }
+      assistant_recount_suggestion: {
+        Args: { p_event_id: string; p_profile_id: string }
+        Returns: undefined
+      }
+      assistant_tune_pistes: { Args: { p_profile_id: string }; Returns: number }
+      assistant_undo_feedback: {
+        Args: { p_feedback_id: string }
+        Returns: Json
       }
       build_all_event_profiles: {
         Args: never
