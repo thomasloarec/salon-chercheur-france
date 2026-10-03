@@ -920,6 +920,8 @@ export type Database = {
           company_name: string | null
           company_ref: string | null
           created_at: string
+          email_alerts_opt_in: boolean
+          email_alerts_opt_in_at: string | null
           goals: string[]
           id: string
           interests: string[]
@@ -931,6 +933,7 @@ export type Database = {
           refresh_dispatched_at: string | null
           refresh_requested_at: string | null
           refreshed_at: string | null
+          region_codes: string[]
           role_code: string | null
           sector_ids: string[]
           sub_sector_ids: string[]
@@ -944,6 +947,8 @@ export type Database = {
           company_name?: string | null
           company_ref?: string | null
           created_at?: string
+          email_alerts_opt_in?: boolean
+          email_alerts_opt_in_at?: string | null
           goals?: string[]
           id?: string
           interests?: string[]
@@ -955,6 +960,7 @@ export type Database = {
           refresh_dispatched_at?: string | null
           refresh_requested_at?: string | null
           refreshed_at?: string | null
+          region_codes?: string[]
           role_code?: string | null
           sector_ids?: string[]
           sub_sector_ids?: string[]
@@ -968,6 +974,8 @@ export type Database = {
           company_name?: string | null
           company_ref?: string | null
           created_at?: string
+          email_alerts_opt_in?: boolean
+          email_alerts_opt_in_at?: string | null
           goals?: string[]
           id?: string
           interests?: string[]
@@ -979,6 +987,7 @@ export type Database = {
           refresh_dispatched_at?: string | null
           refresh_requested_at?: string | null
           refreshed_at?: string | null
+          region_codes?: string[]
           role_code?: string | null
           sector_ids?: string[]
           sub_sector_ids?: string[]
@@ -14617,12 +14626,19 @@ export type Database = {
         Args: { p_event_id: string; p_profile_id: string }
         Returns: undefined
       }
+      assistant_region_of: { Args: { p_code_postal: string }; Returns: string }
+      assistant_regions_list: { Args: never; Returns: Json }
       assistant_remove_from_agenda: {
         Args: { p_item_id: string; p_item_type: string }
         Returns: Json
       }
+      assistant_set_email_alerts: { Args: { p_opt_in: boolean }; Returns: Json }
       assistant_set_my_distance: {
         Args: { p_city: string; p_radius_km: number }
+        Returns: Json
+      }
+      assistant_set_my_regions: {
+        Args: { p_region_codes: string[] }
         Returns: Json
       }
       assistant_tune_pistes: { Args: { p_profile_id: string }; Returns: number }
