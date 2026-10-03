@@ -7496,6 +7496,7 @@ export type Database = {
           model: string | null
           novelty_id: string
           problems: string[]
+          promise: string | null
           prompt_version: string
           role_codes: string[]
           sub_sector_ids: string[]
@@ -7513,6 +7514,7 @@ export type Database = {
           model?: string | null
           novelty_id: string
           problems?: string[]
+          promise?: string | null
           prompt_version: string
           role_codes?: string[]
           sub_sector_ids?: string[]
@@ -7530,6 +7532,7 @@ export type Database = {
           model?: string | null
           novelty_id?: string
           problems?: string[]
+          promise?: string | null
           prompt_version?: string
           role_codes?: string[]
           sub_sector_ids?: string[]
@@ -11030,6 +11033,7 @@ export type Database = {
           level: string | null
           model: string | null
           problems: string[]
+          promise: string | null
           prompt_version: string
           role_codes: string[]
           session_id: string
@@ -11047,6 +11051,7 @@ export type Database = {
           level?: string | null
           model?: string | null
           problems?: string[]
+          promise?: string | null
           prompt_version: string
           role_codes?: string[]
           session_id: string
@@ -11064,6 +11069,7 @@ export type Database = {
           level?: string | null
           model?: string | null
           problems?: string[]
+          promise?: string | null
           prompt_version?: string
           role_codes?: string[]
           session_id?: string
