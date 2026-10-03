@@ -509,7 +509,10 @@ function reviewPrompt(
   const retoursBlock = retours.length ? `
 SES DERNIERS RETOURS (du plus récent au plus ancien)
 ${retours.join('\n')}
-Ces retours précisent ses goûts. Rapproche ta note de ce qu'il a apprécié et éloigne-la de ce qu'il a refusé, pour la même raison, uniquement pour des éléments vraiment proches. Un retour ne dit rien des éléments sans rapport.
+Ces retours précisent ses goûts, sans en créer de nouveaux.
+- Un élément qu'il a ajouté confirme l'angle précis qui le relie à son métier (par exemple un composant qu'il fabrique, un client qu'il vise). Monte ta note seulement pour les éléments qui partagent ce même angle, jamais pour tout ce qui touche au même marché ou au même salon.
+- Un élément qu'il a refusé : baisse ta note pour les éléments vraiment proches, refusés pour la même raison.
+- Un retour ne dit rien des éléments sans rapport, et le barème ci-dessous reste la règle.
 ` : '';
 
   return `Tu es l'assistant d'un professionnel. Tu juges si chaque conférence ou Nouveauté d'exposant ci-dessous vaut le déplacement pour lui, sur un salon professionnel.
