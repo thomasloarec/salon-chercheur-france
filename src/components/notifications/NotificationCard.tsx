@@ -30,6 +30,7 @@ const getNotificationIcon = (type: string): string => {
     'claim_approved': '🎉',
     'claim_request': '📥',
     'novelty_visit_milestone': '👀',
+    'recommended_event': '✨',
   }
   return icons[type] || '🔔'
 }

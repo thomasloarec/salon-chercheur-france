@@ -733,10 +733,21 @@ export default function AssistantOnboarding() {
     }
   };
 
-  const finish = () => {
+  const finish = async () => {
+    try {
+      const { error } = await rpc('assistant_set_email_alerts', { p_opt_in: optIn });
+      if (error) throw error;
+    } catch (e) {
+      console.warn('[assistant] réglage des emails impossible', e);
+    }
     clearDraft();
     qc.invalidateQueries({ queryKey: ['assistant-feed'] });
-    toast({ title: 'Votre assistant veille', description: 'Je vous écris dès que quelque chose vaut le déplacement.' });
+    toast({
+      title: 'Votre assistant veille',
+      description: optIn
+        ? 'Je relis les salons pour vous. Je vous écris dès que quelque chose vaut le déplacement.'
+        : 'Je relis les salons pour vous. Mes suggestions arrivent dans votre agenda.',
+    });
     navigate('/agenda');
   };
 
@@ -1369,7 +1380,7 @@ export default function AssistantOnboarding() {
             <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-card p-4">
               <Checkbox checked={optIn} onCheckedChange={(v) => setOptIn(v === true)} className="mt-0.5 h-5 w-5" />
               <span className="text-[15px] text-foreground">
-                Recevoir par email les alertes de mon assistant. Désinscription en un clic.
+                {OPT_IN_LABEL}
               </span>
             </label>
 

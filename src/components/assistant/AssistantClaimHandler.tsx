@@ -46,10 +46,14 @@ export default function AssistantClaimHandler() {
         clearPendingClaim();
         if (res.ok) {
           cleanUrl(true);
-          qc.invalidateQueries({ queryKey: ['assistant-feed'] });
+          await qc.invalidateQueries({ queryKey: ['assistant-feed'] });
+          const feeds = qc.getQueriesData<any>({ queryKey: ['assistant-feed'] });
+          const optIn = feeds.some(([, d]) => d?.profile?.email_alerts_opt_in === true);
           toast({
             title: 'Votre assistant veille',
-            description: 'Je relis les salons pour vous. Je vous écris dès que quelque chose vaut le déplacement.',
+            description: optIn
+              ? 'Je relis les salons pour vous. Je vous écris dès que quelque chose vaut le déplacement.'
+              : 'Je relis les salons pour vous. Mes suggestions arrivent dans votre agenda.',
           });
         } else {
           cleanUrl(false);
