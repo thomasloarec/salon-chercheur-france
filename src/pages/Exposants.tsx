@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
   CalendarCheck,
+  CalendarHeart,
   Check,
   ChevronRight,
   Clock,
@@ -12,9 +13,11 @@ import {
   FileUp,
   Info,
   Lightbulb,
+  Linkedin,
   MapPin,
   Megaphone,
   Search,
+  Send,
   Sparkles,
   Users,
 } from 'lucide-react';
@@ -297,6 +300,169 @@ const LeadsMock = () => {
 };
 
 /* ================================================================== */
+/* Mock 4 - Votre stand dans l'agenda d'un visiteur                    */
+/* ================================================================== */
+const VisitorAgendaMock = () => {
+  const [ref, inView] = useInView<HTMLDivElement>(0.35);
+  const reduced = usePrefersReducedMotion();
+  const shown = reduced || inView;
+  return (
+    <Mock>
+      <div ref={ref}>
+        <p className="heading-display text-lg text-foreground">Mon Agenda</p>
+        <p className="text-xs text-muted-foreground mb-3">
+          Vu par un responsable production, PME de mécanique
+        </p>
+
+        <div className="rounded-xl bg-surface-inverse text-inverse px-3 py-2.5 flex items-center gap-2">
+          <span aria-hidden className="text-inverse-primary">◆</span>
+          <span className="heading-display text-lg font-bold">Global Industrie</span>
+          <span className="ml-auto rounded-full border border-inverse/30 px-2 py-0.5 text-xs font-semibold tabular-nums">
+            J-12
+          </span>
+        </div>
+
+        <div className="ml-4 pl-3.5 border-l-2 border-primary/40">
+          <div
+            style={{ transitionDelay: '160ms' }}
+            className={`rounded-[14px] border border-border p-3.5 mt-2.5 transition-all duration-500 ${
+              shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
+            }`}
+          >
+            <span className="inline-flex rounded-full bg-secondary text-primary text-[11px] font-medium px-2 py-0.5">
+              Stand à voir
+            </span>
+            <p className="mt-2 text-sm font-medium leading-snug text-foreground">
+              La cobotique de soudure accessible aux ateliers de 10 personnes
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">Atelier Meca · Stand C12</p>
+            <div className="mt-2.5 rounded-lg bg-muted/50 px-3 py-2 text-[13px]">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+                Pourquoi pour vous
+              </p>
+              <p className="mt-0.5 text-foreground/80">
+                Vous équipez des ateliers de moins de 20 personnes : démonstration de soudure en
+                continu sur le stand.
+              </p>
+            </div>
+            <div className="mt-2.5 flex gap-2">
+              <span className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">
+                Garder
+              </span>
+              <span className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground">
+                Pas pour moi
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <p
+          style={{ transitionDelay: '350ms' }}
+          className={`mt-3 flex items-start gap-2 border-t border-border pt-3 text-xs text-muted-foreground transition-opacity duration-500 ${
+            shown ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+          Proposé parce que votre Nouveauté correspond à ses sujets.
+        </p>
+      </div>
+    </Mock>
+  );
+};
+
+/* ================================================================== */
+/* Mock 5 - Votre page d'invitation                                    */
+/* ================================================================== */
+const InvitationMock = () => {
+  const [ref, inView] = useInView<HTMLDivElement>(0.35);
+  const reduced = usePrefersReducedMotion();
+  const shown = reduced || inView;
+  const days = ['Mardi', 'Mercredi', 'Jeudi'];
+  return (
+    <Mock>
+      <div ref={ref}>
+        <div
+          style={{ transitionDelay: '160ms' }}
+          className={`rounded-xl border border-border p-3 transition-all duration-500 ${
+            shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
+          }`}
+        >
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Linkedin className="h-3.5 w-3.5 text-info" />
+            Publié sur LinkedIn
+          </div>
+          <div className="mt-2 rounded-lg bg-surface-inverse text-inverse p-3">
+            <p className="font-medium">Atelier Meca vous invite au salon Global Industrie</p>
+            <p className="mt-1 text-xs text-inverse-muted">
+              Réservez votre rendez-vous sur le stand C12
+            </p>
+          </div>
+        </div>
+
+        <div
+          style={{ transitionDelay: '350ms' }}
+          className={`my-2 flex justify-center text-primary transition-opacity duration-500 ${
+            shown ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <ArrowRight className="h-5 w-5 rotate-90" />
+        </div>
+
+        <div
+          style={{ transitionDelay: '540ms' }}
+          className={`rounded-xl border border-border p-3.5 transition-all duration-500 ${
+            shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
+          }`}
+        >
+          <p className="font-medium text-foreground">Choisissez votre jour</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {days.map((d, i) => (
+              <span
+                key={d}
+                style={{ transitionDelay: `${540 + (i + 1) * 190}ms` }}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-500 ${
+                  d === 'Mercredi'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'border border-border text-foreground'
+                } ${shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}
+              >
+                {d}
+              </span>
+            ))}
+          </div>
+          <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="flex -space-x-1.5">
+              {['CL', 'MB'].map((ini) => (
+                <span
+                  key={ini}
+                  className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-[10px] font-semibold text-primary ring-2 ring-background"
+                >
+                  {ini}
+                </span>
+              ))}
+            </span>
+            2 personnes de l'équipe sur le stand
+          </div>
+          <span className="mt-3 block w-full rounded-lg bg-primary py-2 text-center text-sm font-medium text-primary-foreground">
+            Demander un rendez-vous
+          </span>
+        </div>
+
+        <p
+          style={{ transitionDelay: '730ms' }}
+          className={`mt-3 flex items-start gap-2 border-t border-border pt-3 text-xs text-muted-foreground transition-opacity duration-500 ${
+            shown ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <CalendarCheck className="h-4 w-4 shrink-0 text-primary" />
+          La demande arrive dans vos Rendez-vous, avant l'ouverture.
+        </p>
+      </div>
+    </Mock>
+  );
+};
+
+/* ================================================================== */
 /* Blocs solution alternés (modèle Home)                               */
 /* ================================================================== */
 interface SolutionBlock {
@@ -370,8 +536,8 @@ const SOLUTION_BLOCKS: SolutionBlock[] = [
     title: 'Visible au moment exact où les visiteurs préparent leur venue',
     body: (
       <>
-        Votre nouveauté apparaît sur Lotexpo sur la page du salon, dans les nouveautés du site et dans les
-        réponses de la recherche IA.{' '}
+        Votre nouveauté apparaît sur Lotexpo sur la page du salon, dans les nouveautés du site, dans
+        les réponses de la recherche IA et dans l'agenda des visiteurs.{' '}
         <strong className="font-semibold text-primary">
           Les visiteurs la repèrent pendant qu'ils construisent leur parcours
         </strong>
@@ -382,6 +548,40 @@ const SOLUTION_BLOCKS: SolutionBlock[] = [
       "Le jour J, on ne vous découvre plus par hasard en passant dans l'allée : on vient vous voir exprès.",
     cta: { label: 'Voir les nouveautés déjà publiées', to: '/nouveautes' },
     visual: <NoveltyMock />,
+  },
+  {
+    actor: 'Mon Agenda des visiteurs',
+    title: 'Les visiteurs ne vous cherchent plus. Leur assistant vous propose.',
+    body: (
+      <>
+        Les visiteurs créent leur agenda en choisissant leurs sujets et leurs régions. L'IA leur
+        propose un stand{' '}
+        <strong className="font-semibold text-primary">
+          seulement si l'exposant a publié une Nouveauté sur ce salon
+        </strong>
+        , et seulement à ceux que votre Nouveauté concerne.
+      </>
+    ),
+    ecoNote:
+      "Pas de Nouveauté, pas de suggestion. Une Nouveauté publiée, c'est votre stand proposé aux bons visiteurs.",
+    cta: { label: 'Publier ma nouveauté', to: '/publier-nouveaute' },
+    visual: <VisitorAgendaMock />,
+  },
+  {
+    actor: "Votre page d'invitation",
+    title: 'Invitez vos clients sur votre stand. Ils réservent leur rendez-vous.',
+    body: (
+      <>
+        Une page par salon, à envoyer par email ou à publier sur LinkedIn. Vos invités y découvrent
+        votre Nouveauté et l'équipe présente sur le stand, puis{' '}
+        <strong className="font-semibold text-primary">
+          demandent un rendez-vous en choisissant leur jour.
+        </strong>
+      </>
+    ),
+    ecoNote: "Elle s'active dès que votre Nouveauté est publiée pour le salon.",
+    cta: { label: 'Publier ma nouveauté', to: '/publier-nouveaute' },
+    visual: <InvitationMock />,
   },
   {
     actor: 'Le plus important',
@@ -422,8 +622,8 @@ const STEPS = [
   {
     icon: Users,
     n: 'Étape 3',
-    title: 'Récupérez vos contacts',
-    text: 'Rendez-vous demandés, brochures téléchargées, stands ajoutés aux parcours : tout vous remonte avant le salon.',
+    title: 'Invitez et récupérez vos contacts',
+    text: "Partagez votre page d'invitation à vos clients. Rendez-vous demandés, brochures téléchargées, stands ajoutés aux parcours : tout vous remonte avant le salon.",
   },
 ];
 
@@ -439,6 +639,14 @@ const FAQ = [
   {
     q: "Comment l'IA fonctionne-t-elle exactement ?",
     a: "Vous lui donnez votre matière : un PDF de plaquette ou de présentation, un post que vous avez déjà rédigé, ou simplement quelques phrases. Elle en extrait le texte et les visuels exploitables, puis vous propose plusieurs angles de présentation. Vous choisissez, vous modifiez librement, rien n'est publié sans votre validation.",
+  },
+  {
+    q: 'Comment mon stand peut-il être proposé aux visiteurs ?',
+    a: "Les visiteurs qui créent leur agenda Lotexpo choisissent leurs sujets et leurs régions. L'IA leur propose un stand seulement si l'exposant a publié une Nouveauté pour ce salon, et seulement si elle correspond à leurs sujets. Publier votre Nouveauté est donc la condition pour être proposé. Personne ne peut payer pour y apparaître.",
+  },
+  {
+    q: "Comment fonctionne la page d'invitation ?",
+    a: "Dès que votre Nouveauté est publiée pour un salon, une page d'invitation s'active pour ce salon dans votre espace exposant. Vous l'envoyez par email ou vous la publiez sur LinkedIn. Vos invités y voient votre Nouveauté et l'équipe présente sur le stand, puis demandent un rendez-vous en choisissant leur jour. Les demandes arrivent dans vos Rendez-vous, avant l'ouverture. Cette page n'est pas indexée par les moteurs de recherche.",
   },
   {
     q: "Comment récupère-t-on les contacts générés ?",
@@ -719,6 +927,26 @@ export default function Exposants() {
                 lue par les visiteurs qui préparent ce salon précis.
               </b>
             </p>
+            <div className="mt-6 text-center">
+              <p className="text-sm font-semibold text-foreground">
+                Une Nouveauté publiée, trois canaux ouverts :
+              </p>
+              <div className="mt-3 flex flex-wrap justify-center gap-2">
+                {[
+                  { icon: Search, label: 'La page du salon et la recherche IA' },
+                  { icon: CalendarHeart, label: "L'agenda des visiteurs" },
+                  { icon: Send, label: "Votre page d'invitation" },
+                ].map((p) => (
+                  <span
+                    key={p.label}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-secondary/60 px-3.5 py-1.5 text-sm font-medium text-primary"
+                  >
+                    <p.icon className="h-4 w-4" />
+                    {p.label}
+                  </span>
+                ))}
+              </div>
+            </div>
           </Reveal>
 
           <div className="flex flex-col">
