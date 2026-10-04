@@ -160,7 +160,7 @@ const Home = () => {
               <p className="mt-5 text-lg md:text-xl text-muted-foreground max-w-[56ch]">
                 L'information sur les salons est{' '}
                 <b className="text-foreground font-semibold">partout, donc introuvable.</b>{' '}
-                Créez votre compte et dites ce qui vous intéresse : l'IA de Lotexpo lit les salons, leurs
+                L'IA de Lotexpo lit les salons, leurs
                 programmes et les Nouveautés des exposants, et vous signale les conférences, les stands et les
                 salons à ne pas manquer.{' '}
                 <b className="text-foreground font-semibold">Plus besoin de faire votre veille.</b>
