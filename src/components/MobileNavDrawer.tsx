@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { CalendarDays, Lightbulb, LogOut, Settings, Sparkles, LogIn, type LucideIcon } from 'lucide-react';
+import { CalendarDays, CalendarHeart, Lightbulb, LogOut, Settings, Sparkles, LogIn, type LucideIcon } from 'lucide-react';
+import { ASSISTANT_ONBOARDING_PATH } from '@/components/assistant/config';
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -124,13 +125,15 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2 pb-4" aria-label="Navigation principale">
-          <div className="px-3 pt-4 pb-2">
-            <Button asChild className="w-full min-h-[48px] rounded-xl">
-              <Link to="/recherche-ia" onClick={close}>
-                Essayer l'IA <Sparkles className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
+          {!isRealUser && (
+            <div className="px-3 pt-4 pb-2">
+              <Button asChild className="w-full min-h-[48px] rounded-xl">
+                <Link to={ASSISTANT_ONBOARDING_PATH} onClick={close}>
+                  Créer mon agenda <CalendarHeart className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          )}
 
           <Section>
             <Row to="/salons" icon={CalendarDays} label="Salons" onNavigate={close} />
