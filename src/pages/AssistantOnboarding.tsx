@@ -499,6 +499,159 @@ export default function AssistantOnboarding() {
   };
 
   // ---------------------------------------------------------------------------------------------
+  // Écran 6 : état (préparé en avance dès l'écran 5)
+  // ---------------------------------------------------------------------------------------------
+  const [phaseA, setPhaseA] = useState<'idle' | 'running' | 'done'>('idle');
+  const [phaseB, setPhaseB] = useState<'idle' | 'running' | 'done'>('idle');
+  const [bError, setBError] = useState<{ kind: 'quota' | 'other'; message?: string } | null>(null);
+  const [pistesChanged, setPistesChanged] = useState(false);
+  const [refining, setRefining] = useState(false);
+  const [editingPiste, setEditingPiste] = useState<string | null>(null);
+  const [pisteDraft, setPisteDraft] = useState('');
+  const [pisteBusy, setPisteBusy] = useState(false);
+
+  const regionKeyOf = (codes: string[]) => [...codes].sort().join(',');
+  const prepSignature = JSON.stringify({
+    company_ref: answers.company_ref,
+    company_name: answers.company_name,
+    company_description: answers.company_description,
+    sub_sector_ids: answers.sub_sector_ids,
+    role_codes: answers.role_codes,
+    role_other: otherOn ? otherText : null,
+    interests: answers.interests,
+    goals: answers.goals,
+  });
+  const lastPrepSig = useRef<string | null>(null);
+  const bRegionsKey = useRef<string | null>(null);
+  const runIdRef = useRef(0);
+  const claimRef = useRef<{ profile_id: string; claim_token: string } | null>(null);
+  const pendingRegionCheck = useRef(false);
+  const currentRegionsKey = useRef(regionKeyOf(answers.region_codes));
+  currentRegionsKey.current = regionKeyOf(answers.region_codes);
+  const phaseBRef = useRef(phaseB);
+  phaseBRef.current = phaseB;
+  const checkRegionsRef = useRef<(id: number) => Promise<void>>(async () => {});
+
+  const runB = useCallback(
+    async (id: number) => {
+      const ok = () => id === runIdRef.current;
+      if (!ok()) return;
+      setPhaseB('running');
+      phaseBRef.current = 'running';
+      setBError(null);
+      setPistesChanged(false);
+      let err: { kind: 'quota' | 'other'; message?: string } | null = null;
+      try {
+        const { error } = await supabase.functions.invoke('assistant-pepites', { body: { step: 'match', preview: true } });
+        if (error) {
+          const e = await readFnError(error);
+          err = e.code === 'quota' ? { kind: 'quota', message: e.message } : { kind: 'other' };
+        }
+      } catch {
+        err = { kind: 'other' };
+      }
+      if (!ok()) return;
+      if (err) setBError(err);
+      if (pendingRegionCheck.current && !err) {
+        pendingRegionCheck.current = false;
+        await checkRegionsRef.current(id);
+        return;
+      }
+      pendingRegionCheck.current = false;
+      await refetchFeed();
+      if (!ok()) return;
+      setPhaseB('done');
+      phaseBRef.current = 'done';
+    },
+    [refetchFeed],
+  );
+
+  checkRegionsRef.current = async (id: number) => {
+    const ok = () => id === runIdRef.current;
+    const r = await refetchFeed();
+    if (!ok()) return;
+    const n = (r.data as any)?.suggestions?.length ?? 0;
+    if (n < 2) {
+      bRegionsKey.current = currentRegionsKey.current;
+      setRefining(true);
+      await runB(id);
+      if (ok()) setRefining(false);
+    } else {
+      setPhaseB('done');
+      phaseBRef.current = 'done';
+    }
+  };
+
+  const runA = useCallback(
+    async (id: number) => {
+      const ok = () => id === runIdRef.current;
+      if (!ok()) return;
+      setPhaseA('running');
+      setBError(null);
+      try {
+        const { error } = await supabase.functions.invoke('assistant-pepites', { body: { step: 'pistes' } });
+        if (error) {
+          const e = await readFnError(error);
+          if (e.code === 'quota' && ok()) setBError({ kind: 'quota', message: e.message });
+        }
+      } catch {
+        /* l'assistant refera la recherche plus tard */
+      }
+      if (!ok()) return;
+      await refetchFeed();
+      if (!ok()) return;
+      setPhaseA('done');
+      if (bRegionsKey.current === null) bRegionsKey.current = currentRegionsKey.current;
+      void runB(id);
+    },
+    [refetchFeed, runB],
+  );
+
+  // Préparation en arrière-plan dès l'arrivée sur l'écran 5
+  useEffect(() => {
+    if (step !== 5 || !session) return;
+    if (prepSignature === lastPrepSig.current && phaseA !== 'idle') return;
+    lastPrepSig.current = prepSignature;
+    runIdRef.current += 1;
+    const id = runIdRef.current;
+    const ok = () => id === runIdRef.current;
+    setPhaseA('idle');
+    setPhaseB('idle');
+    phaseBRef.current = 'idle';
+    setBError(null);
+    setPistesChanged(false);
+    setRefining(false);
+    pendingRegionCheck.current = false;
+    bRegionsKey.current = null;
+    claimRef.current = null;
+    void (async () => {
+      try {
+        const res = await upsertProfile(isRealUser);
+        if (!ok()) return;
+        if (res?.profile_id && res?.claim_token) {
+          claimRef.current = { profile_id: res.profile_id, claim_token: res.claim_token };
+          if (!isRealUser) savePendingClaim(res.profile_id, res.claim_token);
+        }
+        const codes = answers.region_codes;
+        const { error } = await rpc('assistant_set_my_regions', { p_region_codes: codes });
+        if (error) throw error;
+        if (!ok()) return;
+        bRegionsKey.current = regionKeyOf(codes);
+        await runA(id);
+      } catch {
+        if (!ok()) return;
+        setPhaseA('idle');
+        setPhaseB('idle');
+        phaseBRef.current = 'idle';
+        lastPrepSig.current = null;
+        claimRef.current = null;
+        bRegionsKey.current = null;
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, session, prepSignature]);
+
+  // ---------------------------------------------------------------------------------------------
   // Écran 5 : régions + enregistrement
   // ---------------------------------------------------------------------------------------------
   const [saving5, setSaving5] = useState(false);
@@ -507,11 +660,30 @@ export default function AssistantOnboarding() {
     setSaving5(true);
     setError5(null);
     try {
-      const res = await upsertProfile(isRealUser);
+      if (!claimRef.current) {
+        const res = await upsertProfile(isRealUser);
+        if (res?.profile_id && res?.claim_token) {
+          claimRef.current = { profile_id: res.profile_id, claim_token: res.claim_token };
+        }
+      }
       const { error } = await rpc('assistant_set_my_regions', { p_region_codes: answers.region_codes });
       if (error) throw error;
-      if (!isRealUser && res?.profile_id && res?.claim_token) savePendingClaim(res.profile_id, res.claim_token);
+      if (!isRealUser && claimRef.current) savePendingClaim(claimRef.current.profile_id, claimRef.current.claim_token);
       setStep(6);
+      const key = currentRegionsKey.current;
+      if (bRegionsKey.current !== null && key !== bRegionsKey.current) {
+        const id = runIdRef.current;
+        if (phaseBRef.current === 'done') {
+          setPhaseB('running');
+          phaseBRef.current = 'running';
+          void checkRegionsRef.current(id);
+        } else if (phaseBRef.current === 'running') {
+          pendingRegionCheck.current = true;
+        } else {
+          // étape B pas encore lancée : elle partira avec les régions enregistrées
+          bRegionsKey.current = key;
+        }
+      }
     } catch {
       setError5('Enregistrement impossible pour le moment. Réessayez.');
     } finally {
@@ -519,53 +691,12 @@ export default function AssistantOnboarding() {
     }
   };
 
-  // ---------------------------------------------------------------------------------------------
-  // Écran 6 : sujets de recherche et premiers résultats
-  // ---------------------------------------------------------------------------------------------
-  const [phaseA, setPhaseA] = useState<'idle' | 'running' | 'done'>('idle');
-  const [phaseB, setPhaseB] = useState<'idle' | 'running' | 'done'>('idle');
-  const [bError, setBError] = useState<{ kind: 'quota' | 'other'; message?: string } | null>(null);
-  const [pistesChanged, setPistesChanged] = useState(false);
-  const [editingPiste, setEditingPiste] = useState<string | null>(null);
-  const [pisteDraft, setPisteDraft] = useState('');
-  const [pisteBusy, setPisteBusy] = useState(false);
-
-  const runB = useCallback(async () => {
-    setPhaseB('running');
-    setBError(null);
-    setPistesChanged(false);
-    try {
-      const { error } = await supabase.functions.invoke('assistant-pepites', { body: { step: 'match', preview: true } });
-      if (error) {
-        const e = await readFnError(error);
-        setBError(e.code === 'quota' ? { kind: 'quota', message: e.message } : { kind: 'other' });
-      }
-    } catch {
-      setBError({ kind: 'other' });
-    }
-    await refetchFeed();
-    setPhaseB('done');
-  }, [refetchFeed]);
-
-  const runA = useCallback(async () => {
-    setPhaseA('running');
-    setBError(null);
-    try {
-      const { error } = await supabase.functions.invoke('assistant-pepites', { body: { step: 'pistes' } });
-      if (error) {
-        const e = await readFnError(error);
-        if (e.code === 'quota') setBError({ kind: 'quota', message: e.message });
-      }
-    } catch {
-      /* l'assistant refera la recherche plus tard */
-    }
-    await refetchFeed();
-    setPhaseA('done');
-    void runB();
-  }, [refetchFeed, runB]);
-
   useEffect(() => {
-    if (step === 6 && session && phaseA === 'idle') void runA();
+    if (step === 6 && session && phaseA === 'idle') {
+      runIdRef.current += 1;
+      bRegionsKey.current = currentRegionsKey.current;
+      void runA(runIdRef.current);
+    }
   }, [step, session, phaseA, runA]);
 
   const pistes = feed?.pistes ?? [];
@@ -748,7 +879,7 @@ export default function AssistantOnboarding() {
         <Heading title="Dans quelle entreprise travaillez-vous ?" subtitle="Je m'en sers pour comprendre votre métier." />
         {confirm ? (
           <div className="space-y-4 rounded-xl border-2 border-primary bg-card p-5">
-            <p className="break-words text-lg font-bold text-foreground">{confirm.name}</p>
+            <p className="break-words text-lg font-semibold text-foreground">{confirm.name}</p>
             {confirm.description && <p className="line-clamp-2 text-[15px] text-muted-foreground">{confirm.description}</p>}
             {confirm.upcoming_events?.length > 0 && (
               <p className="text-sm font-medium text-primary">
@@ -810,7 +941,7 @@ export default function AssistantOnboarding() {
                       disabled={loadingContext}
                       className="flex min-h-14 w-full flex-col justify-center px-4 py-2 text-left hover:bg-violet-soft focus-visible:bg-violet-soft focus-visible:outline-none"
                     >
-                      <span className="break-words font-bold text-foreground">{c.nom}</span>
+                      <span className="break-words font-medium text-foreground">{c.nom}</span>
                       {c.domaine && <span className="break-all text-sm text-muted-foreground">{c.domaine}</span>}
                     </button>
                   </li>
@@ -850,7 +981,7 @@ export default function AssistantOnboarding() {
     );
     const cardCls = (on: boolean) =>
       cn(
-        'flex min-h-14 items-center gap-3 rounded-xl border-2 px-4 text-left text-base font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-40',
+        'flex min-h-14 items-center gap-3 rounded-xl border-2 px-4 text-left text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-40',
         on ? 'border-primary bg-violet-soft text-foreground' : 'border-border bg-card text-foreground hover:border-primary',
       );
     body = (
@@ -966,7 +1097,7 @@ export default function AssistantOnboarding() {
                 if (!s) return null;
                 return (
                   <div className="space-y-2 rounded-xl bg-violet-soft p-4">
-                    <p className="text-[15px] font-semibold text-foreground">{s.label}, plutôt pour :</p>
+                    <p className="text-[15px] font-medium text-foreground">{s.label}, plutôt pour :</p>
                     <div className="flex flex-wrap gap-2">
                       {s.precisions.map((p) => (
                         <Chip key={p} selected={answers.interests.includes(p)} disabled={full} onClick={() => toggleInterest(p)}>
@@ -1056,7 +1187,7 @@ export default function AssistantOnboarding() {
                   update({ goals: on ? answers.goals.filter((x) => x !== g.value) : [...answers.goals, g.value] })
                 }
                 className={cn(
-                  'flex min-h-14 w-full items-center gap-3 rounded-xl border-2 px-4 text-left text-base font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  'flex min-h-14 w-full items-center gap-3 rounded-xl border-2 px-4 text-left text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   on ? 'border-primary bg-violet-soft' : 'border-border bg-card hover:border-primary',
                 )}
               >
@@ -1140,7 +1271,7 @@ export default function AssistantOnboarding() {
                     </form>
                   ) : (
                     <>
-                      <span className="min-w-0 flex-1 break-words text-[17px] font-semibold text-foreground">{p.label}</span>
+                      <span className="min-w-0 flex-1 break-words text-[17px] font-medium text-foreground">{p.label}</span>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -1177,7 +1308,7 @@ export default function AssistantOnboarding() {
             {phaseB === 'running' && (
               <div className="flex items-center gap-3 rounded-xl bg-violet-soft p-4">
                 <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" aria-hidden />
-                <span className="text-[15px] text-foreground">Je lis les programmes et les Nouveautés des deux prochains mois…</span>
+                <span className="text-[15px] text-foreground">{refining ? "J'affine pour vos régions…" : 'Je lis les programmes et les Nouveautés des deux prochains mois…'}</span>
               </div>
             )}
             {bError?.kind === 'quota' && (
@@ -1191,7 +1322,7 @@ export default function AssistantOnboarding() {
               </div>
             )}
             {pistesChanged && phaseB !== 'running' && (
-              <Button variant="link" className="min-h-11 px-0" onClick={() => void runB()}>
+              <Button variant="link" className="min-h-11 px-0" onClick={() => void runB(runIdRef.current)}>
                 Relancer la recherche avec ces sujets
               </Button>
             )}
