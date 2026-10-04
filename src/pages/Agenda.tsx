@@ -19,6 +19,7 @@ import { Search } from 'lucide-react';
 import { useAssistantFeed } from '@/components/assistant/useAssistantFeed';
 import AssistantSearchBar from '@/components/assistant/AssistantSearchBar';
 import AssistantDiscoverSection from '@/components/assistant/AssistantDiscoverSection';
+import AgendaLanding from '@/components/assistant/AgendaLanding';
 import { ASSISTANT_ONBOARDING_PATH, ASSISTANT_ONBOARDING_READY } from '@/components/assistant/config';
 import type { AssistantItem, AssistantKeptSession } from '@/components/assistant/types';
 
@@ -51,7 +52,7 @@ function AgendaShell({ children }: { children: React.ReactNode }) {
 }
 
 const Agenda = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { data: allEvents = [], isLoading, error } = useFavoriteEvents();
@@ -174,33 +175,18 @@ const Agenda = () => {
   const nextOngoing = nextState === 'en_cours' || nextState === 'imminent';
   const daysToNext = nextEvent ? getDaysUntilStart(nextEvent.date_debut) : null;
 
-  if (!user) {
+  if (authLoading) {
     return (
-      <AgendaShell>
-        <div className="flex min-h-[60vh] items-center justify-center px-6 py-16">
-          <div className="max-w-md text-center">
-            <div className="mx-auto mb-5 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-              <CalendarRange className="h-8 w-8 text-primary" />
-            </div>
-            <h1 className="heading-display text-2xl text-foreground mb-2">
-              Connectez-vous pour voir votre agenda
-            </h1>
-            <p className="text-muted-foreground mb-6">
-              Vos salons, vos exposants à voir et vos nouveautés repérées, réunis dans un
-              seul plan de visite.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <Button asChild>
-                <Link to="/auth">Se connecter</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link to="/salons">Parcourir les salons</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </AgendaShell>
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
+        <main className="min-h-[60vh]" />
+        <Footer />
+      </div>
     );
+  }
+
+  if (!user) {
+    return <AgendaLanding />;
   }
 
   if (error) {
@@ -395,7 +381,7 @@ const Agenda = () => {
           <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl bg-violet-soft p-5">
             <Search className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
             <p className="flex-1 text-base text-foreground">
-              Créer mon assistant : 90 secondes, et je vous signale ce qui vaut le déplacement.
+              Créer mon assistant : 2 minutes, et je vous signale ce qui vaut le déplacement.
             </p>
             <Button asChild className="min-h-11">
               <Link to={ASSISTANT_ONBOARDING_PATH}>Créer mon assistant</Link>

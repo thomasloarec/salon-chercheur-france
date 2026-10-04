@@ -142,7 +142,7 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
             <React.Fragment key={g.title}>
               <div className="mx-3 border-t border-border/60" />
               <Section title={g.title}>
-                {g.items.map((f) => (
+                {g.items.filter((f) => f.to !== AGENDA_NAV_ITEM.to).map((f) => (
                   <Row key={f.to} to={f.to} icon={f.icon} label={f.label} onNavigate={close} />
                 ))}
               </Section>
