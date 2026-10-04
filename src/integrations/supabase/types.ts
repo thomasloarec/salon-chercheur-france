@@ -627,6 +627,53 @@ export type Database = {
         }
         Relationships: []
       }
+      assistant_alert_sends: {
+        Row: {
+          channel: string
+          created_at: string
+          error: string | null
+          id: number
+          item_count: number
+          mode: string
+          profile_id: string
+          resend_id: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          error?: string | null
+          id?: never
+          item_count?: number
+          mode: string
+          profile_id: string
+          resend_id?: string | null
+          status: string
+          user_id?: string | null
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          error?: string | null
+          id?: never
+          item_count?: number
+          mode?: string
+          profile_id?: string
+          resend_id?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_alert_sends_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "assistant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assistant_engine_runs: {
         Row: {
           created_at: string
@@ -762,6 +809,44 @@ export type Database = {
           },
           {
             foreignKeyName: "assistant_feedback_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "assistant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assistant_item_history: {
+        Row: {
+          event_id: string
+          first_retained_at: string
+          item_id: string
+          item_type: string
+          notified_at: string | null
+          notified_mode: string | null
+          profile_id: string
+        }
+        Insert: {
+          event_id: string
+          first_retained_at?: string
+          item_id: string
+          item_type: string
+          notified_at?: string | null
+          notified_mode?: string | null
+          profile_id: string
+        }
+        Update: {
+          event_id?: string
+          first_retained_at?: string
+          item_id?: string
+          item_type?: string
+          notified_at?: string | null
+          notified_mode?: string | null
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_item_history_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "assistant_profiles"
@@ -14605,6 +14690,25 @@ export type Database = {
         Returns: Json
       }
       assistant_admin_role_others: { Args: never; Returns: Json }
+      assistant_alerts_collect: {
+        Args: { p_force?: boolean; p_mode?: string; p_profile_id?: string }
+        Returns: Json
+      }
+      assistant_alerts_mark: {
+        Args: {
+          p_bell_event_id?: string
+          p_bell_message?: string
+          p_bell_title?: string
+          p_email_status: string
+          p_error?: string
+          p_keys: Json
+          p_mode: string
+          p_profile_id: string
+          p_resend_id?: string
+        }
+        Returns: Json
+      }
+      assistant_alerts_unsubscribe: { Args: { p_token: string }; Returns: Json }
       assistant_can_access_profile: {
         Args: { p_profile_id: string }
         Returns: boolean
@@ -14696,6 +14800,7 @@ export type Database = {
         Args: { p_item_id: string; p_item_type: string }
         Returns: Json
       }
+      assistant_request_veille: { Args: never; Returns: number }
       assistant_set_email_alerts: { Args: { p_opt_in: boolean }; Returns: Json }
       assistant_set_my_distance: {
         Args: { p_city: string; p_radius_km: number }
