@@ -258,3 +258,9 @@ verify_jwt = false
 # Appelée chaque matin par pg_cron (assistant-roles-digest) avec la clé de service ; toute autre clé est refusée
 # en code (comparaison à temps constant). Envoie un email à admin@lotexpo.com seulement au-delà du seuil.
 verify_jwt = false
+
+[functions.assistant-alerts]
+verify_jwt = false
+
+[functions.assistant-alerts-unsubscribe]
+verify_jwt = false
