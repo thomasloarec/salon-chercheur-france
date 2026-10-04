@@ -16,6 +16,6 @@ export interface UserMenuItem {
 export const USER_MENU_ITEMS: UserMenuItem[] = [
   { to: '/profile', label: 'Mon profil', icon: User },
   { to: '/notifications', label: 'Notifications', icon: Bell, showUnreadBadge: true },
-  { to: '/agenda', label: 'Mon agenda', icon: CalendarRange },
+  { to: '/agenda', label: 'Mon Agenda', icon: CalendarRange },
   { to: '/radar-crm/results', label: 'Radar CRM', icon: Radar },
 ];
