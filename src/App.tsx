@@ -94,6 +94,7 @@ import BlogArticle from '@/pages/BlogArticle';
 import Organisateurs from '@/pages/Organisateurs';
 import NotFound from '@/pages/NotFound';
 import DesinscriptionConfirmee from '@/pages/DesinscriptionConfirmee';
+import DesinscriptionAssistant from '@/pages/DesinscriptionAssistant';
 import SectorHub from '@/pages/SectorHub';
 import SectorYearHub from '@/pages/SectorYearHub';
 import CityHub from '@/pages/CityHub';
@@ -238,6 +239,7 @@ function App() {
               <Route path="/politique-confidentialite" element={<PolitiqueConfidentialite />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/desinscription-confirmee" element={<DesinscriptionConfirmee />} />
+              <Route path="/desinscription-assistant" element={<DesinscriptionAssistant />} />
               <Route path="/crm-integrations" element={<CrmIntegrations />} />
               <Route path="/oauth/callback" element={<OAuthCallback />} />
               <Route path="/oauth/hubspot/callback" element={<OAuthCallback />} />

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import RegionsDialog from '@/components/assistant/RegionsDialog';
+import AssistantEmailToggle from '@/components/assistant/AssistantEmailToggle';
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight, CalendarRange, MapPin, Radio, Sparkles, Store } from 'lucide-react';
@@ -360,6 +361,7 @@ const Agenda = () => {
             regionCodes={assistantFeed.profile?.region_codes ?? []}
             onEditRegions={() => setRegionsOpen(true)}
           />
+          <AssistantEmailToggle value={assistantFeed.profile?.email_alerts_opt_in === true} />
           <AssistantDiscoverSection
             suggestions={assistantFeed.suggestions ?? []}
             profileId={assistantFeed.profile?.id}

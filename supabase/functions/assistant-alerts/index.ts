@@ -62,7 +62,8 @@ function parisDay(): number {
 }
 function frDate(d: string | null, opts: Intl.DateTimeFormatOptions): string {
   if (!d) return '';
-  return new Intl.DateTimeFormat('fr-FR', { timeZone: 'UTC', ...opts }).format(new Date(`${d.slice(0, 10)}T12:00:00Z`));
+  return new Intl.DateTimeFormat('fr-FR', { timeZone: 'UTC', ...opts }).format(new Date(`${d.slice(0, 10)}T12:00:00Z`))
+    .replace(/\b1(?= \p{L}|$)/u, '1er');
 }
 function eventDates(e: Ev): string {
   const a = frDate(e.date_debut, { day: 'numeric', month: 'long' });
