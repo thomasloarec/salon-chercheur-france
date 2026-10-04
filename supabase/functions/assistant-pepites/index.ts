@@ -32,6 +32,7 @@ const REVIEW_CHUNK = 15;        // éléments relus par appel à Claude
 const REVIEW_CONCURRENCY = 4;
 const MAX_REVIEWED = 90;        // plafond d'éléments relus par profil
 const PREVIEW_MAX_REVIEWED = 45; // aperçu de l'onboarding (trois paquets relus en parallèle)
+const REUSE_REVIEW_DAYS = 14;   // lot 5 : une relecture IA reste valable 14 jours (sans retour ni profil modifié)
 const WEAK_RETAIN_SCORE = 80;   // seuil pour une piste affaiblie par des « Pas pour moi » répétés
 const GOAL_LABELS: Record<string, string> = {
   fournisseurs: 'trouver des fournisseurs ou des solutions',
@@ -704,10 +705,47 @@ async function runMatch(
   if (evRes.error) throw new Error(evRes.error.message);
   const events = new Map(((evRes.data ?? []) as Record<string, string | null>[]).map((e) => [e.id as string, e]));
 
+  // Relecture incrémentale (lot 5, veille de nuit) : un élément déjà relu depuis moins de REUSE_REVIEW_DAYS
+  // jours, sans retour de l'utilisateur ni modification de son profil depuis, garde sa note et sa raison.
+  // Seuls les éléments nouveaux (ou à relire) partent à l'IA.
+  const reviews = new Map<string, { score: number; reason: string; model: string; at?: string }>();
+  {
+    const [fbRes, profRes] = await Promise.all([
+      supabase.from('assistant_feedback').select('created_at').eq('profile_id', p.id)
+        .order('created_at', { ascending: false }).limit(1),
+      supabase.from('assistant_profiles').select('updated_at').eq('id', p.id).maybeSingle(),
+    ]);
+    if (fbRes.error) throw new Error(fbRes.error.message);
+    if (profRes.error) throw new Error(profRes.error.message);
+    const lastFb = (fbRes.data?.[0] as { created_at?: string } | undefined)?.created_at;
+    const profUpdated = (profRes.data as { updated_at?: string } | null)?.updated_at;
+    const since = Math.max(
+      Date.now() - REUSE_REVIEW_DAYS * 86400000,
+      lastFb ? Date.parse(lastFb) : 0,
+      profUpdated ? Date.parse(profUpdated) : 0,
+    );
+    const ids = toReview.map((c) => c.item_id);
+    for (let i = 0; i < ids.length; i += 200) {
+      const r = await supabase.from('assistant_matches')
+        .select('item_type,item_id,score,reason,model,reviewed_at')
+        .eq('profile_id', p.id).in('item_id', ids.slice(i, i + 200))
+        .not('score', 'is', null).not('reviewed_at', 'is', null);
+      if (r.error) throw new Error(r.error.message);
+      for (const x of (r.data ?? []) as { item_type: string; item_id: string; score: number; reason: string | null;
+        model: string | null; reviewed_at: string }[]) {
+        if (Date.parse(x.reviewed_at) > since) {
+          reviews.set(`${x.item_type}:${x.item_id}`,
+            { score: x.score, reason: x.reason ?? '', model: x.model ?? MODEL, at: x.reviewed_at });
+        }
+      }
+    }
+  }
+  const reused = reviews.size;
+  const toAsk = toReview.filter((c) => !reviews.has(`${c.item_type}:${c.item_id}`));
+
   // Relecture IA par paquets
-  const reviews = new Map<string, { score: number; reason: string; model: string }>();
   const chunks: Candidate[][] = [];
-  for (let i = 0; i < toReview.length; i += REVIEW_CHUNK) chunks.push(toReview.slice(i, i + REVIEW_CHUNK));
+  for (let i = 0; i < toAsk.length; i += REVIEW_CHUNK) chunks.push(toAsk.slice(i, i + REVIEW_CHUNK));
   let reviewErrors = 0;
   let ci = 0;
   async function worker() {
@@ -751,7 +789,7 @@ async function runMatch(
         similarity: c.similarity, sector_match: c.sector_match, role_match: c.role_match, theme_match: c.theme_match,
         score: r ? r.score : null, reason: r ? r.reason : null,
         status: r ? (r.score >= threshold ? 'retained' : 'rejected') : 'candidate',
-        model: r ? r.model : null, reviewed_at: r ? now : null,
+        model: r ? r.model : null, reviewed_at: r ? (r.at ?? now) : null,
       };
     }),
     // pépites aimées : conservées telles quelles (sauf salon refusé depuis)
@@ -827,7 +865,8 @@ async function runMatch(
     doublons_de_titre: duplicates,
     rediffusions_refusees: refusedReplays,
     pepites_aimees_conservees: likedKeys.size,
-    relus: reviews.size,
+    relus: reviews.size - reused,
+    relectures_reutilisees: reused,
     retenus: inserted.filter((x) => x.status === 'retained').length,
     erreurs_relecture: reviewErrors,
     salons_suggeres: suggestions

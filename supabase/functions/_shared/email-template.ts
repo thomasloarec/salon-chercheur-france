@@ -164,7 +164,7 @@ export interface FooterOptions {
 export function renderFooter(opts: FooterOptions = {}): string {
   const tagline = opts.tagline ?? "L'intelligence des salons professionnels.";
   const unsub = opts.unsubscribeUrl
-    ? `<p style="margin:14px 0 0 0;font-family:${F.body};font-size:12px;line-height:18px;color:${C.footerText};"><a href="${escapeHtml(opts.unsubscribeUrl)}" style="color:${C.footerLink};text-decoration:underline;">Se desinscrire</a></p>`
+    ? `<p style="margin:14px 0 0 0;font-family:${F.body};font-size:12px;line-height:18px;color:${C.footerText};"><a href="${escapeHtml(opts.unsubscribeUrl)}" style="color:${C.footerLink};text-decoration:underline;">Se d&eacute;sinscrire</a></p>`
     : '';
   const extra = opts.extraHtml
     ? `<p style="margin:14px 0 0 0;font-family:${F.body};font-size:12px;line-height:18px;color:${C.footerText};">${opts.extraHtml}</p>`

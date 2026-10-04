@@ -13,6 +13,7 @@ export interface SendResendEmailOptions {
   tags?: Array<{ name: string; value: string }>;
   from?: string;
   replyTo?: string;
+  headers?: Record<string, string>;
 }
 
 export interface SendResendEmailResult {
@@ -47,6 +48,7 @@ export async function sendResendEmail(
   if (options.text) body.text = options.text;
   if (options.tags && options.tags.length > 0) body.tags = options.tags;
   if (options.replyTo) body.reply_to = options.replyTo;
+  if (options.headers && Object.keys(options.headers).length > 0) body.headers = options.headers;
 
   const resp = await fetch('https://api.resend.com/emails', {
     method: 'POST',
