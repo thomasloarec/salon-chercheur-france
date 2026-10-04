@@ -9,6 +9,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useProfile } from '@/hooks/useProfile';
 import { LotexpoWordmark } from '@/components/LotexpoWordmark';
 import { cn } from '@/lib/utils';
+import { AGENDA_NAV_ITEM, type NavSolutionGroup } from '@/config/navSolutions';
 
 /**
  * Menu mobile du site : tiroir plein écran, une seule logique de lignes.
@@ -17,17 +18,10 @@ import { cn } from '@/lib/utils';
  * aucun doublon (Radar CRM n'apparaît qu'une fois), compte et déconnexion en bas.
  */
 
-export interface MobileNavFeature {
-  to: string;
-  label: string;
-  icon: LucideIcon;
-  description?: string;
-}
-
 interface MobileNavDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  features: MobileNavFeature[];
+  groups: NavSolutionGroup[];
   isRealUser: boolean;
   email: string | null | undefined;
   isAdmin: boolean;
@@ -85,8 +79,8 @@ const AccountSection: React.FC<{ email: string; onNavigate: () => void }> = ({ e
   const { unreadCount } = useNotifications();
   const initial = profile?.first_name?.charAt(0).toUpperCase() || email.charAt(0).toUpperCase() || 'U';
   const displayName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ');
-  // Radar CRM est déjà dans « Fonctionnalités » : pas de doublon ici.
-  const items = USER_MENU_ITEMS.filter((i) => !i.to.startsWith('/radar-crm'));
+  // Radar CRM est déjà dans « Solutions » et Mon Agenda en haut du tiroir : pas de doublon ici.
+  const items = USER_MENU_ITEMS.filter((i) => !i.to.startsWith('/radar-crm') && i.to !== '/agenda');
 
   return (
     <div className="py-2">
@@ -114,7 +108,7 @@ const AccountSection: React.FC<{ email: string; onNavigate: () => void }> = ({ e
 };
 
 const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
-  open, onOpenChange, features, isRealUser, email, isAdmin, adminPendingTotal, onSignOut,
+  open, onOpenChange, groups, isRealUser, email, isAdmin, adminPendingTotal, onSignOut,
 }) => {
   const close = () => onOpenChange(false);
 
@@ -141,15 +135,19 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
           <Section>
             <Row to="/salons" icon={CalendarDays} label="Salons" onNavigate={close} />
             <Row to="/nouveautes" icon={Lightbulb} label="Avant-première" onNavigate={close} />
+            <Row to={AGENDA_NAV_ITEM.to} icon={AGENDA_NAV_ITEM.icon} label={AGENDA_NAV_ITEM.label} onNavigate={close} end />
           </Section>
 
-          <div className="mx-3 border-t border-border/60" />
-
-          <Section title="Fonctionnalités">
-            {features.map((f) => (
-              <Row key={f.to} to={f.to} icon={f.icon} label={f.label} onNavigate={close} />
-            ))}
-          </Section>
+          {groups.map((g) => (
+            <React.Fragment key={g.title}>
+              <div className="mx-3 border-t border-border/60" />
+              <Section title={g.title}>
+                {g.items.map((f) => (
+                  <Row key={f.to} to={f.to} icon={f.icon} label={f.label} onNavigate={close} />
+                ))}
+              </Section>
+            </React.Fragment>
+          ))}
 
           {isRealUser && email && (
             <>
