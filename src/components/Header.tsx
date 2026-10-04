@@ -16,13 +16,7 @@ import {
   NavigationMenuContent,
 } from '@/components/ui/navigation-menu';
 import { LotexpoWordmark } from '@/components/LotexpoWordmark';
-
-const FEATURE_ITEMS = [
-  { to: '/recherche-ia', label: 'Recherche IA', icon: Sparkles, description: 'Trouvez le bon salon avec l’IA' },
-  { to: '/radar-crm', label: 'Radar CRM', icon: Radar, description: 'Suivez vos comptes sur les salons' },
-  { to: '/directeur-commercial', label: 'Directeurs commerciaux', icon: Target, description: 'Testez la prospection salon sans importer vos données' },
-  { to: '/exposants', label: 'Exposants', icon: Users, description: 'Les entreprises présentes sur les salons' },
-];
+import { NAV_SOLUTION_GROUPS, AGENDA_NAV_ITEM } from '@/config/navSolutions';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -59,25 +53,34 @@ const Header = () => {
                     type="button"
                     className="h-auto bg-transparent px-0 py-0 text-sm text-muted-foreground hover:text-primary hover:bg-transparent focus:bg-transparent focus:text-primary data-[state=open]:bg-transparent data-[state=open]:text-primary font-normal"
                   >
-                    Fonctionnalités
+                    Solutions
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
-                    <ul className="grid w-[320px] gap-1 p-2">
-                      {FEATURE_ITEMS.map((item) => (
-                        <li key={item.to}>
-                          <Link
-                            to={item.to}
-                            className="flex items-start gap-3 rounded-md p-3 hover:bg-primary/10 transition-colors"
-                          >
-                            <item.icon className="h-5 w-5 text-foreground mt-0.5 shrink-0" />
-                            <span className="flex flex-col">
-                              <span className="text-sm font-medium text-foreground">{item.label}</span>
-                              <span className="text-xs text-muted-foreground">{item.description}</span>
-                            </span>
-                          </Link>
-                        </li>
+                    <div className="grid w-[560px] grid-cols-2 gap-x-2 gap-y-3 p-3">
+                      {NAV_SOLUTION_GROUPS.map((group) => (
+                        <div key={group.title}>
+                          <p className="px-3 pt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            {group.title}
+                          </p>
+                          <ul className="mt-1 grid gap-1">
+                            {group.items.map((item) => (
+                              <li key={item.to}>
+                                <Link
+                                  to={item.to}
+                                  className="flex items-start gap-3 rounded-md p-3 hover:bg-primary/10 transition-colors"
+                                >
+                                  <item.icon className="h-5 w-5 text-foreground mt-0.5 shrink-0" />
+                                  <span className="flex flex-col">
+                                    <span className="text-sm font-medium text-foreground">{item.label}</span>
+                                    <span className="text-xs text-muted-foreground">{item.description}</span>
+                                  </span>
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </NavigationMenuContent>
                 </NavigationMenuItem>
               </NavigationMenuList>
@@ -95,6 +98,14 @@ const Header = () => {
             >
               <Lightbulb className="h-4 w-4" />
               <span>Avant-première</span>
+            </NavLink>
+            <NavLink
+              to={AGENDA_NAV_ITEM.to}
+              end
+              className={({ isActive }) => navLinkClass(isActive)}
+            >
+              <AGENDA_NAV_ITEM.icon className="h-4 w-4" />
+              <span>Mon Agenda</span>
             </NavLink>
             {session && isAdmin && (
               <NavLink
@@ -157,7 +168,7 @@ const Header = () => {
         <MobileNavDrawer
           open={isMenuOpen}
           onOpenChange={setIsMenuOpen}
-          features={FEATURE_ITEMS}
+          groups={NAV_SOLUTION_GROUPS}
           isRealUser={!!isRealUser}
           email={user?.email}
           isAdmin={!!(session && isAdmin)}
