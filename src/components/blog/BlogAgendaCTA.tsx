@@ -29,8 +29,7 @@ export default function BlogAgendaCTA({ slug }: { slug?: string }) {
               <span className="text-inverse-primary"> Ils viennent à vous.</span>
             </h2>
             <p className="mt-2 text-inverse-muted text-[15px] leading-relaxed max-w-[62ch]">
-              Créez votre compte en 2 minutes : votre agenda range automatiquement les conférences, les stands
-              et les salons qui comptent pour vous. 100 % gratuit, sans carte bancaire.
+              Créez votre compte en 2 minutes : votre agenda boosté par l'IA trouve automatiquement les conférences, les stands et les salons qui comptent pour vous. 100 % gratuit.
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-3">
