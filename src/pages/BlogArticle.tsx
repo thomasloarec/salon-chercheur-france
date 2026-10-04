@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CalendarDays, MapPin, ArrowRight, FileText, Users } from 'lucide-react';
 import BlogNewsletterCTA from '@/components/blog/BlogNewsletterCTA';
+import BlogAgendaCTA from '@/components/blog/BlogAgendaCTA';
 import BlogRadarCrmCTA from '@/components/blog/BlogRadarCrmCTA';
 import DOMPurify from 'dompurify';
 
@@ -397,6 +398,9 @@ const BlogArticle = () => {
 
         {/* 7b. Radar CRM CTA (generic articles only) */}
         {isGeneric && <BlogRadarCrmCTA />}
+
+        {/* 7c. Mon Agenda CTA (articles de salons seulement) */}
+        {!isGeneric && <BlogAgendaCTA slug={article.slug} />}
 
         {/* 8. Newsletter CTA */}
         <BlogNewsletterCTA />
