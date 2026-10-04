@@ -6,7 +6,8 @@ Allow: /
 Disallow: /admin/
 Disallow: /auth
 Disallow: /profile
-Disallow: /agenda
+Allow: /agenda$
+Disallow: /agenda/
 Disallow: /api/
 
 # Google Images
@@ -19,7 +20,8 @@ Allow: /
 Disallow: /admin/
 Disallow: /auth
 Disallow: /profile
-Disallow: /agenda
+Allow: /agenda$
+Disallow: /agenda/
 
 # Social media bots (for rich previews)
 User-agent: Twitterbot
@@ -74,7 +76,8 @@ Allow: /
 Disallow: /admin/
 Disallow: /auth
 Disallow: /profile
-Disallow: /agenda
+Allow: /agenda$
+Disallow: /agenda/
 Disallow: /notifications
 Disallow: /favorites
 Disallow: /crm-integrations
