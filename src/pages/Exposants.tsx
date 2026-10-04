@@ -927,6 +927,26 @@ export default function Exposants() {
                 lue par les visiteurs qui préparent ce salon précis.
               </b>
             </p>
+            <div className="mt-6 text-center">
+              <p className="text-sm font-semibold text-foreground">
+                Une Nouveauté publiée, trois canaux ouverts :
+              </p>
+              <div className="mt-3 flex flex-wrap justify-center gap-2">
+                {[
+                  { icon: Search, label: 'La page du salon et la recherche IA' },
+                  { icon: CalendarHeart, label: "L'agenda des visiteurs" },
+                  { icon: Send, label: "Votre page d'invitation" },
+                ].map((p) => (
+                  <span
+                    key={p.label}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-secondary/60 px-3.5 py-1.5 text-sm font-medium text-primary"
+                  >
+                    <p.icon className="h-4 w-4" />
+                    {p.label}
+                  </span>
+                ))}
+              </div>
+            </div>
           </Reveal>
 
           <div className="flex flex-col">
