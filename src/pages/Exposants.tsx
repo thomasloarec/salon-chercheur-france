@@ -300,7 +300,7 @@ const LeadsMock = () => {
 };
 
 /* ================================================================== */
-/* Mock 4 — Votre stand dans l'agenda d'un visiteur                    */
+/* Mock 4 - Votre stand dans l'agenda d'un visiteur                    */
 /* ================================================================== */
 const VisitorAgendaMock = () => {
   const [ref, inView] = useInView<HTMLDivElement>(0.35);
@@ -371,7 +371,7 @@ const VisitorAgendaMock = () => {
 };
 
 /* ================================================================== */
-/* Mock 5 — Votre page d'invitation                                    */
+/* Mock 5 - Votre page d'invitation                                    */
 /* ================================================================== */
 const InvitationMock = () => {
   const [ref, inView] = useInView<HTMLDivElement>(0.35);
@@ -579,7 +579,7 @@ const SOLUTION_BLOCKS: SolutionBlock[] = [
         </strong>
       </>
     ),
-    ecoNote: 'Elle s\'active dès que votre Nouveauté est publiée pour le salon.',
+    ecoNote: "Elle s'active dès que votre Nouveauté est publiée pour le salon.",
     cta: { label: 'Publier ma nouveauté', to: '/publier-nouveaute' },
     visual: <InvitationMock />,
   },
