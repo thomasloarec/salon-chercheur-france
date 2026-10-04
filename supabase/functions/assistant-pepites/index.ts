@@ -270,6 +270,11 @@ async function buildPistes(supabase: SupabaseClient, anthropicKey: string, p: Pr
   const ins = await supabase.from('assistant_pistes').insert(rows);
   if (ins.error) throw new Error(ins.error.message);
 
+  // Intentions reconstruites depuis le profil actuel : le dispatcher n'a plus à les refaire.
+  const built = await supabase.from('assistant_profiles')
+    .update({ pistes_built_at: new Date().toISOString() }).eq('id', p.id);
+  if (built.error) throw new Error(`pistes_built_at : ${built.error.message}`);
+
   await embedPistes(supabase, p.id);
   return rows.map((r) => ({ label: r.label, court: r.short_label, themes: r.theme_codes, generique: r.is_generic }));
 }
@@ -917,6 +922,9 @@ Deno.serve(async (req) => {
   let daysFrom = typeof body.days_from === 'number' ? Math.max(0, Math.min(365, body.days_from)) : 0;
   let daysTo = typeof body.days_to === 'number' ? Math.max(daysFrom, Math.min(365, body.days_to)) : 60;
   const preview = body.preview === true || callerAnonymous;
+  // Un admin sans profile_id agit sur SON propre assistant (onboarding, Mon Agenda) : mêmes règles
+  // qu'un utilisateur (quota, fenêtre, étapes). Sans ce repli, l'appel répondait 400 « profile_id manquant ».
+  if (!profileId && caller === 'admin') caller = 'owner';
   if (caller === 'owner') {
     // l'utilisateur ne règle ni la fenêtre ni l'étape « adapt » (réservée à la tâche planifiée)
     if (step === 'adapt') step = 'match';
