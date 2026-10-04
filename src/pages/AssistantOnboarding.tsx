@@ -74,6 +74,8 @@ const DRAFT_MAX_MS = 2 * 60 * 60 * 1000;
 const MAX_INTERESTS = 12;
 const MAX_ROLES = 4;
 const MAX_MORE_REQUESTS = 4;
+const OPT_IN_LABEL =
+  "M'écrire quand il y a du nouveau : un récapitulatif le mardi, et un message si une conférence ou un stand à ne pas manquer apparaît. Désinscription en un clic.";
 
 const GOALS: { value: string; label: string }[] = [
   { value: 'fournisseurs', label: 'Trouver des fournisseurs' },
@@ -1350,6 +1352,12 @@ export default function AssistantOnboarding() {
                 </div>
               ))}
           </section>
+        )}
+        {isRealUser && (
+          <label className="mt-8 flex cursor-pointer items-start gap-3 rounded-xl bg-card p-4">
+            <Checkbox checked={optIn} onCheckedChange={(v) => setOptIn(v === true)} className="mt-0.5 h-5 w-5" />
+            <span className="text-[15px] text-foreground">{OPT_IN_LABEL}</span>
+          </label>
         )}
       </>
     );
