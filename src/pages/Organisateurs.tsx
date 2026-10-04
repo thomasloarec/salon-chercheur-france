@@ -1219,7 +1219,7 @@ const Organisateurs = () => {
               <Link to="/trouver-un-salon">
                 <Button className="h-12 rounded-xl bg-background px-6 text-base text-primary hover:bg-background/90 gap-2">
                   <ShieldCheck className="h-5 w-5" />
-                  Salon déjà présenté : revendiquer mon salon
+                  Revendiquer mon salon
                 </Button>
               </Link>
               <Link to="/contact">
@@ -1228,7 +1228,7 @@ const Organisateurs = () => {
                   className="h-12 rounded-xl border-primary-foreground/40 bg-transparent px-6 text-base text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground gap-2"
                 >
                   <ArrowUpRight className="h-5 w-5" />
-                  Salon pas encore présenté : le soumettre
+                  Soumettre mon salon
                 </Button>
               </Link>
             </div>
