@@ -346,6 +346,7 @@ const Agenda = () => {
             status={assistantFeed.status}
             regionCodes={assistantFeed.profile?.region_codes ?? []}
             onEditRegions={() => setRegionsOpen(true)}
+            interestsCount={assistantFeed.profile?.interests?.length ?? 0}
           />
           <AssistantEmailToggle value={assistantFeed.profile?.email_alerts_opt_in === true} />
           <AssistantDiscoverSection
