@@ -20,6 +20,8 @@ import { SECTOR_YEAR_INDEX_THRESHOLD, CITY_YEAR_INDEX_THRESHOLD } from './seoThr
 const t0 = Date.now();
 const DIST = path.resolve('dist');
 const SITE_ORIGIN = 'https://lotexpo.com';
+// Image de partage par défaut (LinkedIn, WhatsApp, X) pour toute page sans image propre.
+const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/og-lotexpo.jpg`;
 const ENV_PATH = path.resolve('.env');
 // Dedicated landscape OG card for exhibitor pages (never the company logo).
 const OG_EXHIBITOR_FALLBACK = 'https://lotexpo.com/og-exhibitor-default.png';
@@ -274,17 +276,25 @@ function applyToShell(baseTemplate, { title, description, headExtra, body, robot
   return html;
 }
 
-function commonHead(canonical, title, desc, ogImage) {
+function commonHead(canonical, title, desc, ogImage, ogTitle) {
+  // ogImage : image propre à la page (salon, article...). À défaut, image de marque 1200x630.
+  // ogTitle : titre de partage distinct du <title> (utilisé par la Home pour la signature).
+  const image = ogImage || DEFAULT_OG_IMAGE;
+  const isDefaultImage = !ogImage;
+  const shareTitle = ogTitle || title;
   return `
-    <meta property="og:title" content="${escapeHtml(title)}" />
+    <meta property="og:title" content="${escapeHtml(shareTitle)}" />
     <meta property="og:description" content="${escapeHtml(desc)}" />
     <meta property="og:url" content="${escapeHtml(canonical)}" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Lotexpo" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:image" content="${escapeHtml(image)}" />
+    ${isDefaultImage ? `<meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" /><meta property="og:image:alt" content="Lotexpo, l'intelligence des salons professionnels" />` : ''}
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="${escapeHtml(title)}" />
+    <meta name="twitter:title" content="${escapeHtml(shareTitle)}" />
     <meta name="twitter:description" content="${escapeHtml(desc)}" />
-    ${ogImage ? `<meta property="og:image" content="${escapeHtml(ogImage)}" /><meta name="twitter:image" content="${escapeHtml(ogImage)}" />` : ''}
+    <meta name="twitter:image" content="${escapeHtml(image)}" />
     <link rel="canonical" href="${escapeHtml(canonical)}" />
   `;
 }
@@ -441,17 +451,16 @@ function buildEvent(ev, exhibitors, novelties, program) {
 
 function buildHome() {
   const canonical = `${SITE_ORIGIN}/`;
-  const title = 'Salons professionnels en France | Lotexpo';
-  const description = "Retrouvez les salons professionnels à venir en France, classés par secteur, ville et période. Calendrier B2B complet, dates, lieux et exposants sur Lotexpo.";
-  const websiteSchema = { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Lotexpo', url: SITE_ORIGIN };
-  const orgSchema = { '@context': 'https://schema.org', '@type': 'Organization', name: 'Lotexpo', url: SITE_ORIGIN };
-  const headExtra = commonHead(canonical, title, description)
-    + `<script type="application/ld+json">${safeJsonLd(websiteSchema)}</script>`
-    + `<script type="application/ld+json">${safeJsonLd(orgSchema)}</script>`;
+  // Aligné sur src/pages/Home.tsx (même <title> et même description qu'après hydratation).
+  const title = "Salons professionnels en France, lus par l'IA | Lotexpo";
+  const description = "L'information sur les salons est partout, donc introuvable. Créez votre agenda gratuit : l'IA de Lotexpo vous signale les salons, les conférences et les stands qui comptent pour vous.";
+  const ogTitle = "Lotexpo, l'intelligence des salons professionnels";
+  // Pas de JSON-LD ici : index.html porte déjà WebSite (avec SearchAction) et Organization (description, slogan).
+  const headExtra = commonHead(canonical, title, description, undefined, ogTitle);
   const body = `<div id="seo-prerender" class="seo-prerender-fallback">
-    <h1>Salons professionnels en France</h1>
-    <p>Retrouvez les salons professionnels à venir en France, classés par secteur, ville et période. Lotexpo centralise les salons, congrès, conventions et événements B2B avec leurs dates, lieux et exposants associés.</p>
-    <p><a href="/salons-professionnels-2026">Voir les salons professionnels 2026</a> · <a href="/salons">Calendrier complet</a> · <a href="/nouveautes">Nouveautés des exposants</a></p>
+    <h1>Toutes les opportunités des salons professionnels, révélées par l'IA</h1>
+    <p>Lotexpo, l'intelligence des salons professionnels. Son IA lit chaque salon, son programme de conférences et les Nouveautés des exposants pour aider visiteurs, exposants et organisateurs à tirer le meilleur de chaque rencontre.</p>
+    <p><a href="/agenda/creer">Créer mon agenda gratuit</a> · <a href="/salons">Calendrier des salons</a> · <a href="/salons-professionnels-2026">Salons professionnels 2026</a> · <a href="/nouveautes">Avant-première des exposants</a></p>
   </div>`;
   return { title, description, canonical, headExtra, body };
 }
@@ -605,7 +614,7 @@ function buildSalonsIndex(eventsFuture) {
 function buildBlogIndex(articles) {
   const canonical = `${SITE_ORIGIN}/blog`;
   const title = 'Blog Lotexpo – Salons professionnels, secteurs & exposants';
-  const description = 'Articles, guides et analyses sur les salons professionnels en France : secteurs porteurs, calendriers, exposants à suivre et tendances B2B.';
+  const description = 'Guides et conseils pour préparer vos salons professionnels : choisir les bons salons, suivre les bonnes conférences, rentabiliser votre visite ou votre stand.';
   const headExtra = commonHead(canonical, title, description);
   const body = `<div id="seo-prerender" class="seo-prerender-fallback">
     <h1>Blog Lotexpo</h1>
