@@ -750,6 +750,12 @@ const SOLUTION_BLOCKS: SolutionBlock[] = [
 /* ================================================================== */
 /* Page                                                                */
 /* ================================================================== */
+const HERO_MENTIONS = [
+  'Gratuit, sans engagement',
+  'Vous gardez la main',
+  'Votre site officiel reste la destination',
+];
+
 const Organisateurs = () => {
   const faqSchema = {
     '@context': 'https://schema.org',
@@ -855,17 +861,18 @@ const Organisateurs = () => {
               </p>
 
               <p className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
-                {['Gratuit, sans engagement', 'Vous gardez la main', 'Votre site officiel reste la destination'].map(
-                  (t, i) => (
-                    <React.Fragment key={t}>
-                      {i > 0 && <span aria-hidden>·</span>}
-                      <span className="inline-flex items-center gap-1.5">
-                        <Check className="h-4 w-4 text-primary" />
-                        {t}
-                      </span>
-                    </React.Fragment>
-                  ),
-                )}
+                {HERO_MENTIONS.flatMap((t, i) => {
+                  const item = (
+                    <span key={t} className="inline-flex items-center gap-1.5">
+                      <Check className="h-4 w-4 text-primary" />
+                      {t}
+                    </span>
+                  );
+                  if (i < HERO_MENTIONS.length - 1) {
+                    return [item, <span key={`${t}-sep`} aria-hidden>·</span>];
+                  }
+                  return [item];
+                })}
               </p>
             </Reveal>
           </div>
