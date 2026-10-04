@@ -23,8 +23,11 @@ const Footer = () => {
           {/* Company Info */}
           <div className="lg:col-span-1">
             <LotexpoWordmark aria-label="Lotexpo" className="h-8 mb-4 w-auto text-inverse [--logo-accent:hsl(var(--primary-inverse))]" />
+            <p className="font-display text-lg font-semibold text-inverse mb-2">
+              L'intelligence des salons professionnels.
+            </p>
             <p className="text-inverse-muted mb-4">
-              Lotexpo centralise les salons professionnels en France et aide les entreprises à mieux préparer, suivre et valoriser leur présence sur les événements.
+              Lotexpo lit chaque salon, son programme et les Nouveautés des exposants pour aider visiteurs, exposants et organisateurs à tirer le meilleur de chaque rencontre.
             </p>
           </div>
 

@@ -84,7 +84,7 @@ const FAQ_ITEMS: { q: string; a: string }[] = [
   },
   {
     q: "D'où vient la donnée salon ?",
-    a: "De Lotexpo, qui centralise les salons professionnels en France et plus de 25 000 participations d'exposants. C'est cette donnée que votre CRM n'a pas.",
+    a: "De Lotexpo, qui lit les salons professionnels en France et plus de 35 000 participations d'exposants. C'est cette donnée que votre CRM n'a pas.",
   },
   {
     q: "Je vais déjà sur les salons. Qu'est-ce que ça change ?",

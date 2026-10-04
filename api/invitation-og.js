@@ -89,7 +89,7 @@ export default async function handler(req, res) {
   }
 
   let title = 'Invitation | Lotexpo';
-  let description = 'Retrouvez les exposants et leurs nouveautés avant les salons professionnels.';
+  let description = 'Découvrez les Nouveautés des exposants et prenez rendez-vous sur leur stand avant l\'ouverture du salon.';
   let image = { url: DEFAULT_IMAGE, sized: false };
 
   if (data && data.active) {
