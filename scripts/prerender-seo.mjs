@@ -456,6 +456,59 @@ function buildHome() {
   return { title, description, canonical, headExtra, body };
 }
 
+// Landings statiques (/agenda, /exposants, /organisateurs). Titre, description et
+// canonical identiques au Helmet de chaque page React. Pas de JSON-LD ici : le
+// Helmet de la page l'ajoute déjà, on évite les doublons.
+function buildStaticLanding({ path: routePath, title, description, h1, intro, links }) {
+  const canonical = `${SITE_ORIGIN}${routePath}`;
+  const headExtra = commonHead(canonical, title, description);
+  const linksHtml = (links || [])
+    .map((l) => `<a href="${escapeHtml(l.href)}">${escapeHtml(l.label)}</a>`)
+    .join(' · ');
+  const body = `<div id="seo-prerender" class="seo-prerender-fallback">
+    <h1>${escapeHtml(h1)}</h1>
+    <p>${escapeHtml(intro)}</p>
+    ${linksHtml ? `<p>${linksHtml}</p>` : ''}
+  </div>`;
+  return { title, description, canonical, headExtra, body };
+}
+
+const STATIC_LANDINGS = [
+  {
+    path: '/agenda',
+    title: 'Mon Agenda : votre assistant salons gratuit | Lotexpo',
+    description: "Dites ce qui vous intéresse. L'IA de Lotexpo lit les programmes des salons et les Nouveautés des exposants, puis range dans votre agenda les conférences, les stands et les salons qui valent le déplacement. Gratuit.",
+    h1: 'Mon Agenda : votre assistant salons gratuit',
+    intro: "Dites-nous ce qui vous intéresse. L'IA de Lotexpo lit les programmes des salons et les Nouveautés des exposants, puis range dans votre agenda les conférences, les stands et les salons qui valent votre déplacement.",
+    links: [
+      { href: '/salons', label: 'Calendrier des salons' },
+      { href: '/nouveautes', label: 'Nouveautés des exposants' },
+    ],
+  },
+  {
+    path: '/exposants',
+    title: 'Publier une nouveauté sur vos salons, gratuitement | Lotexpo',
+    description: "Annoncez gratuitement ce que vous présentez sur votre stand. L'IA de Lotexpo rédige votre nouveauté à partir de vos documents, et vous génère des rendez-vous avant l'ouverture du salon.",
+    h1: 'Publier une nouveauté sur vos salons, gratuitement',
+    intro: "Annoncez ce que vous présentez sur votre stand. Les visiteurs qui préparent déjà leur venue sur Lotexpo vous repèrent, et vous arrivez au salon avec des rendez-vous.",
+    links: [
+      { href: '/publier-nouveaute', label: 'Publier ma nouveauté' },
+      { href: '/nouveautes', label: 'Voir des exemples' },
+    ],
+  },
+  {
+    path: '/organisateurs',
+    title: 'Organisateurs de salons professionnels | Lotexpo',
+    description: "Revendiquez la page de votre salon sur Lotexpo, gratuitement. Vous gardez la main sur vos informations, votre site officiel reste la destination, et la visibilité ne s'achète pas.",
+    h1: 'Votre salon vous appartient. Sur Lotexpo aussi.',
+    intro: "Revendiquez gratuitement la page de votre salon sur Lotexpo. Vos informations font foi, votre site officiel reste la destination, et la visibilité ne s'achète pas.",
+    links: [
+      { href: '/trouver-un-salon', label: 'Revendiquer mon salon' },
+      { href: '/salons', label: 'Calendrier des salons' },
+    ],
+  },
+];
+
 function buildAnnualHub(year, eventsFuture, sectors, cities, monthGroups) {
   const canonical = `${SITE_ORIGIN}/salons-professionnels-${year}`;
   const title = `Salons professionnels ${year} en France | Lotexpo`;
@@ -1481,6 +1534,13 @@ async function main() {
     }
   } catch (e) { errors++; console.warn('[prerender] novelties index failed', e.message); }
 
+  // 7e. landings statiques
+  for (const landing of STATIC_LANDINGS) {
+    try {
+      await writeRoute(landing.path, applyToShell(baseTemplate, buildStaticLanding(landing)));
+    } catch (e) { errors++; console.warn('[prerender] landing failed', landing.path, e.message); }
+  }
+  console.log(`[prerender] static landings: ${STATIC_LANDINGS.length}`);
   // 8. home — written LAST so it never pollutes the template
   try {
     const built = buildHome();
