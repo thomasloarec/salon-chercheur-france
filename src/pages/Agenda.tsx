@@ -174,33 +174,18 @@ const Agenda = () => {
   const nextOngoing = nextState === 'en_cours' || nextState === 'imminent';
   const daysToNext = nextEvent ? getDaysUntilStart(nextEvent.date_debut) : null;
 
-  if (!user) {
+  if (authLoading) {
     return (
-      <AgendaShell>
-        <div className="flex min-h-[60vh] items-center justify-center px-6 py-16">
-          <div className="max-w-md text-center">
-            <div className="mx-auto mb-5 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-              <CalendarRange className="h-8 w-8 text-primary" />
-            </div>
-            <h1 className="heading-display text-2xl text-foreground mb-2">
-              Connectez-vous pour voir votre agenda
-            </h1>
-            <p className="text-muted-foreground mb-6">
-              Vos salons, vos exposants à voir et vos nouveautés repérées, réunis dans un
-              seul plan de visite.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <Button asChild>
-                <Link to="/auth">Se connecter</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link to="/salons">Parcourir les salons</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </AgendaShell>
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
+        <main className="min-h-[60vh]" />
+        <Footer />
+      </div>
     );
+  }
+
+  if (!user) {
+    return <AgendaLanding />;
   }
 
   if (error) {
