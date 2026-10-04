@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Menu, X, Search, Users, Settings, Radar, Sparkles, Lightbulb, Target } from 'lucide-react';
+import { Menu, X, Search, Users, Settings, Radar, Sparkles, Lightbulb, Target, CalendarHeart } from 'lucide-react';
+import { ASSISTANT_ONBOARDING_PATH } from '@/components/assistant/config';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useAdminPendingCounts } from '@/hooks/useAdminPendingCounts';
@@ -137,15 +138,17 @@ const Header = () => {
                 <Button variant="ghost" type="button">Se connecter</Button>
               </Link>
             )}
-            <Link to="/recherche-ia">
-              <Button
-                type="button"
-                className="rounded-xl shadow-[0_4px_14px_-4px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_18px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                Essayer l'IA
-                <Sparkles className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+            {!isRealUser && (
+              <Link to={ASSISTANT_ONBOARDING_PATH}>
+                <Button
+                  type="button"
+                  className="rounded-xl shadow-[0_4px_14px_-4px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_18px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  Créer mon agenda
+                  <CalendarHeart className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile menu button */}

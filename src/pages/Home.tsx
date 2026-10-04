@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
-  Search, ArrowRight, Sparkles, Users, Store, Building2, Info,
-  RefreshCw, Route, Radar, Rocket, Eye, MapPin, CalendarDays,
+  ArrowRight, ArrowDown, Users, Store, Building2, Info, Rocket, Check,
+  CalendarHeart, CalendarClock, Megaphone, ExternalLink,
 } from 'lucide-react';
+import { ASSISTANT_ONBOARDING_PATH } from '@/components/assistant/config';
+import { AgendaDemoMock } from '@/components/assistant/AgendaLanding';
 import { cn } from '@/lib/utils';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -54,39 +56,6 @@ function useInView<T extends HTMLElement>(threshold = 0.2) {
   return [ref, inView] as const;
 }
 
-const HERO_QUERIES = [
-  "Je cherche des fournisseurs d'emballage écoresponsable…",
-  'Où exposent mes concurrents en cosmétique bio ?',
-  'Sur quel salon rencontrer des directeurs achats agro ?',
-  'Quels salons couvrent déjà le marché de la foodtech ?',
-];
-
-function useTypewriter(queries: string[], active: boolean) {
-  const reduced = usePrefersReducedMotion();
-  const [text, setText] = useState(queries[0]);
-  useEffect(() => {
-    if (!active || reduced) { setText(queries[0]); return; }
-    let qi = 0, ci = 0, del = false;
-    let timer: ReturnType<typeof setTimeout>;
-    const tick = () => {
-      const f = queries[qi];
-      if (!del) {
-        ci++;
-        setText(f.slice(0, ci));
-        if (ci === f.length) { del = true; timer = setTimeout(tick, 1500); return; }
-        timer = setTimeout(tick, 52);
-      } else {
-        ci--;
-        setText(f.slice(0, ci));
-        if (ci === 0) { del = false; qi = (qi + 1) % queries.length; timer = setTimeout(tick, 260); return; }
-        timer = setTimeout(tick, 26);
-      }
-    };
-    timer = setTimeout(tick, 400);
-    return () => clearTimeout(timer);
-  }, [active, reduced, queries]);
-  return text;
-}
 
 const floorTo = (n: number, step: number) => Math.floor(n / step) * step;
 const frThousands = (n: number) => n.toLocaleString('fr-FR');
@@ -139,20 +108,8 @@ function Reveal({ children, className = '', delay = 0 }: { children: React.React
 /* Page                                                                */
 /* ================================================================== */
 const Home = () => {
-  const navigate = useNavigate();
   const { data: stats } = usePublicStats();
   const { data: upcoming, isLoading: upcomingLoading } = useUpcomingEvents(10);
-
-  const [query, setQuery] = useState('');
-  const [focused, setFocused] = useState(false);
-  const placeholder = useTypewriter(HERO_QUERIES, !focused && query.length === 0);
-
-  const submitSearch = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    const value = query.trim();
-    if (!value) return;
-    navigate(`/recherche-ia?q=${encodeURIComponent(value)}`);
-  };
 
   const salonsTarget = stats ? floorTo(stats.salons, 50) : 0;
   const exposantsTarget = stats ? floorTo(stats.exposants, 1000) : 0;
@@ -163,7 +120,7 @@ const Home = () => {
         <title>Salons professionnels en France, lus par l'IA | Lotexpo</title>
         <meta
           name="description"
-          content="L'information sur les salons est partout, donc introuvable. L'IA de Lotexpo lit tout — salons, exposants, secteurs — et vous donne la réponse qui compte."
+          content="L'information sur les salons est partout, donc introuvable. Créez votre agenda gratuit : l'IA de Lotexpo vous signale les salons, les conférences et les stands qui comptent pour vous."
         />
         <link rel="canonical" href="https://lotexpo.com/" />
       </Helmet>
@@ -190,9 +147,9 @@ const Home = () => {
             <Reveal className="text-left max-w-[540px]">
               <span className="inline-flex items-center gap-2 rounded-full bg-background border border-border shadow-sm pl-2 pr-4 py-1.5 text-sm font-semibold text-primary mb-5">
                 <span className="rounded-full bg-primary text-primary-foreground text-[0.7rem] font-bold uppercase tracking-wide px-2 py-0.5">
-                  Nouveau
+                  Gratuit
                 </span>
-                Les salons professionnels, lus par l'IA
+                Votre assistant salons
               </span>
 
               <h1 className="heading-display text-[clamp(1.9rem,3.6vw,3.3rem)] text-foreground max-w-[16ch] text-balance">
@@ -203,44 +160,43 @@ const Home = () => {
               <p className="mt-5 text-lg md:text-xl text-muted-foreground max-w-[56ch]">
                 L'information sur les salons est{' '}
                 <b className="text-foreground font-semibold">partout, donc introuvable.</b>{' '}
-                L'IA de Lotexpo lit tout (salons, exposants, secteurs) et vous donne la réponse qui compte.
+                Créez votre compte et dites ce qui vous intéresse : l'IA de Lotexpo lit les salons, leurs
+                programmes et les Nouveautés des exposants, et vous signale les conférences, les stands et les
+                salons à ne pas manquer.{' '}
+                <b className="text-foreground font-semibold">Plus besoin de faire votre veille.</b>
               </p>
 
-              {/* Searchbar */}
-              <form onSubmit={submitSearch} className="max-w-[680px] mt-7">
-                <div className="flex items-center gap-3 rounded-2xl border-[1.5px] border-border bg-background shadow-lg pl-5 pr-2 py-2 focus-within:border-primary transition-colors">
-                  <Search className="h-5 w-5 text-muted-foreground shrink-0" />
-                  <input
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onFocus={() => setFocused(true)}
-                    onBlur={() => setFocused(false)}
-                    placeholder={placeholder}
-                    aria-label="Décrivez votre besoin"
-                    className="flex-1 min-w-0 bg-transparent border-0 outline-none text-foreground placeholder:text-foreground/70 text-base py-2.5"
-                  />
-                  <Button
-                    type="submit"
-                    className="shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-4 rounded-xl"
-                  >
-                    <Sparkles className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Chercher avec l'IA</span>
-                  </Button>
-                </div>
-                <p className="text-sm text-muted-foreground mt-3.5 text-left px-0.5">
-                  Acheteur, exposant, commercial ou organisateur, posez votre question comme à un humain.
-                </p>
-              </form>
-
-              <div className="flex items-center justify-start gap-4 mt-6 flex-wrap">
-                <span className="text-sm text-muted-foreground">ou</span>
-                <Link to="/salons">
-                  <Button variant="outline" className="rounded-xl">
-                    Voir tous les salons
-                  </Button>
-                </Link>
+              <div className="mt-8 flex flex-wrap items-center gap-4">
+                <Button asChild size="lg" className="h-12 rounded-xl px-6 text-base gap-2 shadow-lg">
+                  <Link to={ASSISTANT_ONBOARDING_PATH}>
+                    <CalendarHeart className="h-5 w-5" />
+                    Créer mon agenda
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="h-12 rounded-xl px-6 text-base">
+                  <Link to="/salons">Voir tous les salons</Link>
+                </Button>
               </div>
+
+              <div className="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                {['100 % gratuit', 'Prêt en 2 minutes', 'Aucune veille à faire'].map((m, i) => (
+                  <React.Fragment key={m}>
+                    {i > 0 && <span aria-hidden>·</span>}
+                    <span className="inline-flex items-center gap-1.5">
+                      <Check className="h-4 w-4 text-primary" />
+                      {m}
+                    </span>
+                  </React.Fragment>
+                ))}
+              </div>
+
+              <p className="mt-4 text-sm">
+                <span className="text-muted-foreground">Vous cherchez quelque chose de précis ? </span>
+                <Link to="/recherche-ia" className="inline-flex items-center gap-1 font-semibold text-primary">
+                  Posez votre question à l'IA
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </p>
             </Reveal>
           </div>
         </section>
@@ -356,10 +312,10 @@ const Home = () => {
               Rendre le marché lisible. Pour tout le monde.
             </h2>
             <p className="mt-4 text-lg text-foreground/70">
-              Lotexpo lit l'intégralité de l'écosystème, chaque salon, chaque exposant, chaque secteur,
-              pour transformer ce chaos en information actionnable.{' '}
+              Lotexpo lit l'intégralité de l'écosystème, chaque salon, chaque programme, chaque exposant,
+              pour transformer ce chaos en information utile.{' '}
               <b className="text-primary font-semibold">
-                Le même moteur sert le visiteur, l'exposant, le commercial et l'organisateur.
+                Chacun y trouve son intérêt : le visiteur, l'exposant, le commercial et l'organisateur.
               </b>
             </p>
           </Reveal>
@@ -456,10 +412,10 @@ const Home = () => {
               l'écosystème.
             </p>
             <div className="mt-9 flex items-center justify-center gap-4 flex-wrap">
-              <Link to="/recherche-ia">
+              <Link to={ASSISTANT_ONBOARDING_PATH}>
                 <Button className="bg-background text-primary hover:bg-background/90 h-12 px-6 text-base rounded-xl">
-                  Essayer la recherche IA
-                  <Sparkles className="ml-2 h-4 w-4" />
+                  Créer mon agenda
+                  <CalendarHeart className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
               <span className="text-primary-foreground/60 text-sm">ou</span>
@@ -532,107 +488,6 @@ const Mock = ({ children, className = '' }: { children: React.ReactNode; classNa
   </div>
 );
 
-/* ---- Block 1 : recherche ---- */
-const SearchMock = () => {
-  const [ref, inView] = useInView<HTMLDivElement>(0.35);
-  const results = [
-    { name: 'SIRHA', pct: 92, meta: 'Restauration & hôtellerie · 23-27 janv. · Lyon', tag: '142 exposants correspondent' },
-    { name: 'Food Hotel Tech', pct: 84, meta: 'Tech & digital pour la restauration · 10-11 mars · Paris', tag: '47 exposants correspondent' },
-    { name: 'Sandwich & Snack Show', pct: 78, meta: 'Restauration rapide & nomade · 19-20 mai · Paris', tag: '63 exposants correspondent' },
-  ];
-  return (
-    <Mock>
-      <div ref={ref}>
-        <div className="flex items-center gap-3 bg-secondary/40 border border-secondary rounded-xl px-4 py-3 mb-4">
-          <Search className="h-4 w-4 text-foreground shrink-0" />
-          <span className="text-sm text-foreground truncate">
-            Je vends des logiciels de caisse pour restaurants
-          </span>
-        </div>
-        <p className="text-xs font-semibold text-muted-foreground mb-3.5 px-1">
-          <b className="text-primary">3 salons</b> correspondent à votre activité
-        </p>
-        <div className="space-y-3">
-          {results.map((r, i) => (
-            <div
-              key={r.name}
-              style={{ transitionDelay: `${260 + i * 200}ms` }}
-              className={`rounded-[14px] border border-border bg-background px-4 py-[15px] transition-all duration-500 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}
-            >
-              <div className="flex justify-between items-baseline gap-3">
-                <span className="font-bold text-[1.05rem] text-primary">{r.name}</span>
-                <span className="font-bold text-sm text-primary shrink-0">{r.pct}%</span>
-              </div>
-              <p className="text-[0.86rem] text-muted-foreground mt-1">{r.meta}</p>
-              <div className="h-[5px] bg-muted/60 rounded-full mt-3 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-[width] duration-[1100ms] ease-out"
-                  style={{ width: inView ? `${r.pct}%` : '0%', transitionDelay: `${400 + i * 200}ms` }}
-                />
-              </div>
-              <span className="inline-flex items-center mt-3 text-[0.78rem] font-semibold text-primary bg-secondary rounded-full px-[11px] py-1">
-                {r.tag}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </Mock>
-  );
-};
-
-/* ---- Block 2 : parcours ---- */
-const ParcoursMock = () => {
-  const [ref, inView] = useInView<HTMLDivElement>(0.35);
-  const items = [
-    { n: 1, name: 'Adoria', loc: 'Hall 3 · Stand C12', obj: 'Innovation', cls: 'bg-primary/15 text-primary' },
-    { n: 2, name: 'Inpulse', loc: 'Hall 3 · Stand C40', obj: 'Innovation', cls: 'bg-primary/15 text-primary' },
-    { n: 3, name: 'SwiftPay', loc: 'Hall 5 · Stand E08', obj: 'Paiement', cls: 'bg-info/10 text-info' },
-    { n: 4, name: 'BioNature', loc: 'Hall 1 · Stand A22', obj: 'Bio', cls: 'bg-info/10 text-info' },
-  ];
-  return (
-    <Mock>
-      <div ref={ref}>
-        <div className="flex items-center justify-between gap-3 pb-3.5 border-b border-border">
-          <span className="font-bold text-primary">Votre parcours · SIRHA</span>
-          <span className="text-xs font-bold text-primary-foreground bg-primary rounded-full px-2.5 py-1 whitespace-nowrap">
-            196 exposants
-          </span>
-        </div>
-        <div className="flex flex-wrap gap-2 items-center mt-3.5">
-          <span className="text-[0.72rem] uppercase tracking-wide font-bold text-muted-foreground">Objectifs</span>
-          {['Voir les innovations', 'Solutions de paiement', 'Fournisseurs bio'].map((g) => (
-            <span key={g} className="text-xs font-semibold text-primary bg-secondary/50 border border-secondary rounded-full px-2.5 py-1">
-              {g}
-            </span>
-          ))}
-        </div>
-        <div className="mt-2">
-          {items.map((it, i) => (
-            <div
-              key={it.name}
-              style={{ transitionDelay: `${150 + i * 180}ms` }}
-              className={`flex gap-[13px] items-center py-[11px] border-t border-border transition-all duration-500 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
-            >
-              <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                {it.n}
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className="font-bold text-primary text-sm">{it.name}</div>
-                <div className="text-xs text-muted-foreground">{it.loc}</div>
-              </div>
-              <span className={`text-[0.73rem] font-bold px-[9px] py-[3px] rounded-md ${it.cls}`}>{it.obj}</span>
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground flex items-center gap-2">
-          <Route className="h-4 w-4 text-foreground shrink-0" />
-          Itinéraire regroupé par hall, vous ne revenez jamais sur vos pas.
-        </div>
-      </div>
-    </Mock>
-  );
-};
 
 /* ---- Block 3 : radar CRM ---- */
 const RadarMock = () => (
@@ -674,74 +529,92 @@ const RadarMock = () => (
   </Mock>
 );
 
-/* ---- Block 4 : nouveautés ---- */
+/* ---- Block 2 : nouveautés ---- */
 const NoveltyMock = () => (
-  <Mock className="max-w-[420px] mx-auto relative">
-    <span className="absolute top-3.5 left-3.5 z-10 bg-primary text-primary-foreground text-[0.72rem] font-bold uppercase tracking-wide px-3 py-1 rounded-full shadow-md">
-      Nouveauté
-    </span>
-    <div
-      className="h-[150px] rounded-xl flex items-center justify-center text-primary mb-4 overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.25), hsl(var(--secondary)))' }}
-    >
-      <Rocket className="h-12 w-12 opacity-50" />
-    </div>
-    <div className="flex items-center gap-2.5 mb-2.5">
-      <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-extrabold text-sm">A</div>
-      <div>
-        <div className="font-bold text-primary text-sm leading-tight">Adoria</div>
-        <div className="text-xs text-muted-foreground">présentée à Food Hotel Tech</div>
+  <Mock className="max-w-[460px] mx-auto">
+    <div className="flex gap-4">
+      <div
+        className="w-24 sm:w-28 shrink-0 aspect-[3/4] rounded-xl flex items-center justify-center text-primary overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.25), hsl(var(--secondary)))' }}
+      >
+        <Rocket className="h-10 w-10 opacity-50" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <span className="inline-block bg-primary text-primary-foreground text-[0.72rem] font-bold uppercase tracking-wide px-3 py-1 rounded-full mb-2.5">
+          Nouveauté
+        </span>
+        <div className="flex items-center gap-2.5 mb-2">
+          <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-extrabold text-sm shrink-0">A</div>
+          <div className="min-w-0">
+            <div className="font-bold text-primary text-sm leading-tight">Adoria</div>
+            <div className="text-xs text-muted-foreground">présentée à Food Hotel Tech</div>
+          </div>
+        </div>
+        <div className="font-bold text-foreground mb-2.5 leading-snug">Borne de commande autonome nouvelle génération</div>
+        <div className="flex flex-wrap gap-[6px]">
+          {['Démo live sur stand', '-30% temps de commande', 'Intégration caisse native'].map((c) => (
+            <span key={c} className="text-[0.74rem] font-medium text-primary bg-secondary/40 border border-secondary rounded-full px-[10px] py-0.5">
+              {c}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
-    <div className="font-bold text-foreground mb-3">Borne de commande autonome nouvelle génération</div>
-    <div className="flex flex-wrap gap-[7px] mb-3.5">
-      {['Démo live sur stand', '-30% temps de commande', 'Intégration caisse native'].map((c) => (
-        <span key={c} className="text-[0.78rem] font-semibold text-primary bg-secondary/40 border border-secondary rounded-full px-[11px] py-1">
-          {c}
-        </span>
-      ))}
-    </div>
-    <div className="flex items-center gap-2 text-xs font-semibold text-info border-t border-border pt-3">
-      <Eye className="h-4 w-4" />
-      Repérée par 34 visiteurs · 8 prévoient de passer
+    <div className="flex items-center gap-2 text-xs font-semibold text-info border-t border-border pt-3 mt-4">
+      <CalendarHeart className="h-4 w-4 shrink-0" />
+      Proposée dans l'agenda des visiteurs concernés
     </div>
   </Mock>
 );
 
-/* ---- Block 5 : moteur / structuration ---- */
-const StructMock = () => (
-  <Mock>
-    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
-      <div className="flex-1 rounded-xl border border-border p-4">
-        <div className="text-[0.72rem] font-bold uppercase tracking-wide text-muted-foreground mb-2.5">Fiche brute</div>
-        <div className="bg-muted/30 rounded-lg p-3 text-xs text-muted-foreground leading-relaxed font-mono">
-          « Ns proposons sol. digitales p/ restau : caisse tactile, cmd table, paiement… + de 200 clients franchisés en FR &amp; BENELUX. »
+/* ---- Block 4 : organisateurs ---- */
+const OrganizerHomeMock = () => {
+  const reduced = usePrefersReducedMotion();
+  const [ref, inView] = useInView<HTMLDivElement>(0.35);
+  const shown = reduced || inView;
+  const rows = [
+    { icon: CalendarClock, label: 'Programme publié · 14 sessions' },
+    { icon: Megaphone, label: 'Nouveautés de vos exposants · 9 publiées' },
+    { icon: ExternalLink, label: 'Bouton vers votre site officiel' },
+  ];
+  const cls = (i: number) =>
+    cn('transition-all duration-500', shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2');
+  const delay = (i: number) => ({ transitionDelay: reduced ? '0ms' : `${160 + i * 190}ms` });
+  return (
+    <Mock>
+      <div ref={ref}>
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <span className="heading-display text-lg text-foreground">Votre salon sur Lotexpo</span>
+          <div className="flex items-center gap-1.5">
+            <span className="bg-secondary text-primary text-[11px] font-medium rounded-full px-2 py-0.5">Page revendiquée</span>
+            <span className="text-[11px] text-muted-foreground border border-border rounded-full px-2">Exemple</span>
+          </div>
+        </div>
+        <div className="space-y-2.5">
+          {rows.map((r, i) => (
+            <div
+              key={r.label}
+              style={delay(i)}
+              className={cn('rounded-xl border border-border px-3 py-2.5 flex items-center gap-2.5 text-sm font-medium text-foreground', cls(i))}
+            >
+              <r.icon className="h-4 w-4 text-primary shrink-0" />
+              {r.label}
+            </div>
+          ))}
+        </div>
+        <div style={delay(3)} className={cn('flex justify-center py-2.5 text-primary', cls(3))}>
+          <ArrowDown className="h-5 w-5" />
+        </div>
+        <div style={delay(4)} className={cn('rounded-xl bg-surface-inverse text-inverse p-4', cls(4))}>
+          <span className="inline-block bg-inverse-primary text-surface-inverse text-[11px] font-bold uppercase tracking-wide rounded-full px-2.5 py-0.5">
+            Salon à ne pas manquer
+          </span>
+          <p className="text-sm mt-2">Proposé aux visiteurs dont les sujets correspondent</p>
         </div>
       </div>
-      <div className="flex flex-col items-center justify-center gap-1 text-primary text-[0.7rem] font-bold shrink-0">
-        <ArrowRight className="h-6 w-6 rotate-90 sm:rotate-0" />
-        <span className="whitespace-nowrap">L'IA lit</span>
-      </div>
-      <div className="flex-1 rounded-xl border border-border p-4">
-        <div className="text-[0.72rem] font-bold uppercase tracking-wide text-muted-foreground mb-2.5">Fiche structurée</div>
-        {[
-          { k: 'Secteur', tags: ['Restauration tech'] },
-          { k: 'Produits', tags: ['Caisse', 'Commande', 'Paiement'] },
-          { k: 'Cible', tags: ['Franchises', 'Restaurateurs'] },
-        ].map((f) => (
-          <div key={f.k} className="mb-3 last:mb-0">
-            <div className="text-[0.72rem] font-bold uppercase tracking-wide text-primary mb-1.5">{f.k}</div>
-            <div className="flex flex-wrap gap-1.5">
-              {f.tags.map((t) => (
-                <span key={t} className="text-xs font-semibold text-primary bg-secondary rounded-md px-2.5 py-1">{t}</span>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </Mock>
-);
+    </Mock>
+  );
+};
 
 const SOLUTION_BLOCKS: SolutionBlock[] = [
   {
@@ -749,45 +622,30 @@ const SOLUTION_BLOCKS: SolutionBlock[] = [
     title: "Le bon salon, même celui auquel vous n'auriez jamais pensé",
     body: (
       <>
-        Décrivez votre besoin en une phrase. L'IA a lu tous les salons et tous les exposants, et fait
-        remonter ceux où se trouve vraiment votre marché,{' '}
-        <strong className="text-primary font-semibold">classés par pertinence réelle.</strong>
+        Dites une fois ce qui vous intéresse : votre métier, vos sujets, vos régions. L'IA lit en continu
+        les salons, leurs programmes et les Nouveautés des exposants, puis range dans votre agenda{' '}
+        <strong className="text-primary font-semibold">les conférences, les stands et les salons à ne pas manquer</strong>,
+        avec la raison écrite pour vous.
       </>
     ),
-    ecoNote:
-      'Côté exposants et organisateurs : être enfin trouvé par les bonnes personnes, sans se battre pour le référencement.',
-    cta: { label: 'Essayer la recherche IA', to: '/recherche-ia' },
-    visual: <SearchMock />,
-  },
-  {
-    actor: 'Pour les visiteurs · le jour J',
-    title: 'Ne tournez plus en rond dans les allées',
-    body: (
-      <>
-        Indiquez vos objectifs : voir les innovations, sourcer un produit précis, rencontrer un profil.
-        L'IA établit votre <strong className="text-primary font-semibold">liste d'exposants prioritaires</strong>{' '}
-        et l'ordonne stand par stand. Sur un salon de plusieurs milliers d'exposants, vous savez
-        exactement où aller, et à qui parler.
-      </>
-    ),
-    ecoNote:
-      "Même sur un salon géant, chaque exposant pertinent est vu, et chaque visite devient une vraie rencontre, pas un hasard d'allée.",
-    cta: { label: 'Trouver mon prochain salon', to: '/salons' },
-    visual: <ParcoursMock />,
+    ecoNote: 'Gratuit et prêt en 2 minutes. Un email quand ça vaut le déplacement, 2 par semaine au plus.',
+    cta: { label: 'Créer mon agenda', to: ASSISTANT_ONBOARDING_PATH },
+    visual: <AgendaDemoMock />,
   },
   {
     actor: 'Pour les exposants',
     title: "Soyez découvert avant même l'ouverture des portes",
     body: (
       <>
-        Publiez vos nouveautés : un lancement, une innovation, une démo.{' '}
-        <strong className="text-primary font-semibold">L'IA les fait remonter aux visiteurs concernés</strong>,
-        qui planifient leur passage sur votre stand. Votre visibilité commence des semaines avant le salon.
+        Publiez votre Nouveauté : un lancement, une innovation, une démo. L'IA la rédige avec vous à partir
+        de vos documents, puis{' '}
+        <strong className="text-primary font-semibold">la propose dans l'agenda des visiteurs qu'elle concerne.</strong>{' '}
+        Vous partagez votre page d'invitation, et les demandes de rendez-vous arrivent avant l'ouverture.
       </>
     ),
     ecoNote:
       'Pour les visiteurs : savoir quoi voir et pourquoi. Pour les salons : un contenu vivant qui donne envie de venir.',
-    cta: { label: 'Publier une nouveauté', to: '/publier-nouveaute' },
+    cta: { label: 'Publier une Nouveauté', to: '/exposants' },
     visual: <NoveltyMock />,
   },
   {
@@ -806,19 +664,19 @@ const SOLUTION_BLOCKS: SolutionBlock[] = [
     visual: <RadarMock />,
   },
   {
-    actor: 'Le moteur',
-    title: 'Des milliers de fiches, lues et remises au clair, en continu',
+    actor: 'Pour les organisateurs',
+    title: 'Votre salon, sur le radar des bons visiteurs',
     body: (
       <>
-        En coulisses, l'IA lit et structure sans relâche les fiches exposants : descriptions, produits,
-        secteurs.{' '}
-        <strong className="text-primary font-semibold">C'est ce travail invisible qui rend chaque recherche juste</strong>,
-        et que personne ne pourrait faire à la main.
+        Revendiquez gratuitement la page de votre salon : vos informations font foi. Publiez votre programme,
+        invitez vos exposants à annoncer leurs Nouveautés :{' '}
+        <strong className="text-primary font-semibold">plus votre salon est vivant, plus il est proposé aux visiteurs qu'il concerne.</strong>{' '}
+        Des outils gratuits vous aident à créer de l'intérêt et à amener du trafic vers votre site avant l'ouverture.
       </>
     ),
-    ecoNote:
-      'La fondation invisible qui fait tenir tout le reste, et le fossé qui se creuse fiche après fiche.',
-    visual: <StructMock />,
+    ecoNote: "La visibilité ne s'achète pas, elle se gagne. Votre site officiel reste la destination.",
+    cta: { label: 'Revendiquer mon salon', to: '/organisateurs' },
+    visual: <OrganizerHomeMock />,
   },
 ];
 
