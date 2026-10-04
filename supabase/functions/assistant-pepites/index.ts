@@ -1005,7 +1005,7 @@ Deno.serve(async (req) => {
       // Une session anonyme l'aura au rattachement de son assistant à un compte.
       if (preview && caller === 'owner' && !callerAnonymous) {
         const full = await supabase.from('assistant_profiles')
-          .update({ refresh_requested_at: new Date().toISOString(), refresh_attempts: 0 }).eq('id', p.id);
+          .update({ refresh_requested_at: new Date().toISOString(), refresh_attempts: 0, refresh_fast: true }).eq('id', p.id);
         if (full.error) console.error('[assistant-pepites] refresh_requested_at', full.error.message);
       }
     }

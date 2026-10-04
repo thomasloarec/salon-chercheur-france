@@ -756,7 +756,14 @@ export default function AssistantOnboarding() {
   // ---------------------------------------------------------------------------------------------
   // Écran 7 : compte
   // ---------------------------------------------------------------------------------------------
-  const [optIn, setOptIn] = useState(false);
+  const [optIn, setOptIn] = useState(true);
+  // Mode Modifier : reprendre la valeur actuelle de l'assistant (ne pas réactiver des emails coupés).
+  const optInPrefilled = useRef(false);
+  useEffect(() => {
+    if (!editMode || optInPrefilled.current || !feed?.has_profile || !feed.profile) return;
+    optInPrefilled.current = true;
+    setOptIn(feed.profile.email_alerts_opt_in === true);
+  }, [editMode, feed]);
   const [email, setEmail] = useState('');
   const [busy7, setBusy7] = useState<'google' | 'email' | null>(null);
   const [error7, setError7] = useState<string | null>(null);
