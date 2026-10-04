@@ -536,8 +536,8 @@ const SOLUTION_BLOCKS: SolutionBlock[] = [
     title: 'Visible au moment exact où les visiteurs préparent leur venue',
     body: (
       <>
-        Votre nouveauté apparaît sur Lotexpo sur la page du salon, dans les nouveautés du site et dans les
-        réponses de la recherche IA.{' '}
+        Votre nouveauté apparaît sur Lotexpo sur la page du salon, dans les nouveautés du site, dans
+        les réponses de la recherche IA et dans l'agenda des visiteurs.{' '}
         <strong className="font-semibold text-primary">
           Les visiteurs la repèrent pendant qu'ils construisent leur parcours
         </strong>
@@ -548,6 +548,40 @@ const SOLUTION_BLOCKS: SolutionBlock[] = [
       "Le jour J, on ne vous découvre plus par hasard en passant dans l'allée : on vient vous voir exprès.",
     cta: { label: 'Voir les nouveautés déjà publiées', to: '/nouveautes' },
     visual: <NoveltyMock />,
+  },
+  {
+    actor: 'Mon Agenda des visiteurs',
+    title: 'Les visiteurs ne vous cherchent plus. Leur assistant vous propose.',
+    body: (
+      <>
+        Les visiteurs créent leur agenda en choisissant leurs sujets et leurs régions. L'IA leur
+        propose un stand{' '}
+        <strong className="font-semibold text-primary">
+          seulement si l'exposant a publié une Nouveauté sur ce salon
+        </strong>
+        , et seulement à ceux que votre Nouveauté concerne.
+      </>
+    ),
+    ecoNote:
+      "Pas de Nouveauté, pas de suggestion. Une Nouveauté publiée, c'est votre stand proposé aux bons visiteurs.",
+    cta: { label: 'Publier ma nouveauté', to: '/publier-nouveaute' },
+    visual: <VisitorAgendaMock />,
+  },
+  {
+    actor: "Votre page d'invitation",
+    title: 'Invitez vos clients sur votre stand. Ils réservent leur rendez-vous.',
+    body: (
+      <>
+        Une page par salon, à envoyer par email ou à publier sur LinkedIn. Vos invités y découvrent
+        votre Nouveauté et l'équipe présente sur le stand, puis{' '}
+        <strong className="font-semibold text-primary">
+          demandent un rendez-vous en choisissant leur jour.
+        </strong>
+      </>
+    ),
+    ecoNote: 'Elle s\'active dès que votre Nouveauté est publiée pour le salon.',
+    cta: { label: 'Publier ma nouveauté', to: '/publier-nouveaute' },
+    visual: <InvitationMock />,
   },
   {
     actor: 'Le plus important',
@@ -588,8 +622,8 @@ const STEPS = [
   {
     icon: Users,
     n: 'Étape 3',
-    title: 'Récupérez vos contacts',
-    text: 'Rendez-vous demandés, brochures téléchargées, stands ajoutés aux parcours : tout vous remonte avant le salon.',
+    title: 'Invitez et récupérez vos contacts',
+    text: "Partagez votre page d'invitation à vos clients. Rendez-vous demandés, brochures téléchargées, stands ajoutés aux parcours : tout vous remonte avant le salon.",
   },
 ];
 
@@ -605,6 +639,14 @@ const FAQ = [
   {
     q: "Comment l'IA fonctionne-t-elle exactement ?",
     a: "Vous lui donnez votre matière : un PDF de plaquette ou de présentation, un post que vous avez déjà rédigé, ou simplement quelques phrases. Elle en extrait le texte et les visuels exploitables, puis vous propose plusieurs angles de présentation. Vous choisissez, vous modifiez librement, rien n'est publié sans votre validation.",
+  },
+  {
+    q: 'Comment mon stand peut-il être proposé aux visiteurs ?',
+    a: "Les visiteurs qui créent leur agenda Lotexpo choisissent leurs sujets et leurs régions. L'IA leur propose un stand seulement si l'exposant a publié une Nouveauté pour ce salon, et seulement si elle correspond à leurs sujets. Publier votre Nouveauté est donc la condition pour être proposé. Personne ne peut payer pour y apparaître.",
+  },
+  {
+    q: "Comment fonctionne la page d'invitation ?",
+    a: "Dès que votre Nouveauté est publiée pour un salon, une page d'invitation s'active pour ce salon dans votre espace exposant. Vous l'envoyez par email ou vous la publiez sur LinkedIn. Vos invités y voient votre Nouveauté et l'équipe présente sur le stand, puis demandent un rendez-vous en choisissant leur jour. Les demandes arrivent dans vos Rendez-vous, avant l'ouverture. Cette page n'est pas indexée par les moteurs de recherche.",
   },
   {
     q: "Comment récupère-t-on les contacts générés ?",
