@@ -402,8 +402,8 @@ const BlogArticle = () => {
         {/* 7c. Mon Agenda CTA (articles de salons seulement) */}
         {!isGeneric && <BlogAgendaCTA slug={article.slug} />}
 
-        {/* 8. Newsletter CTA */}
-        <BlogNewsletterCTA />
+        {/* 8. Newsletter CTA (articles génériques seulement ; les articles de salons gardent un seul CTA : Mon Agenda) */}
+        {isGeneric && <BlogNewsletterCTA />}
 
         {/* 9. Similar articles */}
         {similarArticles && similarArticles.length > 0 && (
