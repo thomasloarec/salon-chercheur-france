@@ -19,6 +19,7 @@ import { Search } from 'lucide-react';
 import { useAssistantFeed } from '@/components/assistant/useAssistantFeed';
 import AssistantSearchBar from '@/components/assistant/AssistantSearchBar';
 import AssistantDiscoverSection from '@/components/assistant/AssistantDiscoverSection';
+import AgendaLanding from '@/components/assistant/AgendaLanding';
 import { ASSISTANT_ONBOARDING_PATH, ASSISTANT_ONBOARDING_READY } from '@/components/assistant/config';
 import type { AssistantItem, AssistantKeptSession } from '@/components/assistant/types';
 
@@ -51,7 +52,7 @@ function AgendaShell({ children }: { children: React.ReactNode }) {
 }
 
 const Agenda = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { data: allEvents = [], isLoading, error } = useFavoriteEvents();
@@ -380,7 +381,7 @@ const Agenda = () => {
           <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl bg-violet-soft p-5">
             <Search className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
             <p className="flex-1 text-base text-foreground">
-              Créer mon assistant : 90 secondes, et je vous signale ce qui vaut le déplacement.
+              Créer mon assistant : 2 minutes, et je vous signale ce qui vaut le déplacement.
             </p>
             <Button asChild className="min-h-11">
               <Link to={ASSISTANT_ONBOARDING_PATH}>Créer mon assistant</Link>
