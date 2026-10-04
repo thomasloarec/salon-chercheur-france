@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
   CalendarCheck,
+  CalendarHeart,
   Check,
   ChevronRight,
   Clock,
@@ -12,9 +13,11 @@ import {
   FileUp,
   Info,
   Lightbulb,
+  Linkedin,
   MapPin,
   Megaphone,
   Search,
+  Send,
   Sparkles,
   Users,
 } from 'lucide-react';
@@ -290,6 +293,169 @@ const LeadsMock = () => {
 
         <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground">
           Vous arrivez sur le salon avec des rendez-vous, pas avec une liste vide.
+        </p>
+      </div>
+    </Mock>
+  );
+};
+
+/* ================================================================== */
+/* Mock 4 — Votre stand dans l'agenda d'un visiteur                    */
+/* ================================================================== */
+const VisitorAgendaMock = () => {
+  const [ref, inView] = useInView<HTMLDivElement>(0.35);
+  const reduced = usePrefersReducedMotion();
+  const shown = reduced || inView;
+  return (
+    <Mock>
+      <div ref={ref}>
+        <p className="heading-display text-lg text-foreground">Mon Agenda</p>
+        <p className="text-xs text-muted-foreground mb-3">
+          Vu par un responsable production, PME de mécanique
+        </p>
+
+        <div className="rounded-xl bg-surface-inverse text-inverse px-3 py-2.5 flex items-center gap-2">
+          <span aria-hidden className="text-inverse-primary">◆</span>
+          <span className="heading-display text-lg font-bold">Global Industrie</span>
+          <span className="ml-auto rounded-full border border-inverse/30 px-2 py-0.5 text-xs font-semibold tabular-nums">
+            J-12
+          </span>
+        </div>
+
+        <div className="ml-4 pl-3.5 border-l-2 border-primary/40">
+          <div
+            style={{ transitionDelay: '160ms' }}
+            className={`rounded-[14px] border border-border p-3.5 mt-2.5 transition-all duration-500 ${
+              shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
+            }`}
+          >
+            <span className="inline-flex rounded-full bg-secondary text-primary text-[11px] font-medium px-2 py-0.5">
+              Stand à voir
+            </span>
+            <p className="mt-2 text-sm font-medium leading-snug text-foreground">
+              La cobotique de soudure accessible aux ateliers de 10 personnes
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">Atelier Meca · Stand C12</p>
+            <div className="mt-2.5 rounded-lg bg-muted/50 px-3 py-2 text-[13px]">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+                Pourquoi pour vous
+              </p>
+              <p className="mt-0.5 text-foreground/80">
+                Vous équipez des ateliers de moins de 20 personnes : démonstration de soudure en
+                continu sur le stand.
+              </p>
+            </div>
+            <div className="mt-2.5 flex gap-2">
+              <span className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">
+                Garder
+              </span>
+              <span className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground">
+                Pas pour moi
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <p
+          style={{ transitionDelay: '350ms' }}
+          className={`mt-3 flex items-start gap-2 border-t border-border pt-3 text-xs text-muted-foreground transition-opacity duration-500 ${
+            shown ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+          Proposé parce que votre Nouveauté correspond à ses sujets.
+        </p>
+      </div>
+    </Mock>
+  );
+};
+
+/* ================================================================== */
+/* Mock 5 — Votre page d'invitation                                    */
+/* ================================================================== */
+const InvitationMock = () => {
+  const [ref, inView] = useInView<HTMLDivElement>(0.35);
+  const reduced = usePrefersReducedMotion();
+  const shown = reduced || inView;
+  const days = ['Mardi', 'Mercredi', 'Jeudi'];
+  return (
+    <Mock>
+      <div ref={ref}>
+        <div
+          style={{ transitionDelay: '160ms' }}
+          className={`rounded-xl border border-border p-3 transition-all duration-500 ${
+            shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
+          }`}
+        >
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Linkedin className="h-3.5 w-3.5 text-info" />
+            Publié sur LinkedIn
+          </div>
+          <div className="mt-2 rounded-lg bg-surface-inverse text-inverse p-3">
+            <p className="font-medium">Atelier Meca vous invite au salon Global Industrie</p>
+            <p className="mt-1 text-xs text-inverse-muted">
+              Réservez votre rendez-vous sur le stand C12
+            </p>
+          </div>
+        </div>
+
+        <div
+          style={{ transitionDelay: '350ms' }}
+          className={`my-2 flex justify-center text-primary transition-opacity duration-500 ${
+            shown ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <ArrowRight className="h-5 w-5 rotate-90" />
+        </div>
+
+        <div
+          style={{ transitionDelay: '540ms' }}
+          className={`rounded-xl border border-border p-3.5 transition-all duration-500 ${
+            shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
+          }`}
+        >
+          <p className="font-medium text-foreground">Choisissez votre jour</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {days.map((d, i) => (
+              <span
+                key={d}
+                style={{ transitionDelay: `${540 + (i + 1) * 190}ms` }}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-500 ${
+                  d === 'Mercredi'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'border border-border text-foreground'
+                } ${shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}
+              >
+                {d}
+              </span>
+            ))}
+          </div>
+          <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="flex -space-x-1.5">
+              {['CL', 'MB'].map((ini) => (
+                <span
+                  key={ini}
+                  className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-[10px] font-semibold text-primary ring-2 ring-background"
+                >
+                  {ini}
+                </span>
+              ))}
+            </span>
+            2 personnes de l'équipe sur le stand
+          </div>
+          <span className="mt-3 block w-full rounded-lg bg-primary py-2 text-center text-sm font-medium text-primary-foreground">
+            Demander un rendez-vous
+          </span>
+        </div>
+
+        <p
+          style={{ transitionDelay: '730ms' }}
+          className={`mt-3 flex items-start gap-2 border-t border-border pt-3 text-xs text-muted-foreground transition-opacity duration-500 ${
+            shown ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <CalendarCheck className="h-4 w-4 shrink-0 text-primary" />
+          La demande arrive dans vos Rendez-vous, avant l'ouverture.
         </p>
       </div>
     </Mock>
