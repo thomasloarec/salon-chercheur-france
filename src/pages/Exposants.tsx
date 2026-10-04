@@ -773,7 +773,7 @@ export default function Exposants() {
               </div>
 
               <p className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
-                {['100 % gratuit', 'Sans carte bancaire', "Rédigée avec l'IA en quelques minutes"].map(
+                {['100 % gratuit', "Rédigée avec l'IA en quelques minutes"].map(
                   (t, i) => (
                     <React.Fragment key={t}>
                       {i > 0 && <span aria-hidden>·</span>}
