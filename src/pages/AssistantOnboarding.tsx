@@ -507,6 +507,7 @@ export default function AssistantOnboarding() {
   const [phaseB, setPhaseB] = useState<'idle' | 'running' | 'done'>('idle');
   const [bError, setBError] = useState<{ kind: 'quota' | 'other'; message?: string } | null>(null);
   const [pistesChanged, setPistesChanged] = useState(false);
+  const [pistesDeferred, setPistesDeferred] = useState(false);
   const [refining, setRefining] = useState(false);
   const [editingPiste, setEditingPiste] = useState<string | null>(null);
   const [pisteDraft, setPisteDraft] = useState('');
@@ -590,14 +591,17 @@ export default function AssistantOnboarding() {
       if (!ok()) return;
       setPhaseA('running');
       setBError(null);
+      setPistesDeferred(false);
       try {
         const { error } = await supabase.functions.invoke('assistant-pepites', { body: { step: 'pistes' } });
         if (error) {
           const e = await readFnError(error);
           if (e.code === 'quota' && ok()) setBError({ kind: 'quota', message: e.message });
+          else if (ok()) setPistesDeferred(true);
         }
       } catch {
-        /* l'assistant refera la recherche plus tard */
+        // le serveur reconstruira les sujets dans quelques minutes (filet de sécurité du dispatcher)
+        if (ok()) setPistesDeferred(true);
       }
       if (!ok()) return;
       await refetchFeed();
@@ -1329,6 +1333,11 @@ export default function AssistantOnboarding() {
               <div className="flex items-center gap-3 rounded-xl bg-violet-soft p-4">
                 <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" aria-hidden />
                 <span className="text-[15px] text-foreground">{refining ? "J'affine pour vos régions…" : 'Je lis les programmes et les Nouveautés des deux prochains mois…'}</span>
+              </div>
+            )}
+            {pistesDeferred && !bError && (
+              <div className="rounded-xl bg-violet-soft p-4 text-[15px] text-foreground">
+                Vos sujets de recherche se mettent à jour, ça peut prendre une ou deux minutes.
               </div>
             )}
             {bError?.kind === 'quota' && (
