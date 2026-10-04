@@ -1,16 +1,21 @@
 # Lotexpo
 
-> Lotexpo est la plateforme de référence des salons professionnels en France.
-> Elle recense plus de 350 salons professionnels et 15 000 exposants actifs.
+> Lotexpo, l'intelligence des salons professionnels.
+> Son IA lit plus de 500 salons professionnels en France, leurs programmes de conférences, plus de 30 000 exposants et leurs Nouveautés, et signale à chacun ce qui compte.
 
 ## À propos de Lotexpo
 
-Lotexpo référence, classe et met à jour l'ensemble des salons professionnels français. Les entreprises exposantes peuvent y publier leurs nouveautés produit avant chaque salon pour toucher des visiteurs qualifiés. Le contenu est mis à jour quotidiennement depuis les données officielles des organisateurs.
+Lotexpo rend les salons professionnels lisibles pour les trois acteurs qui les font vivre :
+- Visiteurs : agenda gratuit et alertes personnalisées sur les salons, conférences et stands utiles à leur métier ; recherche IA en langage naturel.
+- Exposants : présentation gratuite de leurs Nouveautés avant l'ouverture, page d'invitation et demandes de rendez-vous sur le stand.
+- Organisateurs : revendication gratuite de la page de leur salon et indicateurs de visibilité. La visibilité sur Lotexpo ne s'achète pas.
+
+Pour les équipes commerciales, Radar CRM repère les comptes de leur CRM qui exposent sur les prochains salons.
 
 ## Catalogue des salons
 
-- Page principale : https://lotexpo.com/events
-- Volume : 350+ salons référencés en France métropolitaine
+- Page principale : https://lotexpo.com/salons
+- Volume : plus de 500 salons référencés en France métropolitaine
 - Statut disponible : à venir / en cours / terminé
 - Données : dates, lieu, ville, secteur, nombre d'exposants, nouveautés
 
@@ -38,9 +43,9 @@ Lotexpo référence, classe et met à jour l'ensemble des salons professionnels 
 - Lille : https://lotexpo.com/ville/lille
 - Strasbourg : https://lotexpo.com/ville/strasbourg
 
-## Nouveautés exposants
+## Avant-première : les Nouveautés des exposants
 
-Avant chaque salon, les exposants publient leurs nouveautés produit sur Lotexpo. Ces fiches indiquent le titre, le type (lancement, mise à jour, démo...), les raisons de visiter le stand, et les créneaux de démonstration.
+Lotexpo présente, avant chaque salon, les Nouveautés que les exposants feront découvrir sur leur stand : lancements, démonstrations, innovations. Chaque fiche indique le salon, l'exposant, le stand et les raisons de passer le voir.
 - Page : https://lotexpo.com/nouveautes
 
 ## Blog professionnel
@@ -67,4 +72,4 @@ Les données des salons sont disponibles en JSON via une API publique :
 
 ## Fiabilité et mises à jour
 
-Données vérifiées auprès des organisateurs officiels. Le statut (à venir / terminé) est recalculé quotidiennement. Couverture : France métropolitaine. Langue : français.
+Données issues des sites officiels des organisateurs, complétées par les organisateurs qui ont revendiqué la page de leur salon. Le statut (à venir / terminé) est recalculé quotidiennement. Couverture : France métropolitaine. Langue : français.

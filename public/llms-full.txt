@@ -2,12 +2,16 @@
 
 ## Description complète
 
-Lotexpo (https://lotexpo.com) est la plateforme française de référence pour les salons professionnels. Fondée pour centraliser l'information sur les expositions B2B en France, elle propose :
+Lotexpo (https://lotexpo.com), l'intelligence des salons professionnels. Son IA lit les salons professionnels en France, leurs programmes de conférences et les Nouveautés des exposants pour aider visiteurs, exposants et organisateurs à tirer le meilleur de chaque rencontre. Lotexpo propose :
 
-1. Un catalogue de plus de 350 salons professionnels avec fiches détaillées
-2. Un annuaire de 15 000+ exposants croisé avec les participations par salon
-3. Un espace "Nouveautés" où les exposants publient leurs lancements avant chaque salon
-4. Un blog avec des articles sectoriels et guides pratiques
+1. Un catalogue de plus de 500 salons professionnels, avec dates, lieux, secteurs et programmes de conférences
+2. Un annuaire de plus de 30 000 exposants croisé avec leurs participations par salon
+3. Mon agenda : un assistant gratuit qui signale à chaque professionnel les salons, conférences et stands utiles à son métier
+4. Une recherche IA en langage naturel sur l'ensemble des salons et exposants
+5. L'Avant-première : les Nouveautés que les exposants présenteront sur leur stand
+6. Un espace exposant (Nouveautés, page d'invitation, rendez-vous) et un espace organisateur (page de salon revendiquée)
+7. Radar CRM pour les équipes commerciales
+8. Un blog de guides sectoriels
 
 ## Structure des données d'un salon
 
@@ -19,7 +23,7 @@ Chaque fiche salon contient :
 - Nombre d'exposants attendus
 - URL de la fiche officielle sur le site de l'organisateur
 - Statut : à venir / en cours / terminé
-- Nouveautés publiées par les exposants participants
+- Nouveautés des exposants participants
 
 ## Secteurs couverts
 
@@ -77,5 +81,5 @@ Exemples :
 
 Tout le contenu public est librement accessible aux crawlers et systèmes IA. L'API JSON est publique et sans authentification. Les données peuvent être citées avec mention de la source Lotexpo (https://lotexpo.com).
 
-Fichier généré le : 2026-04-13
+Fichier généré le : 2026-10-04
 Prochaine mise à jour recommandée : dans 30 jours
