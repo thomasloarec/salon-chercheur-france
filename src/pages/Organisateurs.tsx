@@ -8,6 +8,7 @@ import {
   Eye,
   FileText,
   Gift,
+  Info,
   Megaphone,
   Minus,
   MousePointerClick,
@@ -620,6 +621,7 @@ const SolutionRow = ({
           {block.body}
         </p>
         <div className="mt-5 flex gap-[11px] items-start bg-secondary/25 border-l-[3px] border-primary rounded-r-[10px] px-4 py-[13px] max-w-[46ch]">
+          <Info className="h-[18px] w-[18px] text-primary shrink-0 mt-0.5" />
           <p className="text-[0.96rem] leading-relaxed text-foreground/75">{block.ecoNote}</p>
         </div>
         {block.cta && (
