@@ -64,7 +64,7 @@ export default function RegionPicker({ value, onChange }: Props) {
         )}
       >
         <Globe2 className="h-6 w-6 shrink-0 text-primary" aria-hidden />
-        <span className="flex-1 text-base font-semibold text-foreground">Partout en France</span>
+        <span className="flex-1 text-base font-medium text-foreground">Partout en France</span>
         {everywhere && <Check className="h-5 w-5 text-primary" aria-hidden />}
       </button>
 
@@ -190,7 +190,7 @@ export default function RegionPicker({ value, onChange }: Props) {
                       on ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card hover:border-primary',
                     )}
                   >
-                    <span className="break-words text-[15px] font-semibold leading-tight">{r.name}</span>
+                    <span className="break-words text-[15px] font-medium leading-tight">{r.name}</span>
                     <span className={cn('mt-0.5 text-[13px]', on ? 'text-primary-foreground/85' : 'text-muted-foreground')}>
                       {r.upcoming_events === 0
                         ? 'Aucun salon à venir'

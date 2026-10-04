@@ -879,7 +879,7 @@ export default function AssistantOnboarding() {
         <Heading title="Dans quelle entreprise travaillez-vous ?" subtitle="Je m'en sers pour comprendre votre métier." />
         {confirm ? (
           <div className="space-y-4 rounded-xl border-2 border-primary bg-card p-5">
-            <p className="break-words text-lg font-bold text-foreground">{confirm.name}</p>
+            <p className="break-words text-lg font-semibold text-foreground">{confirm.name}</p>
             {confirm.description && <p className="line-clamp-2 text-[15px] text-muted-foreground">{confirm.description}</p>}
             {confirm.upcoming_events?.length > 0 && (
               <p className="text-sm font-medium text-primary">
@@ -941,7 +941,7 @@ export default function AssistantOnboarding() {
                       disabled={loadingContext}
                       className="flex min-h-14 w-full flex-col justify-center px-4 py-2 text-left hover:bg-violet-soft focus-visible:bg-violet-soft focus-visible:outline-none"
                     >
-                      <span className="break-words font-bold text-foreground">{c.nom}</span>
+                      <span className="break-words font-medium text-foreground">{c.nom}</span>
                       {c.domaine && <span className="break-all text-sm text-muted-foreground">{c.domaine}</span>}
                     </button>
                   </li>
@@ -981,7 +981,7 @@ export default function AssistantOnboarding() {
     );
     const cardCls = (on: boolean) =>
       cn(
-        'flex min-h-14 items-center gap-3 rounded-xl border-2 px-4 text-left text-base font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-40',
+        'flex min-h-14 items-center gap-3 rounded-xl border-2 px-4 text-left text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-40',
         on ? 'border-primary bg-violet-soft text-foreground' : 'border-border bg-card text-foreground hover:border-primary',
       );
     body = (
@@ -1097,7 +1097,7 @@ export default function AssistantOnboarding() {
                 if (!s) return null;
                 return (
                   <div className="space-y-2 rounded-xl bg-violet-soft p-4">
-                    <p className="text-[15px] font-semibold text-foreground">{s.label}, plutôt pour :</p>
+                    <p className="text-[15px] font-medium text-foreground">{s.label}, plutôt pour :</p>
                     <div className="flex flex-wrap gap-2">
                       {s.precisions.map((p) => (
                         <Chip key={p} selected={answers.interests.includes(p)} disabled={full} onClick={() => toggleInterest(p)}>
@@ -1187,7 +1187,7 @@ export default function AssistantOnboarding() {
                   update({ goals: on ? answers.goals.filter((x) => x !== g.value) : [...answers.goals, g.value] })
                 }
                 className={cn(
-                  'flex min-h-14 w-full items-center gap-3 rounded-xl border-2 px-4 text-left text-base font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  'flex min-h-14 w-full items-center gap-3 rounded-xl border-2 px-4 text-left text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   on ? 'border-primary bg-violet-soft' : 'border-border bg-card hover:border-primary',
                 )}
               >
@@ -1271,7 +1271,7 @@ export default function AssistantOnboarding() {
                     </form>
                   ) : (
                     <>
-                      <span className="min-w-0 flex-1 break-words text-[17px] font-semibold text-foreground">{p.label}</span>
+                      <span className="min-w-0 flex-1 break-words text-[17px] font-medium text-foreground">{p.label}</span>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -1308,7 +1308,7 @@ export default function AssistantOnboarding() {
             {phaseB === 'running' && (
               <div className="flex items-center gap-3 rounded-xl bg-violet-soft p-4">
                 <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" aria-hidden />
-                <span className="text-[15px] text-foreground">Je lis les programmes et les Nouveautés des deux prochains mois…</span>
+                <span className="text-[15px] text-foreground">{refining ? "J'affine pour vos régions…" : 'Je lis les programmes et les Nouveautés des deux prochains mois…'}</span>
               </div>
             )}
             {bError?.kind === 'quota' && (
@@ -1322,7 +1322,7 @@ export default function AssistantOnboarding() {
               </div>
             )}
             {pistesChanged && phaseB !== 'running' && (
-              <Button variant="link" className="min-h-11 px-0" onClick={() => void runB()}>
+              <Button variant="link" className="min-h-11 px-0" onClick={() => void runB(runIdRef.current)}>
                 Relancer la recherche avec ces sujets
               </Button>
             )}
