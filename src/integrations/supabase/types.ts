@@ -16068,6 +16068,7 @@ export type Database = {
         Args: { p_loser_identity_id: string; p_winner_identity_id: string }
         Returns: Json
       }
+      public_conference_count: { Args: never; Returns: number }
       publish_event_program_sessions: {
         Args: { p_event_id: string }
         Returns: number
