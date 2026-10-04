@@ -9,9 +9,12 @@ interface Props {
   status?: { refreshing: boolean; refreshed_at: string | null; pistes_stale?: boolean };
   regionCodes?: string[];
   onEditRegions?: () => void;
+  /** Nombre de centres d'intérêt du profil (les chips sont des sujets tirés de ces centres d'intérêt). */
+  interestsCount?: number;
 }
 
-const MAX_CHIPS = 6;
+// Peu de chips pour garder la barre compacte ; le reste est résumé par « +N ».
+const MAX_CHIPS = 4;
 
 function updatedLabel(iso: string): string | null {
   try {
@@ -21,7 +24,7 @@ function updatedLabel(iso: string): string | null {
   }
 }
 
-export default function AssistantSearchBar({ pistes, status, regionCodes, onEditRegions }: Props) {
+export default function AssistantSearchBar({ pistes, status, regionCodes, onEditRegions, interestsCount }: Props) {
   const nRegions = regionCodes?.length ?? 0;
   const regionLabel = nRegions === 0 ? 'Partout en France' : `${nRegions} région${nRegions > 1 ? 's' : ''}`;
   // Sujets en cours de reconstruction (profil modifié) : on n'affiche pas les anciens.
@@ -74,7 +77,9 @@ export default function AssistantSearchBar({ pistes, status, regionCodes, onEdit
           to={`${ASSISTANT_ONBOARDING_PATH}?modifier=1`}
           className="text-sm text-primary-foreground underline underline-offset-2"
         >
-          Modifier
+          {interestsCount && interestsCount > 0
+            ? `Voir mes ${interestsCount} centre${interestsCount > 1 ? 's' : ''} d'intérêt`
+            : 'Voir tout'}
         </Link>
       )}
       {(status?.refreshing || updated) && (
