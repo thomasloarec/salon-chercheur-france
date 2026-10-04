@@ -249,7 +249,7 @@ const shortDate = (iso: string) => {
   return `${day === 1 ? '1er' : day} ${month}`;
 };
 
-function AgendaDemoMock() {
+export function AgendaDemoMock() {
   const demo = useDemo();
   const groups = Object.values(
     demo.items.reduce<Record<string, DemoItem[]>>((acc, it) => {
