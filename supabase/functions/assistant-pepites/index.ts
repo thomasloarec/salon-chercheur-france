@@ -44,8 +44,15 @@ const GOAL_LABELS: Record<string, string> = {
 type Profile = {
   id: string; user_id: string | null; label: string | null; company_name: string | null; company_description: string | null;
   sector_ids: string[]; sub_sector_ids: string[]; role_code: string | null;
+  role_codes: string[] | null; role_other: string | null;
   interests: string[]; goals: string[];
 };
+
+// Tous les rôles choisis (lot 3d ter), avec repli sur le rôle unique des profils plus anciens.
+function profileRoleCodes(p: Profile): string[] {
+  const list = (p.role_codes ?? []).filter(Boolean);
+  return list.length ? list : (p.role_code ? [p.role_code] : []);
+}
 type RefItem = { code: string; label: string; description: string };
 type SubSector = { id: string; name: string; sector_id: string };
 type Sector = { id: string; name: string };
@@ -158,13 +165,16 @@ type Refs = Awaited<ReturnType<typeof loadRefs>>;
 function profileText(p: Profile, refs: Refs): string {
   const sectorNames = refs.sectors.filter((s) => p.sector_ids.includes(s.id)).map((s) => s.name);
   const subNames = refs.subs.filter((s) => p.sub_sector_ids.includes(s.id)).map((s) => s.name);
-  const role = refs.roles.find((r) => r.code === p.role_code);
+  const roleLabels = profileRoleCodes(p)
+    .map((c) => refs.roles.find((r) => r.code === c)?.label)
+    .filter((l): l is string => !!l);
+  if (p.role_other) roleLabels.push(`${clean(p.role_other, 80)} (décrit par la personne)`);
   const goals = p.goals.map((g) => GOAL_LABELS[g] || g);
   return [
     `Métier : ${p.label || 'non précisé'}`,
     `Entreprise : ${p.company_name || 'non précisée'}${p.company_description ? ` (${clean(p.company_description, 500)})` : ''}`,
     `Secteurs : ${[...sectorNames, ...subNames].join(', ') || 'non précisés'}`,
-    `Rôle : ${role ? role.label : 'non précisé'}`,
+    `Rôle : ${roleLabels.join(', ') || 'non précisé'}`,
     `Centres d'intérêt professionnels : ${p.interests.join(' ; ') || 'non précisés'}`,
     `Ce qu'il cherche sur un salon : ${goals.join(', ') || 'non précisé'}`,
   ].join('\n');
@@ -228,7 +238,7 @@ async function buildPistes(supabase: SupabaseClient, anthropicKey: string, p: Pr
       .map((n) => subByName.get(norm(n))).filter((s): s is SubSector => !!s);
     if (subs.length === 0) subs = refs.subs.filter((s) => p.sub_sector_ids.includes(s.id));
     let roles = strArray(x.roles, 3, 40).filter((c) => roleCodes.has(c));
-    if (roles.length === 0 && p.role_code) roles = [p.role_code];
+    if (roles.length === 0) roles = profileRoleCodes(p).slice(0, 3);
     const subIds = [...new Set(subs.map((s) => s.id))];
     const sectorIds = [...new Set(subs.map((s) => s.sector_id))];
     return {
@@ -457,7 +467,7 @@ async function replacePistes(
         .map((n) => subByName.get(norm(n))).filter((s): s is SubSector => !!s);
       if (subs.length === 0) subs = refs.subs.filter((s) => p.sub_sector_ids.includes(s.id));
       let roles = strArray(x.roles, 3, 40).filter((c) => roleCodes.has(c));
-      if (roles.length === 0 && p.role_code) roles = [p.role_code];
+      if (roles.length === 0) roles = profileRoleCodes(p).slice(0, 3);
       if (label.length >= 5) {
         const ins = await supabase.from('assistant_pistes').insert({
           profile_id: p.id, position: old.position, label, short_label: shortLabel(x.court),
@@ -879,7 +889,7 @@ Deno.serve(async (req) => {
 
   try {
     let q = supabase.from('assistant_profiles')
-      .select('id,user_id,label,company_name,company_description,sector_ids,sub_sector_ids,role_code,interests,goals');
+      .select('id,user_id,label,company_name,company_description,sector_ids,sub_sector_ids,role_code,role_codes,role_other,interests,goals');
     q = profileId ? q.eq('id', profileId) : q.eq('user_id', callerId);
     const pRes = await q.maybeSingle();
     if (pRes.error) return json({ error: pRes.error.message }, 500);

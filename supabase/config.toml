@@ -253,3 +253,8 @@ verify_jwt = false
 # Point d'entrée public : la personne n'a pas encore de compte. Sécurité en code : limites d'envoi par
 # adresse et par IP (empreintes), chemin de retour interne uniquement, réponse identique compte existant ou non.
 verify_jwt = false
+
+[functions.assistant-roles-digest]
+# Appelée chaque matin par pg_cron (assistant-roles-digest) avec la clé de service ; toute autre clé est refusée
+# en code (comparaison à temps constant). Envoie un email à admin@lotexpo.com seulement au-delà du seuil.
+verify_jwt = false
