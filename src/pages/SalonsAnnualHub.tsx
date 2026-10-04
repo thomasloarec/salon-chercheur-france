@@ -12,6 +12,7 @@ import { useAnnualHub, ANNUAL_HUB_THRESHOLD } from '@/hooks/useAnnualHub';
 import type { CanonicalEvent } from '@/types/lotexpo';
 import type { Event } from '@/types/event';
 import { sectorIconMap, FallbackIcon } from '@/components/filters/sectorIconMap';
+import BlogAgendaCTA from '@/components/blog/BlogAgendaCTA';
 import { formatAffluence } from '@/utils/affluenceUtils';
 import { Users } from 'lucide-react';
 
@@ -357,6 +358,8 @@ const SalonsAnnualHub = () => {
             </>
           )}
         </div>
+
+        <BlogAgendaCTA slug="salons-professionnels-2026" />
       </main>
 
       <Footer />
