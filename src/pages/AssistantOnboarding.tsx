@@ -26,7 +26,8 @@ interface Answers {
   company_name: string;
   company_description: string;
   sub_sector_ids: string[];
-  role_code: string | null;
+  role_codes: string[];
+  role_other: string;
   interests: string[];
   goals: string[];
   region_codes: string[];
@@ -37,7 +38,8 @@ const EMPTY: Answers = {
   company_name: '',
   company_description: '',
   sub_sector_ids: [],
-  role_code: null,
+  role_codes: [],
+  role_other: '',
   interests: [],
   goals: [],
   region_codes: [],
@@ -69,7 +71,9 @@ interface Suggestion {
 
 const DRAFT_KEY = 'assistant_onboarding_draft';
 const DRAFT_MAX_MS = 2 * 60 * 60 * 1000;
-const MAX_INTERESTS = 8;
+const MAX_INTERESTS = 12;
+const MAX_ROLES = 4;
+const MAX_MORE_REQUESTS = 4;
 
 const GOALS: { value: string; label: string }[] = [
   { value: 'fournisseurs', label: 'Trouver des fournisseurs' },
@@ -97,7 +101,15 @@ function loadDraft(): { answers: Answers; step: number } | null {
     if (!raw) return null;
     const v = JSON.parse(raw);
     if (!v || typeof v.at !== 'number' || Date.now() - v.at > DRAFT_MAX_MS) return null;
-    return { answers: { ...EMPTY, ...v.answers }, step: Number(v.step) || 1 };
+    const a = { ...EMPTY, ...v.answers };
+    // Brouillon ancien : un seul rôle (role_code)
+    if (typeof v.answers?.role_code === 'string' && !(Array.isArray(v.answers?.role_codes) && v.answers.role_codes.length)) {
+      a.role_codes = [v.answers.role_code];
+    }
+    delete (a as any).role_code;
+    if (!Array.isArray(a.role_codes)) a.role_codes = [];
+    if (typeof a.role_other !== 'string') a.role_other = '';
+    return { answers: a, step: Number(v.step) || 1 };
   } catch {
     return null;
   }
@@ -218,23 +230,31 @@ export default function AssistantOnboarding() {
       return (data ?? []) as { code: string; label: string; position: number }[];
     },
   });
-  const roleLabel = roles?.find((r) => r.code === answers.role_code)?.label ?? '';
+  const [otherOn, setOtherOn] = useState<boolean>(() => !!draft?.answers.role_other);
+  const otherText = answers.role_other.trim();
+  const roleLabel = [
+    ...answers.role_codes.map((c) => roles?.find((r) => r.code === c)?.label).filter((l): l is string => !!l),
+    ...(otherOn && otherText ? [otherText] : []),
+  ].join(', ');
 
   // Mode « Modifier » : réponses pré-remplies depuis l'assistant existant
   useEffect(() => {
     if (!editMode || prefilled.current || !feed?.has_profile || !feed.profile) return;
     prefilled.current = true;
     const p = feed.profile as any;
+    const codes: string[] = Array.isArray(p.role_codes) && p.role_codes.length ? p.role_codes : p.role_code ? [p.role_code] : [];
     setAnswers({
       company_ref: p.company_ref ?? null,
       company_name: p.company_name ?? '',
       company_description: p.company_description ?? '',
       sub_sector_ids: p.sub_sector_ids ?? [],
-      role_code: p.role_code ?? null,
+      role_codes: codes,
+      role_other: p.role_other ?? '',
       interests: p.interests ?? [],
       goals: p.goals ?? [],
       region_codes: p.region_codes ?? [],
     });
+    setOtherOn(!!p.role_other);
     setStep(3);
   }, [editMode, feed]);
 
@@ -250,7 +270,7 @@ export default function AssistantOnboarding() {
         p_company_description: answers.company_description.trim() || null,
         p_company_ref: answers.company_ref,
         p_sub_sector_ids: answers.sub_sector_ids,
-        p_role_code: answers.role_code,
+        p_role_code: answers.role_codes[0] ?? null,
         p_interests: answers.interests,
         p_goals: answers.goals,
         p_city: null,
@@ -258,9 +278,14 @@ export default function AssistantOnboarding() {
         p_onboarded: onboarded,
       });
       if (error) throw error;
+      const rolesRes = await rpc('assistant_set_my_roles', {
+        p_role_codes: answers.role_codes,
+        p_role_other: otherOn && otherText ? otherText : null,
+      });
+      if (rolesRes.error) throw rolesRes.error;
       return parse(data) as { profile_id: string; claim_token: string; is_new: boolean };
     },
-    [answers, roleLabel],
+    [answers, roleLabel, otherOn, otherText],
   );
 
   // ---------------------------------------------------------------------------------------------
