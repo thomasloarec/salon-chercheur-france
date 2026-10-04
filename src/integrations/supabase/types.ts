@@ -669,6 +669,13 @@ export type Database = {
             foreignKeyName: "assistant_alert_sends_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
+            referencedRelation: "assistant_pistes_stale_violations"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "assistant_alert_sends_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
             referencedRelation: "assistant_profiles"
             referencedColumns: ["id"]
           },
@@ -811,6 +818,13 @@ export type Database = {
             foreignKeyName: "assistant_feedback_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
+            referencedRelation: "assistant_pistes_stale_violations"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "assistant_feedback_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
             referencedRelation: "assistant_profiles"
             referencedColumns: ["id"]
           },
@@ -845,6 +859,13 @@ export type Database = {
           profile_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "assistant_item_history_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "assistant_pistes_stale_violations"
+            referencedColumns: ["profile_id"]
+          },
           {
             foreignKeyName: "assistant_item_history_profile_id_fkey"
             columns: ["profile_id"]
@@ -921,6 +942,13 @@ export type Database = {
             foreignKeyName: "assistant_matches_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
+            referencedRelation: "assistant_pistes_stale_violations"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "assistant_matches_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
             referencedRelation: "assistant_profiles"
             referencedColumns: ["id"]
           },
@@ -992,6 +1020,13 @@ export type Database = {
             foreignKeyName: "assistant_pistes_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
+            referencedRelation: "assistant_pistes_stale_violations"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "assistant_pistes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
             referencedRelation: "assistant_profiles"
             referencedColumns: ["id"]
           },
@@ -1004,6 +1039,7 @@ export type Database = {
           company_description: string | null
           company_name: string | null
           company_ref: string | null
+          content_changed_at: string | null
           created_at: string
           email_alerts_opt_in: boolean
           email_alerts_opt_in_at: string | null
@@ -1013,6 +1049,7 @@ export type Database = {
           is_test: boolean
           label: string | null
           onboarded_at: string | null
+          pistes_built_at: string | null
           radius_km: number | null
           refresh_attempts: number
           refresh_dispatched_at: string | null
@@ -1034,6 +1071,7 @@ export type Database = {
           company_description?: string | null
           company_name?: string | null
           company_ref?: string | null
+          content_changed_at?: string | null
           created_at?: string
           email_alerts_opt_in?: boolean
           email_alerts_opt_in_at?: string | null
@@ -1043,6 +1081,7 @@ export type Database = {
           is_test?: boolean
           label?: string | null
           onboarded_at?: string | null
+          pistes_built_at?: string | null
           radius_km?: number | null
           refresh_attempts?: number
           refresh_dispatched_at?: string | null
@@ -1064,6 +1103,7 @@ export type Database = {
           company_description?: string | null
           company_name?: string | null
           company_ref?: string | null
+          content_changed_at?: string | null
           created_at?: string
           email_alerts_opt_in?: boolean
           email_alerts_opt_in_at?: string | null
@@ -1073,6 +1113,7 @@ export type Database = {
           is_test?: boolean
           label?: string | null
           onboarded_at?: string | null
+          pistes_built_at?: string | null
           radius_km?: number | null
           refresh_attempts?: number
           refresh_dispatched_at?: string | null
@@ -1124,6 +1165,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "assistant_role_other_entries_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "assistant_pistes_stale_violations"
+            referencedColumns: ["profile_id"]
+          },
           {
             foreignKeyName: "assistant_role_other_entries_profile_id_fkey"
             columns: ["profile_id"]
@@ -1237,6 +1285,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_suggestions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "assistant_pistes_stale_violations"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "assistant_suggestions_profile_id_fkey"
@@ -12867,6 +12922,30 @@ export type Database = {
           item_type: string | null
           probleme: string | null
           profile_id: string | null
+        }
+        Relationships: []
+      }
+      assistant_pistes_stale_violations: {
+        Row: {
+          content_changed_at: string | null
+          label: string | null
+          pistes_built_at: string | null
+          profile_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          content_changed_at?: string | null
+          label?: string | null
+          pistes_built_at?: string | null
+          profile_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          content_changed_at?: string | null
+          label?: string | null
+          pistes_built_at?: string | null
+          profile_id?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
