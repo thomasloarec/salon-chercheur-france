@@ -9,7 +9,7 @@
 //   preview    : relecture plafonnée à 45 éléments (onboarding) ; toujours vrai pour une session anonyme.
 //                Après un aperçu, un compte reçoit la recherche complète par la tâche planifiée.
 //   L'utilisateur ne peut lancer que « all », « pistes » ou « match » sur la fenêtre par défaut.
-//   pistes : l'IA tire 3 à 5 pistes du profil, puis leurs vecteurs sont calculés (RPC embed_assistant_pistes)
+//   pistes : l'IA tire 3 à 8 pistes du profil (chaque centre d'intérêt couvert), puis leurs vecteurs sont calculés (RPC embed_assistant_pistes)
 //   match  : présélection + croisement (RPC assistant_candidates, qui applique les retours de l'utilisateur),
 //            relecture IA (score 0-100 + raison, avec les derniers retours), écriture des pépites
 //            (assistant_matches) et des salons suggérés (assistant_suggestions)
@@ -31,6 +31,7 @@ const STRONG_SCORE = 90;        // une seule pépite suffit si elle atteint ce s
 const REVIEW_CHUNK = 15;        // éléments relus par appel à Claude
 const REVIEW_CONCURRENCY = 4;
 const MAX_REVIEWED = 90;        // plafond d'éléments relus par profil
+const MAX_PISTES = 8;           // plafond de pistes par profil (chaque centre d'intérêt couvert, regroupements permis)
 const PREVIEW_MAX_REVIEWED = 45; // aperçu de l'onboarding (trois paquets relus en parallèle)
 const REUSE_REVIEW_DAYS = 14;   // lot 5 : une relecture IA reste valable 14 jours (sans retour ni profil modifié)
 const WEAK_RETAIN_SCORE = 80;   // seuil pour une piste affaiblie par des « Pas pour moi » répétés
@@ -200,11 +201,11 @@ SOUS-SECTEURS (noms autorisés, à recopier exactement)
 ${refs.subs.map((x) => x.name).join(' | ')}
 
 TA TÂCHE
-Déduis du profil 3 à 5 pistes de recherche. Une piste est un sujet professionnel précis sur lequel une conférence ou une Nouveauté lui serait vraiment utile.
+Déduis du profil 3 à 8 pistes de recherche : autant qu'il en faut pour que chaque centre d'intérêt du profil soit couvert par au moins une piste, et pas plus. Une piste est un sujet professionnel précis sur lequel une conférence ou une Nouveauté lui serait vraiment utile.
 
 RÈGLES
 1. Chaque piste croise un centre d'intérêt du profil avec son activité, son secteur ou son métier. Exemple : « Intelligence artificielle appliquée à la conception de machines agricoles », et non « Intelligence artificielle ».
-2. Couvre les différents centres d'intérêt du profil. N'ajoute aucun sujet qu'il n'a pas exprimé et qui ne découle pas directement de son métier.
+2. Chaque centre d'intérêt du profil doit être couvert par au moins une piste. Regroupe dans une même piste les centres d'intérêt très proches (par exemple deux formulations du même sujet) ; ne laisse aucun centre d'intérêt de côté. N'ajoute aucun sujet qu'il n'a pas exprimé et qui ne découle pas directement de son métier.
 3. label : 6 à 16 mots, en français, sans tiret cadratin.
 4. themes : 0 à 2 codes, seulement si la piste relève vraiment du thème.
 5. sous_secteurs : 1 à 3 noms exacts de la liste : le secteur d'activité du profil et, si la piste porte sur ses clients ou ses marchés, le secteur de ces clients.
@@ -221,7 +222,7 @@ Uniquement un objet JSON, sans texte autour :
 async function buildPistes(supabase: SupabaseClient, anthropicKey: string, p: Profile, refs: Refs) {
   const res = await callAnthropic({
     apiKey: anthropicKey, model: MODEL, userMessage: pistesPrompt(p, refs),
-    maxTokens: 1500, caller: 'assistant-pepites:pistes',
+    maxTokens: 2400, caller: 'assistant-pepites:pistes',
   });
   if (!res.ok || !res.text) throw new Error(`Claude pistes : ${res.error || 'réponse vide'}`);
   const out = parseJson(res.text);
@@ -232,7 +233,7 @@ async function buildPistes(supabase: SupabaseClient, anthropicKey: string, p: Pr
   const roleCodes = new Set(refs.roles.map((r) => r.code));
   const subByName = new Map(refs.subs.map((x) => [norm(x.name), x]));
 
-  const rows = raw.slice(0, 5).map((x, i) => {
+  const rows = raw.slice(0, MAX_PISTES).map((x, i) => {
     const label = clip(clean(typeof x.label === 'string' ? x.label.replace(/—/g, ',') : '', 200), 160);
     const themes = strArray(x.themes, 2, 40).filter((c) => themeCodes.has(c));
     let subs = strArray(x.sous_secteurs, 3, 120)
