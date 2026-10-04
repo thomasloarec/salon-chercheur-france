@@ -627,6 +627,16 @@ export default function AgendaLanding() {
   const { data: stats } = usePublicStats();
   const salons = (stats as any)?.salons as number | undefined;
 
+  const { data: confCount } = useQuery({
+    queryKey: ['public-conference-count'],
+    staleTime: 60 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc('public_conference_count');
+      if (error) throw error;
+      return Number(data) || 0;
+    },
+  });
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Helmet>
@@ -733,7 +743,7 @@ export default function AgendaLanding() {
               {[
                 { big: <>2 min</>, lbl: 'pour créer votre agenda' },
                 { big: salons && salons > 0 ? <CountUp target={salons} /> : <>500+</>, lbl: 'salons professionnels lus par l\'IA' },
-                { big: <>0</>, lbl: 'veille à faire de votre côté' },
+                { big: confCount && confCount > 0 ? <CountUp target={confCount} /> : <>1 500+</>, lbl: 'conférences lues par l\'IA dans les programmes' },
               ].map((c, i) => (
                 <Reveal
                   key={c.lbl}
