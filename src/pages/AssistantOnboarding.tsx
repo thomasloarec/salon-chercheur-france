@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, Loader2, Pencil, Search, Trash2, X } from 'lucide-react';
+import { Check, Loader2, Pencil, Search, Sparkles, Trash2, X } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +26,8 @@ interface Answers {
   company_name: string;
   company_description: string;
   sub_sector_ids: string[];
-  role_code: string | null;
+  role_codes: string[];
+  role_other: string;
   interests: string[];
   goals: string[];
   region_codes: string[];
@@ -37,7 +38,8 @@ const EMPTY: Answers = {
   company_name: '',
   company_description: '',
   sub_sector_ids: [],
-  role_code: null,
+  role_codes: [],
+  role_other: '',
   interests: [],
   goals: [],
   region_codes: [],
@@ -69,7 +71,9 @@ interface Suggestion {
 
 const DRAFT_KEY = 'assistant_onboarding_draft';
 const DRAFT_MAX_MS = 2 * 60 * 60 * 1000;
-const MAX_INTERESTS = 8;
+const MAX_INTERESTS = 12;
+const MAX_ROLES = 4;
+const MAX_MORE_REQUESTS = 4;
 
 const GOALS: { value: string; label: string }[] = [
   { value: 'fournisseurs', label: 'Trouver des fournisseurs' },
@@ -97,7 +101,15 @@ function loadDraft(): { answers: Answers; step: number } | null {
     if (!raw) return null;
     const v = JSON.parse(raw);
     if (!v || typeof v.at !== 'number' || Date.now() - v.at > DRAFT_MAX_MS) return null;
-    return { answers: { ...EMPTY, ...v.answers }, step: Number(v.step) || 1 };
+    const a = { ...EMPTY, ...v.answers };
+    // Brouillon ancien : un seul rôle (role_code)
+    if (typeof v.answers?.role_code === 'string' && !(Array.isArray(v.answers?.role_codes) && v.answers.role_codes.length)) {
+      a.role_codes = [v.answers.role_code];
+    }
+    delete (a as any).role_code;
+    if (!Array.isArray(a.role_codes)) a.role_codes = [];
+    if (typeof a.role_other !== 'string') a.role_other = '';
+    return { answers: a, step: Number(v.step) || 1 };
   } catch {
     return null;
   }
@@ -218,23 +230,31 @@ export default function AssistantOnboarding() {
       return (data ?? []) as { code: string; label: string; position: number }[];
     },
   });
-  const roleLabel = roles?.find((r) => r.code === answers.role_code)?.label ?? '';
+  const [otherOn, setOtherOn] = useState<boolean>(() => !!draft?.answers.role_other);
+  const otherText = answers.role_other.trim();
+  const roleLabel = [
+    ...answers.role_codes.map((c) => roles?.find((r) => r.code === c)?.label).filter((l): l is string => !!l),
+    ...(otherOn && otherText ? [otherText] : []),
+  ].join(', ');
 
   // Mode « Modifier » : réponses pré-remplies depuis l'assistant existant
   useEffect(() => {
     if (!editMode || prefilled.current || !feed?.has_profile || !feed.profile) return;
     prefilled.current = true;
     const p = feed.profile as any;
+    const codes: string[] = Array.isArray(p.role_codes) && p.role_codes.length ? p.role_codes : p.role_code ? [p.role_code] : [];
     setAnswers({
       company_ref: p.company_ref ?? null,
       company_name: p.company_name ?? '',
       company_description: p.company_description ?? '',
       sub_sector_ids: p.sub_sector_ids ?? [],
-      role_code: p.role_code ?? null,
+      role_codes: codes,
+      role_other: p.role_other ?? '',
       interests: p.interests ?? [],
       goals: p.goals ?? [],
       region_codes: p.region_codes ?? [],
     });
+    setOtherOn(!!p.role_other);
     setStep(3);
   }, [editMode, feed]);
 
@@ -250,7 +270,7 @@ export default function AssistantOnboarding() {
         p_company_description: answers.company_description.trim() || null,
         p_company_ref: answers.company_ref,
         p_sub_sector_ids: answers.sub_sector_ids,
-        p_role_code: answers.role_code,
+        p_role_code: answers.role_codes[0] ?? null,
         p_interests: answers.interests,
         p_goals: answers.goals,
         p_city: null,
@@ -258,9 +278,16 @@ export default function AssistantOnboarding() {
         p_onboarded: onboarded,
       });
       if (error) throw error;
+      if (answers.role_codes.length > 0 || (otherOn && otherText)) {
+        const rolesRes = await rpc('assistant_set_my_roles', {
+          p_role_codes: answers.role_codes,
+          p_role_other: otherOn && otherText ? otherText : null,
+        });
+        if (rolesRes.error) throw rolesRes.error;
+      }
       return parse(data) as { profile_id: string; claim_token: string; is_new: boolean };
     },
-    [answers, roleLabel],
+    [answers, roleLabel, otherOn, otherText],
   );
 
   // ---------------------------------------------------------------------------------------------
@@ -353,11 +380,24 @@ export default function AssistantOnboarding() {
   // ---------------------------------------------------------------------------------------------
   // Écran 3 : sujets
   // ---------------------------------------------------------------------------------------------
-  const suggestKey = `${answers.company_name}|${answers.role_code}|${answers.sub_sector_ids.join(',')}`;
+  const roleOtherSent = otherOn && otherText ? otherText : null;
+  const suggestKey = `${answers.company_name}|${answers.role_codes.join(',')}|${roleOtherSent ?? ''}|${answers.sub_sector_ids.join(',')}`;
   const [sugg, setSugg] = useState<{ key: string; list: Suggestion[]; failed: boolean } | null>(null);
   const [suggLoading, setSuggLoading] = useState(false);
   const [openGeneric, setOpenGeneric] = useState<string | null>(null);
   const [freeTopic, setFreeTopic] = useState('');
+  const [moreCount, setMoreCount] = useState(0);
+  const [moreLoading, setMoreLoading] = useState(false);
+  const [moreMsg, setMoreMsg] = useState<string | null>(null);
+  const [moreBlocked, setMoreBlocked] = useState(false);
+  const [freshLabels, setFreshLabels] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (step !== 3) return;
+    setMoreCount(0);
+    setMoreMsg(null);
+    setMoreBlocked(false);
+  }, [step]);
 
   useEffect(() => {
     if (step !== 3 || !session || suggLoading || sugg?.key === suggestKey) return;
@@ -371,7 +411,8 @@ export default function AssistantOnboarding() {
             company_name: answers.company_name || null,
             company_description: answers.company_description || null,
             sub_sector_ids: answers.sub_sector_ids,
-            role_code: answers.role_code,
+            role_codes: answers.role_codes,
+            role_other: roleOtherSent,
           },
         });
         if (error) throw error;
@@ -407,6 +448,55 @@ export default function AssistantOnboarding() {
   };
   const suggLabels = new Set((sugg?.list ?? []).flatMap((s) => [s.label, ...(s.precisions ?? [])]));
   const customInterests = answers.interests.filter((i) => !suggLabels.has(i));
+
+  const requestMore = async () => {
+    if (!sugg || moreLoading) return;
+    setMoreLoading(true);
+    setMoreMsg(null);
+    const shown = [...suggLabels, ...customInterests];
+    try {
+      const { data, error } = await supabase.functions.invoke('assistant-onboarding', {
+        body: {
+          action: 'interests',
+          company_name: answers.company_name || null,
+          company_description: answers.company_description || null,
+          sub_sector_ids: answers.sub_sector_ids,
+          role_codes: answers.role_codes,
+          role_other: roleOtherSent,
+          exclude: shown,
+          selected: answers.interests,
+        },
+      });
+      if (error) {
+        const { code, message } = await readFnError(error);
+        if (code === 'quota' || (error as any)?.context?.status === 429) {
+          setMoreBlocked(true);
+          setMoreMsg(message ?? 'Trop de demandes aujourd\'hui.');
+          return;
+        }
+        throw error;
+      }
+      const known = new Set(shown.map((s) => s.toLowerCase()));
+      const added: Suggestion[] = [];
+      for (const s of (data?.suggestions ?? []) as Suggestion[]) {
+        const k = s.label.toLowerCase();
+        if (known.has(k)) continue;
+        known.add(k);
+        added.push(s);
+      }
+      setMoreCount((n) => n + 1);
+      if (added.length === 0) {
+        setMoreMsg("Je n'ai pas trouvé d'autres sujets proches. Ajoutez-en un vous-même ci-dessous.");
+        return;
+      }
+      setFreshLabels(new Set(added.map((s) => s.label)));
+      setSugg((cur) => (cur ? { ...cur, list: [...cur.list, ...added] } : cur));
+    } catch {
+      setMoreMsg('Impossible pour le moment. Réessayez.');
+    } finally {
+      setMoreLoading(false);
+    }
+  };
 
   // ---------------------------------------------------------------------------------------------
   // Écran 5 : régions + enregistrement
@@ -606,7 +696,7 @@ export default function AssistantOnboarding() {
       onContinue = () => setStep(2);
     }
   } else if (step === 2) {
-    continueDisabled = !answers.role_code;
+    continueDisabled = !(answers.role_codes.length > 0 || (otherOn && otherText.length >= 3));
   } else if (step === 3) {
     continueDisabled = answers.interests.length === 0;
   } else if (step === 5) {
@@ -747,33 +837,79 @@ export default function AssistantOnboarding() {
       </>
     );
   } else if (step === 2) {
+    const rolesFull = answers.role_codes.length >= MAX_ROLES;
+    const box = (on: boolean) => (
+      <span
+        className={cn(
+          'flex h-5 w-5 shrink-0 items-center justify-center rounded border-2',
+          on ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground',
+        )}
+      >
+        {on && <Check className="h-3.5 w-3.5" aria-hidden />}
+      </span>
+    );
+    const cardCls = (on: boolean) =>
+      cn(
+        'flex min-h-14 items-center gap-3 rounded-xl border-2 px-4 text-left text-base font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-40',
+        on ? 'border-primary bg-violet-soft text-foreground' : 'border-border bg-card text-foreground hover:border-primary',
+      );
     body = (
       <>
-        <Heading title="Quel est votre rôle ?" />
+        <Heading title="Quel est votre rôle ?" subtitle="Plusieurs réponses possibles." />
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {(roles ?? []).map((r) => {
-            const on = answers.role_code === r.code;
+            const on = answers.role_codes.includes(r.code);
             return (
               <button
                 key={r.code}
                 type="button"
-                aria-pressed={on}
-                onClick={() => {
-                  update({ role_code: r.code });
-                  setStep(3);
-                }}
-                className={cn(
-                  'flex min-h-14 items-center justify-between gap-2 rounded-xl border-2 px-4 text-left text-base font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  on ? 'border-primary bg-violet-soft text-foreground' : 'border-border bg-card text-foreground hover:border-primary',
-                )}
+                role="checkbox"
+                aria-checked={on}
+                disabled={!on && rolesFull}
+                onClick={() =>
+                  update({
+                    role_codes: on ? answers.role_codes.filter((c) => c !== r.code) : [...answers.role_codes, r.code],
+                  })
+                }
+                className={cardCls(on)}
               >
-                <span className="break-words">{r.label}</span>
-                {on && <Check className="h-5 w-5 shrink-0 text-primary" aria-hidden />}
+                {box(on)}
+                <span className="min-w-0 flex-1 break-words">{r.label}</span>
               </button>
             );
           })}
+          {roles && (
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={otherOn}
+              onClick={() => {
+                if (otherOn) update({ role_other: '' });
+                setOtherOn(!otherOn);
+              }}
+              className={cardCls(otherOn)}
+            >
+              {box(otherOn)}
+              <span className="min-w-0 flex-1 break-words">Autre</span>
+              <Pencil className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+            </button>
+          )}
           {!roles && Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-14 animate-pulse rounded-xl bg-muted" />)}
         </div>
+        {otherOn && (
+          <div className="mt-3">
+            <Input
+              autoFocus
+              aria-label="Votre rôle, en quelques mots"
+              placeholder="Votre rôle, en quelques mots (ex. Acheteur public, Consultant indépendant)"
+              maxLength={80}
+              className="h-12 text-base"
+              value={answers.role_other}
+              onChange={(e) => update({ role_other: e.target.value })}
+            />
+          </div>
+        )}
+        {rolesFull && <p className="mt-3 text-[15px] text-muted-foreground">4 rôles au plus.</p>}
       </>
     );
   } else if (step === 3) {
@@ -803,17 +939,24 @@ export default function AssistantOnboarding() {
                 const precisionPicked = (s.precisions ?? []).some((p) => answers.interests.includes(p));
                 const selected = answers.interests.includes(s.label) || precisionPicked;
                 return (
-                  <Chip
+                  <span
                     key={s.label}
-                    selected={selected}
-                    disabled={full}
-                    onClick={() => {
-                      if (isGeneric) setOpenGeneric((o) => (o === s.label ? null : s.label));
-                      else toggleInterest(s.label);
-                    }}
+                    className={cn(
+                      'inline-flex max-w-full',
+                      freshLabels.has(s.label) && 'duration-500 animate-in fade-in motion-reduce:animate-none',
+                    )}
                   >
-                    {s.label}
-                  </Chip>
+                    <Chip
+                      selected={selected}
+                      disabled={full}
+                      onClick={() => {
+                        if (isGeneric) setOpenGeneric((o) => (o === s.label ? null : s.label));
+                        else toggleInterest(s.label);
+                      }}
+                    >
+                      {s.label}
+                    </Chip>
+                  </span>
                 );
               })}
             </div>
@@ -842,6 +985,28 @@ export default function AssistantOnboarding() {
                   </div>
                 );
               })()}
+            {!moreBlocked && moreCount < MAX_MORE_REQUESTS && sugg!.list.length > 0 && (
+              <div className="space-y-2 pt-1">
+                {answers.interests.length > 0 && (
+                  <p className="text-[15px] text-muted-foreground">
+                    Je m'appuie sur vos choix pour proposer des sujets plus précis.
+                  </p>
+                )}
+                <Button type="button" variant="outline" className="min-h-11" disabled={moreLoading} onClick={requestMore}>
+                  {moreLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                  ) : (
+                    <Sparkles className="mr-2 h-4 w-4" aria-hidden />
+                  )}
+                  {moreLoading ? 'Je cherche d\'autres sujets…' : "Proposer d'autres sujets"}
+                </Button>
+              </div>
+            )}
+            {moreMsg && (
+              <p role="status" className="text-[15px] text-muted-foreground">
+                {moreMsg}
+              </p>
+            )}
           </div>
         )}
         {customInterests.length > 0 && (

@@ -51,6 +51,7 @@ export interface AssistantFeed {
     sub_sector_ids: string[]; role_code: string | null; interests: string[]; goals: string[];
     city: string | null; radius_km: number | null; onboarded_at: string | null;
     company_description?: string | null; region_codes?: string[]; email_alerts_opt_in?: boolean;
+    role_codes?: string[]; role_other?: string | null;
   };
   status?: { refreshing: boolean; refreshed_at: string | null };
   pistes?: { id: string; label: string; short_label: string }[];
