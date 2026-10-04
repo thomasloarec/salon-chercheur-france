@@ -1208,10 +1208,12 @@ const Organisateurs = () => {
           />
           <Reveal className="relative z-10 max-w-3xl mx-auto px-6">
             <h2 className="heading-display text-[clamp(2rem,3.7vw,3rem)]">
-              Votre salon est déjà sur Lotexpo. Prenez-en la main.
+              Votre salon est déjà sur Lotexpo ? Prenez-en la main. Il n'y est
+              pas encore ? Soumettez-le.
             </h2>
             <p className="mt-4 text-lg text-primary-foreground/80 max-w-[52ch] mx-auto">
-              La revendication est gratuite et ne vous engage à rien.
+              La revendication et la soumission sont gratuites et ne vous
+              engagent à rien.
             </p>
             <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
               <Link to="/trouver-un-salon">
@@ -1220,13 +1222,22 @@ const Organisateurs = () => {
                   Revendiquer mon salon
                 </Button>
               </Link>
-              <a href="#faq">
+              <Link to="/contact">
                 <Button
                   variant="outline"
-                  className="h-12 rounded-xl border-primary-foreground/40 bg-transparent px-6 text-base text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                  className="h-12 rounded-xl border-primary-foreground/40 bg-transparent px-6 text-base text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground gap-2"
                 >
-                  Voir les questions fréquentes
+                  <ArrowUpRight className="h-5 w-5" />
+                  Soumettre mon salon
                 </Button>
+              </Link>
+            </div>
+            <div className="mt-6">
+              <a
+                href="#faq"
+                className="text-sm text-primary-foreground/70 underline-offset-4 hover:underline"
+              >
+                Voir les questions fréquentes
               </a>
             </div>
           </Reveal>
