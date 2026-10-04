@@ -30,6 +30,16 @@ export default function AssistantApercu() {
 
   const suggestions = feed?.suggestions ?? [];
 
+  const { data: roleOthers } = useQuery({
+    queryKey: ['assistant-admin-role-others'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc('assistant_admin_role_others');
+      if (error) throw error;
+      const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+      return (parsed ?? []) as { label: string; count: number; last_at: string | null; new_count: number }[];
+    },
+  });
+
   return (
     <div className="min-h-screen bg-muted/40 py-8">
       <Helmet>
@@ -140,6 +150,48 @@ export default function AssistantApercu() {
             </section>
           </>
         )}
+
+        <section className="space-y-3">
+          <h2 className="heading-display text-[30px]">Rôles saisis à la main</h2>
+          <p className="text-sm text-muted-foreground">
+            Un email part vers admin@lotexpo.com chaque matin dès que 5 nouvelles saisies se sont accumulées.
+          </p>
+          {roleOthers === undefined ? (
+            <div className="h-24 animate-pulse rounded-xl bg-muted" />
+          ) : roleOthers.length === 0 ? (
+            <p className="text-muted-foreground">Aucun rôle saisi à la main pour l'instant.</p>
+          ) : (
+            <div className="overflow-x-auto rounded-[14px] bg-card shadow-sm">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-border text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold">Rôle saisi</th>
+                    <th className="px-4 py-3 font-semibold">Nombre</th>
+                    <th className="px-4 py-3 font-semibold">Dernière saisie</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {roleOthers.map((r) => (
+                    <tr key={r.label}>
+                      <td className="px-4 py-3">
+                        <span className="font-medium">{r.label}</span>
+                        {r.new_count > 0 && (
+                          <span className="ml-2 rounded-full bg-violet-soft px-2 py-0.5 text-xs font-semibold text-primary">
+                            nouveau
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">{r.count}</td>
+                      <td className="px-4 py-3">
+                        {r.last_at ? format(parseISO(r.last_at), 'd MMM yyyy', { locale: fr }) : ''}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );
