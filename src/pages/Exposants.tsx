@@ -724,9 +724,9 @@ export default function Exposants() {
               className="h-full w-full object-cover object-center"
               style={{
                 maskImage:
-                  'linear-gradient(90deg, transparent 0%, transparent 14%, black 46%)',
+                  'linear-gradient(90deg, transparent 0%, transparent 40%, black 62%)',
                 WebkitMaskImage:
-                  'linear-gradient(90deg, transparent 0%, transparent 14%, black 46%)',
+                  'linear-gradient(90deg, transparent 0%, transparent 40%, black 62%)',
               }}
             />
             {/* Voile sur mobile : l'image passe derrière le texte */}
