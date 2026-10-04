@@ -53,7 +53,7 @@ export interface AssistantFeed {
     company_description?: string | null; region_codes?: string[]; email_alerts_opt_in?: boolean;
     role_codes?: string[]; role_other?: string | null;
   };
-  status?: { refreshing: boolean; refreshed_at: string | null };
+  status?: { refreshing: boolean; refreshed_at: string | null; pistes_stale?: boolean };
   pistes?: { id: string; label: string; short_label: string }[];
   suggestions?: AssistantSuggestion[];          // « À découvrir »
   agenda_pepites?: { event_id: string; pepites: AssistantItem[] }[]; // salons déjà dans l'agenda

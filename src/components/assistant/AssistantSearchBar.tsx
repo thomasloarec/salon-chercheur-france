@@ -6,7 +6,7 @@ import { ASSISTANT_ONBOARDING_PATH, ASSISTANT_ONBOARDING_READY } from './config'
 
 interface Props {
   pistes: { id: string; short_label: string }[];
-  status?: { refreshing: boolean; refreshed_at: string | null };
+  status?: { refreshing: boolean; refreshed_at: string | null; pistes_stale?: boolean };
   regionCodes?: string[];
   onEditRegions?: () => void;
 }
@@ -24,8 +24,10 @@ function updatedLabel(iso: string): string | null {
 export default function AssistantSearchBar({ pistes, status, regionCodes, onEditRegions }: Props) {
   const nRegions = regionCodes?.length ?? 0;
   const regionLabel = nRegions === 0 ? 'Partout en France' : `${nRegions} région${nRegions > 1 ? 's' : ''}`;
-  const shown = pistes.slice(0, MAX_CHIPS);
-  const rest = pistes.length - shown.length;
+  // Sujets en cours de reconstruction (profil modifié) : on n'affiche pas les anciens.
+  const stale = status?.pistes_stale === true;
+  const shown = stale ? [] : pistes.slice(0, MAX_CHIPS);
+  const rest = stale ? 0 : pistes.length - shown.length;
   const updated = !status?.refreshing && status?.refreshed_at ? updatedLabel(status.refreshed_at) : null;
 
   return (
@@ -46,6 +48,12 @@ export default function AssistantSearchBar({ pistes, status, regionCodes, onEdit
           {p.short_label}
         </span>
       ))}
+      {stale && (
+        <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-background px-3 text-sm font-semibold text-primary">
+          <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+          Mise à jour de vos sujets…
+        </span>
+      )}
       {rest > 0 && (
         <span className="inline-flex h-8 items-center rounded-full bg-background px-3 text-sm font-semibold text-primary">
           +{rest}
