@@ -24,10 +24,10 @@ const Blog = () => {
     <MainLayout title="Blog">
       <Helmet>
         <title>Blog salons professionnels B2B — Lotexpo</title>
-        <meta name="description" content="Découvrez nos articles sur les salons professionnels B2B en France : conseils, tendances, guides et événements à ne pas manquer." />
+        <meta name="description" content="Guides et conseils pour préparer vos salons professionnels : choisir les bons salons, suivre les bonnes conférences, rentabiliser votre visite ou votre stand." />
         <link rel="canonical" href="https://lotexpo.com/blog" />
         <meta property="og:title" content="Blog salons professionnels B2B — Lotexpo" />
-        <meta property="og:description" content="Découvrez nos articles sur les salons professionnels B2B en France." />
+        <meta property="og:description" content="Guides et conseils pour préparer vos salons professionnels." />
         <meta property="og:url" content="https://lotexpo.com/blog" />
         <meta property="og:type" content="website" />
       </Helmet>
