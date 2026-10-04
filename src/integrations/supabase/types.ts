@@ -14568,6 +14568,7 @@ export type Database = {
         Args: { p_name?: string; p_note?: string; p_organizer_id: string }
         Returns: Json
       }
+      admin_visitor_activity_stats: { Args: never; Returns: Json }
       apply_exposant_merge_plan: {
         Args: { p_canonical?: string }
         Returns: {

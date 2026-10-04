@@ -2,7 +2,8 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Minus, Globe, Eye, Users, MousePointerClick, ExternalLink, FileText, Radar, ArrowRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Globe, Eye, Users, MousePointerClick, ExternalLink, FileText, Radar, ArrowRight, HelpCircle, Activity, Sparkles, CalendarCheck } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAdminLeadsStats } from '@/hooks/useAdminLeadsStats';
@@ -27,18 +28,32 @@ const MetricCard = ({
   subtitle,
   delta,
   icon: IconComp,
+  help,
 }: {
   title: string;
   value: string;
   subtitle: string;
   delta?: number | null;
   icon?: React.ElementType;
+  help?: string;
 }) => (
   <Card>
     <CardContent className="pt-6">
       <div className="flex items-center gap-2 mb-1">
         {IconComp && <IconComp className="h-4 w-4 text-muted-foreground" />}
         <p className="text-sm text-muted-foreground">{title}</p>
+        {help && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button type="button" aria-label="Définition" className="text-muted-foreground">
+                  <HelpCircle className="h-3.5 w-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">{help}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </div>
       <div className="flex items-baseline gap-2 mt-1">
         <span className="text-3xl font-bold">{value}</span>
@@ -73,9 +88,30 @@ const useGa4Stats = () => {
   });
 };
 
+// ── Visiteurs 7j (RPC admin) ──
+const useVisitorStats = () => {
+  return useQuery({
+    queryKey: ['overview-visitor-stats'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc('admin_visitor_activity_stats');
+      if (error) throw error;
+      return (typeof data === 'string' ? JSON.parse(data) : data) as any;
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+};
+
+const plural = (n: number | null | undefined, one: string, many: string) =>
+  `${fmt(n)} ${n != null && n > 1 ? many : one}`;
+const pct = (num: number | null | undefined, den: number | null | undefined) =>
+  num != null && den ? `${Math.round((num / den) * 100)}` : '–';
+
 const AdminOverview = () => {
   // ── GA4 (cartes + top pages + sources) ──
   const { data: ga4, isError: ga4Error } = useGa4Stats();
+  const { data: vs, isLoading: vsLoading, isError: vsError } = useVisitorStats();
+  const vv = (n: number | null | undefined) => (vsLoading ? '…' : fmt(n));
 
   const visitors = ga4?.aggregate?.results?.metrics?.[0] ?? null;
   const pageviews = ga4?.aggregate?.results?.metrics?.[1] ?? null;
@@ -279,6 +315,53 @@ const AdminOverview = () => {
           </Card>
         </section>
       )}
+
+      {/* Visiteurs – 7 jours */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold">Visiteurs – 7 jours</h2>
+          <Link to="/admin/assistant-apercu" className="text-sm text-muted-foreground hover:underline">
+            Voir l'aperçu de l'assistant
+          </Link>
+        </div>
+        {vsError && (
+          <p className="text-sm text-destructive mb-2">Impossible de charger les statistiques visiteurs.</p>
+        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <MetricCard
+            title="Comptes visiteurs"
+            icon={Users}
+            value={vv(vs?.accounts?.total)}
+            delta={vs ? vs.accounts?.new_7d : undefined}
+            subtitle={vsLoading ? '…' : `${plural(vs?.accounts?.new_7d, 'nouveau', 'nouveaux')} cette semaine · ${fmt(vs?.accounts?.new_prev_7d)} la semaine d'avant`}
+            help="Comptes créés sur Lotexpo (connexion Google, email ou mot de passe). Les comptes admin et les visiteurs sans compte ne sont pas comptés."
+          />
+          <MetricCard
+            title="Visiteurs actifs"
+            icon={Activity}
+            value={vv(vs?.active?.current)}
+            delta={vs ? vs.active?.current - vs.active?.previous : undefined}
+            subtitle={vsLoading ? '…' : `${pct(vs?.active?.current, vs?.accounts?.total)} % des comptes`}
+            help="Comptes qui se sont connectés ou ont agi sur le site dans les 7 derniers jours : salon ajouté à l'agenda, Nouveauté gardée, visite préparée, réponse à l'assistant, demande de contact à un exposant."
+          />
+          <MetricCard
+            title="Assistants créés"
+            icon={Sparkles}
+            value={vv(vs?.assistant?.completed_7d)}
+            delta={vs ? vs.assistant?.completed_7d - vs.assistant?.completed_prev_7d : undefined}
+            subtitle={vsLoading ? '…' : `${plural(vs?.assistant?.started_7d, 'parcours commencé', 'parcours commencés')} · ${pct(vs?.assistant?.completed_7d, vs?.assistant?.started_7d)} % terminés · ${fmt(vs?.assistant?.total)} au total`}
+            help="Parcours /agenda/creer terminés : l'assistant est rattaché à un compte visiteur. « Commencés » compte aussi les visiteurs sans compte qui ont démarré le parcours."
+          />
+          <MetricCard
+            title="Intentions de visite"
+            icon={CalendarCheck}
+            value={vv(vs?.intents?.total_7d)}
+            delta={vs ? vs.intents?.total_7d - vs.intents?.total_prev_7d : undefined}
+            subtitle={vsLoading ? '…' : `${plural(vs?.intents?.salons_7d, 'salon', 'salons')} · ${plural(vs?.intents?.selections_7d, 'conférence ou Nouveauté', 'conférences ou Nouveautés')} · ${plural(vs?.intents?.contacts_7d, 'contact exposant', 'contacts exposant')}`}
+            help="Signaux qu'un visiteur prépare sa venue : salon ajouté à l'agenda, conférence ou Nouveauté gardée, demande de contact ou de rendez-vous à un exposant."
+          />
+        </div>
+      </section>
 
       {/* Bloc 2 — Activité plateforme */}
       <section>
