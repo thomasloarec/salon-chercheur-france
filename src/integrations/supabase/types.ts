@@ -1016,6 +1016,7 @@ export type Database = {
           radius_km: number | null
           refresh_attempts: number
           refresh_dispatched_at: string | null
+          refresh_fast: boolean
           refresh_requested_at: string | null
           refreshed_at: string | null
           region_codes: string[]
@@ -1045,6 +1046,7 @@ export type Database = {
           radius_km?: number | null
           refresh_attempts?: number
           refresh_dispatched_at?: string | null
+          refresh_fast?: boolean
           refresh_requested_at?: string | null
           refreshed_at?: string | null
           region_codes?: string[]
@@ -1074,6 +1076,7 @@ export type Database = {
           radius_km?: number | null
           refresh_attempts?: number
           refresh_dispatched_at?: string | null
+          refresh_fast?: boolean
           refresh_requested_at?: string | null
           refreshed_at?: string | null
           region_codes?: string[]
