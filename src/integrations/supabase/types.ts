@@ -935,6 +935,8 @@ export type Database = {
           refreshed_at: string | null
           region_codes: string[]
           role_code: string | null
+          role_codes: string[]
+          role_other: string | null
           sector_ids: string[]
           sub_sector_ids: string[]
           updated_at: string
@@ -962,6 +964,8 @@ export type Database = {
           refreshed_at?: string | null
           region_codes?: string[]
           role_code?: string | null
+          role_codes?: string[]
+          role_other?: string | null
           sector_ids?: string[]
           sub_sector_ids?: string[]
           updated_at?: string
@@ -989,6 +993,8 @@ export type Database = {
           refreshed_at?: string | null
           region_codes?: string[]
           role_code?: string | null
+          role_codes?: string[]
+          role_other?: string | null
           sector_ids?: string[]
           sub_sector_ids?: string[]
           updated_at?: string
@@ -1001,6 +1007,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "assistant_roles"
             referencedColumns: ["code"]
+          },
+        ]
+      }
+      assistant_role_other_entries: {
+        Row: {
+          created_at: string
+          id: number
+          label: string
+          notified_at: string | null
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          label: string
+          notified_at?: string | null
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          label?: string
+          notified_at?: string | null
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_role_other_entries_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "assistant_profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -14562,6 +14603,7 @@ export type Database = {
         Args: { p_item_id: string; p_item_type: string }
         Returns: Json
       }
+      assistant_admin_role_others: { Args: never; Returns: Json }
       assistant_can_access_profile: {
         Args: { p_profile_id: string }
         Returns: boolean
@@ -14660,6 +14702,10 @@ export type Database = {
       }
       assistant_set_my_regions: {
         Args: { p_region_codes: string[] }
+        Returns: Json
+      }
+      assistant_set_my_roles: {
+        Args: { p_role_codes: string[]; p_role_other?: string }
         Returns: Json
       }
       assistant_tune_pistes: { Args: { p_profile_id: string }; Returns: number }

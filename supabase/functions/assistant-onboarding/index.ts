@@ -4,7 +4,11 @@
 // Quota : 30 appels par 24 h et par personne (assistant_engine_run_allowed, mode « interests »).
 //
 // Corps : { "action": "interests", "company_name": "...", "company_description": "...",
-//           "sub_sector_ids": ["..."], "role_code": "..." }
+//           "sub_sector_ids": ["..."], "role_codes": ["..."], "role_other": "...",
+//           "exclude": ["..."], "selected": ["..."] }
+//   (role_code seul reste accepté.) exclude : sujets déjà affichés, à ne pas reproposer ;
+//   selected : sujets déjà choisis. Avec exclude non vide, l'IA propose d'AUTRES sujets, proches de ceux
+//   choisis et plus précis (bouton « Proposer d'autres sujets » de l'écran 3).
 // Réponse : { "suggestions": [{ "label": "...", "generic": false, "theme_code": null, "precisions": [] }] }
 //   6 à 8 centres d'intérêt proposés à l'écran 3. Un thème générique (IA, RSE, export…) porte 3 à 4
 //   précisions prêtes à l'emploi (« IA pour concevoir les machines »…) : un clic remplace le libellé.
@@ -42,10 +46,31 @@ function parseJson(text: string): Record<string, unknown> | null {
 
 type Suggestion = { label: string; generic: boolean; theme_code: string | null; precisions: string[] };
 
+function strList(v: unknown, maxItems: number, maxLen: number): string[] {
+  if (!Array.isArray(v)) return [];
+  const out: string[] = [];
+  for (const x of v) {
+    const t = clean(x, maxLen);
+    if (t.length >= 2 && !out.some((o) => o.toLowerCase() === t.toLowerCase())) out.push(t);
+    if (out.length >= maxItems) break;
+  }
+  return out;
+}
+
 function interestsPrompt(
   company: string, description: string, sectors: string[], role: string,
   themes: { code: string; label: string }[],
+  exclude: string[] = [], selected: string[] = [],
 ): string {
+  const more = exclude.length > 0;
+  const task = more
+    ? `TA TÂCHE
+La personne a déjà vu des propositions et veut en voir d'AUTRES, pour affiner son assistant.
+${selected.length ? `Elle a choisi :\n${selected.map((t) => `- ${t}`).join('\n')}\n` : ''}Déjà proposés (ne JAMAIS les reproposer, ni les reformuler) :
+${exclude.map((t) => `- ${t}`).join('\n')}
+Propose 6 nouveaux centres d'intérêt. ${selected.length ? 'Au moins 4 doivent être proches de ses choix mais plus précis ou complémentaires (un sous-sujet, une application concrète, un enjeu voisin).' : 'Explore des angles différents de son métier.'}`
+    : `TA TÂCHE
+Propose 6 à 8 centres d'intérêt professionnels qu'une personne de ce rôle, dans cette entreprise, a probablement en ce moment. Elle cochera ceux qui lui parlent.`;
   return `Tu aides un professionnel à créer son assistant salons, qui lui signalera les conférences et les Nouveautés d'exposants utiles pour lui sur les salons professionnels.
 
 LA PERSONNE
@@ -56,13 +81,12 @@ Rôle : ${role || 'non précisé'}
 THÈMES TRANSVERSAUX (codes autorisés)
 ${themes.map((t) => `${t.code} : ${t.label}`).join('\n')}
 
-TA TÂCHE
-Propose 6 à 8 centres d'intérêt professionnels qu'une personne de ce rôle, dans cette entreprise, a probablement en ce moment. Elle cochera ceux qui lui parlent.
+${task}
 
 RÈGLES
 1. label : 2 à 6 mots, en français, concret, sans tiret cadratin. Exemple : « Maintenance prédictive », « Réglementation des emballages ».
 2. Au moins 4 propositions propres à son métier ou à son secteur (generique : false, theme : null).
-3. 2 à 3 propositions peuvent être des thèmes transversaux (generique : true) : theme est alors un code de la liste, et precisions donne 3 ou 4 façons concrètes de l'appliquer à son activité, chacune de 3 à 8 mots (exemple pour l'IA chez un fabricant de machines : « IA pour concevoir les machines », « IA en production », « IA pour le service client »).
+3. Au plus 2 propositions peuvent être des thèmes transversaux (generique : true) : theme est alors un code de la liste, et precisions donne 3 ou 4 façons concrètes de l'appliquer à son activité, chacune de 3 à 8 mots (exemple pour l'IA chez un fabricant de machines : « IA pour concevoir les machines », « IA en production », « IA pour le service client »).
 4. Pas de doublons, pas de sujet sans lien avec l'entreprise ou le rôle. N'invente rien sur l'entreprise.
 
 RÉPONSE
@@ -109,19 +133,28 @@ Deno.serve(async (req) => {
     const subIds = Array.isArray(body.sub_sector_ids)
       ? body.sub_sector_ids.filter((x): x is string => typeof x === 'string' && /^[0-9a-f-]{36}$/i.test(x)).slice(0, 10)
       : [];
-    const roleCode = clean(body.role_code, 40);
+    const roleCodes = strList(body.role_codes, 4, 40);
+    const single = clean(body.role_code, 40);
+    if (roleCodes.length === 0 && single) roleCodes.push(single);
+    const roleOther = clean(body.role_other, 80);
+    const exclude = strList(body.exclude, 60, 90);
+    const selected = strList(body.selected, 12, 90);
     const [themesRes, roleRes, subsRes] = await Promise.all([
       supabase.from('assistant_themes').select('code,label').order('position'),
-      roleCode
-        ? supabase.from('assistant_roles').select('label').eq('code', roleCode).maybeSingle()
-        : Promise.resolve({ data: null, error: null }),
+      roleCodes.length
+        ? supabase.from('assistant_roles').select('code,label').in('code', roleCodes)
+        : Promise.resolve({ data: [], error: null }),
       subIds.length
         ? supabase.from('sub_sectors').select('name,sectors(name)').in('id', subIds)
         : Promise.resolve({ data: [], error: null }),
     ]);
     if (themesRes.error) throw new Error(themesRes.error.message);
     const themes = (themesRes.data ?? []) as { code: string; label: string }[];
-    const role = (roleRes.data as { label?: string } | null)?.label ?? '';
+    const roleLabels = roleCodes
+      .map((c) => ((roleRes.data ?? []) as { code: string; label: string }[]).find((r) => r.code === c)?.label)
+      .filter((l): l is string => !!l);
+    if (roleOther) roleLabels.push(roleOther);
+    const role = roleLabels.join(', ');
     const sectors: string[] = [];
     for (const s of (subsRes.data ?? []) as { name: string; sectors: { name: string } | null }[]) {
       if (s.sectors?.name && !sectors.includes(s.sectors.name)) sectors.push(s.sectors.name);
@@ -129,9 +162,10 @@ Deno.serve(async (req) => {
     }
 
     const res = await callAnthropic({
-      apiKey: anthropicKey, model: MODEL, maxTokens: 1500, caller: 'assistant-onboarding:interests',
+      apiKey: anthropicKey, model: MODEL, maxTokens: 1200, caller: 'assistant-onboarding:interests',
       userMessage: interestsPrompt(
         clean(body.company_name, 160), clean(body.company_description, 500), sectors, role, themes,
+        exclude, selected,
       ),
     });
     if (!res.ok || !res.text) throw new Error(`Claude : ${res.error || 'réponse vide'}`);
@@ -139,7 +173,7 @@ Deno.serve(async (req) => {
     const raw = Array.isArray(out?.suggestions) ? (out!.suggestions as Record<string, unknown>[]) : [];
 
     const themeCodes = new Set(themes.map((t) => t.code));
-    const seen = new Set<string>();
+    const seen = new Set<string>(exclude.map((t) => t.toLowerCase()));
     const suggestions: Suggestion[] = [];
     for (const x of raw) {
       const label = clean(x.label, 80);
