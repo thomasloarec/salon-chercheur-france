@@ -278,11 +278,13 @@ export default function AssistantOnboarding() {
         p_onboarded: onboarded,
       });
       if (error) throw error;
-      const rolesRes = await rpc('assistant_set_my_roles', {
-        p_role_codes: answers.role_codes,
-        p_role_other: otherOn && otherText ? otherText : null,
-      });
-      if (rolesRes.error) throw rolesRes.error;
+      if (answers.role_codes.length > 0 || (otherOn && otherText)) {
+        const rolesRes = await rpc('assistant_set_my_roles', {
+          p_role_codes: answers.role_codes,
+          p_role_other: otherOn && otherText ? otherText : null,
+        });
+        if (rolesRes.error) throw rolesRes.error;
+      }
       return parse(data) as { profile_id: string; claim_token: string; is_new: boolean };
     },
     [answers, roleLabel, otherOn, otherText],
@@ -378,11 +380,24 @@ export default function AssistantOnboarding() {
   // ---------------------------------------------------------------------------------------------
   // Écran 3 : sujets
   // ---------------------------------------------------------------------------------------------
-  const suggestKey = `${answers.company_name}|${answers.role_code}|${answers.sub_sector_ids.join(',')}`;
+  const roleOtherSent = otherOn && otherText ? otherText : null;
+  const suggestKey = `${answers.company_name}|${answers.role_codes.join(',')}|${roleOtherSent ?? ''}|${answers.sub_sector_ids.join(',')}`;
   const [sugg, setSugg] = useState<{ key: string; list: Suggestion[]; failed: boolean } | null>(null);
   const [suggLoading, setSuggLoading] = useState(false);
   const [openGeneric, setOpenGeneric] = useState<string | null>(null);
   const [freeTopic, setFreeTopic] = useState('');
+  const [moreCount, setMoreCount] = useState(0);
+  const [moreLoading, setMoreLoading] = useState(false);
+  const [moreMsg, setMoreMsg] = useState<string | null>(null);
+  const [moreBlocked, setMoreBlocked] = useState(false);
+  const [freshLabels, setFreshLabels] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (step !== 3) return;
+    setMoreCount(0);
+    setMoreMsg(null);
+    setMoreBlocked(false);
+  }, [step]);
 
   useEffect(() => {
     if (step !== 3 || !session || suggLoading || sugg?.key === suggestKey) return;
@@ -396,7 +411,8 @@ export default function AssistantOnboarding() {
             company_name: answers.company_name || null,
             company_description: answers.company_description || null,
             sub_sector_ids: answers.sub_sector_ids,
-            role_code: answers.role_code,
+            role_codes: answers.role_codes,
+            role_other: roleOtherSent,
           },
         });
         if (error) throw error;
@@ -432,6 +448,55 @@ export default function AssistantOnboarding() {
   };
   const suggLabels = new Set((sugg?.list ?? []).flatMap((s) => [s.label, ...(s.precisions ?? [])]));
   const customInterests = answers.interests.filter((i) => !suggLabels.has(i));
+
+  const requestMore = async () => {
+    if (!sugg || moreLoading) return;
+    setMoreLoading(true);
+    setMoreMsg(null);
+    const shown = [...suggLabels, ...customInterests];
+    try {
+      const { data, error } = await supabase.functions.invoke('assistant-onboarding', {
+        body: {
+          action: 'interests',
+          company_name: answers.company_name || null,
+          company_description: answers.company_description || null,
+          sub_sector_ids: answers.sub_sector_ids,
+          role_codes: answers.role_codes,
+          role_other: roleOtherSent,
+          exclude: shown,
+          selected: answers.interests,
+        },
+      });
+      if (error) {
+        const { code, message } = await readFnError(error);
+        if (code === 'quota' || (error as any)?.context?.status === 429) {
+          setMoreBlocked(true);
+          setMoreMsg(message ?? 'Trop de demandes aujourd\'hui.');
+          return;
+        }
+        throw error;
+      }
+      const known = new Set(shown.map((s) => s.toLowerCase()));
+      const added: Suggestion[] = [];
+      for (const s of (data?.suggestions ?? []) as Suggestion[]) {
+        const k = s.label.toLowerCase();
+        if (known.has(k)) continue;
+        known.add(k);
+        added.push(s);
+      }
+      setMoreCount((n) => n + 1);
+      if (added.length === 0) {
+        setMoreMsg("Je n'ai pas trouvé d'autres sujets proches. Ajoutez-en un vous-même ci-dessous.");
+        return;
+      }
+      setFreshLabels(new Set(added.map((s) => s.label)));
+      setSugg((cur) => (cur ? { ...cur, list: [...cur.list, ...added] } : cur));
+    } catch {
+      setMoreMsg('Impossible pour le moment. Réessayez.');
+    } finally {
+      setMoreLoading(false);
+    }
+  };
 
   // ---------------------------------------------------------------------------------------------
   // Écran 5 : régions + enregistrement
