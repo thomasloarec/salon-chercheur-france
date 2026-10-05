@@ -34,6 +34,7 @@ import { useEventCardStats } from '@/hooks/useEventCardStats';
 import { useEventProgramCount } from '@/hooks/useEventProgram';
 import { getEventCapabilities, PARCOURS_IA_MIN_EXHIBITORS } from '@/lib/eventCapabilities';
 import { cn } from '@/lib/utils';
+import { getPrimarySectorUrl } from '@/lib/sectorUrl';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Event } from '@/types/event';
 
@@ -114,13 +115,7 @@ export const EventPageContent: React.FC<EventPageContentProps> = ({
     }
   }, [searchParams, exhibitorCount]);
 
-  const sectorLink = useMemo(() => {
-    const secteur = event.secteur;
-    if (!secteur) return '/events';
-    const first = Array.isArray(secteur) ? secteur[0] : secteur;
-    if (!first) return '/events';
-    return `/events?sectors=${encodeURIComponent(first)}`;
-  }, [event.secteur]);
+  const sectorLink = useMemo(() => getPrimarySectorUrl(event.secteur), [event.secteur]);
 
   const invalidateEvents = useInvalidateEvents();
   const queryClient = useQueryClient();
