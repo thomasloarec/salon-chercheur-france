@@ -200,8 +200,13 @@ Deno.serve(async (req) => {
         exhibitor_uuid: exhibitorUUID,
         exhibitor_name: p.exhibitor_name || p.name_final || '',
         
-        // ✅ Description IA prioritaire
+        // Résumé IA : affiché uniquement si l'exposant n'a pas saisi sa propre description
         ai_resume_court: aiResumeCourt,
+
+        // Description saisie par l'exposant (table exhibitors, modifiable uniquement par
+        // l'exposant ou un admin, jamais par un traitement automatique).
+        // PRIORITAIRE à l'affichage sur le résumé IA.
+        owner_description: enrichedData?.description || null,
         
         // ✅ MAPPING MODERNE → LEGACY (avec cascade de fallback)
         exposant_description: enrichedData?.description       // exhibitors.description
