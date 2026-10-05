@@ -11,6 +11,12 @@ export type LightExhibitor = {
   logo_url?: string | null;
   exhibitor_uuid?: string | null;
   ai_resume_court?: string | null;
+  /**
+   * Description saisie par l'exposant lui-même (table exhibitors).
+   * undefined = pas encore recherchée ; null = aucune description saisie.
+   * Prioritaire à l'affichage sur le résumé IA, jamais écrasée par un traitement automatique.
+   */
+  owner_description?: string | null;
 };
 
 /**
@@ -26,7 +32,7 @@ export async function hydrateExhibitor(light: LightExhibitor): Promise<LightExhi
   });
 
   // Si toutes les données sont déjà présentes, pas besoin d'hydratation
-  if (light.exposant_description && light.website_exposant && light.logo_url && light.ai_resume_court) {
+  if (light.exposant_description && light.website_exposant && light.logo_url && light.ai_resume_court && light.owner_description !== undefined) {
     console.log('✅ Données déjà complètes, skip hydratation');
     return light;
   }
@@ -75,6 +81,7 @@ export async function hydrateExhibitor(light: LightExhibitor): Promise<LightExhi
         exhibitor_name: exhibitor.name || light.exhibitor_name,
         website_exposant: exhibitor.website || light.website_exposant,
         exposant_description: exhibitor.description || light.exposant_description,
+        owner_description: exhibitor.description || null,
         logo_url: exhibitor.logo_url || light.logo_url
       };
     }
@@ -115,6 +122,7 @@ export async function hydrateExhibitor(light: LightExhibitor): Promise<LightExhi
           exhibitor_name: exhibitor.name || light.exhibitor_name,
           website_exposant: exhibitor.website || light.website_exposant,
           exposant_description: exhibitor.description || light.exposant_description,
+          owner_description: exhibitor.description || null,
           logo_url: exhibitor.logo_url || light.logo_url
         };
       }
@@ -144,7 +152,8 @@ export async function hydrateExhibitor(light: LightExhibitor): Promise<LightExhi
         ...light,
         exhibitor_name: exposant.nom_exposant || light.exhibitor_name,
         website_exposant: exposant.website_exposant || light.website_exposant,
-        exposant_description: exposant.exposant_description || light.exposant_description
+        exposant_description: exposant.exposant_description || light.exposant_description,
+        owner_description: light.owner_description ?? null
       };
     }
   }
@@ -170,6 +179,7 @@ export async function hydrateExhibitor(light: LightExhibitor): Promise<LightExhi
         exhibitor_uuid: exhibitor.id,
         website_exposant: exhibitor.website || light.website_exposant,
         exposant_description: exhibitor.description || light.exposant_description,
+        owner_description: exhibitor.description || null,
         logo_url: exhibitor.logo_url || light.logo_url
       };
     }
@@ -180,5 +190,5 @@ export async function hydrateExhibitor(light: LightExhibitor): Promise<LightExhi
   // ============================================================================
   
   console.warn('⚠️ hydrateExhibitor - Aucune donnée supplémentaire trouvée');
-  return light;
+  return { ...light, owner_description: light.owner_description ?? null };
 }

@@ -33,6 +33,8 @@ interface Exhibitor {
   website_final?: string;
   // AI enrichment
   ai_resume_court?: string;
+  // Description saisie par l'exposant (undefined = pas encore recherchée, null = aucune)
+  owner_description?: string | null;
   // Radar CRM extras
   crm_company_name?: string;
   needs_review?: boolean;
@@ -70,9 +72,11 @@ const cleanBilingualDescription = (text: string): string => {
   return text;
 };
 
-// Récupère la description — priorité : AI resume_court > description_final > exposant_description
+// Récupère la description. Priorité : description saisie par l'exposant > résumé IA >
+// description_final > exposant_description. Le texte d'un exposant n'est jamais remplacé
+// par un texte généré automatiquement.
 const getDescription = (exhibitor: Exhibitor): string | undefined => {
-  const raw = exhibitor.ai_resume_court || exhibitor.description_final || exhibitor.exposant_description;
+  const raw = exhibitor.owner_description || exhibitor.ai_resume_court || exhibitor.description_final || exhibitor.exposant_description;
   return raw ? cleanBilingualDescription(raw) : undefined;
 };
 
@@ -118,8 +122,8 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
         setDetails(null);
         return;
       }
-      // Always hydrate to ensure ai_resume_court is fetched
-      const needsHydration = !exhibitor.ai_resume_court || !getWebsite(exhibitor);
+      // Hydrate si le résumé IA, le site ou la description saisie par l'exposant ne sont pas encore connus
+      const needsHydration = !exhibitor.ai_resume_court || !getWebsite(exhibitor) || exhibitor.owner_description === undefined;
       
       if (needsHydration) {
         const full = await hydrateExhibitor(exhibitor as any);
@@ -144,7 +148,9 @@ export const ExhibitorDetailDialog: React.FC<ExhibitorDetailDialogProps> = ({
   
   const e = details ?? exhibitor;
   const displayName = getDisplayName(e);
-  const description = getDescription(e);
+  // On attend de savoir si l'exposant a saisi sa propre description avant d'afficher quoi que ce soit,
+  // pour ne jamais montrer brièvement le résumé IA à la place de son texte.
+  const description = e.owner_description === undefined ? undefined : getDescription(e);
   const shortDescription = description ? truncateDescription(description) : null;
   const websiteHref = normalizeExternalUrl(getWebsite(e));
   const hasPublicSlug = !!e.public_slug && !e.is_test;
