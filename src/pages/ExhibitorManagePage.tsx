@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Award, Building2, CalendarCheck, CalendarDays, ExternalLink, LifeBuoy, MailOpen, Sparkles, Users } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
+import { Award, Building2, CalendarCheck, CalendarDays, ExternalLink, LifeBuoy, MailOpen, ScanLine, Sparkles, Users } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import MainLayout from '@/components/layout/MainLayout';
@@ -26,6 +26,9 @@ import ExhibitorTeamSection from '@/components/exhibitor/manage/ExhibitorTeamSec
 import ExhibitorLeadsSection from '@/components/exhibitor/manage/ExhibitorLeadsSection';
 import ExhibitorInvitationsSection from '@/components/exhibitor/manage/ExhibitorInvitationsSection';
 import { useExhibitorLeads } from '@/hooks/useExhibitorLeads';
+import ExhibitorLeadsCaptureSection from '@/components/exhibitor/manage/ExhibitorLeadsCaptureSection';
+import { getAccess } from '@/lib/booth/rpc';
+import { LOTEXPO_LEADS_PUBLIC } from '@/lib/booth/config';
 import SupportChatPanel from '@/components/support/SupportChatPanel';
 import { useSupportUnread } from '@/components/support/useSupportUnread';
 
@@ -35,9 +38,9 @@ const TIER_LABEL: Record<ExhibitorTier, string> = {
   or: 'Or',
 };
 
-type SectionKey = 'fiche' | 'salons' | 'nouveautes' | 'invitations' | 'rendezvous' | 'equipe' | 'aide';
+type SectionKey = 'fiche' | 'salons' | 'nouveautes' | 'invitations' | 'rendezvous' | 'leads' | 'equipe' | 'aide';
 
-const SECTION_KEYS: SectionKey[] = ['fiche', 'salons', 'nouveautes', 'invitations', 'rendezvous', 'equipe', 'aide'];
+const SECTION_KEYS: SectionKey[] = ['fiche', 'salons', 'nouveautes', 'invitations', 'rendezvous', 'leads', 'equipe', 'aide'];
 
 const SECTIONS: {
   key: SectionKey;
@@ -84,6 +87,13 @@ const SECTIONS: {
     title: 'Vos rendez-vous et contacts',
     description:
       'Toutes les demandes de rendez-vous et tous les téléchargements de brochure, au même endroit.',
+  },
+  {
+    key: 'leads',
+    label: 'Lotexpo Leads',
+    icon: ScanLine,
+    title: 'Lotexpo Leads',
+    description: 'Enregistrez chaque rencontre sur votre stand et suivez les relances après le salon.',
   },
   {
     key: 'equipe',
@@ -157,6 +167,19 @@ export default function ExhibitorManagePage() {
   const needsMaterialization =
     isAdmin && !isManagerOfProfile && !!profile && !profile.exhibitor_id && !isError;
 
+  // Visibilité progressive de Lotexpo Leads : admin, accès déjà demandé, ou ouverture publique.
+  const { data: boothAccess } = useQuery({
+    queryKey: ['booth-access', exhibitorId],
+    queryFn: () => getAccess(exhibitorId!),
+    enabled: !!exhibitorId && canManage,
+  });
+  const leadsVisible =
+    isAdmin || LOTEXPO_LEADS_PUBLIC || (!!boothAccess && boothAccess.status !== 'none');
+  const visibleSections = SECTIONS.filter((s) => s.key !== 'leads' || leadsVisible);
+  useEffect(() => {
+    if (activeSection === 'leads' && !leadsVisible && !!boothAccess) setActiveSection('fiche');
+  }, [activeSection, leadsVisible, boothAccess]);
+
   const ready = !authLoading && !adminLoading && !isLoading && !governance.isLoading;
 
   // Redirection des utilisateurs non habilités (comportement inchangé).
@@ -220,7 +243,8 @@ export default function ExhibitorManagePage() {
 
   const name = profile.display_name || profile.canonical_name || 'Exposant';
   const publicSlug = profile.public_slug;
-  const active = SECTIONS.find((s) => s.key === activeSection)!;
+  const effectiveSection: SectionKey = activeSection === 'leads' && !leadsVisible ? 'fiche' : activeSection;
+  const active = SECTIONS.find((s) => s.key === effectiveSection)!;
 
   return (
     <MainLayout title={`Gérer ${name}`}>
@@ -258,9 +282,9 @@ export default function ExhibitorManagePage() {
         <div className="grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-6 md:gap-8">
           <nav aria-label="Sections espace exposant" className="md:sticky md:top-20 md:self-start">
             <ul className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible -mx-1 px-1 md:mx-0 md:px-0">
-              {SECTIONS.map((s) => {
+              {visibleSections.map((s) => {
                 const Icon = s.icon;
-                const isActive = s.key === activeSection;
+                const isActive = s.key === effectiveSection;
                 return (
                   <li key={s.key} className="shrink-0 md:shrink">
                     <button
@@ -307,7 +331,7 @@ export default function ExhibitorManagePage() {
               <p className="text-sm text-muted-foreground">{active.description}</p>
             </div>
 
-            {activeSection === 'fiche' && (
+            {effectiveSection === 'fiche' && (
               <ExhibitorFicheSection
                 exhibitorId={profile.exhibitor_id}
                 publicSlug={publicSlug}
@@ -319,11 +343,11 @@ export default function ExhibitorManagePage() {
               />
             )}
 
-            {activeSection === 'salons' && (
+            {effectiveSection === 'salons' && (
               <ExhibitorSalonsSection exhibitorId={profile.exhibitor_id} />
             )}
 
-            {activeSection === 'nouveautes' && (
+            {effectiveSection === 'nouveautes' && (
               <ExhibitorNoveltiesSection
                 exhibitorId={profile.exhibitor_id}
                 exhibitorName={name}
@@ -338,7 +362,7 @@ export default function ExhibitorManagePage() {
               />
             )}
 
-            {activeSection === 'invitations' && (
+            {effectiveSection === 'invitations' && (
               <ExhibitorInvitationsSection
                 exhibitorId={profile.exhibitor_id}
                 onGoToNovelties={() => setActiveSection('nouveautes')}
@@ -347,7 +371,7 @@ export default function ExhibitorManagePage() {
               />
             )}
 
-            {activeSection === 'rendezvous' && (
+            {effectiveSection === 'rendezvous' && (
               <ExhibitorLeadsSection
                 exhibitorId={profile.exhibitor_id}
                 onGoToNovelties={() => setActiveSection('nouveautes')}
@@ -355,7 +379,11 @@ export default function ExhibitorManagePage() {
               />
             )}
 
-            {activeSection === 'equipe' && (
+            {effectiveSection === 'leads' && (
+              <ExhibitorLeadsCaptureSection exhibitorId={profile.exhibitor_id} isAdmin={isAdmin} />
+            )}
+
+            {effectiveSection === 'equipe' && (
               <ExhibitorTeamSection
                 exhibitorId={profile.exhibitor_id}
                 publicSlug={publicSlug}
@@ -364,7 +392,7 @@ export default function ExhibitorManagePage() {
               />
             )}
 
-            {activeSection === 'aide' && (
+            {effectiveSection === 'aide' && (
               <SupportChatPanel
                 contextType="exhibitor"
                 entityId={profile.exhibitor_id}
