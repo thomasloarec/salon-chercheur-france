@@ -210,3 +210,29 @@ export const adminReviewAccess = (opts: {
     p_plan_event_id: opts.planEventId ?? null,
     p_plan_valid_until: opts.planValidUntil ?? null,
   });
+
+/* ---------- Membres d'équipe ---------- */
+
+export interface BoothAcceptResult {
+  exhibitor_id: string;
+  exhibitor_name: string;
+  role: BoothMemberRole;
+}
+
+export interface BoothContextItem {
+  exhibitor_id: string;
+  exhibitor_name: string;
+  exhibitor_slug: string | null;
+  logo_url: string | null;
+  role: BoothMemberRole | null;
+  access_status: BoothAccessStatus;
+  plan: BoothPlan;
+  plan_valid_until: string | null;
+  is_paid: boolean;
+  is_fiche_manager: boolean;
+}
+
+export const acceptInvite = (token: string) =>
+  call<BoothAcceptResult>('booth_accept_invite', { p_token: token });
+
+export const myContext = () => call<{ items: BoothContextItem[] }>('booth_my_context', {});
