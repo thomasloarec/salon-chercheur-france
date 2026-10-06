@@ -1422,10 +1422,15 @@ export type Database = {
       booth_access: {
         Row: {
           admin_note: string | null
+          admin_notified_at: string | null
           created_at: string
+          decision_notified_at: string | null
           exhibitor_id: string
           id: string
           message: string | null
+          plan: string
+          plan_event_id: string | null
+          plan_valid_until: string | null
           requested_by: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -1436,10 +1441,15 @@ export type Database = {
         }
         Insert: {
           admin_note?: string | null
+          admin_notified_at?: string | null
           created_at?: string
+          decision_notified_at?: string | null
           exhibitor_id: string
           id?: string
           message?: string | null
+          plan?: string
+          plan_event_id?: string | null
+          plan_valid_until?: string | null
           requested_by?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -1450,10 +1460,15 @@ export type Database = {
         }
         Update: {
           admin_note?: string | null
+          admin_notified_at?: string | null
           created_at?: string
+          decision_notified_at?: string | null
           exhibitor_id?: string
           id?: string
           message?: string | null
+          plan?: string
+          plan_event_id?: string | null
+          plan_valid_until?: string | null
           requested_by?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -1490,6 +1505,55 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "participations_with_exhibitors"
             referencedColumns: ["exhibitor_uuid"]
+          },
+          {
+            foreignKeyName: "booth_access_plan_event_id_fkey"
+            columns: ["plan_event_id"]
+            isOneToOne: false
+            referencedRelation: "admin_events_exhibitor_coverage"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_access_plan_event_id_fkey"
+            columns: ["plan_event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "booth_access_plan_event_id_fkey"
+            columns: ["plan_event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "booth_access_plan_event_id_fkey"
+            columns: ["plan_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_access_plan_event_id_fkey"
+            columns: ["plan_event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_access_plan_event_id_fkey"
+            columns: ["plan_event_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_salons_email_missing"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "booth_access_plan_event_id_fkey"
+            columns: ["plan_event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "booth_access_target_event_id_fkey"
@@ -1545,6 +1609,7 @@ export type Database = {
       booth_contacts: {
         Row: {
           archived_at: string | null
+          client_updated_at: string | null
           company_domain: string | null
           company_name: string | null
           created_at: string
@@ -1563,9 +1628,11 @@ export type Database = {
           phone_norm: string | null
           source: string
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           archived_at?: string | null
+          client_updated_at?: string | null
           company_domain?: string | null
           company_name?: string | null
           created_at?: string
@@ -1584,9 +1651,11 @@ export type Database = {
           phone_norm?: string | null
           source?: string
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           archived_at?: string | null
+          client_updated_at?: string | null
           company_domain?: string | null
           company_name?: string | null
           created_at?: string
@@ -1605,6 +1674,7 @@ export type Database = {
           phone_norm?: string | null
           source?: string
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -1747,6 +1817,7 @@ export type Database = {
       booth_opportunities: {
         Row: {
           amount: number | null
+          client_updated_at: string | null
           contact_id: string
           created_at: string
           created_by: string | null
@@ -1769,6 +1840,7 @@ export type Database = {
         }
         Insert: {
           amount?: number | null
+          client_updated_at?: string | null
           contact_id: string
           created_at?: string
           created_by?: string | null
@@ -1791,6 +1863,7 @@ export type Database = {
         }
         Update: {
           amount?: number | null
+          client_updated_at?: string | null
           contact_id?: string
           created_at?: string
           created_by?: string | null
@@ -1837,6 +1910,7 @@ export type Database = {
       }
       booth_team_members: {
         Row: {
+          accepted_at: string | null
           created_at: string
           exhibitor_id: string
           id: string
@@ -1851,6 +1925,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          accepted_at?: string | null
           created_at?: string
           exhibitor_id: string
           id?: string
@@ -1865,6 +1940,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          accepted_at?: string | null
           created_at?: string
           exhibitor_id?: string
           id?: string
@@ -14839,6 +14915,58 @@ export type Database = {
       }
     }
     Functions: {
+      _booth_client_ts: { Args: { p_item: Json }; Returns: string }
+      _booth_dep_total: { Args: { p_exhibitor_id: string }; Returns: number }
+      _booth_has_full_features: {
+        Args: { p_event_id: string; p_exhibitor_id: string }
+        Returns: boolean
+      }
+      _booth_is_fiche_manager: {
+        Args: { p_exhibitor_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      _booth_is_paid: { Args: { p_exhibitor_id: string }; Returns: boolean }
+      _booth_is_team_user: {
+        Args: { p_exhibitor_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      _booth_norm_phone: { Args: { p: string }; Returns: string }
+      _booth_require_user: { Args: never; Returns: string }
+      _booth_resolve_contact: {
+        Args: { p_contact_id: string; p_exhibitor_id: string }
+        Returns: string
+      }
+      _booth_sync_contact: {
+        Args: {
+          p_exhibitor_id: string
+          p_item: Json
+          p_role: string
+          p_uid: string
+        }
+        Returns: Json
+      }
+      _booth_sync_interaction: {
+        Args: {
+          p_exhibitor_id: string
+          p_item: Json
+          p_role: string
+          p_uid: string
+        }
+        Returns: Json
+      }
+      _booth_sync_opportunity: {
+        Args: {
+          p_exhibitor_id: string
+          p_item: Json
+          p_role: string
+          p_uid: string
+        }
+        Returns: Json
+      }
+      _booth_txt: {
+        Args: { d: Json; k: string; maxlen: number }
+        Returns: string
+      }
       _exhibitor_ai_completeness: {
         Args: { a: Database["public"]["Tables"]["exhibitor_ai"]["Row"] }
         Returns: number
@@ -15531,10 +15659,82 @@ export type Database = {
         }
         Returns: Json
       }
+      booth_accept_invite: { Args: { p_token: string }; Returns: Json }
+      booth_admin_list_access: { Args: { p_status?: string }; Returns: Json }
+      booth_admin_review_access: {
+        Args: {
+          p_decision: string
+          p_exhibitor_id: string
+          p_note?: string
+          p_plan?: string
+          p_plan_event_id?: string
+          p_plan_valid_until?: string
+        }
+        Returns: Json
+      }
+      booth_bootstrap: {
+        Args: { p_since?: string; p_workspace_id: string }
+        Returns: Json
+      }
       booth_can_read: { Args: { _exhibitor_id: string }; Returns: boolean }
+      booth_create_workspace: {
+        Args: {
+          p_event_id: string
+          p_exhibitor_id: string
+          p_stand_label?: string
+          p_timezone?: string
+        }
+        Returns: Json
+      }
       booth_enabled: { Args: never; Returns: boolean }
+      booth_find_duplicates: { Args: { p_exhibitor_id: string }; Returns: Json }
+      booth_get_access: { Args: { p_exhibitor_id: string }; Returns: Json }
+      booth_invite_member: {
+        Args: { p_email: string; p_exhibitor_id: string; p_role?: string }
+        Returns: Json
+      }
       booth_is_real_user: { Args: never; Returns: boolean }
+      booth_list_members: { Args: { p_exhibitor_id: string }; Returns: Json }
+      booth_list_workspaces: { Args: { p_exhibitor_id: string }; Returns: Json }
+      booth_merge_contacts: {
+        Args: { p_keep_id: string; p_merge_id: string }
+        Returns: Json
+      }
+      booth_my_context: { Args: never; Returns: Json }
+      booth_request_access: {
+        Args: {
+          p_exhibitor_id: string
+          p_message?: string
+          p_target_event_id?: string
+          p_team_size?: number
+        }
+        Returns: Json
+      }
+      booth_revoke_member: { Args: { p_member_id: string }; Returns: Json }
       booth_role: { Args: { _exhibitor_id: string }; Returns: string }
+      booth_search_companies: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: Json
+      }
+      booth_search_contacts: {
+        Args: { p_exhibitor_id: string; p_limit?: number; p_query: string }
+        Returns: Json
+      }
+      booth_sync: {
+        Args: { p_exhibitor_id: string; p_items: Json }
+        Returns: Json
+      }
+      booth_update_workspace: {
+        Args: {
+          p_archived?: boolean
+          p_clear_cost?: boolean
+          p_stand_label?: string
+          p_timezone?: string
+          p_total_cost?: number
+          p_workspace_id: string
+        }
+        Returns: Json
+      }
       build_all_event_profiles: {
         Args: never
         Returns: {
