@@ -146,6 +146,7 @@ export async function inviteMember(
 
 export function boothErrorMessage(error: unknown): string {
   const msg = String((error as { message?: string })?.message ?? error ?? '');
+  if (msg.includes('BOOTH_ALREADY_MERGED')) return 'Ce contact a déjà été fusionné.';
   if (msg.includes('BOOTH_INVITE_EXPIRED')) return "Ce lien d'invitation a expiré. Demandez une nouvelle invitation.";
   if (msg.includes('BOOTH_INVITE_INVALID')) return "Ce lien d'invitation n'est pas valide ou a déjà été utilisé.";
   if (msg.includes('BOOTH_EMAIL_MISMATCH')) return 'Cette invitation a été envoyée à une autre adresse email.';
@@ -360,3 +361,35 @@ export const searchCompanies = (query: string, limit = 10) =>
     p_query: query,
     p_limit: limit,
   });
+
+/* ---------- Doublons ---------- */
+
+export interface BoothDuplicateContact {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  company_name: string | null;
+  email: string | null;
+  phone: string | null;
+  created_at: string;
+  created_by: string | null;
+  interactions_count: number;
+}
+
+export interface BoothDuplicateGroup {
+  match: 'email' | 'phone';
+  value: string;
+  contacts: BoothDuplicateContact[];
+}
+
+export const findDuplicates = (exhibitorId: string) =>
+  call<{ total: number; items: BoothDuplicateGroup[] }>('booth_find_duplicates', { p_exhibitor_id: exhibitorId });
+
+export const mergeContacts = (keepId: string, mergeId: string) =>
+  call<{
+    keep_id: string;
+    merged_id: string;
+    interactions_moved: number;
+    opportunities_moved: number;
+    previous_merges_moved: number;
+  }>('booth_merge_contacts', { p_keep_id: keepId, p_merge_id: mergeId });
