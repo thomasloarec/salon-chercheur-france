@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { Search, CalendarHeart, Lightbulb, LogOut, Settings, LogIn, type LucideIcon } from 'lucide-react';
+import { Search, CalendarHeart, Lightbulb, LogOut, Settings, LogIn, ScanLine, type LucideIcon } from 'lucide-react';
+import { useBoothContext } from '@/hooks/useBoothContext';
 import { ASSISTANT_ONBOARDING_PATH } from '@/components/assistant/config';
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -81,6 +82,7 @@ const AccountSection: React.FC<{ email: string; onNavigate: () => void }> = ({ e
   const initial = profile?.first_name?.charAt(0).toUpperCase() || email.charAt(0).toUpperCase() || 'U';
   const displayName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ');
   const items = USER_MENU_ITEMS;
+  const { data: boothItems = [] } = useBoothContext();
 
   return (
     <div className="py-2">
@@ -102,6 +104,9 @@ const AccountSection: React.FC<{ email: string; onNavigate: () => void }> = ({ e
             )}
           </Row>
         ))}
+        {boothItems.length > 0 && (
+          <Row to="/leads" icon={ScanLine} label="Lotexpo Leads" onNavigate={onNavigate} />
+        )}
       </ul>
     </div>
   );

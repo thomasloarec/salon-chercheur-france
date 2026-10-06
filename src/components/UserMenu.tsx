@@ -11,7 +11,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { LogOut } from 'lucide-react';
+import { LogOut, ScanLine } from 'lucide-react';
+import { useBoothContext } from '@/hooks/useBoothContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -20,6 +21,7 @@ import { USER_MENU_ITEMS } from '@/config/userMenuItems';
 
 const UserMenu = () => {
   const { user, signOut } = useAuth();
+  const { data: boothItems = [] } = useBoothContext();
   const { data: profile } = useProfile();
   const { unreadCount } = useNotifications();
 
@@ -66,6 +68,14 @@ const UserMenu = () => {
             </Link>
           </DropdownMenuItem>
         ))}
+        {boothItems.length > 0 && (
+          <DropdownMenuItem asChild>
+            <Link to="/leads" className="cursor-pointer">
+              <ScanLine className="mr-2 h-4 w-4" />
+              Lotexpo Leads
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
