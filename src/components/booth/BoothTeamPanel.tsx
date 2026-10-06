@@ -93,7 +93,7 @@ export default function BoothTeamPanel({ exhibitorId, isPaid }: Props) {
     <Card>
       <CardHeader className="space-y-1">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle className="text-base">Votre équipe</CardTitle>
+          <CardTitle className="text-base">Votre équipe sur le stand</CardTitle>
           {q.data && (
             <span className="text-sm text-muted-foreground">
               {seats} / {MAX_SEATS} comptes
