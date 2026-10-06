@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Contact, Interaction, Opportunity } from './types';
 
 // Les RPC booth_* ne sont pas dans les types générés : appel non typé.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -239,7 +240,6 @@ export const myContext = () => call<{ items: BoothContextItem[] }>('booth_my_con
 
 /* ---------- Mode salon ---------- */
 
-import type { Contact, Interaction, Opportunity } from './types';
 
 export type BoothSyncKind = 'contact' | 'interaction' | 'opportunity';
 
