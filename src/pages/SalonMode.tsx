@@ -22,6 +22,12 @@ import { useBoothSync } from '@/features/booth/sync/useBoothSync';
 import { abandon, retryRejected, type OutboxItem } from '@/features/booth/sync/engine';
 import { isPersistentStorage, onStorageAvailabilityChange } from '@/features/booth/storage/db';
 import type { BoothCache } from '@/features/booth/sync/cache';
+import type { BoothInboundLead } from '@/lib/booth/rpc';
+import NewMeetingFlow from '@/features/booth/salon/NewMeetingFlow';
+import MeetingsList from '@/features/booth/salon/MeetingsList';
+import MeetingDetail from '@/features/booth/salon/MeetingDetail';
+import { clearDraft, emptyDraft, loadDraft, type MeetingDraft } from '@/features/booth/salon/draft';
+import { isCompleted, ownerOf } from '@/features/booth/salon/labels';
 
 const dayInTz = (d: Date, tz: string) => {
   try {
@@ -106,25 +112,17 @@ function SyncPill({
   );
 }
 
-function Placeholder({ onBack }: { onBack: () => void }) {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center">
-      <p className="text-xl font-semibold text-foreground">Bientôt disponible</p>
-      <p className="text-muted-foreground">Cet écran arrive dans la prochaine version du mode salon.</p>
-      <Button size="lg" className="min-h-[56px] w-full max-w-sm text-base" onClick={onBack}>
-        Retour
-      </Button>
-    </div>
-  );
-}
-
 export default function SalonMode() {
   const { workspaceId = '' } = useParams();
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const { cache, status, error } = useBoothWorkspace(workspaceId);
   const sync = useBoothSync(workspaceId, cache?.exhibitorId ?? null);
-  const [screen, setScreen] = useState<'home' | 'soon'>('home');
+  const [screen, setScreen] = useState<'home' | 'flow' | 'list' | 'detail'>('home');
+  const [flowInitial, setFlowInitial] = useState<MeetingDraft>(emptyDraft());
+  const [flowKey, setFlowKey] = useState(0);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [savedDraft, setSavedDraft] = useState<MeetingDraft | null>(null);
   const [rejectedOpen, setRejectedOpen] = useState(false);
   const [toAbandon, setToAbandon] = useState<OutboxItem | null>(null);
   const [persistent, setPersistent] = useState(isPersistentStorage());
@@ -134,6 +132,26 @@ export default function SalonMode() {
   useEffect(() => {
     if (!loading && !user) navigate(`/auth?redirect=${encodeURIComponent(`/salon/${workspaceId}`)}`, { replace: true });
   }, [loading, user, navigate, workspaceId]);
+
+  useEffect(() => {
+    if (!user || !workspaceId || screen !== 'home') return;
+    void loadDraft(user.id, workspaceId).then(setSavedDraft);
+  }, [user, workspaceId, screen]);
+
+  const startFlow = (initial: MeetingDraft) => {
+    setFlowInitial(initial);
+    setFlowKey((k) => k + 1);
+    setScreen('flow');
+  };
+  const startInbound = (l: BoothInboundLead) =>
+    startFlow({
+      ...emptyDraft(),
+      name: l.name ?? '',
+      company: l.company ?? '',
+      coordMode: l.email ? 'email' : null,
+      coordValue: l.email ?? '',
+      inbound_lead_id: l.lead_id,
+    });
 
   const hasPending = sync.pendingCount + sync.rejectedCount > 0;
   useEffect(() => {
@@ -151,9 +169,9 @@ export default function SalonMode() {
     const tz = cache.workspace.timezone || 'Europe/Paris';
     const today = dayInTz(new Date(), tz);
     const todays = cache.interactions.filter(
-      (i) => i.status === 'completed' && i.occurred_at && dayInTz(new Date(i.occurred_at), tz) === today,
+      (i) => isCompleted(i) && i.occurred_at && dayInTz(new Date(i.occurred_at), tz) === today,
     );
-    return { mine: todays.filter((i) => i.owner_user_id === user.id).length, team: todays.length };
+    return { mine: todays.filter((i) => ownerOf(i, user.id) === user.id).length, team: todays.length };
   }, [cache, user]);
 
   const contactName = (item: OutboxItem) => {
@@ -171,14 +189,14 @@ export default function SalonMode() {
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
       <Helmet>
-        <title>Mode salon · Lotexpo Leads</title>
+        <title>Mode salon · Lotexpo</title>
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
 
       <header className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border bg-background px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <Button asChild variant="ghost" className="min-h-[44px] px-2">
           <Link to="/leads">
-            <ArrowLeft className="mr-1 h-5 w-5" /> Leads
+            <ArrowLeft className="mr-1 h-5 w-5" /> Mes salons
           </Link>
         </Button>
         {cache && (
@@ -205,7 +223,7 @@ export default function SalonMode() {
         <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center">
           <p className="text-xl font-semibold">Vous n'avez pas accès à ce salon</p>
           <Button asChild size="lg" className="min-h-[56px] w-full max-w-sm text-base">
-            <Link to="/leads">Retour à Lotexpo Leads</Link>
+            <Link to="/leads">Retour à mes salons</Link>
           </Button>
         </div>
       ) : status === 'error' && !cache ? (
@@ -221,8 +239,28 @@ export default function SalonMode() {
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-16 w-full" />
         </div>
-      ) : screen === 'soon' ? (
-        <Placeholder onBack={() => setScreen('home')} />
+      ) : screen === 'flow' && user ? (
+        <NewMeetingFlow
+          key={flowKey}
+          cache={cache}
+          me={user.id}
+          online={sync.online}
+          initial={flowInitial}
+          onHome={() => setScreen('home')}
+        />
+      ) : screen === 'list' && user ? (
+        <MeetingsList
+          cache={cache}
+          me={user.id}
+          onBack={() => setScreen('home')}
+          onOpen={(id) => {
+            setDetailId(id);
+            setScreen('detail');
+          }}
+          onInbound={startInbound}
+        />
+      ) : screen === 'detail' && user && detailId ? (
+        <MeetingDetail cache={cache} me={user.id} interactionId={detailId} onBack={() => setScreen('list')} />
       ) : (
         <main className="flex flex-1 flex-col gap-5 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           {status === 'stale' && (
@@ -264,8 +302,25 @@ export default function SalonMode() {
           </div>
 
           <div className="mt-auto flex flex-col gap-3">
+            {!ws.archived && savedDraft && (
+              <div className="flex flex-col gap-2 rounded-xl border border-primary/40 bg-primary/5 p-3">
+                <Button size="lg" variant="secondary" className="min-h-[56px] w-full text-base" onClick={() => startFlow(savedDraft)}>
+                  Reprendre la rencontre en cours{savedDraft.name ? ` (${savedDraft.name})` : ''}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (user) void clearDraft(user.id, workspaceId);
+                    setSavedDraft(null);
+                  }}
+                >
+                  Effacer ce brouillon
+                </Button>
+              </div>
+            )}
             {!ws.archived && (
-              <Button size="lg" className="min-h-[64px] w-full text-lg font-semibold" onClick={() => setScreen('soon')}>
+              <Button size="lg" className="min-h-[64px] w-full text-lg font-semibold" onClick={() => startFlow(emptyDraft())}>
                 Nouvelle rencontre
               </Button>
             )}
@@ -273,7 +328,7 @@ export default function SalonMode() {
               size="lg"
               variant="outline"
               className="min-h-[56px] w-full text-base"
-              onClick={() => setScreen('soon')}
+              onClick={() => setScreen('list')}
             >
               Rencontres du salon
             </Button>

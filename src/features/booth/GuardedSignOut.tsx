@@ -48,7 +48,7 @@ export function useGuardedSignOut(userId: string | null | undefined, doSignOut: 
         <AlertDialogHeader>
           <AlertDialogTitle>Saisies non envoyées</AlertDialogTitle>
           <AlertDialogDescription>
-            {count} saisie{count > 1 ? 's' : ''} Lotexpo Leads {count > 1 ? 'ne sont' : "n'est"} pas encore
+            {count} saisie{count > 1 ? 's' : ''} du mode salon {count > 1 ? 'ne sont' : "n'est"} pas encore
             envoyée{count > 1 ? 's' : ''}. Si vous vous déconnectez maintenant, elle{count > 1 ? 's' : ''} sera
             {count > 1 ? 'ont' : ''} perdue{count > 1 ? 's' : ''}.
           </AlertDialogDescription>
