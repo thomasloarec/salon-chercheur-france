@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { CalendarDays, CalendarHeart, Lightbulb, LogOut, Settings, Sparkles, LogIn, type LucideIcon } from 'lucide-react';
+import { Search, CalendarHeart, Lightbulb, LogOut, Settings, LogIn, type LucideIcon } from 'lucide-react';
 import { ASSISTANT_ONBOARDING_PATH } from '@/components/assistant/config';
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import { AGENDA_NAV_ITEM, type NavSolutionGroup } from '@/config/navSolutions';
  * Menu mobile du site : tiroir plein écran, une seule logique de lignes.
  * Bonnes pratiques appliquées : 1 niveau de regroupement maximum, titres de
  * section discrets, chaque ligne = icône + libellé, zone tactile >= 48 px,
- * aucun doublon (Radar CRM n'apparaît qu'une fois), compte et déconnexion en bas.
+ * mêmes entrées que sur ordinateur, compte et déconnexion en bas.
  */
 
 interface MobileNavDrawerProps {
@@ -80,8 +80,7 @@ const AccountSection: React.FC<{ email: string; onNavigate: () => void }> = ({ e
   const { unreadCount } = useNotifications();
   const initial = profile?.first_name?.charAt(0).toUpperCase() || email.charAt(0).toUpperCase() || 'U';
   const displayName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ');
-  // Radar CRM est déjà dans « Solutions » et Mon Agenda en haut du tiroir : pas de doublon ici.
-  const items = USER_MENU_ITEMS.filter((i) => !i.to.startsWith('/radar-crm') && i.to !== '/agenda');
+  const items = USER_MENU_ITEMS;
 
   return (
     <div className="py-2">
@@ -136,7 +135,7 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
           )}
 
           <Section>
-            <Row to="/salons" icon={CalendarDays} label="Salons" onNavigate={close} />
+            <Row to="/salons" icon={Search} label="Salons" onNavigate={close} />
             <Row to="/nouveautes" icon={Lightbulb} label="Avant-première" onNavigate={close} />
             <Row to={AGENDA_NAV_ITEM.to} icon={AGENDA_NAV_ITEM.icon} label={AGENDA_NAV_ITEM.label} onNavigate={close} end />
           </Section>
@@ -145,7 +144,7 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
             <React.Fragment key={g.title}>
               <div className="mx-3 border-t border-border/60" />
               <Section title={g.title}>
-                {g.items.filter((f) => f.to !== AGENDA_NAV_ITEM.to).map((f) => (
+                {g.items.map((f) => (
                   <Row key={f.to} to={f.to} icon={f.icon} label={f.label} onNavigate={close} />
                 ))}
               </Section>
