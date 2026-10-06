@@ -26,6 +26,8 @@ import type { BoothInboundLead } from '@/lib/booth/rpc';
 import NewMeetingFlow from '@/features/booth/salon/NewMeetingFlow';
 import MeetingsList from '@/features/booth/salon/MeetingsList';
 import MeetingDetail from '@/features/booth/salon/MeetingDetail';
+import DuplicatesScreen from '@/features/booth/salon/DuplicatesScreen';
+import { findDuplicates } from '@/lib/booth/rpc';
 import { clearDraft, emptyDraft, loadDraft, type MeetingDraft } from '@/features/booth/salon/draft';
 import { isCompleted, ownerOf } from '@/features/booth/salon/labels';
 
@@ -118,7 +120,8 @@ export default function SalonMode() {
   const { user, loading } = useAuth();
   const { cache, status, error } = useBoothWorkspace(workspaceId);
   const sync = useBoothSync(workspaceId, cache?.exhibitorId ?? null);
-  const [screen, setScreen] = useState<'home' | 'flow' | 'list' | 'detail'>('home');
+  const [screen, setScreen] = useState<'home' | 'flow' | 'list' | 'detail' | 'duplicates'>('home');
+  const [dupCount, setDupCount] = useState(0);
   const [flowInitial, setFlowInitial] = useState<MeetingDraft>(emptyDraft());
   const [flowKey, setFlowKey] = useState(0);
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -137,6 +140,19 @@ export default function SalonMode() {
     if (!user || !workspaceId || screen !== 'home') return;
     void loadDraft(user.id, workspaceId).then(setSavedDraft);
   }, [user, workspaceId, screen]);
+
+  const isManager = cache?.role === 'manager';
+  const exhibitorIdForDup = cache?.exhibitorId;
+  useEffect(() => {
+    if (screen !== 'home' || !isManager || !exhibitorIdForDup || !sync.online) return;
+    let cancelled = false;
+    findDuplicates(exhibitorIdForDup)
+      .then((r) => !cancelled && setDupCount(r.total ?? 0))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [screen, isManager, exhibitorIdForDup, sync.online]);
 
   const startFlow = (initial: MeetingDraft) => {
     setFlowInitial(initial);
@@ -259,6 +275,8 @@ export default function SalonMode() {
           }}
           onInbound={startInbound}
         />
+      ) : screen === 'duplicates' && user ? (
+        <DuplicatesScreen cache={cache} me={user.id} online={sync.online} onBack={() => setScreen('home')} />
       ) : screen === 'detail' && user && detailId ? (
         <MeetingDetail cache={cache} me={user.id} interactionId={detailId} onBack={() => setScreen('list')} />
       ) : (
@@ -332,6 +350,11 @@ export default function SalonMode() {
             >
               Rencontres du salon
             </Button>
+            {cache.role === 'manager' && dupCount > 0 && (
+              <Button variant="link" className="min-h-[44px]" onClick={() => setScreen('duplicates')}>
+                Doublons ({dupCount})
+              </Button>
+            )}
           </div>
         </main>
       )}
