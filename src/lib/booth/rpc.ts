@@ -94,8 +94,63 @@ export const updateWorkspace = (
   return call<unknown>('booth_update_workspace', args);
 };
 
+export type BoothMemberRole = 'manager' | 'field';
+
+export interface BoothMember {
+  member_id: string | null;
+  user_id: string | null;
+  role: BoothMemberRole;
+  status: 'active' | 'invited';
+  inherited: boolean;
+  display_name: string;
+  email: string | null;
+  invite_expires_at: string | null;
+}
+
+export interface BoothMemberList {
+  role: BoothMemberRole;
+  items: BoothMember[];
+}
+
+export interface BoothInviteResult {
+  member_id: string;
+  email: string;
+  role: BoothMemberRole;
+  expires_at: string;
+  invite_url: string;
+  email_sent: boolean;
+}
+
+export const listMembers = (exhibitorId: string) =>
+  call<BoothMemberList>('booth_list_members', { p_exhibitor_id: exhibitorId });
+
+export const revokeMember = (memberId: string) =>
+  call<unknown>('booth_revoke_member', { p_member_id: memberId });
+
+export async function inviteMember(
+  exhibitorId: string,
+  email: string,
+  role: BoothMemberRole,
+): Promise<BoothInviteResult> {
+  const { data, error } = await supabase.functions.invoke('booth-invite', {
+    body: { exhibitor_id: exhibitorId, email, role },
+  });
+  if (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const body = await (error as any).context?.json?.().catch(() => null);
+    throw new Error(body?.error || 'BOOTH_ERROR');
+  }
+  return data as BoothInviteResult;
+}
+
 export function boothErrorMessage(error: unknown): string {
   const msg = String((error as { message?: string })?.message ?? error ?? '');
+  if (msg.includes('BOOTH_INVITE_EXPIRED')) return "Ce lien d'invitation a expiré. Demandez une nouvelle invitation.";
+  if (msg.includes('BOOTH_INVITE_INVALID')) return "Ce lien d'invitation n'est pas valide ou a déjà été utilisé.";
+  if (msg.includes('BOOTH_EMAIL_MISMATCH')) return 'Cette invitation a été envoyée à une autre adresse email.';
+  if (msg.includes('BOOTH_PLAN_REQUIRED')) return "L'invitation d'équipe est incluse dans la bêta, le Pass Salon et l'Annuel.";
+  if (msg.includes('BOOTH_SEATS_FULL')) return 'Limite atteinte : 15 comptes au maximum, invitations en cours comprises.';
+  if (msg.includes('BOOTH_ALREADY_MEMBER')) return 'Cette personne fait déjà partie de l\u2019équipe.';
   if (msg.includes('BOOTH_ACCESS_NOT_APPROVED')) return "L'accès doit d'abord être ouvert.";
   if (msg.includes('BOOTH_FORBIDDEN')) return 'Seuls les gestionnaires principaux de la fiche peuvent faire cette action.';
   if (msg.includes('BOOTH_INVALID_INPUT')) return "Une information saisie n'est pas valide.";
