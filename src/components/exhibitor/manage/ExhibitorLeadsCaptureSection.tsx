@@ -30,6 +30,7 @@ import {
   type BoothPhase,
   type BoothWorkspace,
 } from '@/lib/booth/rpc';
+import BoothTeamPanel from '@/components/booth/BoothTeamPanel';
 
 interface Props {
   exhibitorId: string;
@@ -555,8 +556,10 @@ function ApprovedView({ exhibitorId, access }: { exhibitorId: string; access: Bo
         </CardContent>
       </Card>
 
+      <BoothTeamPanel exhibitorId={exhibitorId} isPaid={access.is_paid} />
+
       <div className="rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 dark:bg-blue-950/30 dark:text-blue-200 dark:border-blue-800">
-        L'application de saisie sur le stand et l'invitation de votre équipe arrivent très bientôt dans cette section.
+        L'application de saisie sur le stand arrive très bientôt dans cette section.
       </div>
 
       {editing && <EditWorkspaceDialog ws={editing} onClose={() => setEditing(null)} onSaved={refresh} />}
