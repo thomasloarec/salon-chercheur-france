@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { adminListAccess } from '@/lib/booth/rpc';
 
 export interface AdminPendingCounts {
   novelties: number;       // novelties to moderate
@@ -11,6 +12,7 @@ export interface AdminPendingCounts {
   participationRequests: number; // déclarations de participation en attente
   exhibitorsNeedingAction: number; // entreprises avec revendication ou participation en attente
   supportThreads: number; // fils de support à traiter
+  boothRequests: number; // demandes Lotexpo Leads en attente
 }
 
 /**
@@ -33,6 +35,7 @@ export const useAdminPendingCounts = () => {
         coverageTodoRes,
         participationRes,
         supportRes,
+        boothTotal,
       ] = await Promise.all([
         supabase
           .from('novelties')
@@ -59,6 +62,9 @@ export const useAdminPendingCounts = () => {
           .select('exhibitor_id', { count: 'exact' })
           .eq('status', 'pending'),
         supabase.rpc('support_admin_inbox', { p_status: undefined, p_limit: 200 }),
+        adminListAccess('requested')
+          .then((r) => Number(r?.total ?? 0) || 0)
+          .catch(() => 0),
       ]);
 
       const noveltiesCount = noveltiesRes.count ?? 0;
@@ -84,6 +90,7 @@ export const useAdminPendingCounts = () => {
         supportThreads: ((supportRes.data ?? []) as any[]).filter(
           (t) => (t.admin_unread_count ?? 0) > 0 || t.status === 'open'
         ).length,
+        boothRequests: boothTotal,
       };
     },
   });
