@@ -68,7 +68,7 @@ function SyncPill({
   onOpenRejected: () => void;
 }) {
   const [showTime, setShowTime] = useState(false);
-  let cls = 'bg-success/15 text-success border-success/30';
+  let cls = 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30';
   let label = 'Synchronisé';
   if (rejectedCount > 0) {
     cls = 'bg-destructive/15 text-destructive border-destructive/30';
