@@ -189,7 +189,7 @@ export default function SalonMode() {
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
       <Helmet>
-        <title>Mode salon · Lotexpo Leads</title>
+        <title>Mode salon · Lotexpo</title>
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
 
