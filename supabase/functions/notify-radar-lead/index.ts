@@ -1,6 +1,7 @@
 // notify-radar-lead
 // Webhook base de données sur INSERT dans radar_leads -> email à admin@lotexpo.com via Resend.
-// Autonome (aucun import _shared) pour un déploiement direct et vérifiable.
+// Mise en forme : gabarit commun _shared/email-template.ts (DA Lotexpo).
+import { renderEmailShell, heading, paragraph, dataTable } from '../_shared/email-template.ts';
 
 const ADMIN_EMAIL = 'admin@lotexpo.com';
 
@@ -89,42 +90,31 @@ async function sendEmail(to: string, subject: string, html: string) {
   return await resp.json();
 }
 
-function rowHtml(label: string, value: unknown): string {
-  return `<tr><td style="padding:6px 12px 6px 0;color:#6b7280;font-weight:600;vertical-align:top;">${esc(label)}</td><td style="padding:6px 0;color:#111827;vertical-align:top;">${esc(value ?? '—')}</td></tr>`;
-}
-
 function buildHtml(r: RadarLeadRecord): string {
   const name = String(r.contact_name ?? '').trim() || '—';
-  return `<!doctype html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8" />
-  <title>🎯 Nouveau lead Directeur Commercial</title>
-</head>
-<body style="font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f3f4f6;padding:24px;color:#111827;">
-  <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;padding:32px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-    <h1 style="margin-top:0;color:#6b51ff;">🎯 Nouveau lead Directeur Commercial</h1>
-    <p style="font-size:16px;line-height:1.5;">
-      <strong>${esc(name)}</strong> vient de demander la version connectée depuis la page Directeur Commercial.
-    </p>
-    <table style="width:100%;border-collapse:collapse;margin-top:16px;font-size:14px;">
-      ${rowHtml('Contact', r.contact_name)}
-      ${rowHtml('Email', r.contact_email)}
-      ${rowHtml('CRM', r.crm)}
-      ${rowHtml("Taille d'équipe", r.team_size)}
-      ${rowHtml('Type de clientèle', r.client_type)}
-      ${rowHtml('Type de produit', r.product_type)}
-      ${rowHtml('Salons par an', r.salons_per_year)}
-      ${rowHtml('Entreprise recherchée', r.searched_query)}
-      ${rowHtml('Message', r.message)}
-      ${rowHtml('Date', fr(r.created_at))}
-    </table>
-    <p style="margin-top:24px;font-size:13px;color:#6b7280;">
-      Lead enregistré dans <code>radar_leads</code>. Retrouvez tous les leads dans l'Admin.
-    </p>
-  </div>
-</body>
-</html>`;
+  const v = (x: unknown) => String(x ?? '').trim() || '—';
+  return renderEmailShell({
+    title: 'Nouveau lead Directeur Commercial',
+    preheader: `${name} demande la version connectée depuis la page Directeur Commercial.`,
+    bodyBlocks: [
+      heading('🎯 Nouveau lead Directeur Commercial'),
+      paragraph(`<strong>${esc(name)}</strong> vient de demander la version connectée depuis la page Directeur Commercial.`),
+      dataTable([
+        ['Contact', v(r.contact_name)],
+        ['Email', v(r.contact_email)],
+        ['CRM', v(r.crm)],
+        ["Taille d'équipe", v(r.team_size)],
+        ['Type de clientèle', v(r.client_type)],
+        ['Type de produit', v(r.product_type)],
+        ['Salons par an', v(r.salons_per_year)],
+        ['Entreprise recherchée', v(r.searched_query)],
+        ['Message', v(r.message)],
+        ['Date', fr(r.created_at)],
+      ]),
+      paragraph('<span style="font-size:14px;color:#5c6684;">Lead enregistré dans la table radar_leads. Retrouvez tous les leads dans l’administration.</span>'),
+    ],
+    cta: { label: 'Ouvrir l’administration', href: 'https://lotexpo.com/admin' },
+  });
 }
 
 Deno.serve(async (req) => {
@@ -158,3 +148,4 @@ Deno.serve(async (req) => {
     return jsonResp({ ok: false, error: m }, 500);
   }
 });
+
