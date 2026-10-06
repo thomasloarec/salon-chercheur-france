@@ -1419,6 +1419,616 @@ export type Database = {
         }
         Relationships: []
       }
+      booth_access: {
+        Row: {
+          admin_note: string | null
+          created_at: string
+          exhibitor_id: string
+          id: string
+          message: string | null
+          requested_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          target_event_id: string | null
+          team_size: number | null
+          updated_at: string
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string
+          exhibitor_id: string
+          id?: string
+          message?: string | null
+          requested_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          target_event_id?: string | null
+          team_size?: number | null
+          updated_at?: string
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string
+          exhibitor_id?: string
+          id?: string
+          message?: string | null
+          requested_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          target_event_id?: string | null
+          team_size?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booth_access_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: true
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "booth_access_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: true
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_access_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: true
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_access_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: true
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
+          {
+            foreignKeyName: "booth_access_target_event_id_fkey"
+            columns: ["target_event_id"]
+            isOneToOne: false
+            referencedRelation: "admin_events_exhibitor_coverage"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_access_target_event_id_fkey"
+            columns: ["target_event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "booth_access_target_event_id_fkey"
+            columns: ["target_event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "booth_access_target_event_id_fkey"
+            columns: ["target_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_access_target_event_id_fkey"
+            columns: ["target_event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_access_target_event_id_fkey"
+            columns: ["target_event_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_salons_email_missing"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "booth_access_target_event_id_fkey"
+            columns: ["target_event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booth_contacts: {
+        Row: {
+          archived_at: string | null
+          company_domain: string | null
+          company_name: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          email_norm: string | null
+          exhibitor_id: string
+          first_name: string | null
+          id: string
+          job_title: string | null
+          last_name: string | null
+          linkedin_url: string | null
+          lotexpo_company_ref: string | null
+          merged_into_id: string | null
+          phone: string | null
+          phone_norm: string | null
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          company_domain?: string | null
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          email_norm?: string | null
+          exhibitor_id: string
+          first_name?: string | null
+          id?: string
+          job_title?: string | null
+          last_name?: string | null
+          linkedin_url?: string | null
+          lotexpo_company_ref?: string | null
+          merged_into_id?: string | null
+          phone?: string | null
+          phone_norm?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          company_domain?: string | null
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          email_norm?: string | null
+          exhibitor_id?: string
+          first_name?: string | null
+          id?: string
+          job_title?: string | null
+          last_name?: string | null
+          linkedin_url?: string | null
+          lotexpo_company_ref?: string | null
+          merged_into_id?: string | null
+          phone?: string | null
+          phone_norm?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booth_contacts_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "booth_contacts_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_contacts_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_contacts_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
+          {
+            foreignKeyName: "booth_contacts_merged_same_exhibitor"
+            columns: ["merged_into_id", "exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "booth_contacts"
+            referencedColumns: ["id", "exhibitor_id"]
+          },
+        ]
+      }
+      booth_interactions: {
+        Row: {
+          capture_source: string
+          client_updated_at: string | null
+          contact_id: string
+          created_at: string
+          created_by: string | null
+          customer_topic: string | null
+          exhibitor_id: string
+          id: string
+          inbound_lead_id: string | null
+          is_field_lead: boolean | null
+          next_action: string
+          next_action_done_at: string | null
+          next_action_due: string | null
+          next_action_owner_id: string | null
+          note: string | null
+          occurred_at: string
+          owner_user_id: string | null
+          potential: string | null
+          relationship: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          capture_source?: string
+          client_updated_at?: string | null
+          contact_id: string
+          created_at?: string
+          created_by?: string | null
+          customer_topic?: string | null
+          exhibitor_id: string
+          id?: string
+          inbound_lead_id?: string | null
+          is_field_lead?: boolean | null
+          next_action?: string
+          next_action_done_at?: string | null
+          next_action_due?: string | null
+          next_action_owner_id?: string | null
+          note?: string | null
+          occurred_at?: string
+          owner_user_id?: string | null
+          potential?: string | null
+          relationship: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          capture_source?: string
+          client_updated_at?: string | null
+          contact_id?: string
+          created_at?: string
+          created_by?: string | null
+          customer_topic?: string | null
+          exhibitor_id?: string
+          id?: string
+          inbound_lead_id?: string | null
+          is_field_lead?: boolean | null
+          next_action?: string
+          next_action_done_at?: string | null
+          next_action_due?: string | null
+          next_action_owner_id?: string | null
+          note?: string | null
+          occurred_at?: string
+          owner_user_id?: string | null
+          potential?: string | null
+          relationship?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booth_interactions_contact_fk"
+            columns: ["contact_id", "exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "booth_contacts"
+            referencedColumns: ["id", "exhibitor_id"]
+          },
+          {
+            foreignKeyName: "booth_interactions_inbound_lead_id_fkey"
+            columns: ["inbound_lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_interactions_workspace_fk"
+            columns: ["workspace_id", "exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "booth_workspaces"
+            referencedColumns: ["id", "exhibitor_id"]
+          },
+        ]
+      }
+      booth_opportunities: {
+        Row: {
+          amount: number | null
+          contact_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          exhibitor_id: string
+          horizon: string | null
+          id: string
+          lost_at: string | null
+          origin_interaction_id: string | null
+          owner_user_id: string | null
+          probability: number | null
+          status: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          value_band: string | null
+          won_amount: number | null
+          won_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          amount?: number | null
+          contact_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          exhibitor_id: string
+          horizon?: string | null
+          id?: string
+          lost_at?: string | null
+          origin_interaction_id?: string | null
+          owner_user_id?: string | null
+          probability?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+          value_band?: string | null
+          won_amount?: number | null
+          won_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          amount?: number | null
+          contact_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          exhibitor_id?: string
+          horizon?: string | null
+          id?: string
+          lost_at?: string | null
+          origin_interaction_id?: string | null
+          owner_user_id?: string | null
+          probability?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          value_band?: string | null
+          won_amount?: number | null
+          won_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booth_opportunities_contact_fk"
+            columns: ["contact_id", "exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "booth_contacts"
+            referencedColumns: ["id", "exhibitor_id"]
+          },
+          {
+            foreignKeyName: "booth_opportunities_origin_fk"
+            columns: ["origin_interaction_id", "exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "booth_interactions"
+            referencedColumns: ["id", "exhibitor_id"]
+          },
+          {
+            foreignKeyName: "booth_opportunities_workspace_fk"
+            columns: ["workspace_id", "exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "booth_workspaces"
+            referencedColumns: ["id", "exhibitor_id"]
+          },
+        ]
+      }
+      booth_team_members: {
+        Row: {
+          created_at: string
+          exhibitor_id: string
+          id: string
+          invite_expires_at: string | null
+          invite_token_hash: string | null
+          invited_by: string | null
+          invited_email: string | null
+          revoked_at: string | null
+          role: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          exhibitor_id: string
+          id?: string
+          invite_expires_at?: string | null
+          invite_token_hash?: string | null
+          invited_by?: string | null
+          invited_email?: string | null
+          revoked_at?: string | null
+          role: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          exhibitor_id?: string
+          id?: string
+          invite_expires_at?: string | null
+          invite_token_hash?: string | null
+          invited_by?: string | null
+          invited_email?: string | null
+          revoked_at?: string | null
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booth_team_members_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "booth_team_members_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_team_members_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_team_members_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
+        ]
+      }
+      booth_workspaces: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          event_id: string
+          exhibitor_id: string
+          id: string
+          stand_label: string | null
+          timezone: string
+          total_cost: number | null
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          event_id: string
+          exhibitor_id: string
+          id?: string
+          stand_label?: string | null
+          timezone?: string
+          total_cost?: number | null
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          event_id?: string
+          exhibitor_id?: string
+          id?: string
+          stand_label?: string | null
+          timezone?: string
+          total_cost?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booth_workspaces_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "admin_events_exhibitor_coverage"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_workspaces_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "booth_workspaces_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "booth_workspaces_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_workspaces_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_workspaces_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_salons_email_missing"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "booth_workspaces_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_workspaces_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "booth_workspaces_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_workspaces_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_workspaces_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
+          },
+        ]
+      }
       communes: {
         Row: {
           code_postal: string | null
@@ -14921,6 +15531,10 @@ export type Database = {
         }
         Returns: Json
       }
+      booth_can_read: { Args: { _exhibitor_id: string }; Returns: boolean }
+      booth_enabled: { Args: never; Returns: boolean }
+      booth_is_real_user: { Args: never; Returns: boolean }
+      booth_role: { Args: { _exhibitor_id: string }; Returns: string }
       build_all_event_profiles: {
         Args: never
         Returns: {
