@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Building2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Building2, Loader2, QrCode } from 'lucide-react';
+import QrScanner from '../qr/QrScanner';
+import { hasUsefulData, parseQr } from '../qr/parse';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,7 +25,7 @@ import {
   ymd,
 } from './labels';
 
-const ORDER: FlowStep[] = ['who', 'coord', 'rel', 'pot', 'concrete', 'action', 'details', 'done'];
+const ORDER: FlowStep[] = ['who', 'verify', 'coord', 'rel', 'pot', 'concrete', 'action', 'details', 'done'];
 
 interface Suggestion {
   id: string;
@@ -83,7 +85,9 @@ export default function NewMeetingFlow({
   initial: MeetingDraft;
   onHome: () => void;
 }) {
-  const [d, setD] = useState<MeetingDraft>(initial);
+  const [d, setD] = useState<MeetingDraft>({ ...emptyDraft(), ...initial });
+  const [scanning, setScanning] = useState(false);
+  const [scanMsg, setScanMsg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [duplicate, setDuplicate] = useState<{ id: string; label: string; rel: Interaction['relationship'] | null } | null>(null);
   const [companyFocus, setCompanyFocus] = useState(false);
@@ -188,18 +192,73 @@ export default function NewMeetingFlow({
   const pickContact = (s: Suggestion) =>
     go('rel', { contactId: s.id, name: s.name, company: s.company ?? '', relationship: s.relationship ?? null });
 
+  const findDup = (email: string, phone: string) => {
+    const e = email.trim().toLowerCase();
+    const n = normPhone(phone);
+    const c =
+      (e && cache.contacts.find((x) => (x.email ?? '').toLowerCase() === e)) ||
+      (n && cache.contacts.find((x) => normPhone(x.phone) === n)) ||
+      null;
+    return c
+      ? { id: c.id, label: [fullName(c), c.company_name].filter(Boolean).join(', '), rel: lastByContact.get(c.id)?.relationship ?? null }
+      : null;
+  };
+
   const checkDuplicateAndContinue = () => {
     const v = d.coordValue.trim();
-    if (d.coordMode === 'email' && v) {
-      const c = cache.contacts.find((x) => (x.email ?? '').toLowerCase() === v.toLowerCase());
-      if (c) return setDuplicate({ id: c.id, label: [fullName(c), c.company_name].filter(Boolean).join(', '), rel: lastByContact.get(c.id)?.relationship ?? null });
-    }
-    if (d.coordMode === 'phone' && normPhone(v)) {
-      const n = normPhone(v);
-      const c = cache.contacts.find((x) => normPhone(x.phone) === n);
-      if (c) return setDuplicate({ id: c.id, label: [fullName(c), c.company_name].filter(Boolean).join(', '), rel: lastByContact.get(c.id)?.relationship ?? null });
-    }
+    const dup = findDup(d.coordMode === 'email' ? v : '', d.coordMode === 'phone' ? v : '');
+    if (dup) return setDuplicate(dup);
     go('rel');
+  };
+
+  const verifyContinue = () => {
+    const email = d.coordMode === 'email' ? d.coordValue : '';
+    const phone = d.coordMode === 'phone' ? d.coordValue : d.phoneExtra;
+    const dup = findDup(email, phone);
+    if (dup) return setDuplicate(dup);
+    go(email.trim() || phone.trim() ? 'rel' : 'coord');
+  };
+
+  const handleScan = async (text: string) => {
+    setScanning(false);
+    const p = parseQr(text);
+    if (!hasUsefulData(p)) {
+      setScanMsg('Ce QR code ne contient pas de coordonnées lisibles. Saisissez le nom à la main ou utilisez plus tard la photo du badge.');
+      return;
+    }
+    setScanMsg(null);
+    let company = p.company ?? '';
+    let companyDomain: string | null = p.domain ?? null;
+    let companyRef: string | null = null;
+    if (!company && p.domain) {
+      company = p.domain;
+      if (online) {
+        try {
+          const r = await searchCompanies(p.domain, 1);
+          const hit = r.items?.[0];
+          if (hit) {
+            company = hit.name;
+            companyDomain = hit.domain ?? p.domain;
+            companyRef = hit.public_identity_id;
+          }
+        } catch {
+          // saisie libre
+        }
+      }
+    }
+    go('verify', {
+      name: p.name ?? '',
+      company,
+      companyDomain,
+      companyRef,
+      contactId: null,
+      jobTitle: p.job_title ?? '',
+      linkedinUrl: p.linkedin_url ?? null,
+      coordMode: p.email ? 'email' : p.phone ? 'phone' : null,
+      coordValue: p.email ?? p.phone ?? '',
+      phoneExtra: p.email && p.phone ? p.phone : '',
+      captureSource: 'qr',
+    });
   };
 
   const dueOptions = useMemo(() => {
@@ -235,8 +294,11 @@ export default function NewMeetingFlow({
           company_name: f.company.trim() || null,
           company_domain: f.companyDomain,
           lotexpo_company_ref: f.companyRef,
-          source: f.companyRef ? 'search' : 'manual',
+          source: f.captureSource === 'qr' ? 'qr' : f.companyRef ? 'search' : 'manual',
         };
+        if (f.jobTitle.trim()) data.job_title = f.jobTitle.trim();
+        if (f.linkedinUrl) data.linkedin_url = f.linkedinUrl;
+        if (f.phoneExtra.trim()) data.phone = f.phoneExtra.trim();
         if (f.coordMode === 'email' && f.coordValue.trim()) data.email = f.coordValue.trim();
         if (f.coordMode === 'phone' && f.coordValue.trim()) data.phone = f.coordValue.trim();
         await enqueue(userId, cache.exhibitorId, 'contact', contactId, data);
@@ -254,7 +316,7 @@ export default function NewMeetingFlow({
         next_action_due: action === 'none' ? null : f.due,
         next_action_owner_id: action === 'none' ? null : f.owner ?? me,
         note: f.note.trim() || null,
-        capture_source: 'manual',
+        capture_source: f.captureSource,
         ...(f.inbound_lead_id ? { inbound_lead_id: f.inbound_lead_id } : {}),
       });
       if (f.concrete) {
@@ -300,8 +362,42 @@ export default function NewMeetingFlow({
     );
   }
 
+  const dupBlock = duplicate && (
+    <div className="space-y-3 rounded-lg border border-border p-4">
+      <p className="font-medium">Ce contact existe déjà : {duplicate.label}</p>
+      <Choice
+        selected
+        onClick={() => {
+          const dup = duplicate;
+          setDuplicate(null);
+          go('rel', { contactId: dup.id, relationship: dup.rel });
+        }}
+      >
+        Utiliser cette fiche (recommandé)
+      </Choice>
+      <Choice
+        onClick={() => {
+          setDuplicate(null);
+          go(d.step === 'verify' && !d.coordValue.trim() && !d.phoneExtra.trim() ? 'coord' : 'rel');
+        }}
+      >
+        Créer quand même
+      </Choice>
+    </div>
+  );
+
   return (
     <div className="flex flex-1 flex-col">
+      {scanning && (
+        <QrScanner
+          onResult={(t) => void handleScan(t)}
+          onClose={() => setScanning(false)}
+          onDenied={() => {
+            setScanning(false);
+            setScanMsg("Autorisez l'accès à la caméra dans les réglages du navigateur pour scanner.");
+          }}
+        />
+      )}
       <div className="h-1 w-full bg-muted">
         <div className="h-1 bg-primary transition-all" style={{ width: `${progress * 100}%` }} />
       </div>
@@ -316,6 +412,18 @@ export default function NewMeetingFlow({
         {d.step === 'who' && (
           <>
             <h2 className="text-2xl font-bold">Qui ?</h2>
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-[56px] w-full text-base"
+              onClick={() => {
+                setScanMsg(null);
+                setScanning(true);
+              }}
+            >
+              <QrCode className="mr-2 h-5 w-5" /> Scanner un QR code
+            </Button>
+            {scanMsg && <p className="rounded-md bg-muted p-3 text-sm text-foreground">{scanMsg}</p>}
             <div className="space-y-2">
               <Input
                 autoFocus
@@ -388,31 +496,62 @@ export default function NewMeetingFlow({
           </>
         )}
 
+        {d.step === 'verify' && (
+          <>
+            <h2 className="text-2xl font-bold">Vérifiez avant de continuer</h2>
+            {duplicate ? (
+              dupBlock
+            ) : (
+              <>
+                <Input placeholder="Nom (prénom et nom)" className="h-12 text-base" value={d.name} onChange={(e) => patch({ name: e.target.value })} />
+                <Input
+                  placeholder="Entreprise"
+                  className="h-12 text-base"
+                  value={d.company}
+                  onChange={(e) => patch({ company: e.target.value, companyRef: null, companyDomain: null })}
+                />
+                <Input placeholder="Poste" className="h-12 text-base" value={d.jobTitle} onChange={(e) => patch({ jobTitle: e.target.value })} />
+                <Input
+                  type="email"
+                  inputMode="email"
+                  placeholder="Email"
+                  className="h-12 text-base"
+                  value={d.coordMode === 'email' ? d.coordValue : ''}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v) patch({ coordMode: 'email', coordValue: v, phoneExtra: d.coordMode === 'phone' ? d.coordValue : d.phoneExtra });
+                    else patch({ coordMode: d.phoneExtra ? 'phone' : null, coordValue: d.phoneExtra, phoneExtra: '' });
+                  }}
+                />
+                <Input
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="Téléphone"
+                  className="h-12 text-base"
+                  value={d.coordMode === 'phone' ? d.coordValue : d.phoneExtra}
+                  onChange={(e) =>
+                    d.coordMode === 'email' ? patch({ phoneExtra: e.target.value }) : patch({ coordMode: e.target.value ? 'phone' : null, coordValue: e.target.value })
+                  }
+                />
+                {d.linkedinUrl && <p className="truncate text-xs text-muted-foreground">LinkedIn : {d.linkedinUrl}</p>}
+                <Button
+                  size="lg"
+                  className="mt-auto min-h-[56px] w-full text-base"
+                  disabled={!d.name.trim() && !d.company.trim()}
+                  onClick={verifyContinue}
+                >
+                  Continuer
+                </Button>
+              </>
+            )}
+          </>
+        )}
+
         {d.step === 'coord' && (
           <>
             <h2 className="text-2xl font-bold">Coordonnée</h2>
             {duplicate ? (
-              <div className="space-y-3 rounded-lg border border-border p-4">
-                <p className="font-medium">Ce contact existe déjà : {duplicate.label}</p>
-                <Choice
-                  selected
-                  onClick={() => {
-                    const dup = duplicate;
-                    setDuplicate(null);
-                    go('rel', { contactId: dup.id, relationship: dup.rel });
-                  }}
-                >
-                  Utiliser cette fiche (recommandé)
-                </Choice>
-                <Choice
-                  onClick={() => {
-                    setDuplicate(null);
-                    go('rel');
-                  }}
-                >
-                  Créer quand même
-                </Choice>
-              </div>
+              dupBlock
             ) : (
               <>
                 <div className="grid gap-3">

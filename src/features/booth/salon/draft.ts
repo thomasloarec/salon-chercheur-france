@@ -1,7 +1,7 @@
 import { del, get, put } from '../storage/db';
 import type { Interaction, Opportunity } from '@/lib/booth/types';
 
-export type FlowStep = 'who' | 'coord' | 'rel' | 'pot' | 'topic' | 'concrete' | 'action' | 'details' | 'done';
+export type FlowStep = 'who' | 'verify' | 'coord' | 'rel' | 'pot' | 'topic' | 'concrete' | 'action' | 'details' | 'done';
 
 export interface MeetingDraft {
   step: FlowStep;
@@ -25,6 +25,10 @@ export interface MeetingDraft {
   horizon: Opportunity['horizon'];
   note: string;
   inbound_lead_id: string | null;
+  jobTitle: string;
+  linkedinUrl: string | null;
+  phoneExtra: string;
+  captureSource: 'manual' | 'qr';
 }
 
 export const emptyDraft = (): MeetingDraft => ({
@@ -49,6 +53,10 @@ export const emptyDraft = (): MeetingDraft => ({
   horizon: null,
   note: '',
   inbound_lead_id: null,
+  jobTitle: '',
+  linkedinUrl: null,
+  phoneExtra: '',
+  captureSource: 'manual',
 });
 
 const key = (userId: string, workspaceId: string) => `${userId}|${workspaceId}|draft`;
