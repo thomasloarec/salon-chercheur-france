@@ -18,6 +18,7 @@ import { Link } from 'react-router-dom';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useProfile } from '@/hooks/useProfile';
 import { USER_MENU_ITEMS } from '@/config/userMenuItems';
+import { useGuardedSignOut } from '@/features/booth/GuardedSignOut';
 
 const UserMenu = () => {
   const { user, signOut } = useAuth();
@@ -25,15 +26,19 @@ const UserMenu = () => {
   const { data: profile } = useProfile();
   const { unreadCount } = useNotifications();
 
+  const guard = useGuardedSignOut(user?.id, signOut);
+
   if (!user) return null;
 
-  const handleSignOut = async () => {
-    await signOut();
+  const handleSignOut = () => {
+    void guard.request();
   };
 
   const userInitial = profile?.first_name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U';
 
   return (
+    <>
+    {guard.dialog}
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <div className="relative cursor-pointer">
@@ -83,6 +88,7 @@ const UserMenu = () => {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+    </>
   );
 };
 

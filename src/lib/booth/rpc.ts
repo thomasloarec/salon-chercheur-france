@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Contact, Interaction, Opportunity } from './types';
 
 // Les RPC booth_* ne sont pas dans les types générés : appel non typé.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -236,3 +237,126 @@ export const acceptInvite = (token: string) =>
   call<BoothAcceptResult>('booth_accept_invite', { p_token: token });
 
 export const myContext = () => call<{ items: BoothContextItem[] }>('booth_my_context', {});
+
+/* ---------- Mode salon ---------- */
+
+
+export type BoothSyncKind = 'contact' | 'interaction' | 'opportunity';
+
+export interface BoothBootstrapWorkspace {
+  workspace_id: string;
+  exhibitor_id: string;
+  event_id: string;
+  nom_event: string;
+  event_slug: string | null;
+  ville: string | null;
+  date_debut: string | null;
+  date_fin: string | null;
+  stand_label: string | null;
+  timezone: string | null;
+  currency: string | null;
+  total_cost: number | null;
+  archived: boolean;
+  phase: BoothPhase;
+}
+
+export interface BoothTeammate {
+  user_id: string;
+  role: BoothMemberRole;
+  name: string | null;
+  email: string | null;
+}
+
+export interface BoothInboundLead {
+  lead_id: string;
+  type: string;
+  created_at: string;
+  name: string | null;
+  email: string | null;
+  company: string | null;
+  job_title: string | null;
+  phone: string | null;
+  rdv_date: string | null;
+  preferred_slot: string | null;
+  status: string | null;
+}
+
+export interface BoothBootstrap {
+  server_time: string;
+  next_since: string | null;
+  role: BoothMemberRole;
+  me: string;
+  full_features: boolean;
+  workspace: BoothBootstrapWorkspace;
+  team: BoothTeammate[];
+  contacts: { total: number; truncated: boolean; items: Contact[] };
+  interactions: Interaction[];
+  opportunities: Opportunity[];
+  inbound_leads: BoothInboundLead[];
+}
+
+export interface BoothSyncItem {
+  kind: BoothSyncKind;
+  id: string;
+  data: Record<string, unknown>;
+  client_updated_at: string;
+}
+
+export interface BoothSyncResult {
+  index: number;
+  kind: BoothSyncKind;
+  id: string;
+  status: 'created' | 'updated' | 'unchanged' | 'stale' | 'merged' | 'error';
+  error?: string;
+  row?: Record<string, unknown>;
+  merged_into_id?: string;
+  contact_id?: string;
+}
+
+export interface BoothSyncResponse {
+  server_time: string;
+  results: BoothSyncResult[];
+  counts: Record<string, number>;
+}
+
+export const bootstrap = (workspaceId: string, since: string | null) =>
+  call<BoothBootstrap>('booth_bootstrap', { p_workspace_id: workspaceId, p_since: since });
+
+export const sync = (exhibitorId: string, items: BoothSyncItem[]) =>
+  call<BoothSyncResponse>('booth_sync', { p_exhibitor_id: exhibitorId, p_items: items });
+
+export interface BoothContactSearchItem {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  company_name: string | null;
+  job_title: string | null;
+  email: string | null;
+  phone: string | null;
+  lotexpo_company_ref: string | null;
+  interactions_count: number;
+  last_interaction_at: string | null;
+}
+
+export const searchContacts = (exhibitorId: string, query: string, limit = 20) =>
+  call<{ total: number; items: BoothContactSearchItem[] }>('booth_search_contacts', {
+    p_exhibitor_id: exhibitorId,
+    p_query: query,
+    p_limit: limit,
+  });
+
+export interface BoothCompanySearchItem {
+  public_identity_id: string;
+  exhibitor_id: string | null;
+  name: string;
+  website: string | null;
+  domain: string | null;
+  logo_url: string | null;
+  public_slug: string | null;
+}
+
+export const searchCompanies = (query: string, limit = 10) =>
+  call<{ total: number; items: BoothCompanySearchItem[] }>('booth_search_companies', {
+    p_query: query,
+    p_limit: limit,
+  });

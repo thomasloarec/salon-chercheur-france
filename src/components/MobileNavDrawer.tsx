@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Search, CalendarHeart, Lightbulb, LogOut, Settings, LogIn, ScanLine, type LucideIcon } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGuardedSignOut } from '@/features/booth/GuardedSignOut';
 import { useBoothContext } from '@/hooks/useBoothContext';
 import { ASSISTANT_ONBOARDING_PATH } from '@/components/assistant/config';
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet';
@@ -116,8 +118,12 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
   open, onOpenChange, groups, isRealUser, email, isAdmin, adminPendingTotal, onSignOut,
 }) => {
   const close = () => onOpenChange(false);
+  const { user } = useAuth();
+  const guard = useGuardedSignOut(user?.id, onSignOut);
 
   return (
+    <>
+    {guard.dialog}
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-sm">
         <div className="flex h-16 shrink-0 items-center border-b border-border/60 px-5">
@@ -179,7 +185,7 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
           {isRealUser ? (
             <button
               type="button"
-              onClick={() => { close(); onSignOut(); }}
+              onClick={() => { close(); void guard.request(); }}
               className="flex min-h-[48px] w-full items-center gap-3 rounded-lg px-3 text-[15px] text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
             >
               <LogOut className="h-5 w-5 shrink-0" aria-hidden="true" />
@@ -198,6 +204,7 @@ const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({
         </div>
       </SheetContent>
     </Sheet>
+    </>
   );
 };
 
