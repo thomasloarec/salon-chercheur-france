@@ -158,8 +158,7 @@ Deno.serve(async (req) => {
       const { data: admins } = await db.from('user_roles').select('user_id').eq('role', 'admin');
       const targets = Array.from(new Set((admins ?? []).map((a: { user_id: string }) => a.user_id)));
       if (targets.length > 0) {
-        // Le type 'booth_access_request' doit être autorisé par la contrainte notifications_type_check
-        // (ajout prévu au lot 5) : tant que ce n'est pas le cas, l'insertion échoue et c'est journalisé.
+        // Type 'booth_access_request' autorisé par notifications_type_check depuis le lot 5.
         const { error: notifErr } = await db.from('notifications').insert(targets.map((userId) => ({
           user_id: userId,
           type: 'booth_access_request',
@@ -198,7 +197,7 @@ Deno.serve(async (req) => {
     const to = await userEmail(access.requested_by);
     if (!to) return json({ ok: true, skipped: 'no_requester_email' });
 
-    const manageUrl = exhibitorSlug ? `${SITE_URL}/exposants/${exhibitorSlug}/gerer` : `${SITE_URL}`;
+    const manageUrl = exhibitorSlug ? `${SITE_URL}/exposants/${exhibitorSlug}/gerer?section=leads` : `${SITE_URL}`;
     let subject: string;
     let blocks: string[];
     let cta: { label: string; href: string } | undefined;
@@ -214,9 +213,9 @@ Deno.serve(async (req) => {
         heading('Bienvenue dans Lotexpo Leads'),
         paragraph(`L'accès de <strong>${escapeHtml(exhibitorName)}</strong> à Lotexpo Leads est ouvert.`),
         dataTable(rows),
-        infoBox('Prochaine étape : dans votre espace exposant, section Salons, créez l\'espace du salon où vous exposez, puis invitez votre équipe.'),
+        infoBox('Prochaine étape : dans votre espace exposant, section Lotexpo Leads, créez l\'espace du salon où vous exposez.'),
       ];
-      cta = { label: 'Ouvrir mon espace exposant', href: manageUrl };
+      cta = { label: 'Ouvrir Lotexpo Leads', href: manageUrl };
     } else {
       subject = `Votre demande d'accès à Lotexpo Leads`;
       blocks = [
