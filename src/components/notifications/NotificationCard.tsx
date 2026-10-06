@@ -29,6 +29,7 @@ const getNotificationIcon = (type: string): string => {
     'radar_new_matches': '🎯',
     'claim_approved': '🎉',
     'claim_request': '📥',
+    'booth_access_request': '📩',
     'novelty_visit_milestone': '👀',
     'recommended_event': '✨',
   }
