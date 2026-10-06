@@ -1,0 +1,154 @@
+import { useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, CalendarClock, CloudUpload, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import type { BoothInboundLead } from '@/lib/booth/rpc';
+import { onBoothChange, type BoothCache } from '../sync/cache';
+import { listOutbox } from '../sync/engine';
+import { ACTION, POTENTIAL, POTENTIAL_CLASS, fmtDateTime, fullName, initials, isCompleted, ownerOf } from './labels';
+
+export default function MeetingsList({
+  cache,
+  me,
+  onBack,
+  onOpen,
+  onInbound,
+}: {
+  cache: BoothCache;
+  me: string;
+  onBack: () => void;
+  onOpen: (interactionId: string) => void;
+  onInbound: (lead: BoothInboundLead) => void;
+}) {
+  const [tab, setTab] = useState<'mine' | 'team'>('mine');
+  const [query, setQuery] = useState('');
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const read = async () => setPendingIds(new Set((await listOutbox(me, cache.exhibitorId)).map((i) => i.id)));
+    void read();
+    return onBoothChange(() => void read());
+  }, [me, cache.exhibitorId]);
+
+  const contacts = useMemo(() => new Map(cache.contacts.map((c) => [c.id, c])), [cache.contacts]);
+  const inbound = useMemo(() => {
+    const linked = new Set(cache.interactions.map((i) => i.inbound_lead_id).filter(Boolean));
+    return (cache.inbound_leads ?? []).filter((l) => !linked.has(l.lead_id));
+  }, [cache.inbound_leads, cache.interactions]);
+
+  const rows = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return cache.interactions
+      .filter((i) => i.workspace_id === cache.workspaceId || !i.workspace_id)
+      .filter(isCompleted)
+      .filter((i) => tab === 'team' || ownerOf(i, me) === me || i.created_by === me)
+      .filter((i) => {
+        if (!q) return true;
+        const c = contacts.get(i.contact_id);
+        return [fullName(c), c?.company_name, c?.email].some((v) => (v ?? '').toLowerCase().includes(q));
+      })
+      .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at));
+  }, [cache.interactions, cache.workspaceId, tab, me, query, contacts]);
+
+  return (
+    <div className="flex flex-1 flex-col">
+      <div className="flex items-center gap-2 px-2 py-2">
+        <Button variant="ghost" className="min-h-[44px] px-2" onClick={onBack}>
+          <ArrowLeft className="mr-1 h-5 w-5" /> Accueil
+        </Button>
+        <h2 className="text-lg font-semibold">Rencontres du salon</h2>
+      </div>
+      <div className="space-y-3 px-4 pb-4">
+        {inbound.length > 0 && (
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+            <p className="mb-2 flex items-center gap-2 text-sm font-semibold">
+              <CalendarClock className="h-4 w-4" /> Rendez-vous demandés sur Lotexpo
+            </p>
+            <ul className="space-y-2">
+              {inbound.map((l) => (
+                <li key={l.lead_id}>
+                  <button
+                    type="button"
+                    className="w-full rounded-md bg-background p-3 text-left hover:bg-muted"
+                    onClick={() => onInbound(l)}
+                  >
+                    <p className="font-medium">
+                      {l.name || l.email || 'Sans nom'}
+                      {l.company ? <span className="font-normal text-muted-foreground"> · {l.company}</span> : null}
+                    </p>
+                    {(l.rdv_date || l.preferred_slot) && (
+                      <p className="text-xs text-muted-foreground">
+                        {[l.rdv_date && new Date(l.rdv_date).toLocaleDateString('fr-FR'), l.preferred_slot].filter(Boolean).join(' · ')}
+                      </p>
+                    )}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
+          {(['mine', 'team'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              className={`min-h-[44px] rounded-md text-sm font-medium ${tab === t ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
+              onClick={() => setTab(t)}
+            >
+              {t === 'mine' ? 'Les miennes' : 'Équipe'}
+            </button>
+          ))}
+        </div>
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Nom, entreprise, email"
+            className="h-12 pl-9 text-base"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+
+        {rows.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">Aucune rencontre pour l'instant.</p>
+        ) : (
+          <ul className="divide-y divide-border rounded-lg border border-border">
+            {rows.map((i) => {
+              const c = contacts.get(i.contact_id);
+              const pending = pendingIds.has(i.id) || pendingIds.has(i.contact_id);
+              return (
+                <li key={i.id}>
+                  <button type="button" className="flex w-full items-start gap-3 p-3 text-left hover:bg-muted" onClick={() => onOpen(i.id)}>
+                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                      {initials(cache, ownerOf(i, me))}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2">
+                        <span className="truncate font-medium">{fullName(c) || c?.email || 'Contact'}</span>
+                        {pending && <CloudUpload className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="En attente d'envoi" />}
+                      </span>
+                      {c?.company_name && <span className="block truncate text-sm text-muted-foreground">{c.company_name}</span>}
+                      <span className="mt-1 flex flex-wrap gap-1.5">
+                        {i.potential && (
+                          <span className={`rounded-full px-2 py-0.5 text-xs ${POTENTIAL_CLASS[i.potential]}`}>{POTENTIAL[i.potential]}</span>
+                        )}
+                        {i.next_action && i.next_action !== 'none' && (
+                          <span className={`rounded-full px-2 py-0.5 text-xs ${i.next_action_done_at ? 'bg-muted text-muted-foreground line-through' : 'bg-secondary text-secondary-foreground'}`}>
+                            {ACTION[i.next_action]}
+                          </span>
+                        )}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{fmtDateTime(i.occurred_at).time}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
