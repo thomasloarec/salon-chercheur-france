@@ -60,6 +60,9 @@ function Workspaces({ exhibitorId }: { exhibitorId: string }) {
             <p className="text-xs text-muted-foreground">
               {w.interactions_count} rencontre{w.interactions_count > 1 ? 's' : ''}
             </p>
+            <Button asChild size="sm" className="mt-1 min-h-[44px]">
+              <Link to={`/salon/${w.workspace_id}`}>Ouvrir le mode salon</Link>
+            </Button>
           </li>
         );
       })}
@@ -102,7 +105,7 @@ function CompanyCard({ c }: { c: BoothContextItem }) {
               <BoothTeamPanel exhibitorId={c.exhibitor_id} isPaid={c.is_paid} />
             )}
             <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900 dark:bg-blue-950/30 dark:text-blue-200 dark:border-blue-800">
-              L'application de saisie sur le stand arrive très bientôt sur cette page.
+              Ouvrez le mode salon sur votre téléphone. Ajoutez la page à votre écran d'accueil pour la retrouver en un geste.
             </div>
           </>
         )}

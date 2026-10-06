@@ -438,11 +438,18 @@ function WorkspaceRow({
         </span>
         {isManager && <span>Coût total : {fmtEuro(ws.total_cost)}</span>}
       </div>
-      {isManager && (
-        <Button size="sm" variant="outline" onClick={onEdit}>
-          Modifier
-        </Button>
-      )}
+      <div className="flex flex-wrap gap-2">
+        {!ws.archived && (
+          <Button asChild size="sm">
+            <Link to={`/salon/${ws.workspace_id}`}>Ouvrir le mode salon</Link>
+          </Button>
+        )}
+        {isManager && (
+          <Button size="sm" variant="outline" onClick={onEdit}>
+            Modifier
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
@@ -559,7 +566,7 @@ function ApprovedView({ exhibitorId, access }: { exhibitorId: string; access: Bo
       <BoothTeamPanel exhibitorId={exhibitorId} isPaid={access.is_paid} />
 
       <div className="rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 dark:bg-blue-950/30 dark:text-blue-200 dark:border-blue-800">
-        L'application de saisie sur le stand arrive très bientôt dans cette section.
+        Ouvrez le mode salon sur votre téléphone. Ajoutez la page à votre écran d'accueil pour la retrouver en un geste.
       </div>
 
       {editing && <EditWorkspaceDialog ws={editing} onClose={() => setEditing(null)} onSaved={refresh} />}
