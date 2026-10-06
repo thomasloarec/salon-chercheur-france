@@ -13,6 +13,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import {
+  ScanLine,
   Activity,
   LayoutDashboard,
   Calendar,
@@ -73,6 +74,7 @@ const navSections = [
         url: '/admin/exhibitors/participation-requests',
         icon: ClipboardList,
       },
+      { title: 'Lotexpo Leads', url: '/admin/lotexpo-leads', icon: ScanLine },
       { title: 'Campagnes', url: '/admin/campaigns', icon: Mail },
     ],
   },
@@ -126,6 +128,7 @@ export function AdminSidebar() {
     '/admin/organisateurs': counts?.organisateurs ?? 0,
     '/admin/events/completude': counts?.exhibitorsToFind ?? 0,
     '/admin/support': counts?.supportThreads ?? 0,
+    '/admin/lotexpo-leads': counts?.boothRequests ?? 0,
   };
 
   const isActive = (url: string, end?: boolean, isHealth?: boolean) => {

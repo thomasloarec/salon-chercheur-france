@@ -96,6 +96,7 @@ export const updateWorkspace = (
 
 export function boothErrorMessage(error: unknown): string {
   const msg = String((error as { message?: string })?.message ?? error ?? '');
+  if (msg.includes('BOOTH_ACCESS_NOT_APPROVED')) return "L'accès doit d'abord être ouvert.";
   if (msg.includes('BOOTH_FORBIDDEN')) return 'Seuls les gestionnaires principaux de la fiche peuvent faire cette action.';
   if (msg.includes('BOOTH_INVALID_INPUT')) return "Une information saisie n'est pas valide.";
   if (msg.includes('BOOTH_NOT_FOUND')) return 'Élément introuvable.';
@@ -103,3 +104,54 @@ export function boothErrorMessage(error: unknown): string {
   if (msg.includes('BOOTH_DISABLED')) return 'Lotexpo Leads est momentanément indisponible.';
   return 'Une erreur est survenue. Réessayez dans un instant.';
 }
+
+/* ---------- Admin ---------- */
+
+export interface BoothAdminAccessItem {
+  id: string;
+  exhibitor_id: string;
+  exhibitor_name: string | null;
+  exhibitor_slug: string | null;
+  status: BoothAccessStatus;
+  plan: BoothPlan;
+  plan_event_id: string | null;
+  plan_event_name: string | null;
+  plan_valid_until: string | null;
+  requested_by: string | null;
+  requested_by_email: string | null;
+  target_event_id: string | null;
+  target_event_name: string | null;
+  target_event_start: string | null;
+  team_size: number | null;
+  message: string | null;
+  admin_note: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+}
+
+export interface BoothAdminAccessList {
+  total: number;
+  items: BoothAdminAccessItem[];
+}
+
+export const adminListAccess = (status: BoothAccessStatus | null) =>
+  call<BoothAdminAccessList>('booth_admin_list_access', { p_status: status });
+
+export type BoothAdminDecision = 'approve' | 'reject' | 'revoke' | 'set_plan';
+
+export const adminReviewAccess = (opts: {
+  exhibitorId: string;
+  decision: BoothAdminDecision;
+  note?: string | null;
+  plan?: Exclude<BoothPlan, null>;
+  planEventId?: string | null;
+  planValidUntil?: string | null;
+}) =>
+  call<unknown>('booth_admin_review_access', {
+    p_exhibitor_id: opts.exhibitorId,
+    p_decision: opts.decision,
+    p_note: opts.note ?? null,
+    p_plan: opts.plan ?? 'beta',
+    p_plan_event_id: opts.planEventId ?? null,
+    p_plan_valid_until: opts.planValidUntil ?? null,
+  });
