@@ -9,7 +9,7 @@ import { useCards, type CardState } from '../card/cardQueue';
 
 const CARD_BADGE: Record<CardState, { label: string; cls: string }> = {
   pending: { label: 'Carte en attente', cls: 'bg-muted text-muted-foreground' },
-  read: { label: 'Carte lue : à vérifier', cls: 'bg-warning/15 text-warning-foreground border border-warning/40' },
+  read: { label: 'Carte lue : à vérifier', cls: 'bg-warning-surface text-warning-foreground border border-warning' },
   unreadable: { label: 'Carte illisible : à compléter', cls: 'bg-destructive/10 text-destructive' },
   blocked: { label: 'Lecture non incluse', cls: 'bg-muted text-muted-foreground' },
 };
