@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Building2, Camera, Loader2, QrCode } from 'lucide-react';
 import { prepareCardImage } from '../card/image';
-import { addCard, PROVISIONAL_COMPANY, updateCard } from '../card/cardQueue';
+import { addCard, pauseCardQueue, processCardQueue, PROVISIONAL_COMPANY, removeCard, updateCard } from '../card/cardQueue';
+
+export const CAMERA_PENDING_KEY = 'lotexpo-leads:camera-pending';
+const clearCameraPending = () => {
+  try {
+    localStorage.removeItem(CAMERA_PENDING_KEY);
+  } catch {
+    /* ignoré */
+  }
+};
 import { linkCardScanLater, useCardScanAvailable } from '../card/useCardScanAvailable';
 import QrScanner from '../qr/QrScanner';
 import { hasUsefulData, parseQr } from '../qr/parse';
@@ -82,12 +91,14 @@ export default function NewMeetingFlow({
   online,
   initial,
   onHome,
+  cameraRetry = null,
 }: {
   cache: BoothCache;
   me: string;
   online: boolean;
   initial: MeetingDraft;
   onHome: () => void;
+  cameraRetry?: 'card' | 'badge' | null;
 }) {
   const [d, setD] = useState<MeetingDraft>({ ...emptyDraft(), ...initial });
   const [scanning, setScanning] = useState(false);
@@ -111,14 +122,39 @@ export default function NewMeetingFlow({
   const [qrPresent, setQrPresent] = useState(false);
   const scanToken = useRef(0);
 
-  useEffect(() => () => {
-    if (photoUrl) URL.revokeObjectURL(photoUrl);
-  }, [photoUrl]);
+  // Pas de lecture de cartes en parallèle tant que le parcours est ouvert
+  useEffect(() => {
+    const resume = pauseCardQueue();
+    return () => {
+      resume();
+      void processCardQueue(userId, wsId);
+    };
+  }, [userId, wsId]);
+
+  // Photo annulée : la prise de vue n'est plus en cours
+  useEffect(() => {
+    const el = fileRef.current;
+    if (!el) return;
+    el.addEventListener('cancel', clearCameraPending);
+    return () => el.removeEventListener('cancel', clearCameraPending);
+  }, []);
+
+  useEffect(() => {
+    if (!cameraRetry) return;
+    setCardKind(cameraRetry);
+    setKindPicker(true);
+    setCardMsg('Le téléphone a interrompu la prise de photo. Reprenez la photo.');
+  }, [cameraRetry]);
 
   const openCamera = (kind: 'card' | 'badge') => {
     setKindPicker(false);
     setCardKind(kind);
     setCardMsg(null);
+    try {
+      localStorage.setItem(CAMERA_PENDING_KEY, JSON.stringify({ workspaceId: wsId, kind, at: Date.now() }));
+    } catch {
+      /* ignoré */
+    }
     fileRef.current?.click();
   };
 
@@ -127,18 +163,17 @@ export default function NewMeetingFlow({
     setCardWait(false);
   };
 
-  const onPhoto = async (file: File | undefined) => {
+  const onPhoto = async (picked: File | undefined) => {
+    clearCameraPending();
     if (fileRef.current) fileRef.current.value = '';
+    let file: File | null = picked ?? null;
     if (!file) return;
     setScanMsg(null);
     setCardMsg(null);
-    setPhotoUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return URL.createObjectURL(file);
-    });
+    setPhotoUrl(null);
     const token = ++scanToken.current;
     setCardWait(true);
-    let img: { base64: string; mediaType: 'image/jpeg' } | null = null;
+    let img: { base64: string; mediaType: 'image/jpeg'; dataUrl: string } | null = null;
     const scanId = newId();
     const queueOffline = async () => {
       if (!img) return false;
@@ -173,6 +208,9 @@ export default function NewMeetingFlow({
     };
     try {
       img = await prepareCardImage(file);
+      file = null;
+      picked = undefined;
+      setPhotoUrl(img.dataUrl);
       if (token !== scanToken.current) return;
       if (!navigator.onLine) {
         await queueOffline();
@@ -248,8 +286,30 @@ export default function NewMeetingFlow({
   const patch = (p: Partial<MeetingDraft>) => setD((prev) => ({ ...prev, ...p }));
   const go = (step: FlowStep, p: Partial<MeetingDraft> = {}) =>
     setD((prev) => ({ ...prev, ...p, step, history: [...prev.history, prev.step] }));
+  const dropQueuedCard = (cur: MeetingDraft) => {
+    if (cur.cardQueued && cur.cardScanId && !cur.contactId) void removeCard(userId, wsId, cur.cardScanId);
+  };
   const back = () => {
-    if (d.history.length === 0) return onHome();
+    if (d.history.length === 0) {
+      dropQueuedCard(d);
+      return onHome();
+    }
+    const prevStep = d.history[d.history.length - 1];
+    if (prevStep === 'who' && d.cardQueued && d.cardScanId) {
+      dropQueuedCard(d);
+      setPhotoUrl(null);
+      setDuplicate(null);
+      setD((prev) => ({
+        ...prev,
+        step: 'who',
+        history: prev.history.slice(0, -1),
+        cardScanId: null,
+        cardQueued: false,
+        captureSource: 'manual',
+        company: prev.company === PROVISIONAL_COMPANY ? '' : prev.company,
+      }));
+      return;
+    }
     setDuplicate(null);
     setD((prev) => ({ ...prev, step: prev.history[prev.history.length - 1], history: prev.history.slice(0, -1) }));
   };

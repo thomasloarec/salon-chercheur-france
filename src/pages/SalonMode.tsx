@@ -1,5 +1,5 @@
 import { primaryLabel, secondaryLabel } from '@/features/booth/salon/display';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, CloudOff, Loader2, RefreshCw } from 'lucide-react';
@@ -24,7 +24,7 @@ import { abandon, retryRejected, type OutboxItem } from '@/features/booth/sync/e
 import { isPersistentStorage, onStorageAvailabilityChange } from '@/features/booth/storage/db';
 import type { BoothCache } from '@/features/booth/sync/cache';
 import type { BoothInboundLead } from '@/lib/booth/rpc';
-import NewMeetingFlow from '@/features/booth/salon/NewMeetingFlow';
+import NewMeetingFlow, { CAMERA_PENDING_KEY } from '@/features/booth/salon/NewMeetingFlow';
 import { flushCardLinks } from '@/features/booth/card/useCardScanAvailable';
 import MeetingsList from '@/features/booth/salon/MeetingsList';
 import MeetingDetail from '@/features/booth/salon/MeetingDetail';
@@ -36,7 +36,7 @@ import { registerSalonSW, useOfflineReady } from '@/features/booth/offline/regis
 import { LAST_WORKSPACE_KEY } from '@/pages/SalonStart';
 import { useSalonAppMeta } from '@/features/booth/offline/useSalonAppMeta';
 import InstallBanner from '@/features/booth/offline/InstallBanner';
-import { useCardQueueRunner, useCards } from '@/features/booth/card/cardQueue';
+import { purgeOrphanCards, removeCard, useCardQueueRunner, useCards } from '@/features/booth/card/cardQueue';
 
 const dayInTz = (d: Date, tz: string) => {
   try {
@@ -196,7 +196,40 @@ export default function SalonMode() {
     if (userIdForLinks && sync.online) void flushCardLinks(userIdForLinks);
   }, [userIdForLinks, sync.online]);
 
+  // Au montage : cartes sans contact non reliées au brouillon supprimées
+  const userIdForPurge = user?.id;
+  useEffect(() => {
+    if (!userIdForPurge || !workspaceId) return;
+    void loadDraft(userIdForPurge, workspaceId)
+      .then((dr) => purgeOrphanCards(userIdForPurge, workspaceId, dr?.cardScanId ?? null))
+      .catch(() => undefined);
+  }, [userIdForPurge, workspaceId]);
+
+  // Application rechargée pendant la prise de photo : reprise sur l'écran « Qui ? »
+  const [cameraRetry, setCameraRetry] = useState<'card' | 'badge' | null>(null);
+  const cameraChecked = useRef(false);
+  const cacheReady = !!cache;
+  useEffect(() => {
+    if (cameraChecked.current || !cacheReady || !userIdForPurge || !workspaceId) return;
+    cameraChecked.current = true;
+    try {
+      const raw = localStorage.getItem(CAMERA_PENDING_KEY);
+      if (!raw) return;
+      const v = JSON.parse(raw) as { workspaceId?: string; kind?: string; at?: number };
+      if (v.workspaceId !== workspaceId) return;
+      localStorage.removeItem(CAMERA_PENDING_KEY);
+      if (typeof v.at !== 'number' || Date.now() - v.at > 10 * 60 * 1000) return;
+      setCameraRetry(v.kind === 'badge' ? 'badge' : 'card');
+      setFlowInitial(emptyDraft());
+      setFlowKey((k) => k + 1);
+      setScreen('flow');
+    } catch {
+      /* ignoré */
+    }
+  }, [cacheReady, userIdForPurge, workspaceId]);
+
   const startFlow = (initial: MeetingDraft) => {
+    setCameraRetry(null);
     setFlowInitial(initial);
     setFlowKey((k) => k + 1);
     setScreen('flow');
@@ -315,6 +348,7 @@ export default function SalonMode() {
           me={user.id}
           online={sync.online}
           initial={flowInitial}
+          cameraRetry={cameraRetry}
           onHome={() => setScreen('home')}
         />
       ) : screen === 'list' && user ? (
@@ -389,7 +423,12 @@ export default function SalonMode() {
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    if (user) void clearDraft(user.id, workspaceId);
+                    if (user) {
+                      void clearDraft(user.id, workspaceId);
+                      if (savedDraft.cardQueued && savedDraft.cardScanId && !savedDraft.contactId) {
+                        void removeCard(user.id, workspaceId, savedDraft.cardScanId);
+                      }
+                    }
                     setSavedDraft(null);
                   }}
                 >

@@ -1,7 +1,24 @@
+import { readImageSize } from './dims';
+
 const MAX_SIDE = 1280;
 
 async function decode(file: File): Promise<{ src: CanvasImageSource; w: number; h: number; release: () => void }> {
   if (typeof createImageBitmap === 'function') {
+    const size = await readImageSize(file);
+    if (size && size.w > 0 && size.h > 0) {
+      const scale = Math.min(1, MAX_SIDE / Math.max(size.w, size.h));
+      try {
+        const bmp = await createImageBitmap(file, {
+          imageOrientation: 'from-image',
+          resizeWidth: Math.max(1, Math.round(size.w * scale)),
+          resizeHeight: Math.max(1, Math.round(size.h * scale)),
+          resizeQuality: 'high',
+        });
+        return { src: bmp, w: bmp.width, h: bmp.height, release: () => bmp.close() };
+      } catch {
+        // repli sur le décodage complet
+      }
+    }
     try {
       const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
       return { src: bmp, w: bmp.width, h: bmp.height, release: () => bmp.close() };
@@ -25,7 +42,7 @@ async function decode(file: File): Promise<{ src: CanvasImageSource; w: number; 
 }
 
 /** Redimensionne la photo sur l'appareil (1 280 px max) et la convertit en JPEG base64. */
-export async function prepareCardImage(file: File): Promise<{ base64: string; mediaType: 'image/jpeg' }> {
+export async function prepareCardImage(file: File): Promise<{ base64: string; mediaType: 'image/jpeg'; dataUrl: string }> {
   const { src, w, h, release } = await decode(file);
   const canvas = document.createElement('canvas');
   try {
@@ -39,7 +56,7 @@ export async function prepareCardImage(file: File): Promise<{ base64: string; me
     const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
     const base64 = dataUrl.split(',')[1] ?? '';
     if (!base64) throw new Error('BOOTH_IMAGE_UNREADABLE');
-    return { base64, mediaType: 'image/jpeg' };
+    return { base64, mediaType: 'image/jpeg', dataUrl };
   } finally {
     release();
     canvas.width = 0;
