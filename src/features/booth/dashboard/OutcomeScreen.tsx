@@ -1,0 +1,220 @@
+import { useMemo, useState } from 'react';
+import { ArrowLeft, Download, Loader2, Printer } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { toast } from '@/hooks/use-toast';
+import { boothErrorMessage } from '@/lib/booth/rpc';
+import type { Opportunity } from '@/lib/booth/types';
+import type { BoothCache } from '../sync/cache';
+import { enqueue } from '../sync/engine';
+import { fullName } from '../salon/labels';
+import { computeMetrics, computeOutcome, formatEuros } from './metrics';
+import { runExport } from './exportWorkspace';
+
+const STATUS: { v: Opportunity['status']; label: string }[] = [
+  { v: 'open', label: 'En cours' },
+  { v: 'won', label: 'Gagné' },
+  { v: 'lost', label: 'Perdu' },
+  { v: 'abandoned', label: 'Abandonné' },
+];
+const PROBAS = [10, 25, 50, 75, 90] as const;
+const pct = (v: number | null) => (v === null ? 'Non calculable' : `${Math.round(v * 100)} %`);
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-3 border-t border-border py-2 first:border-t-0">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="text-right font-semibold tabular-nums">{value}</dd>
+    </div>
+  );
+}
+
+function AmountInput({ value, onCommit, label }: { value: number | null; onCommit: (n: number | null) => void; label: string }) {
+  const [v, setV] = useState(value === null ? '' : String(value));
+  const commit = () => {
+    const t = v.replace(/\s/g, '').replace(',', '.');
+    const n = t === '' ? null : Number(t);
+    if (n !== null && (!Number.isFinite(n) || n < 0)) return;
+    if (n !== value) onCommit(n);
+  };
+  return (
+    <label className="flex flex-col gap-1 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <Input inputMode="decimal" className="min-h-[44px]" value={v} onChange={(e) => setV(e.target.value)} onBlur={commit} placeholder="Montant en euros" />
+    </label>
+  );
+}
+
+export default function OutcomeScreen({
+  cache,
+  me,
+  online,
+  onBack,
+}: {
+  cache: BoothCache;
+  me: string;
+  online: boolean;
+  onBack: () => void;
+}) {
+  const [busy, setBusy] = useState<'xlsx' | 'csv' | null>(null);
+  const cur = cache.workspace.currency || 'EUR';
+  const o = useMemo(() => computeOutcome(cache, 'team', me), [cache, me]);
+  const m = useMemo(() => computeMetrics(cache, { day: 'all', scope: 'team', me }), [cache, me]);
+
+  const projects = useMemo(() => {
+    const list = cache.opportunities.filter(
+      (p) => (!p.workspace_id || p.workspace_id === cache.workspaceId) && p.status !== 'abandoned',
+    );
+    const incomplete = (p: Opportunity) => p.status === 'open' && (p.amount === null || p.probability === null);
+    return [...list].sort((a, b) => Number(incomplete(b)) - Number(incomplete(a)));
+  }, [cache]);
+
+  const header = (
+    <div className="flex items-center gap-2 px-2 py-2 print:hidden">
+      <Button variant="ghost" className="min-h-[44px] px-2" onClick={onBack}>
+        <ArrowLeft className="mr-1 h-5 w-5" /> Retour
+      </Button>
+      <h2 className="text-lg font-semibold">Bilan du salon</h2>
+    </div>
+  );
+
+  if (!cache.full_features) {
+    return (
+      <div className="flex flex-1 flex-col">
+        {header}
+        <p className="p-6 text-center text-base">Le tableau de bord est inclus dans la bêta, le Pass Salon et l'Annuel.</p>
+      </div>
+    );
+  }
+
+  const update = (id: string, data: Record<string, unknown>) => enqueue(me, cache.exhibitorId, 'opportunity', id, data);
+  const contactOf = (p: Opportunity) => cache.contacts.find((c) => c.id === p.contact_id);
+
+  const doExport = async (kind: 'xlsx' | 'csv') => {
+    setBusy(kind);
+    try {
+      const data = await runExport(cache.workspaceId, cache.workspace.nom_event, kind);
+      const n = data.rows?.length ?? 0;
+      const p = data.projects?.length ?? 0;
+      const known = cache.interactions.filter((i) => !i.workspace_id || i.workspace_id === cache.workspaceId).length;
+      toast({
+        description: `${n} rencontre${n > 1 ? 's' : ''} et ${p} projet${p > 1 ? 's' : ''} exporté${n + p > 1 ? 's' : ''}.${n !== known ? ' Attention : certaines saisies ne sont pas encore envoyées.' : ''}`,
+      });
+    } catch (e) {
+      toast({ description: boothErrorMessage(e), variant: 'destructive' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="flex flex-1 flex-col">
+      <style>{`@media print { body * { visibility: hidden !important; } .outcome-print, .outcome-print * { visibility: visible !important; } .outcome-print { position: absolute; left: 0; top: 0; width: 100%; } }`}</style>
+      {header}
+      <div className="space-y-4 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="outcome-print space-y-4">
+          <h2 className="hidden text-xl font-bold print:block">Bilan · {cache.workspace.nom_event}</h2>
+          <section className="rounded-xl border border-border p-4">
+            <h3 className="mb-2 font-semibold">Résultats</h3>
+            <dl className="text-sm">
+              <Row label="Pipeline" value={formatEuros(o.pipeline, cur)} />
+              <Row label="Pipeline pondéré" value={formatEuros(o.weighted, cur)} />
+              <Row label="Gagnés" value={`${o.won} · ${formatEuros(o.wonAmount, cur)}`} />
+              <Row label="Perdus" value={String(o.lost)} />
+              <Row label="Taux de transformation" value={pct(o.conversion)} />
+              <Row label="Retour sur investissement" value={o.roi === null ? 'Coût non renseigné' : `× ${o.roi.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}`} />
+              <Row label="Coût par rencontre" value={m.costPerMeeting === null ? 'Non calculable' : formatEuros(m.costPerMeeting, cur)} />
+              <Row label="Coût par projet concret" value={m.costPerProject === null ? 'Non calculable' : formatEuros(m.costPerProject, cur)} />
+              <Row label="Actions réalisées" value={pct(o.actionsRate)} />
+            </dl>
+          </section>
+
+          <section className="rounded-xl border border-border p-4">
+            <h3 className="mb-2 font-semibold">Projets à compléter</h3>
+            {projects.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Aucun projet pour ce salon.</p>
+            ) : (
+              <ul className="space-y-4">
+                {projects.map((p) => {
+                  const c = contactOf(p);
+                  const who = [c?.company_name, fullName(c)].filter(Boolean).join(' · ') || 'Contact';
+                  return (
+                    <li key={p.id} className="space-y-3 border-t border-border pt-3 first:border-t-0 first:pt-0">
+                      <div>
+                        <p className="font-medium">{who}</p>
+                        {p.title && <p className="text-sm text-muted-foreground">{p.title}</p>}
+                      </div>
+                      <div className="flex flex-wrap gap-2 print:hidden">
+                        {STATUS.map((s) => (
+                          <Button
+                            key={s.v}
+                            size="sm"
+                            variant={p.status === s.v ? 'default' : 'outline'}
+                            className="min-h-[44px] rounded-full"
+                            onClick={() => {
+                              if (p.status === s.v) return;
+                              const data: Record<string, unknown> = { status: s.v };
+                              if (s.v === 'won' && p.won_amount === null && p.amount !== null) data.won_amount = p.amount;
+                              void update(p.id, data);
+                            }}
+                          >
+                            {s.label}
+                          </Button>
+                        ))}
+                      </div>
+                      <p className="hidden text-sm print:block">
+                        {STATUS.find((s) => s.v === p.status)?.label}
+                        {p.amount !== null ? ` · ${formatEuros(p.amount, cur)}` : ''}
+                        {p.probability !== null ? ` · ${p.probability} %` : ''}
+                        {p.status === 'won' && p.won_amount !== null ? ` · gagné ${formatEuros(p.won_amount, cur)}` : ''}
+                      </p>
+                      <div className="space-y-3 print:hidden">
+                        <AmountInput key={`a${p.id}${p.amount}`} label="Montant estimé" value={p.amount} onCommit={(n) => void update(p.id, { amount: n })} />
+                        <div className="flex flex-wrap gap-2">
+                          {PROBAS.map((v) => (
+                            <Button
+                              key={v}
+                              size="sm"
+                              variant={p.probability === v ? 'default' : 'outline'}
+                              className="min-h-[44px] min-w-[56px] rounded-full"
+                              onClick={() => void update(p.id, { probability: p.probability === v ? null : v })}
+                            >
+                              {v} %
+                            </Button>
+                          ))}
+                        </div>
+                        {p.status === 'won' && (
+                          <AmountInput
+                            key={`w${p.id}${p.won_amount}`}
+                            label="Montant gagné"
+                            value={p.won_amount ?? p.amount}
+                            onCommit={(n) => void update(p.id, { won_amount: n })}
+                          />
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        </div>
+
+        <section className="space-y-3 rounded-xl border border-border p-4 print:hidden">
+          <h3 className="font-semibold">Exporter</h3>
+          {!online && <p className="text-sm text-muted-foreground">L'export nécessite une connexion.</p>}
+          <Button size="lg" className="min-h-[52px] w-full" disabled={!online || busy !== null} onClick={() => void doExport('xlsx')}>
+            {busy === 'xlsx' ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />} Exporter en Excel
+          </Button>
+          <Button size="lg" variant="outline" className="min-h-[52px] w-full" disabled={!online || busy !== null} onClick={() => void doExport('csv')}>
+            {busy === 'csv' ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />} Exporter en CSV
+          </Button>
+        </section>
+
+        <Button size="lg" variant="secondary" className="min-h-[52px] w-full print:hidden" onClick={() => window.print()}>
+          <Printer className="mr-2 h-5 w-5" /> Imprimer le bilan
+        </Button>
+      </div>
+    </div>
+  );
+}
