@@ -10,6 +10,9 @@ import {
   CHUNK_TIME_BUDGET_MS,
 } from './chunk-utils.ts';
 import type { AirtableConfig } from '../_shared/types.ts';
+import { requireAdmin } from '../_shared/admin-auth.ts';
+// Correctif sécurité 07/10/2026 (2) : réservée aux admins ou à la clé service_role.
+// Avant : n'importe qui pouvait déclencher un import (purge et réécriture du staging).
 
 // Mode simplifié pour éviter CPU timeout
 const DEBUG_ROOT_CAUSE: boolean = false;
@@ -130,6 +133,9 @@ serve(async (req) => {
   if (req.method !== 'POST') {
     return json({ error: 'Method not allowed' }, 405);
   }
+
+  const denied = await requireAdmin(req, corsHeaders, 'import-airtable');
+  if (denied) return denied;
 
   const supabaseClient = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',

@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { getEnvOrConfig, listMissing, debugVariables } from '../_shared/airtable-config.ts';
+import { requireAdmin } from '../_shared/admin-auth.ts';
+// Correctif sécurité 07/10/2026 (2) : réservée aux admins ou à la clé service_role.
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +13,9 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const denied = await requireAdmin(req, corsHeaders, 'airtable-smoke-test');
+  if (denied) return denied;
 
   try {
     console.log('[airtable-smoke-test] 🔍 Début des tests');

@@ -1,11 +1,16 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { corsHeaders, handleOptions } from '../_shared/cors.ts'
+import { requireAdmin } from '../_shared/admin-auth.ts'
+// Correctif sécurité 07/10/2026 (2) : réservée aux admins ou à la clé service_role.
 
 const ALLOWED_TABLES = ['All_Events', 'All_Exposants', 'Participation'];
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return handleOptions(req);
+
+  const denied = await requireAdmin(req, corsHeaders(req), 'airtable-read');
+  if (denied) return denied;
 
   try {
     console.log('[airtable-read] 🔍 Début de la requête de lecture');
