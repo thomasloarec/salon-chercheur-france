@@ -1,5 +1,5 @@
 import { primaryLabel, secondaryLabel } from '@/features/booth/salon/display';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, CloudOff, Loader2, RefreshCw } from 'lucide-react';
