@@ -1,12 +1,20 @@
 import { getAllByPrefix } from '../storage/db';
 import type { OutboxItem } from './engine';
 
-/** Nombre d'éléments Lotexpo Leads non envoyés (en attente ou à reprendre) pour un utilisateur. */
+/** Nombre d'éléments Lotexpo Leads non envoyés (en attente ou à reprendre) pour un utilisateur, cartes à lire comprises. */
 export async function getPendingCountForUser(userId: string): Promise<number> {
+  let n = 0;
   try {
     const items = await getAllByPrefix<OutboxItem>('outbox', `${userId}|`);
-    return items.length;
+    n += items.length;
   } catch {
-    return 0;
+    // ignorer
   }
+  try {
+    const cards = await getAllByPrefix<{ key: string; state?: string }>('meta', `cardq|${userId}|`);
+    n += cards.filter((c) => c.state === 'pending').length;
+  } catch {
+    // ignorer
+  }
+  return n;
 }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Building2, Camera, Loader2, QrCode } from 'lucide-react';
 import { prepareCardImage } from '../card/image';
+import { addCard, PROVISIONAL_COMPANY, updateCard } from '../card/cardQueue';
 import { linkCardScanLater, useCardScanAvailable } from '../card/useCardScanAvailable';
 import QrScanner from '../qr/QrScanner';
 import { hasUsefulData, parseQr } from '../qr/parse';
@@ -137,9 +138,46 @@ export default function NewMeetingFlow({
     });
     const token = ++scanToken.current;
     setCardWait(true);
+    let img: { base64: string; mediaType: 'image/jpeg' } | null = null;
+    const scanId = newId();
+    const queueOffline = async () => {
+      if (!img) return false;
+      await addCard({
+        scanId,
+        userId,
+        exhibitorId: cache.exhibitorId,
+        workspaceId: wsId,
+        kind: cardKind,
+        base64: img.base64,
+        contactId: null,
+        interactionId: null,
+      });
+      setCardWait(false);
+      go('rel', {
+        name: '',
+        company: PROVISIONAL_COMPANY,
+        companyDomain: null,
+        companyRef: null,
+        contactId: null,
+        jobTitle: '',
+        linkedinUrl: null,
+        coordMode: null,
+        coordValue: '',
+        phoneExtra: '',
+        captureSource: 'card',
+        cardScanId: scanId,
+        cardConfidence: null,
+        cardQueued: true,
+      });
+      return true;
+    };
     try {
-      const img = await prepareCardImage(file);
-      const scanId = newId();
+      img = await prepareCardImage(file);
+      if (token !== scanToken.current) return;
+      if (!navigator.onLine) {
+        await queueOffline();
+        return;
+      }
       const res = await Promise.race([
         scanCard({ workspaceId: wsId, scanId, kind: cardKind, imageBase64: img.base64, mediaType: img.mediaType }),
         new Promise<never>((_, rej) => setTimeout(() => rej(new Error('BOOTH_TIMEOUT')), 30_000)),
@@ -189,6 +227,7 @@ export default function NewMeetingFlow({
       if (token !== scanToken.current) return;
       setCardWait(false);
       const m = String((e as Error)?.message ?? '');
+      if ((m.includes('BOOTH_NETWORK') || m.includes('BOOTH_TIMEOUT')) && (await queueOffline())) return;
       setCardMsg(
         m.includes('BOOTH_PLAN_REQUIRED')
           ? "La lecture des cartes est incluse dans la bêta, le Pass Salon et l'Annuel."
@@ -412,8 +451,10 @@ export default function NewMeetingFlow({
         if (f.coordMode === 'phone' && f.coordValue.trim()) data.phone = f.coordValue.trim();
         await enqueue(userId, cache.exhibitorId, 'contact', contactId, data);
       }
-      if (f.cardScanId) linkCardScanLater(userId, f.cardScanId, contactId);
       const interactionId = newId();
+      if (f.cardScanId && f.cardQueued) {
+        await updateCard(userId, wsId, f.cardScanId, { contactId, interactionId });
+      } else if (f.cardScanId) linkCardScanLater(userId, f.cardScanId, contactId);
       const action = f.next_action ?? 'none';
       await enqueue(userId, cache.exhibitorId, 'interaction', interactionId, {
         workspace_id: wsId,
@@ -765,6 +806,11 @@ export default function NewMeetingFlow({
 
         {d.step === 'rel' && (
           <>
+            {d.cardQueued && (
+              <p className="rounded-md bg-muted p-3 text-sm text-foreground">
+                Carte enregistrée. Elle sera lue automatiquement dès le retour du réseau.
+              </p>
+            )}
             <h2 className="text-2xl font-bold">Relation</h2>
             <div className="grid gap-3">
               {(Object.keys(RELATIONSHIP) as Interaction['relationship'][]).map((r) => (

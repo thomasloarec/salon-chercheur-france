@@ -31,6 +31,7 @@ export interface MeetingDraft {
   captureSource: 'manual' | 'qr' | 'card';
   cardScanId: string | null;
   cardConfidence: Record<string, 'high' | 'medium' | 'low'> | null;
+  cardQueued?: boolean;
 }
 
 export const emptyDraft = (): MeetingDraft => ({
