@@ -31,6 +31,8 @@ import DuplicatesScreen from '@/features/booth/salon/DuplicatesScreen';
 import { findDuplicates } from '@/lib/booth/rpc';
 import { clearDraft, emptyDraft, loadDraft, type MeetingDraft } from '@/features/booth/salon/draft';
 import { isCompleted, ownerOf } from '@/features/booth/salon/labels';
+import { registerSalonSW, useOfflineReady } from '@/features/booth/offline/registerSalonSW';
+import { LAST_WORKSPACE_KEY } from '@/pages/SalonStart';
 
 const dayInTz = (d: Date, tz: string) => {
   try {
@@ -133,9 +135,33 @@ export default function SalonMode() {
 
   useEffect(() => onStorageAvailabilityChange(() => setPersistent(isPersistentStorage())) as () => void, []);
 
+  const [online, setOnline] = useState(() => navigator.onLine);
   useEffect(() => {
-    if (!loading && !user) navigate(`/auth?redirect=${encodeURIComponent(`/salon/${workspaceId}`)}`, { replace: true });
-  }, [loading, user, navigate, workspaceId]);
+    registerSalonSW();
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => {
+      window.removeEventListener('online', on);
+      window.removeEventListener('offline', off);
+    };
+  }, []);
+
+  const offlineReady = useOfflineReady(workspaceId, cache?.saved_at);
+
+  useEffect(() => {
+    if (!cache || !workspaceId) return;
+    try {
+      localStorage.setItem(LAST_WORKSPACE_KEY, workspaceId);
+    } catch {
+      /* ignoré */
+    }
+  }, [cache, workspaceId]);
+
+  useEffect(() => {
+    if (!loading && !user && online) navigate(`/auth?redirect=${encodeURIComponent(`/salon/${workspaceId}`)}`, { replace: true });
+  }, [loading, user, navigate, workspaceId, online]);
 
   useEffect(() => {
     if (!user || !workspaceId || screen !== 'home') return;
@@ -237,7 +263,17 @@ export default function SalonMode() {
         </div>
       )}
 
-      {status === 'forbidden' ? (
+      {!loading && !user && !online ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center">
+          <p className="text-lg font-semibold">
+            Reconnectez-vous dès que le réseau revient. Vos rencontres déjà enregistrées sur ce téléphone sont
+            conservées.
+          </p>
+          <Button size="lg" className="min-h-[56px] w-full max-w-sm text-base" onClick={() => window.location.reload()}>
+            Réessayer
+          </Button>
+        </div>
+      ) : status === 'forbidden' ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center">
           <p className="text-xl font-semibold">Vous n'avez pas accès à ce salon</p>
           <Button asChild size="lg" className="min-h-[56px] w-full max-w-sm text-base">
@@ -305,6 +341,9 @@ export default function SalonMode() {
               {ws.nom_event}
               {dayLabel(ws) ? ` · ${dayLabel(ws)}` : ''}
             </h1>
+            {offlineReady && (
+              <p className="mt-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">Disponible sans réseau</p>
+            )}
             {ws.stand_label && <p className="mt-1 text-base text-muted-foreground">Stand {ws.stand_label}</p>}
           </div>
 
