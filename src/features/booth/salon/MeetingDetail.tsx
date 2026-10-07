@@ -17,7 +17,8 @@ import {
 import { toast } from '@/hooks/use-toast';
 import type { Interaction } from '@/lib/booth/types';
 import type { BoothCache } from '../sync/cache';
-import { enqueue } from '../sync/engine';
+import { enqueue, listOutbox } from '../sync/engine';
+import { onBoothChange } from '../sync/cache';
 import {
   ACTION,
   HORIZON,
@@ -69,6 +70,19 @@ export default function MeetingDetail({
   const [confirmCancel, setConfirmCancel] = useState(false);
 
   useEffect(() => setNote(i?.note ?? ''), [i?.note]);
+  const [refused, setRefused] = useState(false);
+  useEffect(() => {
+    const read = async () => {
+      const items = await listOutbox(me, cache.exhibitorId);
+      setRefused(
+        items.some(
+          (o) => o.id === interactionId && o.state === 'rejected' && /BOOTH_FORBIDDEN|BOOTH_INVALID_INPUT/.test(String(o.error ?? '')),
+        ),
+      );
+    };
+    void read();
+    return onBoothChange(() => void read());
+  }, [me, cache.exhibitorId, interactionId]);
 
   if (!i) {
     return (
@@ -80,7 +94,9 @@ export default function MeetingDetail({
   }
 
   const isManager = cache.role === 'manager';
-  const canEdit = isManager || i.created_by === me || ownerOf(i, me) === me || i.next_action_owner_id === me;
+  const canEdit = isManager || i.created_by === me || ownerOf(i, me) === me;
+  const canMarkDone = canEdit || i.next_action_owner_id === me;
+  const memberLabel = (m: BoothCache['team'][number]) => (m.user_id === me ? 'Moi' : m.name || m.email || 'Membre');
   const canEditContact = !!c && (isManager || !c.created_by || c.created_by === me);
   const update = (data: Partial<Interaction> & Record<string, unknown>) =>
     enqueue(me, cache.exhibitorId, 'interaction', i.id, data);
@@ -106,6 +122,11 @@ export default function MeetingDetail({
           </p>
         </div>
 
+        {refused && (
+          <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            Ce changement n'a pas été accepté : la personne choisie ne fait plus partie de l'équipe ou vos droits ont changé.
+          </p>
+        )}
         {c && (
           <PersonBlock cache={cache} me={me} contact={c} canEdit={canEditContact} />
         )}
@@ -155,15 +176,30 @@ export default function MeetingDetail({
                 value={i.next_action_due ?? ''}
                 onChange={(e) => void update({ next_action_due: e.target.value || null })}
               />
-              {i.next_action_owner_id && (
+              {isManager && cache.team.length > 0 ? (
+                <div className="py-1">
+                  <p className="mb-1.5 text-sm text-muted-foreground">Responsable de l'action</p>
+                  <div className="flex flex-wrap gap-2">
+                    {cache.team.map((m) => (
+                      <Chip
+                        key={m.user_id}
+                        selected={(i.next_action_owner_id ?? ownerOf(i, me)) === m.user_id}
+                        onClick={() => void update({ next_action_owner_id: m.user_id })}
+                      >
+                        {memberLabel(m)}
+                      </Chip>
+                    ))}
+                  </div>
+                </div>
+              ) : i.next_action_owner_id && (
                 <Row label="Responsable">{teammateName(cache, i.next_action_owner_id, me, false)}</Row>
               )}
               {i.next_action_done_at ? (
                 <p className="text-sm font-medium text-muted-foreground">Action faite</p>
               ) : (
-                canEdit && (
+                canMarkDone && (
                   <Button variant="outline" className="min-h-[48px] w-full" onClick={() => void update({ next_action_done: true })}>
-                    Action faite
+                    {canEdit ? 'Action faite' : 'Marquer comme faite'}
                   </Button>
                 )
               )}
@@ -192,11 +228,11 @@ export default function MeetingDetail({
           </div>
           {isManager && cache.team.length > 1 && (
             <div className="py-2">
-              <p className="mb-1.5 text-sm text-muted-foreground">Confier à</p>
+              <p className="mb-1.5 text-sm text-muted-foreground">Rencontre suivie par</p>
               <div className="flex flex-wrap gap-2">
                 {cache.team.map((m) => (
                   <Chip key={m.user_id} selected={ownerOf(i, me) === m.user_id} onClick={() => void update({ owner_user_id: m.user_id })}>
-                    {m.user_id === me ? 'Moi' : m.name || m.email}
+                    {memberLabel(m)}
                   </Chip>
                 ))}
               </div>
@@ -219,7 +255,7 @@ export default function MeetingDetail({
             Annuler cette rencontre
           </Button>
         )}
-        {!canEdit && <p className="text-center text-xs text-muted-foreground">Consultation seule</p>}
+        {!canEdit && !canMarkDone && <p className="text-center text-xs text-muted-foreground">Consultation seule</p>}
       </div>
 
       <AlertDialog open={confirmCancel} onOpenChange={setConfirmCancel}>

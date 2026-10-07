@@ -39,6 +39,8 @@ export default function MeetingsList({
   onInbound: (lead: BoothInboundLead) => void;
 }) {
   const [tab, setTab] = useState<'mine' | 'team'>('mine');
+  const [member, setMember] = useState<string | null>(null);
+  const isManager = cache.role === 'manager';
   const [query, setQuery] = useState('');
   const [day, setDay] = useState<string | null>(null);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
@@ -70,14 +72,15 @@ export default function MeetingsList({
         return cardFilter === 'pending' ? st === 'pending' : st === 'read' || st === 'unreadable' || st === 'blocked';
       })
       .filter((i) => !idFilter || idSet.has(i.id))
-      .filter((i) => cardFilter || idFilter || tab === 'team' || ownerOf(i, me) === me || i.created_by === me)
+      .filter((i) => !member || ownerOf(i, me) === member)
+      .filter((i) => cardFilter || idFilter || member || tab === 'team' || ownerOf(i, me) === me || i.created_by === me)
       .filter((i) => {
         if (!q) return true;
         const c = contacts.get(i.contact_id);
         return [fullName(c), c?.company_name, c?.email].some((v) => (v ?? '').toLowerCase().includes(q));
       })
       .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at));
-  }, [cache.interactions, cache.workspaceId, tab, me, query, contacts, cardFilter, cardByContact, idFilter, idSet]);
+  }, [cache.interactions, cache.workspaceId, tab, me, query, contacts, cardFilter, cardByContact, idFilter, idSet, member]);
 
   const ws = cache.workspace;
   const allDays = useMemo(() => {
@@ -156,12 +159,28 @@ export default function MeetingsList({
               key={t}
               type="button"
               className={`min-h-[44px] rounded-md text-sm font-medium ${tab === t ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
-              onClick={() => setTab(t)}
+              onClick={() => { setTab(t); setMember(null); }}
             >
               {t === 'mine' ? 'Les miennes' : 'Équipe'}
             </button>
           ))}
         </div>
+
+        {isManager && cache.team.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Par membre">
+            {cache.team.map((m) => (
+              <Button
+                key={m.user_id}
+                size="sm"
+                variant={member === m.user_id ? 'default' : 'outline'}
+                className="min-h-[44px] shrink-0 rounded-full"
+                onClick={() => setMember(member === m.user_id ? null : m.user_id)}
+              >
+                {m.user_id === me ? 'Moi' : m.name || m.email || 'Membre'}
+              </Button>
+            ))}
+          </div>
+        )}
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
