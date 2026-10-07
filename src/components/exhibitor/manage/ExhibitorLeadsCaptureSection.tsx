@@ -31,6 +31,7 @@ import {
   type BoothWorkspace,
 } from '@/lib/booth/rpc';
 import BoothTeamPanel from '@/components/booth/BoothTeamPanel';
+import BoothCompareSalons from '@/components/booth/BoothCompareSalons';
 
 interface Props {
   exhibitorId: string;
@@ -562,6 +563,8 @@ function ApprovedView({ exhibitorId, access }: { exhibitorId: string; access: Bo
           )}
         </CardContent>
       </Card>
+
+      {isManager && (wsQuery.data?.items.length ?? 0) > 0 && <BoothCompareSalons exhibitorId={exhibitorId} />}
 
       <BoothTeamPanel exhibitorId={exhibitorId} isPaid={access.is_paid} />
 

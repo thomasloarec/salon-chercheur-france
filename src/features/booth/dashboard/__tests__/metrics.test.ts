@@ -153,3 +153,44 @@ describe('computeMetrics', () => {
     expect(d1.series.find((s) => s.key === '23')?.count).toBe(1);
   });
 });
+
+import { computeOutcome } from '../metrics';
+
+describe('computeOutcome', () => {
+  const c = {
+    ...cache,
+    workspace: { ...cache.workspace, total_cost: 35000 },
+    interactions: [
+      it_({ id: 'o1', occurred_at: '2026-10-06T09:00:00Z', next_action: 'call', next_action_done_at: '2026-10-07' }),
+      it_({ id: 'o2', occurred_at: '2026-10-06T10:00:00Z', next_action: 'email' }),
+    ],
+    opportunities: [
+      op({ id: 'p1', origin_interaction_id: 'o1', status: 'won', amount: 12000, won_amount: 12000 }),
+      op({ id: 'p2', origin_interaction_id: 'o1', status: 'lost', amount: 3000 }),
+      op({ id: 'p3', origin_interaction_id: 'o2', status: 'open', amount: 10000, probability: 50 }),
+      op({ id: 'p4', origin_interaction_id: 'o2', status: 'abandoned', amount: 99999, probability: 90 }),
+    ],
+  } as unknown as Parameters<typeof computeOutcome>[0];
+  const o = computeOutcome(c, 'team', A);
+  it('pipeline et pondéré', () => {
+    expect(o.pipeline).toBe(10000);
+    expect(o.weighted).toBe(5000);
+  });
+  it('gagnés, perdus, transformation', () => {
+    expect(o.won).toBe(1);
+    expect(o.wonAmount).toBe(12000);
+    expect(o.lost).toBe(1);
+    expect(o.conversion).toBe(0.5);
+  });
+  it('retour sur investissement', () => {
+    expect(o.roi).toBeCloseTo(0.343, 3);
+  });
+  it('actions réalisées', () => {
+    expect(o.actionsRate).toBe(0.5);
+  });
+  it('sans coût ni projet clos : null', () => {
+    const e = computeOutcome({ ...c, workspace: { ...c.workspace, total_cost: null }, opportunities: [] } as typeof c, 'team', A);
+    expect(e.roi).toBeNull();
+    expect(e.conversion).toBeNull();
+  });
+});

@@ -201,3 +201,45 @@ export function computeMetrics(cache: MetricsCache, opts: MetricsOptions): Metri
 
 export const formatEuros = (n: number, currency = 'EUR') =>
   new Intl.NumberFormat('fr-FR', { style: 'currency', currency: currency || 'EUR', maximumFractionDigits: 0 }).format(n);
+
+export interface Outcome {
+  pipeline: number;
+  weighted: number;
+  won: number;
+  wonAmount: number;
+  lost: number;
+  conversion: number | null;
+  roi: number | null;
+  actionsRate: number | null;
+}
+
+/** Bilan du salon : projets (hors abandonnés), rentabilité, actions. */
+export function computeOutcome(cache: MetricsCache, scope: Scope = 'team', me = ''): Outcome {
+  const meetings = cache.interactions.filter((i) => isMeeting(i, cache.workspaceId));
+  const list = meetings.filter((i) => inScope(ownerId(i, me), scope, me));
+  const ids = new Set(list.map((i) => i.id));
+  const allIds = new Set(meetings.map((i) => i.id));
+  const projects = projectsFor(cache, ids, allIds, 'all', (o) => inScope(o, scope, me), me);
+  const open = projects.filter((p) => p.status === 'open');
+  const won = projects.filter((p) => p.status === 'won');
+  const lost = projects.filter((p) => p.status === 'lost').length;
+  const pipeline = open.reduce((s, p) => s + (typeof p.amount === 'number' ? p.amount : 0), 0);
+  const weighted = open.reduce(
+    (s, p) => s + (typeof p.amount === 'number' && typeof p.probability === 'number' ? (p.amount * p.probability) / 100 : 0),
+    0,
+  );
+  const wonAmount = won.reduce((s, p) => s + (typeof p.won_amount === 'number' ? p.won_amount : 0), 0);
+  const cost = typeof cache.workspace.total_cost === 'number' ? cache.workspace.total_cost : null;
+  const todo = list.filter(isOpenAction).length;
+  const done = list.filter((i) => i.next_action !== 'none' && !!i.next_action_done_at).length;
+  return {
+    pipeline,
+    weighted,
+    won: won.length,
+    wonAmount,
+    lost,
+    conversion: won.length + lost > 0 ? won.length / (won.length + lost) : null,
+    roi: cost !== null && cost > 0 ? wonAmount / cost : null,
+    actionsRate: done + todo > 0 ? done / (done + todo) : null,
+  };
+}

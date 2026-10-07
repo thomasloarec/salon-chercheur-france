@@ -458,3 +458,98 @@ export async function scanCard(opts: {
 
 export const linkCardScan = (scanId: string, contactId: string) =>
   call<unknown>('booth_card_scan_link', { p_scan_id: scanId, p_contact_id: contactId });
+
+/* ---------- Bilan et export ---------- */
+
+export interface BoothWorkspaceSummaryItem {
+  workspace_id: string;
+  nom_event: string;
+  ville: string | null;
+  date_debut: string | null;
+  date_fin: string | null;
+  currency: string | null;
+  total_cost: number | null;
+  archived: boolean;
+  phase: BoothPhase;
+  meetings: number;
+  people: number;
+  new_prospects: number;
+  hot: number;
+  customers: number;
+  actions_open: number;
+  actions_done: number;
+  actions_overdue: number;
+  projects: number;
+  projects_amount: number | null;
+  projects_without_amount: number;
+  weighted_amount: number | null;
+  won: number;
+  won_amount: number | null;
+  lost: number;
+}
+
+export const workspacesSummary = (exhibitorId: string) =>
+  call<{ items: BoothWorkspaceSummaryItem[] }>('booth_workspaces_summary', { p_exhibitor_id: exhibitorId });
+
+export interface BoothExportRow {
+  interaction_id: string;
+  occurred_at: string;
+  local_date: string | null;
+  local_time: string | null;
+  day_number: number | null;
+  status: string | null;
+  company_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  job_title: string | null;
+  email: string | null;
+  phone: string | null;
+  linkedin_url: string | null;
+  contact_source: string | null;
+  relationship: string | null;
+  customer_topic: string | null;
+  potential: string | null;
+  next_action: string | null;
+  next_action_due: string | null;
+  next_action_done_at: string | null;
+  next_action_owner: string | null;
+  owner: string | null;
+  note: string | null;
+  capture_source: string | null;
+  project_title: string | null;
+  project_value_band: string | null;
+  project_amount: number | null;
+  project_horizon: string | null;
+  project_probability: number | null;
+  project_status: string | null;
+  project_won_amount: number | null;
+}
+
+export interface BoothExportProject {
+  opportunity_id: string;
+  created_at: string | null;
+  title: string | null;
+  company_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  value_band: string | null;
+  amount: number | null;
+  currency: string | null;
+  horizon: string | null;
+  probability: number | null;
+  status: string | null;
+  won_amount: number | null;
+  won_at: string | null;
+  lost_at: string | null;
+  owner: string | null;
+}
+
+export interface BoothExport {
+  workspace: { nom_event?: string; [k: string]: unknown };
+  rows: BoothExportRow[];
+  projects: BoothExportProject[];
+  generated_at: string;
+}
+
+export const exportWorkspace = (workspaceId: string) =>
+  call<BoothExport>('booth_export_workspace', { p_workspace_id: workspaceId });
