@@ -187,7 +187,7 @@ export default function NewMeetingFlow({
         contactId: null,
         interactionId: null,
       });
-      const patch: Partial<MeetingDraft> = {
+      const cardPatch: Partial<MeetingDraft> = {
         name: '',
         company: PROVISIONAL_COMPANY,
         companyDomain: null,
@@ -203,7 +203,7 @@ export default function NewMeetingFlow({
         cardConfidence: null,
         cardQueued: true,
       };
-      const next: MeetingDraft = { ...d, ...patch, step: 'rel', history: [...d.history, d.step] };
+      const next: MeetingDraft = { ...d, ...cardPatch, step: 'rel', history: [...d.history, d.step] };
       await saveDraft(userId, wsId, next).catch(() => undefined);
       setCardWait(false);
       setD(next);
