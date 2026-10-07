@@ -132,7 +132,7 @@ export default function PersonBlock({ cache, me, contact: c, canEdit }: { cache:
         value={
           c.company_name && (
             <span className="inline-flex items-center gap-2">
-              {logo && <img src={logo} alt="" className="h-6 w-6 rounded border border-border bg-background object-contain" />}
+              {logo && <img onError={(e) => { e.currentTarget.style.display = 'none'; }} src={logo} alt="" className="h-6 w-6 rounded border border-border bg-background object-contain" />}
               {c.company_name}
             </span>
           )
@@ -177,7 +177,7 @@ export default function PersonBlock({ cache, me, contact: c, canEdit }: { cache:
                         }}
                       >
                         {co.logo_url ? (
-                          <img src={co.logo_url} alt="" className="h-8 w-8 rounded border border-border bg-background object-contain" />
+                          <img onError={(e) => { e.currentTarget.style.display = 'none'; }} src={co.logo_url} alt="" className="h-8 w-8 rounded border border-border bg-background object-contain" />
                         ) : (
                           <Building2 className="h-8 w-8 p-1 text-muted-foreground" />
                         )}

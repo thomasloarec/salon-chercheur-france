@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { User, Session, isAuthRetryableFetchError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { queryClient } from '@/lib/queryClient';
 
@@ -32,6 +32,28 @@ const clearStaleAuthStorage = () => {
   } catch (error) {
     console.error('Failed to clear stale auth storage:', error);
   }
+};
+
+// Hors ligne : une erreur réseau ne signifie pas une session invalide.
+const isNetworkAuthError = (error: unknown): boolean => {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return true;
+  if (isAuthRetryableFetchError(error)) return true;
+  const msg = String((error as { message?: string })?.message ?? '');
+  return /Failed to fetch|NetworkError|Load failed|network/i.test(msg);
+};
+
+const readStoredSession = (): { session: Session; user: User } | null => {
+  try {
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith(SUPABASE_AUTH_STORAGE_PREFIX) || !key.endsWith('-auth-token')) continue;
+      const parsed = JSON.parse(localStorage.getItem(key) ?? 'null');
+      if (parsed?.user?.id) return { session: parsed as Session, user: parsed.user as User };
+    }
+  } catch {
+    /* ignoré */
+  }
+  return null;
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -141,6 +163,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
 
+        if (!nextSession && typeof navigator !== 'undefined' && navigator.onLine === false) {
+          const stored = readStoredSession();
+          if (stored) {
+            setSession(stored.session);
+            setRawUser(stored.user);
+            if (event !== 'INITIAL_SESSION' || authBootstrapped.current) setLoading(false);
+            return;
+          }
+        }
+
         setSession(nextSession);
         setRawUser(nextSession?.user ?? null);
         if (event !== 'INITIAL_SESSION' || authBootstrapped.current) {
@@ -162,9 +194,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
+    const useStoredSession = () => {
+      const stored = readStoredSession();
+      if (stored) {
+        setSession(stored.session);
+        setRawUser(stored.user);
+      }
+    };
+
     const bootstrapAuth = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
+
+        if (error && isNetworkAuthError(error)) {
+          useStoredSession();
+          return;
+        }
 
         if (error) {
           const message = error.message.toLowerCase();
@@ -178,6 +223,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(data.session);
         setRawUser(data.session?.user ?? null);
       } catch (error) {
+        if (isNetworkAuthError(error)) {
+          useStoredSession();
+          return;
+        }
         await handleInvalidSession(error);
         return;
       } finally {

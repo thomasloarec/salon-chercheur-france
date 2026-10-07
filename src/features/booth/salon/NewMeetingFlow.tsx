@@ -470,7 +470,7 @@ export default function NewMeetingFlow({
                         }}
                       >
                         {c.logo_url ? (
-                          <img src={c.logo_url} alt="" className="h-8 w-8 rounded border border-border bg-background object-contain" />
+                          <img onError={(e) => { e.currentTarget.style.display = 'none'; }} src={c.logo_url} alt="" className="h-8 w-8 rounded border border-border bg-background object-contain" />
                         ) : (
                           <Building2 className="h-8 w-8 p-1 text-muted-foreground" />
                         )}

@@ -105,6 +105,7 @@ import CityYearHub from '@/pages/CityYearHub';
 import SalonsAnnualHub from '@/pages/SalonsAnnualHub';
 import SalonEmbedPage from '@/pages/SalonEmbedPage';
 import SalonMode from '@/pages/SalonMode';
+import SalonStart from '@/pages/SalonStart';
 import './App.css';
 
 // Global listener for pending visit plan redirect after OAuth
@@ -192,6 +193,7 @@ function App() {
             <Route path="/radar/invitation" element={<RadarInvitation />} />
             <Route path="/leads" element={<LeadsHome />} />
             <Route path="/leads/invitation" element={<LeadsInvitation />} />
+            <Route path="/salon/demarrer" element={<SalonStart />} />
             <Route path="/salon/:workspaceId" element={<SalonMode />} />
 
             {/* Admin routes with sidebar layout */}
