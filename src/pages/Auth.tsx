@@ -93,17 +93,23 @@ const Auth = () => {
     setLoading(true);
     setError('');
 
-    const { error } = await signIn(email, password);
-    
-    if (error) {
-      if (error.message.includes('Invalid login credentials')) {
-        setError('Email ou mot de passe incorrect');
-      } else {
-        setError(error.message);
+    try {
+      const { error, session } = await signIn(email, password);
+
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          setError('Email ou mot de passe incorrect');
+        } else {
+          setError(error.message);
+        }
+      } else if (session) {
+        navigate(safeRedirect || '/', { replace: true });
       }
+    } catch {
+      setError("La connexion n'a pas pu aboutir. Réessayez dans un instant.");
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
