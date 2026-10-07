@@ -127,6 +127,7 @@ export async function processCardQueue(userId: string, workspaceId: string) {
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     for (const c of items) {
       if (typeof navigator !== 'undefined' && navigator.onLine === false) break;
+      if (paused > 0) break;
       try {
         const res = await scanCard({
           workspaceId,
