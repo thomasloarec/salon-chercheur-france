@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { registerSalonSW } from '@/features/booth/offline/registerSalonSW';
+import { useSalonAppMeta } from '@/features/booth/offline/useSalonAppMeta';
 
 export const LAST_WORKSPACE_KEY = 'lotexpo-leads:last-workspace';
 
 export default function SalonStart() {
   const navigate = useNavigate();
+  useSalonAppMeta();
   const [offline, setOffline] = useState(false);
 
   useEffect(() => {
