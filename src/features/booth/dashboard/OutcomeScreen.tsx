@@ -18,6 +18,13 @@ const STATUS: { v: Opportunity['status']; label: string }[] = [
   { v: 'abandoned', label: 'Abandonné' },
 ];
 const PROBAS = [10, 25, 50, 75, 90] as const;
+const PROBA_LABEL: Record<(typeof PROBAS)[number], string> = {
+  10: 'Faible',
+  25: 'Possible',
+  50: 'Une chance sur deux',
+  75: 'Probable',
+  90: 'Quasi sûr',
+};
 const pct = (v: number | null) => (v === null ? 'Non calculable' : `${Math.round(v * 100)} %`);
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -29,7 +36,17 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function AmountInput({ value, onCommit, label }: { value: number | null; onCommit: (n: number | null) => void; label: string }) {
+function AmountInput({
+  value,
+  onCommit,
+  label,
+  placeholder = 'Montant en euros',
+}: {
+  value: number | null;
+  onCommit: (n: number | null) => void;
+  label: string;
+  placeholder?: string;
+}) {
   const [v, setV] = useState(value === null ? '' : String(value));
   const commit = () => {
     const t = v.replace(/\s/g, '').replace(',', '.');
@@ -40,7 +57,7 @@ function AmountInput({ value, onCommit, label }: { value: number | null; onCommi
   return (
     <label className="flex flex-col gap-1 text-sm">
       <span className="text-muted-foreground">{label}</span>
-      <Input inputMode="decimal" className="min-h-[44px]" value={v} onChange={(e) => setV(e.target.value)} onBlur={commit} placeholder="Montant en euros" />
+      <Input inputMode="decimal" className="min-h-[44px]" value={v} onChange={(e) => setV(e.target.value)} onBlur={commit} placeholder={placeholder} />
     </label>
   );
 }
@@ -65,7 +82,8 @@ export default function OutcomeScreen({
     const list = cache.opportunities.filter(
       (p) => (!p.workspace_id || p.workspace_id === cache.workspaceId) && p.status !== 'abandoned',
     );
-    const incomplete = (p: Opportunity) => p.status === 'open' && (p.amount === null || p.probability === null);
+    const incomplete = (p: Opportunity) =>
+      (p.status === 'open' && (p.amount === null || p.probability === null)) || (p.status === 'won' && p.won_amount === null);
     return [...list].sort((a, b) => Number(incomplete(b)) - Number(incomplete(a)));
   }, [cache]);
 
@@ -119,6 +137,7 @@ export default function OutcomeScreen({
             <dl className="text-sm">
               <Row label="Pipeline" value={formatEuros(o.pipeline, cur)} />
               <Row label="Pipeline pondéré" value={formatEuros(o.weighted, cur)} />
+              <p className="-mt-1 pb-2 text-xs text-muted-foreground">Montant estimé × chance de signer, projets en cours seulement.</p>
               <Row label="Gagnés" value={`${o.won} · ${formatEuros(o.wonAmount, cur)}`} />
               <Row label="Perdus" value={String(o.lost)} />
               <Row label="Taux de transformation" value={pct(o.conversion)} />
@@ -138,11 +157,21 @@ export default function OutcomeScreen({
                 {projects.map((p) => {
                   const c = contactOf(p);
                   const who = [c?.company_name, fullName(c)].filter(Boolean).join(' · ') || 'Contact';
+                  const wonMissing = p.status === 'won' && p.won_amount === null;
+                  const openMissing = p.status === 'open' && (p.amount === null || p.probability === null);
+                  const printLine =
+                    p.status === 'won'
+                      ? `Gagné${p.won_amount !== null ? ` · ${formatEuros(p.won_amount, cur)} signés` : ''}`
+                      : p.status === 'open'
+                        ? `En cours${p.amount !== null ? ` · ${formatEuros(p.amount, cur)}` : ''}${p.probability !== null ? ` · chance de signer ${p.probability} %` : ''}`
+                        : (STATUS.find((s) => s.v === p.status)?.label ?? '');
                   return (
                     <li key={p.id} className="space-y-3 border-t border-border pt-3 first:border-t-0 first:pt-0">
                       <div>
                         <p className="font-medium">{who}</p>
                         {p.title && <p className="text-sm text-muted-foreground">{p.title}</p>}
+                        {wonMissing && <p className="text-sm font-medium text-destructive print:hidden">Montant signé à renseigner</p>}
+                        {openMissing && <p className="text-sm font-medium text-destructive print:hidden">Montant ou chance de signer à renseigner</p>}
                       </div>
                       <div className="flex flex-wrap gap-2 print:hidden">
                         {STATUS.map((s) => (
@@ -154,7 +183,10 @@ export default function OutcomeScreen({
                             onClick={() => {
                               if (p.status === s.v) return;
                               const data: Record<string, unknown> = { status: s.v };
-                              if (s.v === 'won' && p.won_amount === null && p.amount !== null) data.won_amount = p.amount;
+                              if (s.v === 'won') {
+                                const w = p.won_amount ?? p.amount;
+                                if (w !== null) data.won_amount = w;
+                              }
                               void update(p.id, data);
                             }}
                           >
@@ -162,34 +194,57 @@ export default function OutcomeScreen({
                           </Button>
                         ))}
                       </div>
-                      <p className="hidden text-sm print:block">
-                        {STATUS.find((s) => s.v === p.status)?.label}
-                        {p.amount !== null ? ` · ${formatEuros(p.amount, cur)}` : ''}
-                        {p.probability !== null ? ` · ${p.probability} %` : ''}
-                        {p.status === 'won' && p.won_amount !== null ? ` · gagné ${formatEuros(p.won_amount, cur)}` : ''}
-                      </p>
+                      <p className="hidden text-sm print:block">{printLine}</p>
                       <div className="space-y-3 print:hidden">
-                        <AmountInput key={`a${p.id}${p.amount}`} label="Montant estimé" value={p.amount} onCommit={(n) => void update(p.id, { amount: n })} />
-                        <div className="flex flex-wrap gap-2">
-                          {PROBAS.map((v) => (
-                            <Button
-                              key={v}
-                              size="sm"
-                              variant={p.probability === v ? 'default' : 'outline'}
-                              className="min-h-[44px] min-w-[56px] rounded-full"
-                              onClick={() => void update(p.id, { probability: p.probability === v ? null : v })}
-                            >
-                              {v} %
-                            </Button>
-                          ))}
-                        </div>
+                        {p.status === 'open' && (
+                          <>
+                            <AmountInput key={`a${p.id}${p.amount}`} label="Montant estimé" value={p.amount} onCommit={(n) => void update(p.id, { amount: n })} />
+                            <div className="space-y-2">
+                              <p className="text-sm text-muted-foreground">Chance de signer</p>
+                              <div className="flex flex-wrap gap-2">
+                                {PROBAS.map((v) => (
+                                  <Button
+                                    key={v}
+                                    size="sm"
+                                    variant={p.probability === v ? 'default' : 'outline'}
+                                    className="h-auto min-h-[52px] min-w-[72px] flex-col gap-0 rounded-xl px-3 py-1.5"
+                                    onClick={() => void update(p.id, { probability: p.probability === v ? null : v })}
+                                  >
+                                    <span className="font-semibold">{v} %</span>
+                                    <span className="text-xs font-normal">{PROBA_LABEL[v]}</span>
+                                  </Button>
+                                ))}
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {p.amount !== null && p.probability !== null
+                                  ? `Ce projet compte pour ${formatEuros((p.amount * p.probability) / 100, cur)} dans le pipeline pondéré (${formatEuros(p.amount, cur)} × ${p.probability} %).`
+                                  : 'Indiquez le montant estimé et la chance de signer pour calculer le pipeline pondéré.'}
+                              </p>
+                            </div>
+                          </>
+                        )}
                         {p.status === 'won' && (
-                          <AmountInput
-                            key={`w${p.id}${p.won_amount}`}
-                            label="Montant gagné"
-                            value={p.won_amount ?? p.amount}
-                            onCommit={(n) => void update(p.id, { won_amount: n })}
-                          />
+                          <div className="space-y-2">
+                            <AmountInput
+                              key={`w${p.id}${p.won_amount}`}
+                              label="Montant signé"
+                              placeholder="Montant signé en euros"
+                              value={p.won_amount}
+                              onCommit={(n) => void update(p.id, { won_amount: n })}
+                            />
+                            {p.won_amount === null && p.amount !== null && (
+                              <Button
+                                variant="outline"
+                                className="min-h-[44px] w-full"
+                                onClick={() => void update(p.id, { won_amount: p.amount })}
+                              >
+                                Reprendre le montant estimé ({formatEuros(p.amount, cur)})
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                        {(p.status === 'lost' || p.status === 'abandoned') && p.amount !== null && (
+                          <p className="text-sm text-muted-foreground">Montant estimé : {formatEuros(p.amount, cur)}</p>
                         )}
                       </div>
                     </li>
