@@ -185,6 +185,11 @@ export default function SalonMode() {
     };
   }, [screen, isManager, exhibitorIdForDup, sync.online]);
 
+  const userIdForLinks = user?.id;
+  useEffect(() => {
+    if (userIdForLinks && sync.online) void flushCardLinks(userIdForLinks);
+  }, [userIdForLinks, sync.online]);
+
   const startFlow = (initial: MeetingDraft) => {
     setFlowInitial(initial);
     setFlowKey((k) => k + 1);
