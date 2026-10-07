@@ -15607,6 +15607,7 @@ export type Database = {
         Args: { d: Json; k: string; maxlen: number }
         Returns: string
       }
+      _booth_user_label: { Args: { p_user_id: string }; Returns: string }
       _exhibitor_ai_completeness: {
         Args: { a: Database["public"]["Tables"]["exhibitor_ai"]["Row"] }
         Returns: number
@@ -16335,6 +16336,10 @@ export type Database = {
         Returns: Json
       }
       booth_enabled: { Args: never; Returns: boolean }
+      booth_export_workspace: {
+        Args: { p_workspace_id: string }
+        Returns: Json
+      }
       booth_find_duplicates: { Args: { p_exhibitor_id: string }; Returns: Json }
       booth_get_access: { Args: { p_exhibitor_id: string }; Returns: Json }
       booth_invite_member: {
@@ -16381,6 +16386,10 @@ export type Database = {
           p_total_cost?: number
           p_workspace_id: string
         }
+        Returns: Json
+      }
+      booth_workspaces_summary: {
+        Args: { p_exhibitor_id: string }
         Returns: Json
       }
       build_all_event_profiles: {
