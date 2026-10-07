@@ -209,6 +209,7 @@ export default function NewMeetingFlow({
     try {
       img = await prepareCardImage(file);
       file = null;
+      picked = undefined;
       setPhotoUrl(img.dataUrl);
       if (token !== scanToken.current) return;
       if (!navigator.onLine) {
