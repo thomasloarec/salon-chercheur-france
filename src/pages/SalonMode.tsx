@@ -29,6 +29,7 @@ import { flushCardLinks } from '@/features/booth/card/useCardScanAvailable';
 import MeetingsList from '@/features/booth/salon/MeetingsList';
 import DashboardScreen, { type ListFilter } from '@/features/booth/dashboard/DashboardScreen';
 import DebriefScreen from '@/features/booth/dashboard/DebriefScreen';
+import ActionsScreen, { openActions } from '@/features/booth/dashboard/ActionsScreen';
 import MeetingDetail from '@/features/booth/salon/MeetingDetail';
 import DuplicatesScreen from '@/features/booth/salon/DuplicatesScreen';
 import { findDuplicates } from '@/lib/booth/rpc';
@@ -129,10 +130,11 @@ export default function SalonMode() {
   const { user, loading } = useAuth();
   const { cache, status, error } = useBoothWorkspace(workspaceId);
   const sync = useBoothSync(workspaceId, cache?.exhibitorId ?? null);
-  const [screen, setScreen] = useState<'home' | 'flow' | 'list' | 'detail' | 'duplicates' | 'dashboard' | 'debrief'>('home');
+  const [screen, setScreen] = useState<'home' | 'flow' | 'list' | 'detail' | 'duplicates' | 'dashboard' | 'debrief' | 'actions'>('home');
+  const [actionsBack, setActionsBack] = useState<'home' | 'dashboard'>('home');
   const [listFilter, setListFilter] = useState<ListFilter | null>(null);
   const [listBack, setListBack] = useState<'home' | 'dashboard'>('home');
-  const [detailBack, setDetailBack] = useState<'list' | 'debrief'>('list');
+  const [detailBack, setDetailBack] = useState<'list' | 'debrief' | 'actions'>('list');
   const [dupCount, setDupCount] = useState(0);
   const [flowInitial, setFlowInitial] = useState<MeetingDraft>(emptyDraft());
   const [flowKey, setFlowKey] = useState(0);
@@ -385,6 +387,14 @@ export default function SalonMode() {
           onBack={() => setScreen('home')}
           onOpenList={(f) => { setCardFilter(null); setListFilter(f); setListBack('dashboard'); setScreen('list'); }}
           onDebrief={() => setScreen('debrief')}
+          onActions={() => { setActionsBack('dashboard'); setScreen('actions'); }}
+        />
+      ) : screen === 'actions' && user ? (
+        <ActionsScreen
+          cache={cache}
+          me={user.id}
+          onBack={() => setScreen(actionsBack)}
+          onOpen={(id) => { setDetailId(id); setDetailBack('actions'); setScreen('detail'); }}
         />
       ) : screen === 'debrief' && user ? (
         <DebriefScreen
@@ -477,6 +487,11 @@ export default function SalonMode() {
             <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base" onClick={() => setScreen('dashboard')}>
               Tableau de bord
             </Button>
+            {user && openActions(cache, user.id).length > 0 && (
+              <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base" onClick={() => { setActionsBack('home'); setScreen('actions'); }}>
+                Actions à faire ({openActions(cache, user.id).length})
+              </Button>
+            )}
             {cardsPending > 0 && (
               <Button variant="link" className="min-h-[44px]" onClick={() => { setCardFilter('pending'); setListFilter(null); setListBack('home'); setScreen('list'); }}>
                 {cardsPending} carte{cardsPending > 1 ? 's' : ''} en attente de lecture

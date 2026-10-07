@@ -55,6 +55,7 @@ export default function DashboardScreen({
   onBack,
   onOpenList,
   onDebrief,
+  onActions,
 }: {
   cache: BoothCache;
   me: string;
@@ -63,6 +64,7 @@ export default function DashboardScreen({
   onBack: () => void;
   onOpenList: (f: ListFilter) => void;
   onDebrief: () => void;
+  onActions: () => void;
 }) {
   const [day, setDay] = useState<string>('all');
   const [scope, setScope] = useState<Scope>('team');
@@ -133,7 +135,7 @@ export default function DashboardScreen({
             label="Actions à faire"
             sub={m.actionsOverdue > 0 ? `dont ${m.actionsOverdue} en retard` : undefined}
             subWarn
-            onClick={() => onOpenList(m.actionsOverdue > 0 ? { ids: m.ids.overdue, label: 'Actions en retard' } : { ids: m.ids.todo, label: 'Actions à faire' })}
+            onClick={onActions}
           />
           <Tile value={String(m.customers)} label="Clients rencontrés" onClick={() => onOpenList({ ids: m.ids.customers, label: 'Clients rencontrés' })} />
         </div>
