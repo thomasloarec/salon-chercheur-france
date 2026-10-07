@@ -1,6 +1,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { AIRTABLE_CONFIG, listMissing, getEnvOrConfig, debugVariables } from '../_shared/airtable-config.ts';
+import { requireAdmin } from '../_shared/admin-auth.ts';
+// Correctif sécurité 07/10/2026 (2) : réservée aux admins ou à la clé service_role.
+// Avant : la clé anon (publique, présente dans le site) suffisait pour lire, créer, modifier et supprimer dans Airtable.
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -193,22 +196,9 @@ serve(async (req) => {
     
     console.log('[airtable-proxy] ✅ Variables OK, Base ID:', AIRTABLE_BASE_ID.substring(0, 10) + '...');
 
-    // 3. Vérification API key Supabase
-    const apiKey = req.headers.get('apikey');
-    if (apiKey !== Deno.env.get('SUPABASE_ANON_KEY')) {
-      console.error('[airtable-proxy] ❌ Clé API Supabase invalide');
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          error: 'unauthorized', 
-          message: 'Invalid API key' 
-        }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
+    // 3. Contrôle d'accès : admin ou service_role uniquement
+    const denied = await requireAdmin(req, corsHeaders, 'airtable-proxy');
+    if (denied) return denied;
 
     // 4. Parsing des paramètres
     const { action, table, payload, uniqueField } = await req.json();
