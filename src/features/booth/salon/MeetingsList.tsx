@@ -182,7 +182,7 @@ export default function MeetingsList({
                         )}
                       </span>
                     </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">{dayTimeLabel(i.occurred_at, ws)}</span>
+                    <span className="max-w-[42%] shrink-0 text-right text-xs text-muted-foreground">{dayTimeLabel(i.occurred_at, ws)}</span>
                   </button>
                 </li>
               );
