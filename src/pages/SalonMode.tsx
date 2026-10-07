@@ -25,6 +25,7 @@ import { isPersistentStorage, onStorageAvailabilityChange } from '@/features/boo
 import type { BoothCache } from '@/features/booth/sync/cache';
 import type { BoothInboundLead } from '@/lib/booth/rpc';
 import NewMeetingFlow from '@/features/booth/salon/NewMeetingFlow';
+import { flushCardLinks } from '@/features/booth/card/useCardScanAvailable';
 import MeetingsList from '@/features/booth/salon/MeetingsList';
 import MeetingDetail from '@/features/booth/salon/MeetingDetail';
 import DuplicatesScreen from '@/features/booth/salon/DuplicatesScreen';

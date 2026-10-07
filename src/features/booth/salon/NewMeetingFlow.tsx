@@ -204,7 +204,7 @@ export default function NewMeetingFlow({
     return keys.some((k) => d.cardConfidence?.[k] === 'medium' || d.cardConfidence?.[k] === 'low');
   };
   const warnCls = (w: boolean) => (w ? ' border-2 border-warning' : '');
-  const Warn = ({ on }: { on: boolean }) => (on ? <p className="-mt-2 text-xs font-medium text-warning">À vérifier</p> : null);
+  const Warn = ({ on }: { on: boolean }) => (on ? <p className="-mt-2 text-xs font-medium text-warning-foreground">À vérifier</p> : null);
 
   const patch = (p: Partial<MeetingDraft>) => setD((prev) => ({ ...prev, ...p }));
   const go = (step: FlowStep, p: Partial<MeetingDraft> = {}) =>
@@ -448,8 +448,7 @@ export default function NewMeetingFlow({
     }
   }
 
-  const shownPhone = d.coordMode === 'phone' ? d.coordValue : d.phoneExtra;
-  const phoneConfKey = d.cardConfidence?.mobile !== undefined && shownPhone && !d.cardConfidence?.phone ? 'mobile' : d.cardConfidence?.mobile && !d.cardConfidence?.phone ? 'mobile' : d.cardConfidence?.phone ? 'phone' : 'mobile';
+  const phoneConfKey = d.cardConfidence?.mobile ? 'mobile' : 'phone';
   const progress = Math.max(0, ORDER.indexOf(d.step === 'topic' ? 'pot' : d.step)) / (ORDER.length - 1);
   const title = headLabel(d.company, d.name);
 
