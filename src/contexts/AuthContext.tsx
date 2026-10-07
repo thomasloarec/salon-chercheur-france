@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
-import { User, Session, isAuthRetryableFetchError } from '@supabase/supabase-js';
+import { User, Session, isAuthRetryableFetchError, isAuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { queryClient } from '@/lib/queryClient';
 
@@ -10,7 +10,7 @@ interface AuthContextType {
   loading: boolean;
   isRealUser: boolean;
   signUp: (email: string, password: string, redirectPath?: string) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: any; session: Session | null }>;
   signOut: () => Promise<{ error: any }>;
 }
 
@@ -227,7 +227,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           applyStoredSession();
           return;
         }
-        await handleInvalidSession(error);
+        const msg = String((error as { message?: string })?.message ?? '').toLowerCase();
+        if (isAuthError(error) && /refresh token|session|invalid/.test(msg)) {
+          await handleInvalidSession(error);
+          return;
+        }
+        applyStoredSession();
         return;
       } finally {
         authBootstrapped.current = true;
@@ -260,16 +265,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    return { error };
+    if (!error && data.session) {
+      setSession(data.session);
+      setRawUser(data.user);
+      setLoading(false);
+    }
+    return { error, session: data?.session ?? null };
   };
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
       if (error) throw error;
       return { error: null };
     } catch (error) {
