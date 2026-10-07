@@ -371,6 +371,13 @@ export type Database = {
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ai_event_visibility_daily_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
         ]
       }
       ai_funnel_events: {
@@ -805,6 +812,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_feedback_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
           {
@@ -1287,6 +1301,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "assistant_suggestions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "assistant_suggestions_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
@@ -1556,6 +1577,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "booth_access_plan_event_id_fkey"
+            columns: ["plan_event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "booth_access_target_event_id_fkey"
             columns: ["target_event_id"]
             isOneToOne: false
@@ -1602,6 +1630,13 @@ export type Database = {
             columns: ["target_event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_access_target_event_id_fkey"
+            columns: ["target_event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
         ]
@@ -2141,6 +2176,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_workspaces_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
           {
@@ -3437,6 +3479,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "crm_company_event_matches_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "crm_company_event_matches_id_exposant_fkey"
             columns: ["id_exposant"]
             isOneToOne: false
@@ -3609,6 +3658,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_event_alerts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
           {
@@ -3965,6 +4021,13 @@ export type Database = {
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_ai_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
         ]
       }
       event_change_requests: {
@@ -4060,6 +4123,13 @@ export type Database = {
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_change_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
         ]
       }
       event_claim_requests: {
@@ -4141,6 +4211,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_claim_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
         ]
@@ -4265,6 +4342,13 @@ export type Database = {
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_embeddings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
         ]
       }
       event_profiles: {
@@ -4346,6 +4430,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: true
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_profiles_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
         ]
@@ -4497,6 +4588,13 @@ export type Database = {
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_program_sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
         ]
       }
       event_program_speakers: {
@@ -4589,6 +4687,13 @@ export type Database = {
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_program_speakers_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
         ]
       }
       event_recommendations: {
@@ -4678,6 +4783,13 @@ export type Database = {
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_recommendations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
         ]
       }
       event_sectors: {
@@ -4716,6 +4828,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events_geo"
+            referencedColumns: ["id_event"]
+          },
+          {
+            foreignKeyName: "event_sectors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id_event"]
           },
           {
@@ -4833,6 +4952,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "event_similarity_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "event_similarity_neighbor_event_id_fkey"
             columns: ["neighbor_event_id"]
             isOneToOne: false
@@ -4879,6 +5005,13 @@ export type Database = {
             columns: ["neighbor_event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_similarity_neighbor_event_id_fkey"
+            columns: ["neighbor_event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
         ]
@@ -4961,6 +5094,13 @@ export type Database = {
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_snapshots_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
         ]
       }
       event_update_activity_log: {
@@ -5036,6 +5176,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_update_activity_log_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
           {
@@ -5129,6 +5276,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_update_stats_daily_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
           {
@@ -5245,6 +5399,13 @@ export type Database = {
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_updates_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
         ]
       }
       events: {
@@ -5311,10 +5472,14 @@ export type Database = {
           type_event: string | null
           updated_at: string | null
           url_image: string | null
+          url_liste_exposants: string | null
           url_site_officiel: string | null
           url_site_officiel_domain: string | null
           url_site_officiel_normalized: string | null
           validation_mode: string | null
+          veille_exposants_at: string | null
+          veille_exposants_note: string | null
+          veille_exposants_statut: string | null
           verified_at: string | null
           ville: string | null
           visible: boolean | null
@@ -5382,10 +5547,14 @@ export type Database = {
           type_event?: string | null
           updated_at?: string | null
           url_image?: string | null
+          url_liste_exposants?: string | null
           url_site_officiel?: string | null
           url_site_officiel_domain?: string | null
           url_site_officiel_normalized?: string | null
           validation_mode?: string | null
+          veille_exposants_at?: string | null
+          veille_exposants_note?: string | null
+          veille_exposants_statut?: string | null
           verified_at?: string | null
           ville?: string | null
           visible?: boolean | null
@@ -5453,10 +5622,14 @@ export type Database = {
           type_event?: string | null
           updated_at?: string | null
           url_image?: string | null
+          url_liste_exposants?: string | null
           url_site_officiel?: string | null
           url_site_officiel_domain?: string | null
           url_site_officiel_normalized?: string | null
           validation_mode?: string | null
+          veille_exposants_at?: string | null
+          veille_exposants_note?: string | null
+          veille_exposants_statut?: string | null
           verified_at?: string | null
           ville?: string | null
           visible?: boolean | null
@@ -6432,6 +6605,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "exhibitor_invitation_pages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "exhibitor_invitation_pages_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
@@ -6695,6 +6875,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibitor_participation_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
           {
@@ -7533,6 +7720,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "favorites_event_fkey"
+            columns: ["event_uuid"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "favorites_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
@@ -7579,6 +7773,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorites_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
         ]
@@ -7692,6 +7893,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "growth_leads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
         ]
@@ -7811,6 +8019,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "growth_subscriptions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
           {
@@ -8045,6 +8260,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "leads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "leads_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
@@ -8269,6 +8491,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "notifications_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "notifications_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
@@ -8458,6 +8687,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelties_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
           {
@@ -8917,6 +9153,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelty_source_documents_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
           {
@@ -9492,6 +9735,13 @@ export type Database = {
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "organizer_exhibitor_imports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
         ]
       }
       organizer_non_groupable_domains: {
@@ -9837,6 +10087,13 @@ export type Database = {
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "organizer_salon_triage_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
         ]
       }
       organizers: {
@@ -10050,6 +10307,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
           {
@@ -10413,6 +10677,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "outreach_unsubscribe_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "outreach_unsubscribe_events_organizer_campaign_id_fkey"
             columns: ["organizer_campaign_id"]
             isOneToOne: false
@@ -10550,6 +10821,13 @@ export type Database = {
             columns: ["id_event"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_participation_event"
+            columns: ["id_event"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
         ]
@@ -10822,6 +11100,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "premium_entitlements_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
           {
@@ -11221,6 +11506,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "radar_event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
           {
@@ -12114,6 +12406,13 @@ export type Database = {
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "seo_regen_backup_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
         ]
       }
       seo_scans: {
@@ -12583,6 +12882,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "staging_organizer_exhibitors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "staging_organizer_exhibitors_import_id_fkey"
             columns: ["import_id"]
             isOneToOne: false
@@ -12721,6 +13027,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staging_program_imports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
         ]
@@ -13012,6 +13325,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_threads_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
           {
@@ -13349,6 +13669,130 @@ export type Database = {
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_routes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      veille_exposants_lignes: {
+        Row: {
+          confiance: string | null
+          created_at: string
+          deja_connu_id_exposant: string | null
+          deja_connu_nom: string | null
+          domaine: string | null
+          event_id: string
+          id: string
+          nom: string
+          remarque: string | null
+          run_id: string
+          stand: string | null
+          stand_brut: string | null
+          statut: string
+          url_fiche: string | null
+          url_source: string | null
+          website: string | null
+          website_brut: string | null
+        }
+        Insert: {
+          confiance?: string | null
+          created_at?: string
+          deja_connu_id_exposant?: string | null
+          deja_connu_nom?: string | null
+          domaine?: string | null
+          event_id: string
+          id?: string
+          nom: string
+          remarque?: string | null
+          run_id: string
+          stand?: string | null
+          stand_brut?: string | null
+          statut?: string
+          url_fiche?: string | null
+          url_source?: string | null
+          website?: string | null
+          website_brut?: string | null
+        }
+        Update: {
+          confiance?: string | null
+          created_at?: string
+          deja_connu_id_exposant?: string | null
+          deja_connu_nom?: string | null
+          domaine?: string | null
+          event_id?: string
+          id?: string
+          nom?: string
+          remarque?: string | null
+          run_id?: string
+          stand?: string | null
+          stand_brut?: string | null
+          statut?: string
+          url_fiche?: string | null
+          url_source?: string | null
+          website?: string | null
+          website_brut?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "veille_exposants_lignes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "admin_events_exhibitor_coverage"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "veille_exposants_lignes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "veille_exposants_lignes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "veille_exposants_lignes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "veille_exposants_lignes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "veille_exposants_lignes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_salons_email_missing"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "veille_exposants_lignes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "veille_exposants_lignes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
         ]
       }
       visit_plans: {
@@ -13441,6 +13885,13 @@ export type Database = {
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "visit_plans_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
         ]
       }
       widget_tokens: {
@@ -13531,6 +13982,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "widget_tokens_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
         ]
@@ -13644,6 +14102,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wizard_sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
         ]
@@ -14005,6 +14470,13 @@ export type Database = {
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_participation_event"
+            columns: ["id_event"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
         ]
       }
       pipeline_health: {
@@ -14258,6 +14730,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "novelties_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "novelties_exhibitor_id_fkey"
             columns: ["exhibitor_id"]
             isOneToOne: false
@@ -14367,6 +14846,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
           {
@@ -14519,6 +15005,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
         ]
@@ -14693,6 +15186,13 @@ export type Database = {
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "outreach_campaigns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
         ]
       }
       v_labels_a_mapper: {
@@ -14824,6 +15324,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "novelties_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
             referencedColumns: ["id"]
           },
           {
@@ -14973,6 +15480,13 @@ export type Database = {
             referencedRelation: "v_events_outreach_eligible"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_participation_event"
+            columns: ["id_event"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
         ]
       }
       v_seo_enrichment_status: {
@@ -14981,6 +15495,45 @@ export type Database = {
           last_run: Json | null
           runs_last_7d: number | null
           success_last_7d: number | null
+        }
+        Relationships: []
+      }
+      v_veille_exposants_file: {
+        Row: {
+          airtable_id: string | null
+          date_debut: string | null
+          id: string | null
+          id_event: string | null
+          nom_event: string | null
+          url_liste_exposants: string | null
+          url_site_officiel: string | null
+          veille_exposants_at: string | null
+          veille_exposants_statut: string | null
+          ville: string | null
+        }
+        Insert: {
+          airtable_id?: string | null
+          date_debut?: string | null
+          id?: string | null
+          id_event?: string | null
+          nom_event?: string | null
+          url_liste_exposants?: string | null
+          url_site_officiel?: string | null
+          veille_exposants_at?: string | null
+          veille_exposants_statut?: string | null
+          ville?: string | null
+        }
+        Update: {
+          airtable_id?: string | null
+          date_debut?: string | null
+          id?: string | null
+          id_event?: string | null
+          nom_event?: string | null
+          url_liste_exposants?: string | null
+          url_site_officiel?: string | null
+          veille_exposants_at?: string | null
+          veille_exposants_statut?: string | null
+          ville?: string | null
         }
         Relationships: []
       }
@@ -17783,6 +18336,14 @@ export type Database = {
           p_voice_note_id: string
         }
         Returns: Json
+      }
+      veille_match_domains: {
+        Args: { p_domains: string[] }
+        Returns: {
+          domaine: string
+          id_exposant: string
+          nom_exposant: string
+        }[]
       }
       web_domain: { Args: { p_raw: string }; Returns: string }
     }

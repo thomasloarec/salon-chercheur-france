@@ -187,8 +187,7 @@ export default function NewMeetingFlow({
         contactId: null,
         interactionId: null,
       });
-      setCardWait(false);
-      go('rel', {
+      const cardPatch: Partial<MeetingDraft> = {
         name: '',
         company: PROVISIONAL_COMPANY,
         companyDomain: null,
@@ -203,7 +202,11 @@ export default function NewMeetingFlow({
         cardScanId: scanId,
         cardConfidence: null,
         cardQueued: true,
-      });
+      };
+      const next: MeetingDraft = { ...d, ...cardPatch, step: 'rel', history: [...d.history, d.step] };
+      await saveDraft(userId, wsId, next).catch(() => undefined);
+      setCardWait(false);
+      setD(next);
       return true;
     };
     try {
