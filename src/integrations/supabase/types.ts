@@ -10626,6 +10626,7 @@ export type Database = {
           id: number
           jobid: number | null
           jobname: string | null
+          notified_at: string | null
         }
         Insert: {
           created_at?: string
@@ -10634,6 +10635,7 @@ export type Database = {
           id?: never
           jobid?: number | null
           jobname?: string | null
+          notified_at?: string | null
         }
         Update: {
           created_at?: string
@@ -10642,6 +10644,7 @@ export type Database = {
           id?: never
           jobid?: number | null
           jobname?: string | null
+          notified_at?: string | null
         }
         Relationships: []
       }
