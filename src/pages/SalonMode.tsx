@@ -36,6 +36,7 @@ import { registerSalonSW, useOfflineReady } from '@/features/booth/offline/regis
 import { LAST_WORKSPACE_KEY } from '@/pages/SalonStart';
 import { useSalonAppMeta } from '@/features/booth/offline/useSalonAppMeta';
 import InstallBanner from '@/features/booth/offline/InstallBanner';
+import { useCardQueueRunner, useCards } from '@/features/booth/card/cardQueue';
 
 const dayInTz = (d: Date, tz: string) => {
   try {
@@ -135,6 +136,11 @@ export default function SalonMode() {
   const [rejectedOpen, setRejectedOpen] = useState(false);
   const [toAbandon, setToAbandon] = useState<OutboxItem | null>(null);
   const [persistent, setPersistent] = useState(isPersistentStorage());
+  const [cardFilter, setCardFilter] = useState<'pending' | 'review' | null>(null);
+  useCardQueueRunner(user?.id, cache?.exhibitorId, workspaceId);
+  const cards = useCards(user?.id, workspaceId);
+  const cardsPending = cards.filter((c) => c.state === 'pending' && c.contactId).length;
+  const cardsReview = cards.filter((c) => c.state !== 'pending' && c.contactId).length;
 
   useEffect(() => onStorageAvailabilityChange(() => setPersistent(isPersistentStorage())) as () => void, []);
 
@@ -315,7 +321,9 @@ export default function SalonMode() {
         <MeetingsList
           cache={cache}
           me={user.id}
-          onBack={() => setScreen('home')}
+          onBack={() => { setCardFilter(null); setScreen('home'); }}
+          cardFilter={cardFilter}
+          onClearCardFilter={() => setCardFilter(null)}
           onOpen={(id) => {
             setDetailId(id);
             setScreen('detail');
@@ -398,10 +406,20 @@ export default function SalonMode() {
               size="lg"
               variant="outline"
               className="min-h-[56px] w-full text-base"
-              onClick={() => setScreen('list')}
+              onClick={() => { setCardFilter(null); setScreen('list'); }}
             >
               Rencontres du salon
             </Button>
+            {cardsPending > 0 && (
+              <Button variant="link" className="min-h-[44px]" onClick={() => { setCardFilter('pending'); setScreen('list'); }}>
+                {cardsPending} carte{cardsPending > 1 ? 's' : ''} en attente de lecture
+              </Button>
+            )}
+            {cardsReview > 0 && (
+              <Button variant="link" className="min-h-[44px]" onClick={() => { setCardFilter('review'); setScreen('list'); }}>
+                {cardsReview} carte{cardsReview > 1 ? 's' : ''} à vérifier
+              </Button>
+            )}
             {cache.role === 'manager' && dupCount > 0 && (
               <Button variant="link" className="min-h-[44px]" onClick={() => setScreen('duplicates')}>
                 Doublons ({dupCount})
