@@ -8,6 +8,7 @@ import { linkCardScanLater } from './useCardScanAvailable';
 export const PROVISIONAL_COMPANY = 'Carte à traiter';
 const MAX_ATTEMPTS = 3;
 const MAX_AGE_MS = 7 * 24 * 3600 * 1000;
+const ORPHAN_AGE_MS = 2 * 3600 * 1000;
 
 export type CardState = 'pending' | 'read' | 'unreadable' | 'blocked';
 
@@ -102,12 +103,14 @@ export function pauseCardQueue() {
   };
 }
 
-/** Supprime les cartes jamais reliées à un contact, sauf celle du brouillon en cours. */
+/** Supprime les cartes jamais reliées à un contact, hors brouillon en cours, créées il y a plus de 2 heures. */
 export async function purgeOrphanCards(userId: string, workspaceId: string, keepScanId: string | null) {
   const items = await listCards(userId, workspaceId);
+  const now = Date.now();
   let changed = false;
   for (const c of items) {
-    if (!c.contactId && c.scanId !== keepScanId) {
+    const old = now - new Date(c.createdAt).getTime() > ORPHAN_AGE_MS;
+    if (!c.contactId && c.scanId !== keepScanId && old) {
       await del('meta', c.key);
       changed = true;
     }
