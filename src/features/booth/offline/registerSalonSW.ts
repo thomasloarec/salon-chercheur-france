@@ -45,7 +45,7 @@ export function registerSalonSW() {
     return;
   }
 
-  sw.register('/salon-sw.js', { scope: '/salon/' }).catch(() => undefined);
+  navigator.serviceWorker.register('/salon-sw.js', { scope: '/salon/' }).catch(() => undefined);
   if (sw.controller) preloadLazyModules();
   else sw.addEventListener('controllerchange', preloadLazyModules, { once: true });
 }
