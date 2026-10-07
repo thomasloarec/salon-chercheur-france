@@ -93,11 +93,32 @@ export async function countPendingCardsForUser(userId: string) {
 const errCode = (e: unknown) => String((e as { message?: string })?.message ?? e ?? '');
 
 const running = new Set<string>();
+let paused = 0;
+/** Suspend la lecture des cartes pendant un parcours de rencontre (évite tout traitement lourd en parallèle). */
+export function pauseCardQueue() {
+  paused++;
+  return () => {
+    paused = Math.max(0, paused - 1);
+  };
+}
+
+/** Supprime les cartes jamais reliées à un contact, sauf celle du brouillon en cours. */
+export async function purgeOrphanCards(userId: string, workspaceId: string, keepScanId: string | null) {
+  const items = await listCards(userId, workspaceId);
+  let changed = false;
+  for (const c of items) {
+    if (!c.contactId && c.scanId !== keepScanId) {
+      await del('meta', c.key);
+      changed = true;
+    }
+  }
+  if (changed) emit();
+}
 
 /** Lit les cartes en attente une par une (une seule exécution à la fois). */
 export async function processCardQueue(userId: string, workspaceId: string) {
   const runKey = `${userId}|${workspaceId}`;
-  if (running.has(runKey)) return;
+  if (running.has(runKey) || paused > 0) return;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
   running.add(runKey);
   try {
