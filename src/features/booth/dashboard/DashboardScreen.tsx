@@ -56,6 +56,7 @@ export default function DashboardScreen({
   onOpenList,
   onDebrief,
   onActions,
+  onOutcome,
 }: {
   cache: BoothCache;
   me: string;
@@ -65,6 +66,7 @@ export default function DashboardScreen({
   onOpenList: (f: ListFilter) => void;
   onDebrief: () => void;
   onActions: () => void;
+  onOutcome?: () => void;
 }) {
   const [day, setDay] = useState<string>('all');
   const [scope, setScope] = useState<Scope>('team');
@@ -148,6 +150,11 @@ export default function DashboardScreen({
         <Button size="lg" variant="secondary" className="min-h-[56px] w-full text-base" onClick={onDebrief}>
           <ClipboardList className="mr-2 h-5 w-5" /> Débrief du jour
         </Button>
+        {isManager && onOutcome && (
+          <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base" onClick={onOutcome}>
+            Bilan du salon
+          </Button>
+        )}
 
         <section className="rounded-xl border border-border p-4">
           <h3 className="mb-3 font-semibold">Potentiel des prospects</h3>

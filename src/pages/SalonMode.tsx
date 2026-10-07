@@ -29,6 +29,7 @@ import { flushCardLinks } from '@/features/booth/card/useCardScanAvailable';
 import MeetingsList from '@/features/booth/salon/MeetingsList';
 import DashboardScreen, { type ListFilter } from '@/features/booth/dashboard/DashboardScreen';
 import DebriefScreen from '@/features/booth/dashboard/DebriefScreen';
+import OutcomeScreen from '@/features/booth/dashboard/OutcomeScreen';
 import ActionsScreen, { openActions } from '@/features/booth/dashboard/ActionsScreen';
 import MeetingDetail from '@/features/booth/salon/MeetingDetail';
 import DuplicatesScreen from '@/features/booth/salon/DuplicatesScreen';
@@ -130,7 +131,8 @@ export default function SalonMode() {
   const { user, loading } = useAuth();
   const { cache, status, error } = useBoothWorkspace(workspaceId);
   const sync = useBoothSync(workspaceId, cache?.exhibitorId ?? null);
-  const [screen, setScreen] = useState<'home' | 'flow' | 'list' | 'detail' | 'duplicates' | 'dashboard' | 'debrief' | 'actions'>('home');
+  const [screen, setScreen] = useState<'home' | 'flow' | 'list' | 'detail' | 'duplicates' | 'dashboard' | 'debrief' | 'actions' | 'outcome'>('home');
+  const [outcomeBack, setOutcomeBack] = useState<'home' | 'dashboard'>('home');
   const [actionsBack, setActionsBack] = useState<'home' | 'dashboard'>('home');
   const [listFilter, setListFilter] = useState<ListFilter | null>(null);
   const [listBack, setListBack] = useState<'home' | 'dashboard'>('home');
@@ -388,7 +390,10 @@ export default function SalonMode() {
           onOpenList={(f) => { setCardFilter(null); setListFilter(f); setListBack('dashboard'); setScreen('list'); }}
           onDebrief={() => setScreen('debrief')}
           onActions={() => { setActionsBack('dashboard'); setScreen('actions'); }}
+          onOutcome={() => { setOutcomeBack('dashboard'); setScreen('outcome'); }}
         />
+      ) : screen === 'outcome' && user && cache.role === 'manager' ? (
+        <OutcomeScreen cache={cache} me={user.id} online={sync.online} onBack={() => setScreen(outcomeBack)} />
       ) : screen === 'actions' && user ? (
         <ActionsScreen
           cache={cache}
@@ -471,8 +476,13 @@ export default function SalonMode() {
                 </Button>
               </div>
             )}
+            {cache.role === 'manager' && ws.phase === 'after' && (
+              <Button size="lg" className="min-h-[64px] w-full text-lg font-semibold" onClick={() => { setOutcomeBack('home'); setScreen('outcome'); }}>
+                Bilan du salon
+              </Button>
+            )}
             {!ws.archived && (
-              <Button size="lg" className="min-h-[64px] w-full text-lg font-semibold" onClick={() => startFlow(emptyDraft())}>
+              <Button size="lg" variant={cache.role === 'manager' && ws.phase === 'after' ? 'outline' : 'default'} className="min-h-[64px] w-full text-lg font-semibold" onClick={() => startFlow(emptyDraft())}>
                 Nouvelle rencontre
               </Button>
             )}
@@ -487,6 +497,11 @@ export default function SalonMode() {
             <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base" onClick={() => setScreen('dashboard')}>
               Tableau de bord
             </Button>
+            {cache.role === 'manager' && ws.phase !== 'after' && (
+              <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base" onClick={() => { setOutcomeBack('home'); setScreen('outcome'); }}>
+                Bilan du salon
+              </Button>
+            )}
             {user && openActions(cache, user.id).length > 0 && (
               <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base" onClick={() => { setActionsBack('home'); setScreen('actions'); }}>
                 Actions à faire ({openActions(cache, user.id).length})
