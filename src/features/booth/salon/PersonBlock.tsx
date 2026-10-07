@@ -9,6 +9,8 @@ import type { Contact } from '@/lib/booth/types';
 import type { BoothCache } from '../sync/cache';
 import { enqueue } from '../sync/engine';
 import { isValidEmail } from './display';
+import { cardImageUrl, PROVISIONAL_COMPANY, removeCard, removeCardsForContact, useCards } from '../card/cardQueue';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 const FIELDS = ['first_name', 'last_name', 'company_name', 'job_title', 'email', 'phone', 'linkedin_url'] as const;
 type Field = (typeof FIELDS)[number];
@@ -42,6 +44,18 @@ export default function PersonBlock({ cache, me, contact: c, canEdit }: { cache:
   const [err, setErr] = useState<string | null>(null);
   const [companies, setCompanies] = useState<BoothCompanySearchItem[]>([]);
   const [companyQuery, setCompanyQuery] = useState('');
+  const [photoFull, setPhotoFull] = useState(false);
+  const cards = useCards(me, cache.workspaceId);
+  const card = cards.find((x) => x.contactId === c.id) ?? null;
+  const provisional =
+    !c.first_name && !c.last_name && !c.email && !c.phone && (!c.company_name || c.company_name === PROVISIONAL_COMPANY);
+
+  // Carte illisible ou non lue : photo supprimée dès que la fiche n'est plus provisoire.
+  useEffect(() => {
+    if (card && (card.state === 'unreadable' || card.state === 'blocked') && !provisional) {
+      void removeCard(me, cache.workspaceId, card.scanId);
+    }
+  }, [card, provisional, me, cache.workspaceId]);
 
   // Logo de l'entreprise Lotexpo liée (en ligne seulement).
   useEffect(() => {
@@ -101,7 +115,10 @@ export default function PersonBlock({ cache, me, contact: c, canEdit }: { cache:
     }
     if (f.company_domain !== c.company_domain) data.company_domain = f.company_domain;
     if (f.lotexpo_company_ref !== c.lotexpo_company_ref) data.lotexpo_company_ref = f.lotexpo_company_ref;
-    if (Object.keys(data).length > 0) await enqueue(me, cache.exhibitorId, 'contact', c.id, data);
+    if (Object.keys(data).length > 0) {
+      await enqueue(me, cache.exhibitorId, 'contact', c.id, data);
+      if (card) await removeCardsForContact(me, cache.workspaceId, c.id);
+    }
     setOpen(false);
     toast({ description: 'Fiche mise à jour' });
   };
@@ -126,6 +143,40 @@ export default function PersonBlock({ cache, me, contact: c, canEdit }: { cache:
           </Button>
         )}
       </div>
+      {card && (
+        <div className="mb-2 flex items-start gap-3 rounded-md bg-muted p-2">
+          <button type="button" onClick={() => setPhotoFull(true)} className="shrink-0" aria-label="Agrandir la photo">
+            <img src={cardImageUrl(card)} alt="Photo de la carte" className="h-16 w-24 rounded border border-border object-cover" />
+          </button>
+          <div className="min-w-0 flex-1 space-y-2 text-sm">
+            {card.state === 'pending' && <p>Carte en attente de lecture.</p>}
+            {card.state === 'read' && (
+              <>
+                <p>Carte lue : vérifiez les informations.</p>
+                <Button size="sm" className="min-h-[40px]" onClick={() => void removeCard(me, cache.workspaceId, card.scanId)}>
+                  C'est correct
+                </Button>
+              </>
+            )}
+            {(card.state === 'unreadable' || card.state === 'blocked') && (
+              <>
+                <p>Complétez la fiche à partir de la photo.</p>
+                <Button size="sm" variant="outline" className="min-h-[40px]" onClick={() => void removeCard(me, cache.workspaceId, card.scanId)}>
+                  Supprimer la photo
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+      {card && (
+        <Dialog open={photoFull} onOpenChange={setPhotoFull}>
+          <DialogContent className="max-w-[95vw] p-2">
+            <DialogTitle className="sr-only">Photo de la carte</DialogTitle>
+            <img src={cardImageUrl(card)} alt="Photo de la carte" className="max-h-[85dvh] w-full object-contain" />
+          </DialogContent>
+        </Dialog>
+      )}
       <Row label="Prénom et nom" value={[c.first_name, c.last_name].filter(Boolean).join(' ')} />
       <Row
         label="Entreprise"

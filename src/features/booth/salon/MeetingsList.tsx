@@ -5,6 +5,15 @@ import { Input } from '@/components/ui/input';
 import type { BoothInboundLead } from '@/lib/booth/rpc';
 import { onBoothChange, type BoothCache } from '../sync/cache';
 import { listOutbox } from '../sync/engine';
+import { useCards, type CardState } from '../card/cardQueue';
+
+const CARD_BADGE: Record<CardState, { label: string; cls: string }> = {
+  pending: { label: 'Carte en attente', cls: 'bg-muted text-muted-foreground' },
+  read: { label: 'Carte lue : à vérifier', cls: 'bg-warning/15 text-warning-foreground border border-warning/40' },
+  unreadable: { label: 'Carte illisible : à compléter', cls: 'bg-destructive/10 text-destructive' },
+  blocked: { label: 'Lecture non incluse', cls: 'bg-muted text-muted-foreground' },
+};
+
 import { dayTimeLabel, longDate, primaryLabel, salonDay, secondaryLabel } from './display';
 import { ACTION, POTENTIAL, POTENTIAL_CLASS, fullName, initials, isCompleted, ownerOf } from './labels';
 
@@ -14,7 +23,11 @@ export default function MeetingsList({
   onBack,
   onOpen,
   onInbound,
+  cardFilter = null,
+  onClearCardFilter,
 }: {
+  cardFilter?: 'pending' | 'review' | null;
+  onClearCardFilter?: () => void;
   cache: BoothCache;
   me: string;
   onBack: () => void;
@@ -32,6 +45,9 @@ export default function MeetingsList({
     return onBoothChange(() => void read());
   }, [me, cache.exhibitorId]);
 
+  const cards = useCards(me, cache.workspaceId);
+  const cardByContact = useMemo(() => new Map(cards.filter((c) => c.contactId).map((c) => [c.contactId!, c.state])), [cards]);
+
   const contacts = useMemo(() => new Map(cache.contacts.map((c) => [c.id, c])), [cache.contacts]);
   const inbound = useMemo(() => {
     const linked = new Set(cache.interactions.map((i) => i.inbound_lead_id).filter(Boolean));
@@ -43,14 +59,19 @@ export default function MeetingsList({
     return cache.interactions
       .filter((i) => i.workspace_id === cache.workspaceId || !i.workspace_id)
       .filter(isCompleted)
-      .filter((i) => tab === 'team' || ownerOf(i, me) === me || i.created_by === me)
+      .filter((i) => {
+        if (!cardFilter) return true;
+        const st = cardByContact.get(i.contact_id);
+        return cardFilter === 'pending' ? st === 'pending' : st === 'read' || st === 'unreadable' || st === 'blocked';
+      })
+      .filter((i) => cardFilter || tab === 'team' || ownerOf(i, me) === me || i.created_by === me)
       .filter((i) => {
         if (!q) return true;
         const c = contacts.get(i.contact_id);
         return [fullName(c), c?.company_name, c?.email].some((v) => (v ?? '').toLowerCase().includes(q));
       })
       .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at));
-  }, [cache.interactions, cache.workspaceId, tab, me, query, contacts]);
+  }, [cache.interactions, cache.workspaceId, tab, me, query, contacts, cardFilter, cardByContact]);
 
   const ws = cache.workspace;
   const allDays = useMemo(() => {
@@ -111,6 +132,12 @@ export default function MeetingsList({
           </div>
         )}
 
+        {cardFilter && (
+          <div className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
+            <span>{cardFilter === 'pending' ? 'Cartes en attente de lecture' : 'Cartes à vérifier'}</span>
+            <Button size="sm" variant="ghost" className="min-h-[40px]" onClick={onClearCardFilter}>Tout afficher</Button>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
           {(['mine', 'team'] as const).map((t) => (
             <button
@@ -172,6 +199,11 @@ export default function MeetingsList({
                       </span>
                       {secondaryLabel(c) && <span className="block truncate text-sm text-muted-foreground">{secondaryLabel(c)}</span>}
                       <span className="mt-1 flex flex-wrap gap-1.5">
+                        {cardByContact.get(i.contact_id) && (
+                          <span className={`rounded-full px-2 py-0.5 text-xs ${CARD_BADGE[cardByContact.get(i.contact_id)!].cls}`}>
+                            {CARD_BADGE[cardByContact.get(i.contact_id)!].label}
+                          </span>
+                        )}
                         {i.potential && (
                           <span className={`rounded-full px-2 py-0.5 text-xs ${POTENTIAL_CLASS[i.potential]}`}>{POTENTIAL[i.potential]}</span>
                         )}
