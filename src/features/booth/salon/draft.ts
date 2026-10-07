@@ -28,7 +28,9 @@ export interface MeetingDraft {
   jobTitle: string;
   linkedinUrl: string | null;
   phoneExtra: string;
-  captureSource: 'manual' | 'qr';
+  captureSource: 'manual' | 'qr' | 'card';
+  cardScanId: string | null;
+  cardConfidence: Record<string, 'high' | 'medium' | 'low'> | null;
 }
 
 export const emptyDraft = (): MeetingDraft => ({
@@ -57,6 +59,8 @@ export const emptyDraft = (): MeetingDraft => ({
   linkedinUrl: null,
   phoneExtra: '',
   captureSource: 'manual',
+  cardScanId: null,
+  cardConfidence: null,
 });
 
 const key = (userId: string, workspaceId: string) => `${userId}|${workspaceId}|draft`;

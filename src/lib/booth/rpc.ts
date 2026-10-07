@@ -146,6 +146,11 @@ export async function inviteMember(
 
 export function boothErrorMessage(error: unknown): string {
   const msg = String((error as { message?: string })?.message ?? error ?? '');
+  if (msg.includes('BOOTH_RATE_LIMITED')) return "Limite de lectures atteinte pour aujourd'hui. Saisissez le contact à la main.";
+  if (msg.includes('BOOTH_SCAN_FAILED')) return "La lecture n'a pas abouti. Reprenez la photo ou saisissez le contact à la main.";
+  if (msg.includes('BOOTH_IMAGE_TOO_LARGE')) return 'Photo trop lourde. Reprenez-la.';
+  if (msg.includes('BOOTH_IMAGE_UNREADABLE')) return 'Format de photo non lu. Reprenez la photo.';
+  if (msg.includes('BOOTH_WORKSPACE_ARCHIVED')) return 'Ce salon est archivé : plus de nouvelle saisie possible.';
   if (msg.includes('BOOTH_ALREADY_MERGED')) return 'Ce contact a déjà été fusionné.';
   if (msg.includes('BOOTH_INVITE_EXPIRED')) return "Ce lien d'invitation a expiré. Demandez une nouvelle invitation.";
   if (msg.includes('BOOTH_INVITE_INVALID')) return "Ce lien d'invitation n'est pas valide ou a déjà été utilisé.";
@@ -393,3 +398,63 @@ export const mergeContacts = (keepId: string, mergeId: string) =>
     opportunities_moved: number;
     previous_merges_moved: number;
   }>('booth_merge_contacts', { p_keep_id: keepId, p_merge_id: mergeId });
+
+/* ---------- Lecture de carte ---------- */
+
+export interface BoothCardFields {
+  first_name: string | null;
+  last_name: string | null;
+  company_name: string | null;
+  job_title: string | null;
+  email: string | null;
+  phone: string | null;
+  mobile: string | null;
+  website: string | null;
+  linkedin_url: string | null;
+}
+
+export interface BoothCardScanResult {
+  scan_id: string;
+  status: 'ok' | 'unreadable';
+  fields?: BoothCardFields;
+  confidence?: Partial<Record<keyof BoothCardFields, 'high' | 'medium' | 'low'>>;
+  company_domain?: string | null;
+  qr_present?: boolean;
+}
+
+export async function scanCard(opts: {
+  workspaceId: string;
+  scanId: string;
+  kind: 'card' | 'badge';
+  imageBase64: string;
+  mediaType: string;
+}): Promise<BoothCardScanResult> {
+  let res;
+  try {
+    res = await supabase.functions.invoke('booth-card-scan', {
+      body: {
+        workspace_id: opts.workspaceId,
+        scan_id: opts.scanId,
+        kind: opts.kind,
+        image_base64: opts.imageBase64,
+        media_type: opts.mediaType,
+      },
+    });
+  } catch {
+    throw new Error('BOOTH_NETWORK');
+  }
+  const { data, error } = res;
+  if (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ctx = (error as any).context;
+    if (!ctx || typeof ctx.json !== 'function' || (error as { name?: string }).name === 'FunctionsFetchError') {
+      throw new Error('BOOTH_NETWORK');
+    }
+    const body = await ctx.json().catch(() => null);
+    throw new Error(body?.error || 'BOOTH_ERROR');
+  }
+  return data as BoothCardScanResult;
+}
+
+export const linkCardScan = (scanId: string, contactId: string) =>
+  call<unknown>('booth_card_scan_link', { p_scan_id: scanId, p_contact_id: contactId });
