@@ -33,6 +33,8 @@ import { clearDraft, emptyDraft, loadDraft, type MeetingDraft } from '@/features
 import { isCompleted, ownerOf } from '@/features/booth/salon/labels';
 import { registerSalonSW, useOfflineReady } from '@/features/booth/offline/registerSalonSW';
 import { LAST_WORKSPACE_KEY } from '@/pages/SalonStart';
+import { useSalonAppMeta } from '@/features/booth/offline/useSalonAppMeta';
+import InstallBanner from '@/features/booth/offline/InstallBanner';
 
 const dayInTz = (d: Date, tz: string) => {
   try {
@@ -135,6 +137,7 @@ export default function SalonMode() {
 
   useEffect(() => onStorageAvailabilityChange(() => setPersistent(isPersistentStorage())) as () => void, []);
 
+  useSalonAppMeta();
   const [online, setOnline] = useState(() => navigator.onLine);
   useEffect(() => {
     registerSalonSW();
@@ -346,6 +349,8 @@ export default function SalonMode() {
             )}
             {ws.stand_label && <p className="mt-1 text-base text-muted-foreground">Stand {ws.stand_label}</p>}
           </div>
+
+          <InstallBanner pendingCount={sync.pendingCount + sync.rejectedCount} />
 
           <div className={`grid gap-3 ${cache.role === 'manager' ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <div className="rounded-xl border border-border bg-card p-4">

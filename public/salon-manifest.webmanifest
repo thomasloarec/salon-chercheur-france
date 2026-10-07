@@ -1,0 +1,16 @@
+{
+  "name": "Lotexpo Salon",
+  "short_name": "Lotexpo Salon",
+  "id": "/salon/demarrer",
+  "start_url": "/salon/demarrer",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "fr",
+  "background_color": "#ffffff",
+  "theme_color": "#6b51ff",
+  "icons": [
+    { "src": "/favicon.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
