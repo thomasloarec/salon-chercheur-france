@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { del, get, getAllByPrefix, put } from '../storage/db';
+import { del, getAllByPrefix, put } from '../storage/db';
 import { linkCardScan, listWorkspaces } from '@/lib/booth/rpc';
 
 const availKey = (userId: string, workspaceId: string) => `cardscan|${userId}|${workspaceId}`;
