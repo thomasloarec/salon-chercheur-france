@@ -58,7 +58,7 @@ const cache = {
     workspace_id: WS, exhibitor_id: 'ex', event_id: 'e', nom_event: 'Salon', event_slug: null, ville: null,
     date_debut: '2026-10-06', date_fin: '2026-10-07', stand_label: null, timezone: 'Europe/Paris',
     currency: 'EUR', total_cost: 1000, archived: false, phase: 'live',
-  } as never,
+  } as unknown as import('@/lib/booth/rpc').BoothBootstrapWorkspace,
   interactions: [
     // Jour 1 (6 oct.)
     it_({ id: '1', occurred_at: '2026-10-06T08:00:00Z', potential: 'hot', next_action: 'call', next_action_due: '2026-10-06' }),
