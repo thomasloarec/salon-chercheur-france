@@ -1606,6 +1606,74 @@ export type Database = {
           },
         ]
       }
+      booth_card_scans: {
+        Row: {
+          attempts: number
+          completed_at: string | null
+          contact_id: string | null
+          created_at: string
+          error_code: string | null
+          exhibitor_id: string
+          extracted: Json | null
+          id: string
+          input_tokens: number | null
+          kind: string
+          latency_ms: number | null
+          linked_at: string | null
+          model: string | null
+          output_tokens: number | null
+          status: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          attempts?: number
+          completed_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          error_code?: string | null
+          exhibitor_id: string
+          extracted?: Json | null
+          id: string
+          input_tokens?: number | null
+          kind?: string
+          latency_ms?: number | null
+          linked_at?: string | null
+          model?: string | null
+          output_tokens?: number | null
+          status?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          attempts?: number
+          completed_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          error_code?: string | null
+          exhibitor_id?: string
+          extracted?: Json | null
+          id?: string
+          input_tokens?: number | null
+          kind?: string
+          latency_ms?: number | null
+          linked_at?: string | null
+          model?: string | null
+          output_tokens?: number | null
+          status?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booth_card_scans_workspace_id_exhibitor_id_fkey"
+            columns: ["workspace_id", "exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "booth_workspaces"
+            referencedColumns: ["id", "exhibitor_id"]
+          },
+        ]
+      }
       booth_contacts: {
         Row: {
           archived_at: string | null
@@ -14918,6 +14986,19 @@ export type Database = {
       }
     }
     Functions: {
+      _booth_card_scan_complete: {
+        Args: {
+          p_error_code: string
+          p_extracted: Json
+          p_input_tokens: number
+          p_latency_ms: number
+          p_model: string
+          p_output_tokens: number
+          p_scan_id: string
+          p_status: string
+        }
+        Returns: undefined
+      }
       _booth_client_ts: { Args: { p_item: Json }; Returns: string }
       _booth_dep_total: { Args: { p_exhibitor_id: string }; Returns: number }
       _booth_has_full_features: {
@@ -15680,6 +15761,14 @@ export type Database = {
         Returns: Json
       }
       booth_can_read: { Args: { _exhibitor_id: string }; Returns: boolean }
+      booth_card_scan_authorize: {
+        Args: { p_kind?: string; p_scan_id: string; p_workspace_id: string }
+        Returns: Json
+      }
+      booth_card_scan_link: {
+        Args: { p_contact_id: string; p_scan_id: string }
+        Returns: Json
+      }
       booth_create_workspace: {
         Args: {
           p_event_id: string
