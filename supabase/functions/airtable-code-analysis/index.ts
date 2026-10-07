@@ -1,5 +1,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { requireAdmin } from '../_shared/admin-auth.ts';
+// Correctif sécurité 07/10/2026 : réservée aux admins.
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,6 +30,9 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const denied = await requireAdmin(req, corsHeaders, 'airtable-code-analysis');
+  if (denied) return denied;
 
   try {
     console.log('[code-analysis] 🔍 Début de l\'analyse du code existant');
