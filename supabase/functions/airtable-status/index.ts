@@ -1,6 +1,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { getEnvOrConfig, listMissing, debugVariables } from '../_shared/airtable-config.ts';
+import { getEnvOrConfig, listMissing } from '../_shared/airtable-config.ts';
+import { requireAdmin } from '../_shared/admin-auth.ts';
+// Correctif sécurité 07/10/2026 (2) : réservée aux admins ou à la clé service_role.
+// Ne renvoie plus aucun fragment de secret (champ debug retiré).
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,6 +31,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const denied = await requireAdmin(req, corsHeaders, 'airtable-status');
+  if (denied) return denied;
+
   try {
     console.log('[airtable-status] 🔍 Début vérification status');
     
@@ -53,7 +59,7 @@ serve(async (req) => {
         const testResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/airtable-proxy`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
             'apikey': Deno.env.get('SUPABASE_ANON_KEY') || '',
             'Content-Type': 'application/json'
           },
@@ -130,7 +136,6 @@ serve(async (req) => {
       testsError,
       dedupOk,
       buttonsActive,
-      debug: debugVariables()
     };
 
     console.log('[airtable-status] 📋 Status final:', {

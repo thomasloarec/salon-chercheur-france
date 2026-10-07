@@ -1,6 +1,9 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { corsHeaders, handleOptions } from '../_shared/cors.ts'
+import { requireAdmin } from '../_shared/admin-auth.ts'
+// Correctif sécurité 07/10/2026 (2) : réservée aux admins ou à la clé service_role.
+// L'ancien contrôle (en-tête X-Lovable-Admin: true) était falsifiable par n'importe qui.
 
 interface ColumnInfo {
   name: string;
@@ -26,7 +29,6 @@ serve(async (req) => {
   console.log('🔥 Method:', req.method);
   console.log('🔥 URL:', req.url);
   console.log('🔥 Headers count:', Array.from(req.headers).length);
-  console.log('🔥 Full headers object:', Object.fromEntries(req.headers.entries()));
   
   // Log pour vérifier qu'on entre dans la fonction
   console.log('🔍 FUNCTION ENTRY - Method:', req.method);
@@ -38,7 +40,6 @@ serve(async (req) => {
   // 🔍 DEBUG: Logger tous les détails de la requête
   console.log('=== DEBUG SCHEMA DISCOVERY ===');
   console.log('Method:', req.method);
-  console.log('Headers:', Object.fromEntries(req.headers));
   
   try {
     const body = await req.clone().text();
@@ -47,18 +48,8 @@ serve(async (req) => {
     console.log('No body or body read error:', e);
   }
   
-  // Vérifier l'en-tête admin (avec debug de la casse)
-  const adminHeader = req.headers.get('X-Lovable-Admin');
-  const adminHeaderLower = req.headers.get('x-lovable-admin');
-  console.log('Admin header (X-Lovable-Admin):', adminHeader);
-  console.log('Admin header (x-lovable-admin):', adminHeaderLower);
-  
-  if (adminHeader !== 'true' && adminHeaderLower !== 'true') {
-    console.log('❌ REJECTING: Admin header not found or not "true"');
-    return json({ success: false, error: 'access_denied', message: 'Accès non autorisé - header admin manquant' }, 403, req);
-  }
-  
-  console.log('✅ Admin header OK, proceeding...');
+  const denied = await requireAdmin(req, corsHeaders(req), 'airtable-schema-discovery');
+  if (denied) return denied;
 
   try {
     console.log('[airtable-schema-discovery] 🔍 Début de la découverte des schémas');
