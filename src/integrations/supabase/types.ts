@@ -13688,6 +13688,7 @@ export type Database = {
           event_id: string
           id: string
           nom: string
+          nom_fiche: string | null
           remarque: string | null
           run_id: string
           stand: string | null
@@ -13707,6 +13708,7 @@ export type Database = {
           event_id: string
           id?: string
           nom: string
+          nom_fiche?: string | null
           remarque?: string | null
           run_id: string
           stand?: string | null
@@ -13726,6 +13728,7 @@ export type Database = {
           event_id?: string
           id?: string
           nom?: string
+          nom_fiche?: string | null
           remarque?: string | null
           run_id?: string
           stand?: string | null

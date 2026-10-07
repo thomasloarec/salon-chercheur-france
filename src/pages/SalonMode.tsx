@@ -27,6 +27,8 @@ import type { BoothInboundLead } from '@/lib/booth/rpc';
 import NewMeetingFlow, { CAMERA_PENDING_KEY } from '@/features/booth/salon/NewMeetingFlow';
 import { flushCardLinks } from '@/features/booth/card/useCardScanAvailable';
 import MeetingsList from '@/features/booth/salon/MeetingsList';
+import DashboardScreen, { type ListFilter } from '@/features/booth/dashboard/DashboardScreen';
+import DebriefScreen from '@/features/booth/dashboard/DebriefScreen';
 import MeetingDetail from '@/features/booth/salon/MeetingDetail';
 import DuplicatesScreen from '@/features/booth/salon/DuplicatesScreen';
 import { findDuplicates } from '@/lib/booth/rpc';
@@ -127,7 +129,10 @@ export default function SalonMode() {
   const { user, loading } = useAuth();
   const { cache, status, error } = useBoothWorkspace(workspaceId);
   const sync = useBoothSync(workspaceId, cache?.exhibitorId ?? null);
-  const [screen, setScreen] = useState<'home' | 'flow' | 'list' | 'detail' | 'duplicates'>('home');
+  const [screen, setScreen] = useState<'home' | 'flow' | 'list' | 'detail' | 'duplicates' | 'dashboard' | 'debrief'>('home');
+  const [listFilter, setListFilter] = useState<ListFilter | null>(null);
+  const [listBack, setListBack] = useState<'home' | 'dashboard'>('home');
+  const [detailBack, setDetailBack] = useState<'list' | 'debrief'>('list');
   const [dupCount, setDupCount] = useState(0);
   const [flowInitial, setFlowInitial] = useState<MeetingDraft>(emptyDraft());
   const [flowKey, setFlowKey] = useState(0);
@@ -355,11 +360,14 @@ export default function SalonMode() {
         <MeetingsList
           cache={cache}
           me={user.id}
-          onBack={() => { setCardFilter(null); setScreen('home'); }}
+          onBack={() => { setCardFilter(null); setListFilter(null); setScreen(listBack); }}
           cardFilter={cardFilter}
+          idFilter={listFilter}
+          onClearIdFilter={() => setListFilter(null)}
           onClearCardFilter={() => setCardFilter(null)}
           onOpen={(id) => {
             setDetailId(id);
+            setDetailBack('list');
             setScreen('detail');
           }}
           onInbound={startInbound}
@@ -367,7 +375,24 @@ export default function SalonMode() {
       ) : screen === 'duplicates' && user ? (
         <DuplicatesScreen cache={cache} me={user.id} online={sync.online} onBack={() => setScreen('home')} />
       ) : screen === 'detail' && user && detailId ? (
-        <MeetingDetail cache={cache} me={user.id} interactionId={detailId} onBack={() => setScreen('list')} />
+        <MeetingDetail cache={cache} me={user.id} interactionId={detailId} onBack={() => setScreen(detailBack)} />
+      ) : screen === 'dashboard' && user ? (
+        <DashboardScreen
+          cache={cache}
+          me={user.id}
+          pendingCount={sync.pendingCount + sync.rejectedCount}
+          lastSyncAt={sync.lastSyncAt}
+          onBack={() => setScreen('home')}
+          onOpenList={(f) => { setCardFilter(null); setListFilter(f); setListBack('dashboard'); setScreen('list'); }}
+          onDebrief={() => setScreen('debrief')}
+        />
+      ) : screen === 'debrief' && user ? (
+        <DebriefScreen
+          cache={cache}
+          me={user.id}
+          onBack={() => setScreen('dashboard')}
+          onOpen={(id) => { setDetailId(id); setDetailBack('debrief'); setScreen('detail'); }}
+        />
       ) : (
         <main className="flex flex-1 flex-col gap-5 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           {status === 'stale' && (
@@ -445,17 +470,20 @@ export default function SalonMode() {
               size="lg"
               variant="outline"
               className="min-h-[56px] w-full text-base"
-              onClick={() => { setCardFilter(null); setScreen('list'); }}
+              onClick={() => { setCardFilter(null); setListFilter(null); setListBack('home'); setScreen('list'); }}
             >
               Rencontres du salon
             </Button>
+            <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base" onClick={() => setScreen('dashboard')}>
+              Tableau de bord
+            </Button>
             {cardsPending > 0 && (
-              <Button variant="link" className="min-h-[44px]" onClick={() => { setCardFilter('pending'); setScreen('list'); }}>
+              <Button variant="link" className="min-h-[44px]" onClick={() => { setCardFilter('pending'); setListFilter(null); setListBack('home'); setScreen('list'); }}>
                 {cardsPending} carte{cardsPending > 1 ? 's' : ''} en attente de lecture
               </Button>
             )}
             {cardsReview > 0 && (
-              <Button variant="link" className="min-h-[44px]" onClick={() => { setCardFilter('review'); setScreen('list'); }}>
+              <Button variant="link" className="min-h-[44px]" onClick={() => { setCardFilter('review'); setListFilter(null); setListBack('home'); setScreen('list'); }}>
                 {cardsReview} carte{cardsReview > 1 ? 's' : ''} à vérifier
               </Button>
             )}

@@ -25,7 +25,11 @@ export default function MeetingsList({
   onInbound,
   cardFilter = null,
   onClearCardFilter,
+  idFilter = null,
+  onClearIdFilter,
 }: {
+  idFilter?: { ids: string[]; label: string } | null;
+  onClearIdFilter?: () => void;
   cardFilter?: 'pending' | 'review' | null;
   onClearCardFilter?: () => void;
   cache: BoothCache;
@@ -54,6 +58,7 @@ export default function MeetingsList({
     return (cache.inbound_leads ?? []).filter((l) => !linked.has(l.lead_id));
   }, [cache.inbound_leads, cache.interactions]);
 
+  const idSet = useMemo(() => new Set(idFilter?.ids ?? []), [idFilter]);
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
     return cache.interactions
@@ -64,14 +69,15 @@ export default function MeetingsList({
         const st = cardByContact.get(i.contact_id);
         return cardFilter === 'pending' ? st === 'pending' : st === 'read' || st === 'unreadable' || st === 'blocked';
       })
-      .filter((i) => cardFilter || tab === 'team' || ownerOf(i, me) === me || i.created_by === me)
+      .filter((i) => !idFilter || idSet.has(i.id))
+      .filter((i) => cardFilter || idFilter || tab === 'team' || ownerOf(i, me) === me || i.created_by === me)
       .filter((i) => {
         if (!q) return true;
         const c = contacts.get(i.contact_id);
         return [fullName(c), c?.company_name, c?.email].some((v) => (v ?? '').toLowerCase().includes(q));
       })
       .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at));
-  }, [cache.interactions, cache.workspaceId, tab, me, query, contacts, cardFilter, cardByContact]);
+  }, [cache.interactions, cache.workspaceId, tab, me, query, contacts, cardFilter, cardByContact, idFilter, idSet]);
 
   const ws = cache.workspace;
   const allDays = useMemo(() => {
@@ -132,6 +138,12 @@ export default function MeetingsList({
           </div>
         )}
 
+        {idFilter && (
+          <div className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
+            <span>{idFilter.label}</span>
+            <Button size="sm" variant="ghost" className="min-h-[44px]" onClick={onClearIdFilter}>Tout afficher</Button>
+          </div>
+        )}
         {cardFilter && (
           <div className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
             <span>{cardFilter === 'pending' ? 'Cartes en attente de lecture' : 'Cartes à vérifier'}</span>
