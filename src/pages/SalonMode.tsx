@@ -1,3 +1,4 @@
+import { primaryLabel, secondaryLabel } from '@/features/booth/salon/display';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -196,8 +197,9 @@ export default function SalonMode() {
         ? item.data
         : cache?.contacts.find((c) => c.id === item.data.contact_id) ?? null;
     if (!src) return null;
-    const s = src as Record<string, unknown>;
-    return [s.first_name, s.last_name].filter(Boolean).join(' ') || null;
+    const s = src as Record<string, string | null>;
+    const second = secondaryLabel(s);
+    return [primaryLabel(s), second].filter(Boolean).join(', ');
   };
 
   const ws = cache?.workspace;

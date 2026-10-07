@@ -23,7 +23,7 @@ import {
 } from '@/lib/booth/rpc';
 import { applyContactMerge, mergeBootstrap, readCache, writeCache, type BoothCache } from '../sync/cache';
 import { getSyncState, listOutbox, syncNow } from '../sync/engine';
-import { fullName } from './labels';
+import { primaryLabel, secondaryLabel } from './display';
 
 const defaultKeep = (contacts: BoothDuplicateContact[]) =>
   [...contacts].sort(
@@ -54,8 +54,8 @@ function GroupCard({
             onClick={() => setKeep(c.id)}
             className={`rounded-lg border p-3 text-left text-sm ${keep === c.id ? 'border-primary bg-primary/5' : 'border-border'}`}
           >
-            <p className="font-medium">{fullName(c) || c.email || 'Sans nom'}</p>
-            {c.company_name && <p className="text-muted-foreground">{c.company_name}</p>}
+            <p className="font-medium">{primaryLabel(c)}</p>
+            {secondaryLabel(c) && <p className="text-muted-foreground">{secondaryLabel(c)}</p>}
             <p className="mt-1 text-xs text-muted-foreground">
               {c.interactions_count} rencontre{c.interactions_count > 1 ? 's' : ''}
             </p>
