@@ -194,7 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    const useStoredSession = () => {
+    const applyStoredSession = () => {
       const stored = readStoredSession();
       if (stored) {
         setSession(stored.session);
@@ -207,7 +207,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data, error } = await supabase.auth.getSession();
 
         if (error && isNetworkAuthError(error)) {
-          useStoredSession();
+          applyStoredSession();
           return;
         }
 
@@ -224,7 +224,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setRawUser(data.session?.user ?? null);
       } catch (error) {
         if (isNetworkAuthError(error)) {
-          useStoredSession();
+          applyStoredSession();
           return;
         }
         await handleInvalidSession(error);
