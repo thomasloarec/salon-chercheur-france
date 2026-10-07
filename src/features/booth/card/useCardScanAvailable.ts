@@ -5,31 +5,35 @@ import { linkCardScan, listWorkspaces } from '@/lib/booth/rpc';
 const availKey = (userId: string, workspaceId: string) => `cardscan|${userId}|${workspaceId}`;
 const linkKey = (userId: string, scanId: string) => `cardlink|${userId}|${scanId}`;
 
-/** Lecture de carte disponible pour ce salon (valeur inconnue : true, le serveur refusera proprement). */
+/**
+ * Lecture de carte disponible pour ce salon.
+ * Sans réseau : toujours true (la carte passera en « Lecture non incluse » au retour du réseau si besoin).
+ * Avec réseau : réponse du serveur ; en cas d'échec de l'appel, true. Jamais masqué pendant le chargement.
+ */
 export function useCardScanAvailable(userId: string, exhibitorId: string, workspaceId: string, online: boolean) {
-  const [available, setAvailable] = useState(true);
+  const [serverValue, setServerValue] = useState<boolean | null>(null);
   useEffect(() => {
     let cancelled = false;
+    setServerValue(null);
+    if (!online) return;
     (async () => {
-      const stored = await get<{ key: string; value: boolean }>('meta', availKey(userId, workspaceId)).catch(() => undefined);
-      if (!cancelled && typeof stored?.value === 'boolean') setAvailable(stored.value);
-      if (!online) return;
       try {
         const r = await listWorkspaces(exhibitorId);
         const ws = r?.items?.find((w) => w.workspace_id === workspaceId);
         if (!ws || cancelled) return;
         const v = !!ws.full_features;
-        setAvailable(v);
-        await put('meta', { key: availKey(userId, workspaceId), value: v });
+        setServerValue(v);
+        await put('meta', { key: availKey(userId, workspaceId), value: { value: v, at: new Date().toISOString() } });
       } catch {
-        // garder la valeur connue
+        // échec de l'appel : le bouton reste visible
       }
     })();
     return () => {
       cancelled = true;
     };
   }, [userId, exhibitorId, workspaceId, online]);
-  return available;
+  if (!online) return true;
+  return serverValue ?? true;
 }
 
 /** Relie une lecture à un contact, sans attendre ; en cas d'échec, mis de côté pour plus tard. */
