@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import PersonBlock from './PersonBlock';
+import { dayTimeLabel, primaryLabel, secondaryLabel } from './display';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -24,7 +26,7 @@ import {
   TOPIC,
   VALUE_BAND,
   fmtDateTime,
-  fullName,
+  isCompleted,
   ownerOf,
   teammateName,
 } from './labels';
@@ -64,15 +66,9 @@ export default function MeetingDetail({
       cache.opportunities.find((o) => o.contact_id === i.contact_id && o.workspace_id === i.workspace_id)
     : undefined;
   const [note, setNote] = useState(i?.note ?? '');
-  const [email, setEmail] = useState(c?.email ?? '');
-  const [phone, setPhone] = useState(c?.phone ?? '');
   const [confirmCancel, setConfirmCancel] = useState(false);
 
   useEffect(() => setNote(i?.note ?? ''), [i?.note]);
-  useEffect(() => {
-    setEmail(c?.email ?? '');
-    setPhone(c?.phone ?? '');
-  }, [c?.email, c?.phone]);
 
   if (!i) {
     return (
@@ -89,6 +85,9 @@ export default function MeetingDetail({
   const update = (data: Partial<Interaction> & Record<string, unknown>) =>
     enqueue(me, cache.exhibitorId, 'interaction', i.id, data);
   const { date, time } = fmtDateTime(i.occurred_at);
+  const others = cache.interactions
+    .filter((o) => o.id !== i.id && o.contact_id === i.contact_id && (o.workspace_id === cache.workspaceId || !o.workspace_id) && isCompleted(o))
+    .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at));
 
   return (
     <div className="flex flex-1 flex-col">
@@ -99,40 +98,26 @@ export default function MeetingDetail({
       </div>
       <div className="space-y-5 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <div>
-          <h2 className="text-2xl font-bold">{fullName(c) || c?.email || 'Contact'}</h2>
-          <p className="text-muted-foreground">
-            {[c?.job_title, c?.company_name].filter(Boolean).join(' · ')}
-          </p>
+          <h2 className="text-2xl font-bold">{primaryLabel(c)}</h2>
+          {secondaryLabel(c) && <p className="text-muted-foreground">{secondaryLabel(c)}</p>}
+          <p className="mt-1 text-sm font-medium">{dayTimeLabel(i.occurred_at, cache.workspace)}</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Rencontré le {date} à {time} par {teammateName(cache, ownerOf(i, me), me, false)}
           </p>
         </div>
 
-        <section className="rounded-lg border border-border p-3">
-          <h3 className="mb-2 text-sm font-semibold">Coordonnées</h3>
-          {canEditContact ? (
-            <div className="space-y-2">
-              <Input type="email" inputMode="email" placeholder="Email" className="h-12" value={email} onChange={(e) => setEmail(e.target.value)} />
-              <Input type="tel" inputMode="tel" placeholder="Téléphone" className="h-12" value={phone} onChange={(e) => setPhone(e.target.value)} />
-              {(email !== (c?.email ?? '') || phone !== (c?.phone ?? '')) && (
-                <Button
-                  className="min-h-[44px] w-full"
-                  onClick={async () => {
-                    await enqueue(me, cache.exhibitorId, 'contact', c!.id, { email: email.trim() || null, phone: phone.trim() || null });
-                    toast({ description: 'Coordonnées enregistrées.' });
-                  }}
-                >
-                  Enregistrer les coordonnées
-                </Button>
-              )}
-            </div>
-          ) : (
-            <>
-              <Row label="Email">{c?.email || 'Non renseigné'}</Row>
-              <Row label="Téléphone">{c?.phone || 'Non renseigné'}</Row>
-            </>
-          )}
-        </section>
+        {c && (
+          <PersonBlock cache={cache} me={me} contact={c} canEdit={canEditContact} />
+        )}
+        {others.length > 0 && (
+          <div className="space-y-1 text-sm text-muted-foreground">
+            {others.map((o) => (
+              <p key={o.id}>
+                Aussi rencontrée le {fmtDateTime(o.occurred_at).date} à {fmtDateTime(o.occurred_at).time} par {teammateName(cache, ownerOf(o, me), me)}
+              </p>
+            ))}
+          </div>
+        )}
 
         <section className="rounded-lg border border-border p-3">
           <h3 className="mb-2 text-sm font-semibold">Rencontre</h3>

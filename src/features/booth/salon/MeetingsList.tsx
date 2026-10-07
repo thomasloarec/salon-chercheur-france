@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import type { BoothInboundLead } from '@/lib/booth/rpc';
 import { onBoothChange, type BoothCache } from '../sync/cache';
 import { listOutbox } from '../sync/engine';
-import { ACTION, POTENTIAL, POTENTIAL_CLASS, fmtDateTime, fullName, initials, isCompleted, ownerOf } from './labels';
+import { dayTimeLabel, longDate, primaryLabel, salonDay, secondaryLabel } from './display';
+import { ACTION, POTENTIAL, POTENTIAL_CLASS, fullName, initials, isCompleted, ownerOf } from './labels';
 
 export default function MeetingsList({
   cache,
@@ -22,6 +23,7 @@ export default function MeetingsList({
 }) {
   const [tab, setTab] = useState<'mine' | 'team'>('mine');
   const [query, setQuery] = useState('');
+  const [day, setDay] = useState<string | null>(null);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -49,6 +51,27 @@ export default function MeetingsList({
       })
       .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at));
   }, [cache.interactions, cache.workspaceId, tab, me, query, contacts]);
+
+  const ws = cache.workspace;
+  const allDays = useMemo(() => {
+    const m = new Map<string, ReturnType<typeof salonDay>>();
+    for (const i of cache.interactions.filter((x) => (x.workspace_id === cache.workspaceId || !x.workspace_id) && isCompleted(x))) {
+      const d = salonDay(i.occurred_at, ws);
+      m.set(d.key, d);
+    }
+    return [...m.values()].sort((a, b) => a.key.localeCompare(b.key));
+  }, [cache.interactions, cache.workspaceId, ws]);
+
+  const groups = useMemo(() => {
+    const g = new Map<string, { day: ReturnType<typeof salonDay>; items: typeof rows }>();
+    for (const i of rows) {
+      const d = salonDay(i.occurred_at, ws);
+      if (day && d.key !== day) continue;
+      if (!g.has(d.key)) g.set(d.key, { day: d, items: [] });
+      g.get(d.key)!.items.push(i);
+    }
+    return [...g.values()].sort((a, b) => b.day.key.localeCompare(a.day.key));
+  }, [rows, ws, day]);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -111,11 +134,29 @@ export default function MeetingsList({
           />
         </div>
 
-        {rows.length === 0 ? (
+        {allDays.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            <Button size="sm" variant={day === null ? 'default' : 'outline'} className="min-h-[40px] shrink-0 rounded-full" onClick={() => setDay(null)}>
+              Tous les jours
+            </Button>
+            {allDays.map((d) => (
+              <Button key={d.key} size="sm" variant={day === d.key ? 'default' : 'outline'} className="min-h-[40px] shrink-0 rounded-full" onClick={() => setDay(d.key)}>
+                {d.short && !d.short.includes('salon') ? d.short : `${d.short} ${new Date(`${d.key}T12:00:00Z`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'UTC' })}`.trim()}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        {groups.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">Aucune rencontre pour l'instant.</p>
         ) : (
+          groups.map((g) => (
+          <div key={g.day.key} className="space-y-2">
+          <p className="text-sm font-semibold">
+            {[g.day.short, longDate(g.day.key), `${g.items.length} rencontre${g.items.length > 1 ? 's' : ''}`].filter(Boolean).join(' · ')}
+          </p>
           <ul className="divide-y divide-border rounded-lg border border-border">
-            {rows.map((i) => {
+            {g.items.map((i) => {
               const c = contacts.get(i.contact_id);
               const pending = pendingIds.has(i.id) || pendingIds.has(i.contact_id);
               return (
@@ -126,10 +167,10 @@ export default function MeetingsList({
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
-                        <span className="truncate font-medium">{fullName(c) || c?.email || 'Contact'}</span>
+                        <span className="truncate font-medium">{primaryLabel(c)}</span>
                         {pending && <CloudUpload className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="En attente d'envoi" />}
                       </span>
-                      {c?.company_name && <span className="block truncate text-sm text-muted-foreground">{c.company_name}</span>}
+                      {secondaryLabel(c) && <span className="block truncate text-sm text-muted-foreground">{secondaryLabel(c)}</span>}
                       <span className="mt-1 flex flex-wrap gap-1.5">
                         {i.potential && (
                           <span className={`rounded-full px-2 py-0.5 text-xs ${POTENTIAL_CLASS[i.potential]}`}>{POTENTIAL[i.potential]}</span>
@@ -141,12 +182,14 @@ export default function MeetingsList({
                         )}
                       </span>
                     </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">{fmtDateTime(i.occurred_at).time}</span>
+                    <span className="max-w-[42%] shrink-0 text-right text-xs text-muted-foreground">{dayTimeLabel(i.occurred_at, ws)}</span>
                   </button>
                 </li>
               );
             })}
           </ul>
+          </div>
+          ))
         )}
       </div>
     </div>

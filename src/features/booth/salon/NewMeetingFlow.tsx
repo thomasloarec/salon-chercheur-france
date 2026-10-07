@@ -5,6 +5,7 @@ import { hasUsefulData, parseQr } from '../qr/parse';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { headLabel, primaryLabel, secondaryLabel } from './display';
 import { searchCompanies, searchContacts, type BoothCompanySearchItem } from '@/lib/booth/rpc';
 import type { Interaction } from '@/lib/booth/types';
 import type { BoothCache } from '../sync/cache';
@@ -200,7 +201,7 @@ export default function NewMeetingFlow({
       (n && cache.contacts.find((x) => normPhone(x.phone) === n)) ||
       null;
     return c
-      ? { id: c.id, label: [fullName(c), c.company_name].filter(Boolean).join(', '), rel: lastByContact.get(c.id)?.relationship ?? null }
+      ? { id: c.id, label: [primaryLabel(c), secondaryLabel(c)].filter(Boolean).join(', '), rel: lastByContact.get(c.id)?.relationship ?? null }
       : null;
   };
 
@@ -339,7 +340,7 @@ export default function NewMeetingFlow({
   }
 
   const progress = Math.max(0, ORDER.indexOf(d.step === 'topic' ? 'pot' : d.step)) / (ORDER.length - 1);
-  const title = d.name.trim() || d.company.trim();
+  const title = headLabel(d.company, d.name);
 
   if (d.step === 'done') {
     const parts = [
@@ -438,10 +439,8 @@ export default function NewMeetingFlow({
                   {suggestions.map((s) => (
                     <li key={s.id}>
                       <button type="button" className="w-full p-3 text-left hover:bg-muted" onClick={() => pickContact(s)}>
-                        <p className="font-medium">
-                          {s.name}
-                          {s.company ? <span className="font-normal text-muted-foreground"> · {s.company}</span> : null}
-                        </p>
+                        <p className="font-semibold">{s.company || s.name}</p>
+                        {s.company && <p className="text-sm text-muted-foreground">{s.name}</p>}
                         {s.hint && <p className="text-xs text-muted-foreground">{s.hint}</p>}
                       </button>
                     </li>
