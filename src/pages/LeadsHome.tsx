@@ -26,7 +26,7 @@ function CompanyCard({ c }: { c: BoothContextItem }) {
         </div>
         {c.role && <Badge variant="secondary">{c.role === 'manager' ? 'Manager' : 'Commercial terrain'}</Badge>}
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 px-4 md:px-6">
         {c.role === null ? (
           <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-800">
             Votre accès est suspendu : la formule de l'entreprise n'inclut plus l'équipe ou l'accès a été retiré.
@@ -34,7 +34,7 @@ function CompanyCard({ c }: { c: BoothContextItem }) {
           </div>
         ) : (
           <>
-            <BoothSalonCockpit exhibitorId={c.exhibitor_id} />
+            <BoothSalonCockpit exhibitorId={c.exhibitor_id} embedded />
             {c.is_fiche_manager && c.exhibitor_slug && (
               <Link
                 to={`/exposants/${c.exhibitor_slug}/gerer?section=leads`}
