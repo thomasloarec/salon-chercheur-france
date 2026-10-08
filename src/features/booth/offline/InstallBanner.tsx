@@ -83,9 +83,9 @@ export default function InstallBanner({ pendingCount }: { pendingCount: number }
         <X className="h-4 w-4" />
       </button>
       {promptEvent ? (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
           <p>Installez le mode salon pour l'ouvrir même sans réseau.</p>
-          <Button className="min-h-[44px] self-start" onClick={() => void install()}>
+          <Button className="min-h-[44px] self-start md:shrink-0 md:self-auto" onClick={() => void install()}>
             Installer
           </Button>
         </div>

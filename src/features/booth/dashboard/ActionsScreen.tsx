@@ -110,8 +110,8 @@ export default function ActionsScreen({
     const d = i.next_action_due ? dueYmd(i.next_action_due, tz) : null;
     const late = !!d && d < today;
     return (
-      <li className="rounded-lg border border-border p-3">
-        <button type="button" className="min-h-[44px] w-full text-left" onClick={() => onOpen(i.id)}>
+      <li className="rounded-lg border border-border p-3 md:flex md:items-center md:gap-4">
+        <button type="button" className="min-h-[44px] w-full text-left md:grid md:min-w-0 md:flex-1 md:grid-cols-3 md:items-center md:gap-4" onClick={() => onOpen(i.id)}>
           <p className="font-medium">{ACTION_LABEL[i.next_action]}</p>
           <p className="text-sm">{who(i)}</p>
           <p className="text-xs text-muted-foreground">
@@ -120,14 +120,14 @@ export default function ActionsScreen({
             {label(responsibleOf(i, me))}
           </p>
         </button>
-        <div className="mt-2 flex gap-2">
+        <div className="mt-2 flex gap-2 md:mt-0 md:shrink-0">
           {canDone(i) && (
-            <Button className="min-h-[44px] flex-1" onClick={() => void update(i.id, { next_action_done: true })}>
+            <Button className="min-h-[44px] flex-1 md:flex-none md:min-w-[120px]" onClick={() => void update(i.id, { next_action_done: true })}>
               Fait
             </Button>
           )}
           {isManager && cache.team.length > 1 && (
-            <Button variant="outline" className="min-h-[44px] flex-1" onClick={() => setReassignOne(i)}>
+            <Button variant="outline" className="min-h-[44px] flex-1 md:flex-none md:min-w-[120px]" onClick={() => setReassignOne(i)}>
               Réattribuer
             </Button>
           )}
@@ -224,7 +224,7 @@ export default function ActionsScreen({
           <AlertDialogHeader>
             <AlertDialogTitle>Réattribuer à</AlertDialogTitle>
           </AlertDialogHeader>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 md:flex-row md:flex-wrap">
             {cache.team.map((m) => (
               <Button
                 key={m.user_id}
@@ -256,7 +256,7 @@ export default function ActionsScreen({
             </AlertDialogTitle>
           </AlertDialogHeader>
           {!groupTo && (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 md:flex-row md:flex-wrap">
               {cache.team.filter((m) => m.user_id !== groupFrom).map((m) => (
                 <Button key={m.user_id} variant="outline" className="min-h-[48px]" onClick={() => setGroupTo(m.user_id)}>
                   {label(m.user_id)}
