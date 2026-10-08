@@ -1817,6 +1817,68 @@ export type Database = {
           },
         ]
       }
+      booth_debrief_summaries: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          day: string | null
+          error_code: string | null
+          exhibitor_id: string
+          id: string
+          input_tokens: number | null
+          latency_ms: number | null
+          meetings: number
+          model: string | null
+          output_tokens: number | null
+          scope: string
+          status: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          day?: string | null
+          error_code?: string | null
+          exhibitor_id: string
+          id?: string
+          input_tokens?: number | null
+          latency_ms?: number | null
+          meetings?: number
+          model?: string | null
+          output_tokens?: number | null
+          scope: string
+          status?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          day?: string | null
+          error_code?: string | null
+          exhibitor_id?: string
+          id?: string
+          input_tokens?: number | null
+          latency_ms?: number | null
+          meetings?: number
+          model?: string | null
+          output_tokens?: number | null
+          scope?: string
+          status?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booth_debrief_summaries_workspace_id_exhibitor_id_fkey"
+            columns: ["workspace_id", "exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "booth_workspaces"
+            referencedColumns: ["id", "exhibitor_id"]
+          },
+        ]
+      }
       booth_interactions: {
         Row: {
           capture_source: string
@@ -2085,6 +2147,89 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participations_with_exhibitors"
             referencedColumns: ["exhibitor_uuid"]
+          },
+        ]
+      }
+      booth_voice_notes: {
+        Row: {
+          analysis_model: string | null
+          attempts: number
+          audio_bytes: number | null
+          completed_at: string | null
+          created_at: string
+          duration_ms: number | null
+          error_code: string | null
+          exhibitor_id: string
+          extracted: Json | null
+          id: string
+          input_tokens: number | null
+          interaction_id: string | null
+          latency_ms: number | null
+          linked_at: string | null
+          mode: string
+          output_tokens: number | null
+          status: string
+          transcribe_model: string | null
+          transcribe_ms: number | null
+          transcript: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          analysis_model?: string | null
+          attempts?: number
+          audio_bytes?: number | null
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_code?: string | null
+          exhibitor_id: string
+          extracted?: Json | null
+          id: string
+          input_tokens?: number | null
+          interaction_id?: string | null
+          latency_ms?: number | null
+          linked_at?: string | null
+          mode?: string
+          output_tokens?: number | null
+          status?: string
+          transcribe_model?: string | null
+          transcribe_ms?: number | null
+          transcript?: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          analysis_model?: string | null
+          attempts?: number
+          audio_bytes?: number | null
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_code?: string | null
+          exhibitor_id?: string
+          extracted?: Json | null
+          id?: string
+          input_tokens?: number | null
+          interaction_id?: string | null
+          latency_ms?: number | null
+          linked_at?: string | null
+          mode?: string
+          output_tokens?: number | null
+          status?: string
+          transcribe_model?: string | null
+          transcribe_ms?: number | null
+          transcript?: string | null
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booth_voice_notes_workspace_id_exhibitor_id_fkey"
+            columns: ["workspace_id", "exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "booth_workspaces"
+            referencedColumns: ["id", "exhibitor_id"]
           },
         ]
       }
@@ -15556,6 +15701,18 @@ export type Database = {
         Returns: undefined
       }
       _booth_client_ts: { Args: { p_item: Json }; Returns: string }
+      _booth_debrief_complete: {
+        Args: {
+          p_error_code: string
+          p_input_tokens: number
+          p_latency_ms: number
+          p_model: string
+          p_output_tokens: number
+          p_status: string
+          p_summary_id: string
+        }
+        Returns: undefined
+      }
       _booth_dep_total: { Args: { p_exhibitor_id: string }; Returns: number }
       _booth_has_full_features: {
         Args: { p_event_id: string; p_exhibitor_id: string }
@@ -15608,6 +15765,27 @@ export type Database = {
         Returns: string
       }
       _booth_user_label: { Args: { p_user_id: string }; Returns: string }
+      _booth_voice_complete: {
+        Args: {
+          p_analysis_model: string
+          p_audio_bytes: number
+          p_error_code: string
+          p_extracted: Json
+          p_input_tokens: number
+          p_latency_ms: number
+          p_note_id: string
+          p_output_tokens: number
+          p_status: string
+          p_transcribe_model: string
+          p_transcribe_ms: number
+          p_transcript: string
+        }
+        Returns: undefined
+      }
+      _booth_voice_month_used: {
+        Args: { p_exhibitor_id: string }
+        Returns: number
+      }
       _exhibitor_ai_completeness: {
         Args: { a: Database["public"]["Tables"]["exhibitor_ai"]["Row"] }
         Returns: number
@@ -16335,6 +16513,10 @@ export type Database = {
         }
         Returns: Json
       }
+      booth_debrief_authorize: {
+        Args: { p_day: string; p_scope?: string; p_workspace_id: string }
+        Returns: Json
+      }
       booth_enabled: { Args: never; Returns: boolean }
       booth_export_workspace: {
         Args: { p_workspace_id: string }
@@ -16388,6 +16570,20 @@ export type Database = {
         }
         Returns: Json
       }
+      booth_voice_authorize: {
+        Args: {
+          p_duration_ms: number
+          p_mode?: string
+          p_note_id: string
+          p_workspace_id: string
+        }
+        Returns: Json
+      }
+      booth_voice_link: {
+        Args: { p_interaction_id: string; p_note_id: string }
+        Returns: Json
+      }
+      booth_voice_usage: { Args: { p_workspace_id: string }; Returns: Json }
       booth_workspaces_summary: {
         Args: { p_exhibitor_id: string }
         Returns: Json
