@@ -139,7 +139,7 @@ export default function SalonMode() {
   const [actionsBack, setActionsBack] = useState<'home' | 'dashboard'>('home');
   const [listFilter, setListFilter] = useState<ListFilter | null>(null);
   const [listBack, setListBack] = useState<'home' | 'dashboard'>('home');
-  const [detailBack, setDetailBack] = useState<'list' | 'debrief' | 'actions'>('list');
+  const [detailBack, setDetailBack] = useState<'list' | 'debrief' | 'actions' | 'home'>('list');
   const [dupCount, setDupCount] = useState(0);
   const [flowInitial, setFlowInitial] = useState<MeetingDraft>(emptyDraft());
   const [flowKey, setFlowKey] = useState(0);
@@ -599,7 +599,7 @@ function RecentMeetings({ cache, me, onOpen, onAll }: { cache: BoothCache; me: s
       .slice(0, 8)
       .map((i) => {
         const c = contacts.get(i.contact_id) ?? null;
-        const label = [c?.company_name?.trim(), fullName(c)].filter(Boolean).join(' · ') || primaryLabel(c as Record<string, string | null> | null);
+        const label = [c?.company_name?.trim(), fullName(c)].filter(Boolean).join(' · ') || primaryLabel(c as unknown as Record<string, string | null> | null);
         return { id: i.id, label, at: i.occurred_at };
       });
   }, [cache, me]);
