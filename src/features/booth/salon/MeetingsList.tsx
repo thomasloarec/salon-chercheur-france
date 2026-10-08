@@ -27,7 +27,9 @@ export default function MeetingsList({
   onClearCardFilter,
   idFilter = null,
   onClearIdFilter,
+  selectedId = null,
 }: {
+  selectedId?: string | null;
   idFilter?: { ids: string[]; label: string } | null;
   onClearIdFilter?: () => void;
   cardFilter?: 'pending' | 'review' | null;
@@ -153,7 +155,8 @@ export default function MeetingsList({
             <Button size="sm" variant="ghost" className="min-h-[40px]" onClick={onClearCardFilter}>Tout afficher</Button>
           </div>
         )}
-        <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
+        <div className="space-y-3 md:flex md:flex-wrap md:items-center md:gap-2 md:space-y-0">
+        <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1 md:w-64 md:shrink-0">
           {(['mine', 'team'] as const).map((t) => (
             <button
               key={t}
@@ -182,7 +185,7 @@ export default function MeetingsList({
           </div>
         )}
 
-        <div className="relative">
+        <div className="relative md:min-w-[200px] md:flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Nom, entreprise, email"
@@ -204,6 +207,7 @@ export default function MeetingsList({
             ))}
           </div>
         )}
+        </div>
 
         {groups.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">Aucune rencontre pour l'instant.</p>
@@ -219,7 +223,7 @@ export default function MeetingsList({
               const pending = pendingIds.has(i.id) || pendingIds.has(i.contact_id);
               return (
                 <li key={i.id}>
-                  <button type="button" className="flex w-full items-start gap-3 p-3 text-left hover:bg-muted" onClick={() => onOpen(i.id)}>
+                  <button type="button" className={`flex w-full items-start gap-3 p-3 text-left hover:bg-muted ${selectedId === i.id ? 'lg:bg-primary/10' : ''}`} aria-current={selectedId === i.id ? 'true' : undefined} onClick={() => onOpen(i.id)}>
                     <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
                       {initials(cache, ownerOf(i, me))}
                     </span>

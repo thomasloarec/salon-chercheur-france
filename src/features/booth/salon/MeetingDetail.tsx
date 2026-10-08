@@ -53,12 +53,15 @@ export default function MeetingDetail({
   cache,
   me,
   interactionId,
+  split = false,
   onBack,
 }: {
   cache: BoothCache;
   me: string;
   interactionId: string;
   onBack: () => void;
+  /** Vue côte à côte (lg) : la fiche reste sur une colonne. */
+  split?: boolean;
 }) {
   const i = cache.interactions.find((x) => x.id === interactionId);
   const c = i ? cache.contacts.find((x) => x.id === i.contact_id) : undefined;
@@ -112,7 +115,8 @@ export default function MeetingDetail({
           <ArrowLeft className="mr-1 h-5 w-5" /> Rencontres
         </Button>
       </div>
-      <div className="space-y-5 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <div className={`space-y-5 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] ${split ? '' : 'lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0'}`}>
+        <div className="space-y-5">
         <div>
           <h2 className="text-2xl font-bold">{primaryLabel(c)}</h2>
           {secondaryLabel(c) && <p className="text-muted-foreground">{secondaryLabel(c)}</p>}
@@ -139,7 +143,9 @@ export default function MeetingDetail({
             ))}
           </div>
         )}
+        </div>
 
+        <div className="space-y-5">
         <section className="rounded-lg border border-border p-3">
           <h3 className="mb-2 text-sm font-semibold">Rencontre</h3>
           <Row label="Relation">{RELATIONSHIP[i.relationship] ?? 'Non renseignée'}</Row>
@@ -198,7 +204,7 @@ export default function MeetingDetail({
                 <p className="text-sm font-medium text-muted-foreground">Action faite</p>
               ) : (
                 canMarkDone && (
-                  <Button variant="outline" className="min-h-[48px] w-full" onClick={() => void update({ next_action_done: true })}>
+                  <Button variant="outline" className="min-h-[48px] w-full md:w-auto md:min-w-[200px]" onClick={() => void update({ next_action_done: true })}>
                     {canEdit ? 'Action faite' : 'Marquer comme faite'}
                   </Button>
                 )
@@ -251,11 +257,12 @@ export default function MeetingDetail({
         )}
 
         {canEdit && (
-          <Button variant="ghost" className="min-h-[48px] w-full text-destructive" onClick={() => setConfirmCancel(true)}>
+          <Button variant="ghost" className="min-h-[48px] w-full text-destructive md:w-auto" onClick={() => setConfirmCancel(true)}>
             Annuler cette rencontre
           </Button>
         )}
         {!canEdit && !canMarkDone && <p className="text-center text-xs text-muted-foreground">Consultation seule</p>}
+        </div>
       </div>
 
       <AlertDialog open={confirmCancel} onOpenChange={setConfirmCancel}>
