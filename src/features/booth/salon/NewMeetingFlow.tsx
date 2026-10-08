@@ -18,11 +18,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { headLabel, primaryLabel, secondaryLabel } from './display';
-import { boothErrorMessage, scanCard, searchCompanies, searchContacts, type BoothCompanySearchItem } from '@/lib/booth/rpc';
+import { boothErrorMessage, scanCard, searchCompanies, searchContacts, voiceNote, type BoothCompanySearchItem } from '@/lib/booth/rpc';
 import type { Interaction } from '@/lib/booth/types';
 import type { BoothCache } from '../sync/cache';
 import { enqueue, newId } from '../sync/engine';
 import { clearDraft, emptyDraft, saveDraft, type FlowStep, type MeetingDraft } from './draft';
+import VoiceDictation from '../voice/VoiceDictation';
+import type { VoiceRecording } from '../voice/useVoiceRecorder';
+import { blobToBase64 } from '../voice/base64';
+import { applyVoiceFields } from '../voice/applyVoiceFields';
+import { addVoice, linkVoiceNoteLater } from '../voice/voiceQueue';
+import { remainingLabel, useVoiceRemaining } from '../voice/useVoiceUsage';
 import {
   ACTION,
   HORIZON,
