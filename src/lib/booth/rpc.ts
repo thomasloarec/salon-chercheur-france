@@ -146,7 +146,12 @@ export async function inviteMember(
 
 export function boothErrorMessage(error: unknown): string {
   const msg = String((error as { message?: string })?.message ?? error ?? '');
-  if (msg.includes('BOOTH_RATE_LIMITED')) return "Limite de lectures atteinte pour aujourd'hui. Saisissez le contact à la main.";
+  if (msg.includes('BOOTH_VOICE_QUOTA')) return 'Vous avez utilisé les 300 notes vocales offertes ce mois-ci.';
+  if (msg.includes('BOOTH_AUDIO_TOO_LONG')) return 'La note dépasse 90 secondes.';
+  if (msg.includes('BOOTH_AUDIO_TOO_LARGE')) return 'Note trop volumineuse, réessayez plus court.';
+  if (msg.includes('BOOTH_VOICE_FAILED')) return 'La transcription a échoué. Réessayez ou saisissez à la main.';
+  if (msg.includes('BOOTH_SUMMARY_FAILED')) return "La synthèse n'a pas pu être rédigée. Réessayez dans un instant.";
+  if (msg.includes('BOOTH_RATE_LIMITED')) return 'Trop de demandes en peu de temps. Réessayez plus tard.';
   if (msg.includes('BOOTH_SCAN_FAILED')) return "La lecture n'a pas abouti. Reprenez la photo ou saisissez le contact à la main.";
   if (msg.includes('BOOTH_IMAGE_TOO_LARGE')) return 'Photo trop lourde. Reprenez-la.';
   if (msg.includes('BOOTH_IMAGE_UNREADABLE')) return 'Format de photo non lu. Reprenez la photo.';
