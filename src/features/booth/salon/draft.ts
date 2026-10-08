@@ -28,10 +28,14 @@ export interface MeetingDraft {
   jobTitle: string;
   linkedinUrl: string | null;
   phoneExtra: string;
-  captureSource: 'manual' | 'qr' | 'card';
+  captureSource: 'manual' | 'qr' | 'card' | 'voice';
   cardScanId: string | null;
   cardConfidence: Record<string, 'high' | 'medium' | 'low'> | null;
   cardQueued?: boolean;
+  /** Identifiant de la rencontre réservé sur l'appareil (notes vocales mises en file avant l'enregistrement). */
+  interactionId?: string;
+  /** Notes vocales à relier à la rencontre après l'enregistrement. */
+  voiceNoteIds?: string[];
 }
 
 export const emptyDraft = (): MeetingDraft => ({
