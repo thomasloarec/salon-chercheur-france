@@ -48,15 +48,17 @@ interface Suggestion {
   relationship: Interaction['relationship'] | null;
 }
 
-function Choice({ selected, onClick, children }: { selected?: boolean; onClick: () => void; children: React.ReactNode }) {
+function Choice({ selected, onClick, children, n }: { selected?: boolean; onClick: () => void; children: React.ReactNode; n?: number }) {
   return (
     <Button
       type="button"
       variant={selected ? 'default' : 'outline'}
-      className="min-h-[56px] w-full justify-start text-base"
+      className="min-h-[56px] w-full justify-start text-base lg:relative"
       onClick={onClick}
+      data-choice=""
     >
       {children}
+      {n !== undefined && n < 9 && <span className="hidden lg:absolute lg:right-2 lg:top-1 lg:inline lg:text-[10px] lg:opacity-60" aria-hidden="true">{n + 1}</span>}
     </Button>
   );
 }
@@ -113,6 +115,7 @@ export default function NewMeetingFlow({
   const userId = me;
   const cardAvailable = useCardScanAvailable(userId, cache.exhibitorId, wsId, online);
   const fileRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const [cardKind, setCardKind] = useState<'card' | 'badge'>('card');
   const [kindPicker, setKindPicker] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -552,6 +555,46 @@ export default function NewMeetingFlow({
     }
   }
 
+  // Raccourcis clavier : actifs uniquement à partir de 1 024 px de large (jamais sur téléphone).
+  const backRef = useRef(back);
+  backRef.current = back;
+  useEffect(() => {
+    const lg = window.matchMedia('(min-width: 1024px)');
+    const onKey = (e: KeyboardEvent) => {
+      if (!lg.matches || scanning || cardWait || photoFull || e.isComposing) return;
+      const panel = panelRef.current;
+      if (!panel || document.querySelector('[role="dialog"],[role="alertdialog"]')) return;
+      const t = e.target as HTMLElement | null;
+      const tag = t?.tagName ?? '';
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        backRef.current();
+        return;
+      }
+      if (e.key === 'Enter' && !e.shiftKey) {
+        if (tag === 'TEXTAREA' || tag === 'BUTTON') return;
+        const b = panel.querySelector<HTMLButtonElement>('[data-primary]:not(:disabled)');
+        if (b) { e.preventDefault(); b.click(); }
+        return;
+      }
+      if (/^[1-9]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey && tag !== 'INPUT' && tag !== 'TEXTAREA') {
+        const b = panel.querySelectorAll<HTMLButtonElement>('[data-choice]')[Number(e.key) - 1];
+        if (b) { e.preventDefault(); b.click(); }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [scanning, cardWait, photoFull]);
+  useEffect(() => {
+    if (!window.matchMedia('(min-width: 1024px)').matches) return;
+    const id = requestAnimationFrame(() => {
+      panelRef.current
+        ?.querySelector<HTMLElement>('input:not([type="file"]):not([type="hidden"]), textarea, [data-choice]')
+        ?.focus();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [d.step]);
+
   const phoneConfKey = d.cardConfidence?.mobile ? 'mobile' : 'phone';
   const progress = Math.max(0, ORDER.indexOf(d.step === 'topic' ? 'pot' : d.step)) / (ORDER.length - 1);
   const title = headLabel(d.company, d.name);
@@ -565,14 +608,18 @@ export default function NewMeetingFlow({
       ACTION[d.next_action ?? 'none'],
     ].filter(Boolean);
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center">
+      <div className="flex flex-1 flex-col md:bg-muted/40 md:px-4 md:py-6">
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center md:mx-auto md:w-full md:max-w-xl md:flex-none md:rounded-xl md:border md:border-border md:bg-background md:py-12">
         <p className="text-xl font-semibold text-foreground">{parts.join(' · ')}</p>
-        <Button size="lg" className="min-h-[64px] w-full max-w-sm text-lg font-semibold" onClick={() => { setPhotoUrl(null); setQrPresent(false); setD(emptyDraft()); }}>
+        <div className="contents md:flex md:flex-row md:items-center md:justify-center md:gap-3">
+        <Button size="lg" className="min-h-[64px] w-full max-w-sm text-lg font-semibold md:w-auto md:min-w-[200px]" onClick={() => { setPhotoUrl(null); setQrPresent(false); setD(emptyDraft()); }}>
           Prochaine rencontre
         </Button>
         <Button variant="link" onClick={onHome}>
           Retour à l'accueil
         </Button>
+        </div>
+      </div>
       </div>
     );
   }
@@ -602,7 +649,8 @@ export default function NewMeetingFlow({
   );
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col md:bg-muted/40 md:px-4 md:py-6">
+    <div className="flex flex-1 flex-col md:mx-auto md:w-full md:max-w-xl md:flex-none md:overflow-hidden md:rounded-xl md:border md:border-border md:bg-background md:pb-4">
       {scanning && (
         <QrScanner
           onResult={(t) => void handleScan(t)}
@@ -645,7 +693,7 @@ export default function NewMeetingFlow({
         {title && d.step !== 'who' && <span className="truncate text-sm text-muted-foreground">{title}</span>}
       </div>
 
-      <div className="flex flex-1 flex-col gap-4 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div ref={panelRef} className="flex flex-1 flex-col gap-4 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         {d.step === 'who' && (
           <>
             <h2 className="text-2xl font-bold">Qui ?</h2>
@@ -747,7 +795,8 @@ export default function NewMeetingFlow({
             </div>
             <Button
               size="lg"
-              className="mt-auto min-h-[56px] w-full text-base"
+              className="mt-auto min-h-[56px] w-full text-base md:w-auto md:min-w-[200px] md:self-end"
+ data-primary=""
               disabled={!d.name.trim() && !d.company.trim()}
               onClick={() => go('coord')}
             >
@@ -814,7 +863,8 @@ export default function NewMeetingFlow({
                 {d.linkedinUrl && <p className="truncate text-xs text-muted-foreground">LinkedIn : {d.linkedinUrl}</p>}
                 <Button
                   size="lg"
-                  className="mt-auto min-h-[56px] w-full text-base"
+                  className="mt-auto min-h-[56px] w-full text-base md:w-auto md:min-w-[200px] md:self-end"
+ data-primary=""
                   disabled={!d.name.trim() && !d.company.trim()}
                   onClick={verifyContinue}
                 >
@@ -854,7 +904,8 @@ export default function NewMeetingFlow({
                     />
                     <Button
                       size="lg"
-                      className="mt-auto min-h-[56px] w-full text-base"
+                      className="mt-auto min-h-[56px] w-full text-base md:w-auto md:min-w-[200px] md:self-end"
+ data-primary=""
                       disabled={!d.coordValue.trim()}
                       onClick={checkDuplicateAndContinue}
                     >
@@ -875,9 +926,10 @@ export default function NewMeetingFlow({
               </p>
             )}
             <h2 className="text-2xl font-bold">Relation</h2>
-            <div className="grid gap-3">
-              {(Object.keys(RELATIONSHIP) as Interaction['relationship'][]).map((r) => (
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {(Object.keys(RELATIONSHIP) as Interaction['relationship'][]).map((r, idx) => (
                 <Choice
+                  n={idx}
                   key={r}
                   selected={d.relationship === r}
                   onClick={() => go(r === 'customer' ? 'topic' : 'pot', { relationship: r })}
@@ -892,9 +944,10 @@ export default function NewMeetingFlow({
         {d.step === 'pot' && (
           <>
             <h2 className="text-2xl font-bold">Potentiel</h2>
-            <div className="grid gap-3">
-              {(Object.keys(POTENTIAL) as NonNullable<Interaction['potential']>[]).map((p) => (
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {(Object.keys(POTENTIAL) as NonNullable<Interaction['potential']>[]).map((p, idx) => (
                 <Choice
+                  n={idx}
                   key={p}
                   selected={d.potential === p}
                   onClick={() => {
@@ -914,9 +967,10 @@ export default function NewMeetingFlow({
         {d.step === 'topic' && (
           <>
             <h2 className="text-2xl font-bold">Sujet</h2>
-            <div className="grid gap-3">
-              {(Object.keys(TOPIC) as NonNullable<Interaction['customer_topic']>[]).map((t) => (
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {(Object.keys(TOPIC) as NonNullable<Interaction['customer_topic']>[]).map((t, idx) => (
                 <Choice
+                  n={idx}
                   key={t}
                   selected={d.customer_topic === t}
                   onClick={() =>
@@ -936,10 +990,10 @@ export default function NewMeetingFlow({
           <>
             <h2 className="text-2xl font-bold">Projet concret ?</h2>
             <div className="grid gap-3">
-              <Choice selected={d.concrete === true} onClick={() => go('action', { concrete: true })}>
+              <Choice n={0} selected={d.concrete === true} onClick={() => go('action', { concrete: true })}>
                 Oui
               </Choice>
-              <Choice selected={d.concrete === false} onClick={() => go('action', { concrete: false })}>
+              <Choice n={1} selected={d.concrete === false} onClick={() => go('action', { concrete: false })}>
                 Pas encore
               </Choice>
             </div>
@@ -949,9 +1003,9 @@ export default function NewMeetingFlow({
         {d.step === 'action' && (
           <>
             <h2 className="text-2xl font-bold">Prochaine action</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {(Object.keys(ACTION) as Interaction['next_action'][]).map((a) => (
-                <Choice key={a} selected={d.next_action === a} onClick={() => pickAction(a)}>
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+              {(Object.keys(ACTION) as Interaction['next_action'][]).map((a, idx) => (
+                <Choice n={idx} key={a} selected={d.next_action === a} onClick={() => pickAction(a)}>
                   {ACTION[a]}
                 </Choice>
               ))}
@@ -992,7 +1046,7 @@ export default function NewMeetingFlow({
                     </div>
                   </div>
                 )}
-                <Button size="lg" className="mt-auto min-h-[56px] w-full text-base" disabled={!d.due} onClick={() => go('details')}>
+                <Button size="lg" data-primary="" className="mt-auto min-h-[56px] w-full text-base md:w-auto md:min-w-[200px] md:self-end" disabled={!d.due} onClick={() => go('details')}>
                   Continuer
                 </Button>
               </>
@@ -1043,8 +1097,8 @@ export default function NewMeetingFlow({
               value={d.note}
               onChange={(e) => patch({ note: e.target.value })}
             />
-            <div className="sticky bottom-0 mt-auto bg-background pb-2 pt-2">
-              <Button size="lg" className="min-h-[64px] w-full text-lg font-semibold" disabled={saving} onClick={() => void save()}>
+            <div className="sticky bottom-0 mt-auto bg-background pb-2 pt-2 md:flex md:justify-end">
+              <Button size="lg" data-primary="" className="min-h-[64px] w-full text-lg font-semibold md:w-auto md:min-w-[200px]" disabled={saving} onClick={() => void save()}>
                 {saving && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
                 Enregistrer
               </Button>
@@ -1052,6 +1106,7 @@ export default function NewMeetingFlow({
           </>
         )}
       </div>
+    </div>
     </div>
   );
 }
