@@ -558,3 +558,103 @@ export interface BoothExport {
 
 export const exportWorkspace = (workspaceId: string) =>
   call<BoothExport>('booth_export_workspace', { p_workspace_id: workspaceId });
+
+/* ---------- Notes vocales et synthèse ---------- */
+
+async function invokeBooth<T>(fn: string, body: Record<string, unknown>): Promise<T> {
+  let res;
+  try {
+    res = await supabase.functions.invoke(fn, { body });
+  } catch {
+    throw new Error('BOOTH_NETWORK');
+  }
+  const { data, error } = res;
+  if (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ctx = (error as any).context;
+    if (!ctx || typeof ctx.json !== 'function' || (error as { name?: string }).name === 'FunctionsFetchError') {
+      throw new Error('BOOTH_NETWORK');
+    }
+    const parsed = await ctx.json().catch(() => null);
+    throw new Error(parsed?.error || 'BOOTH_ERROR');
+  }
+  return data as T;
+}
+
+export interface BoothVoiceFields {
+  contact: {
+    first_name: string | null;
+    last_name: string | null;
+    company_name: string | null;
+    job_title: string | null;
+    email: string | null;
+    phone: string | null;
+  } | null;
+  relationship: string | null;
+  customer_topic: string | null;
+  potential: string | null;
+  project: { title: string | null; amount: number | null; value_band: string | null; horizon: string | null } | null;
+  next_action: string | null;
+  next_action_due: string | null;
+  note: string | null;
+}
+
+export interface BoothVoiceNoteResult {
+  note_id: string;
+  status: 'ok' | 'empty';
+  transcript: string | null;
+  fields?: BoothVoiceFields;
+  confidence?: Record<string, 'high' | 'medium' | 'low'>;
+  remaining_month?: number;
+}
+
+export const voiceNote = (opts: {
+  workspaceId: string;
+  noteId: string;
+  mode: 'capture' | 'note';
+  audioBase64: string;
+  mediaType: string;
+  durationMs: number;
+}) =>
+  invokeBooth<BoothVoiceNoteResult>('booth-voice-note', {
+    workspace_id: opts.workspaceId,
+    note_id: opts.noteId,
+    mode: opts.mode,
+    audio_base64: opts.audioBase64,
+    media_type: opts.mediaType,
+    duration_ms: opts.durationMs,
+  });
+
+export interface BoothVoiceUsage {
+  available: boolean;
+  used_month: number;
+  limit_month: number;
+  remaining_month: number;
+  max_seconds: number;
+}
+
+export const voiceUsage = (workspaceId: string) =>
+  call<BoothVoiceUsage>('booth_voice_usage', { p_workspace_id: workspaceId });
+
+export const linkVoiceNote = (noteId: string, interactionId: string) =>
+  call<unknown>('booth_voice_link', { p_note_id: noteId, p_interaction_id: interactionId });
+
+export interface BoothDebriefSummary {
+  status: 'ok' | 'empty';
+  total: number;
+  truncated: boolean;
+  summary?: {
+    headline: string;
+    overview: string;
+    priorities: Array<{ company: string | null; person: string | null; reason: string | null; action: string | null }>;
+    followups: Array<{ company: string | null; action: string | null; due: string | null; followed_by: string | null }>;
+    signals: string[];
+  };
+}
+
+export const debriefSummary = (opts: { workspaceId: string; day: string | null; scope: 'team' | 'mine' }) =>
+  invokeBooth<BoothDebriefSummary>('booth-debrief-summary', {
+    workspace_id: opts.workspaceId,
+    day: opts.day,
+    scope: opts.scope,
+  });
