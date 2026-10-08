@@ -25,6 +25,7 @@ import { isPersistentStorage, onStorageAvailabilityChange } from '@/features/boo
 import type { BoothCache } from '@/features/booth/sync/cache';
 import type { BoothInboundLead } from '@/lib/booth/rpc';
 import NewMeetingFlow, { CAMERA_PENDING_KEY } from '@/features/booth/salon/NewMeetingFlow';
+import { useVoiceItems, useVoiceQueueRunner } from '@/features/booth/voice/voiceQueue';
 import { flushCardLinks } from '@/features/booth/card/useCardScanAvailable';
 import MeetingsList from '@/features/booth/salon/MeetingsList';
 import DashboardScreen, { type ListFilter } from '@/features/booth/dashboard/DashboardScreen';
@@ -177,6 +178,8 @@ export default function SalonMode() {
   const [cardFilter, setCardFilter] = useState<'pending' | 'review' | null>(null);
   useCardQueueRunner(user?.id, cache?.exhibitorId, workspaceId);
   const cards = useCards(user?.id, workspaceId);
+  useVoiceQueueRunner(user?.id, cache?.exhibitorId, workspaceId);
+  const voicePending = useVoiceItems(user?.id, workspaceId).filter((v) => v.state === 'pending').length;
   const cardsPending = cards.filter((c) => c.state === 'pending' && c.contactId).length;
   const cardsReview = cards.filter((c) => c.state !== 'pending' && c.contactId).length;
 
@@ -346,7 +349,7 @@ export default function SalonMode() {
         </Button>
         {cache && (
           <SyncPill
-            pendingCount={sync.pendingCount}
+            pendingCount={sync.pendingCount + voicePending}
             rejectedCount={sync.rejectedCount}
             online={sync.online}
             syncing={sync.syncing}
