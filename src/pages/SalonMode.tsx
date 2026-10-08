@@ -56,6 +56,18 @@ const toUtc = (ymd: string) => {
   const [y, m, d] = ymd.slice(0, 10).split('-').map(Number);
   return Date.UTC(y, m - 1, d);
 };
+function useMinWidth(px: number) {
+  const q = `(min-width: ${px}px)`;
+  const [ok, setOk] = useState(() => typeof window !== 'undefined' && window.matchMedia(q).matches);
+  useEffect(() => {
+    const m = window.matchMedia(q);
+    const on = () => setOk(m.matches);
+    on();
+    m.addEventListener('change', on);
+    return () => m.removeEventListener('change', on);
+  }, [q]);
+  return ok;
+}
 const timeFmt = (iso: string) => new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
 function dayLabel(ws: BoothCache['workspace']) {
@@ -144,6 +156,20 @@ export default function SalonMode() {
   const [flowInitial, setFlowInitial] = useState<MeetingDraft>(emptyDraft());
   const [flowKey, setFlowKey] = useState(0);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const isLg = useMinWidth(1024);
+  // lg : la fiche s'ouvre à droite de la liste ; en dessous, écran fiche plein écran (inchangé).
+  const openDetail = (id: string, origin: 'home' | 'actions' | 'debrief') => {
+    setDetailId(id);
+    if (isLg) {
+      setCardFilter(null);
+      setListFilter(null);
+      setListBack(origin);
+      setScreen('list');
+    } else {
+      setDetailBack(origin);
+      setScreen('detail');
+    }
+  };
   const [savedDraft, setSavedDraft] = useState<MeetingDraft | null>(null);
   const [rejectedOpen, setRejectedOpen] = useState(false);
   const [toAbandon, setToAbandon] = useState<OutboxItem | null>(null);
@@ -368,6 +394,8 @@ export default function SalonMode() {
           onHome={() => setScreen('home')}
         />
       ) : screen === 'list' && user ? (
+        <div className="flex flex-1 flex-col lg:grid lg:grid-cols-[400px_minmax(0,1fr)] lg:items-start lg:gap-6">
+        <div className="flex flex-1 flex-col lg:sticky lg:top-16 lg:max-h-[calc(100dvh-4rem)] lg:overflow-y-auto">
         <MeetingsList
           cache={cache}
           me={user.id}
@@ -376,13 +404,26 @@ export default function SalonMode() {
           idFilter={listFilter}
           onClearIdFilter={() => setListFilter(null)}
           onClearCardFilter={() => setCardFilter(null)}
+          selectedId={isLg ? detailId : null}
           onOpen={(id) => {
             setDetailId(id);
+            if (isLg) return;
             setDetailBack('list');
             setScreen('detail');
           }}
           onInbound={startInbound}
         />
+        </div>
+        {isLg && (
+          <div className="hidden lg:block lg:min-w-0 lg:rounded-xl lg:border lg:border-border">
+            {detailId && cache.interactions.some((x) => x.id === detailId) ? (
+              <MeetingDetail key={detailId} cache={cache} me={user.id} interactionId={detailId} split onBack={() => setDetailId(null)} />
+            ) : (
+              <p className="p-8 text-center text-muted-foreground">Sélectionnez une rencontre pour voir sa fiche.</p>
+            )}
+          </div>
+        )}
+        </div>
       ) : screen === 'duplicates' && user ? (
         <DuplicatesScreen cache={cache} me={user.id} online={sync.online} onBack={() => setScreen('home')} />
       ) : screen === 'detail' && user && detailId ? (
@@ -406,14 +447,14 @@ export default function SalonMode() {
           cache={cache}
           me={user.id}
           onBack={() => setScreen(actionsBack)}
-          onOpen={(id) => { setDetailId(id); setDetailBack('actions'); setScreen('detail'); }}
+          onOpen={(id) => openDetail(id, 'actions')}
         />
       ) : screen === 'debrief' && user ? (
         <DebriefScreen
           cache={cache}
           me={user.id}
           onBack={() => setScreen('dashboard')}
-          onOpen={(id) => { setDetailId(id); setDetailBack('debrief'); setScreen('detail'); }}
+          onOpen={(id) => openDetail(id, 'debrief')}
         />
       ) : (
         <main className="flex flex-1 flex-col gap-5 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-0 lg:grid lg:grid-cols-[380px_minmax(0,1fr)] lg:items-start lg:gap-8">
@@ -532,7 +573,7 @@ export default function SalonMode() {
             )}
           </div>
           </div>
-          <RecentMeetings cache={cache} me={user?.id ?? null} onOpen={(id) => { setDetailId(id); setDetailBack('home'); setScreen('detail'); }} onAll={() => { setCardFilter(null); setListFilter(null); setListBack('home'); setScreen('list'); }} />
+          <RecentMeetings cache={cache} me={user?.id ?? null} onOpen={(id) => openDetail(id, 'home')} onAll={() => { setDetailId(null); setCardFilter(null); setListFilter(null); setListBack('home'); setScreen('list'); }} />
         </main>
       )}
         </ScreenContainer>
