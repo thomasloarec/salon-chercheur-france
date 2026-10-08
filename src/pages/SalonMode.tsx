@@ -138,7 +138,7 @@ export default function SalonMode() {
   const [outcomeBack, setOutcomeBack] = useState<'home' | 'dashboard'>('home');
   const [actionsBack, setActionsBack] = useState<'home' | 'dashboard'>('home');
   const [listFilter, setListFilter] = useState<ListFilter | null>(null);
-  const [listBack, setListBack] = useState<'home' | 'dashboard'>('home');
+  const [listBack, setListBack] = useState<'home' | 'dashboard' | 'actions' | 'debrief'>('home');
   const [detailBack, setDetailBack] = useState<'list' | 'debrief' | 'actions' | 'home'>('list');
   const [dupCount, setDupCount] = useState(0);
   const [flowInitial, setFlowInitial] = useState<MeetingDraft>(emptyDraft());
