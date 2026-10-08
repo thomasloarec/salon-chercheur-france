@@ -1,6 +1,7 @@
 # Roadmap
 
 ## En cours
+- Cockpit Vos salons : lisibilité mobile et texte à 130 %, vérifications des cartes Avant/Pendant et tests.
 - Chantier 4 (page /organisateurs) : refonte appliquée. Reste la validation utilisateur de l'aperçu.
 
 ## Fait
