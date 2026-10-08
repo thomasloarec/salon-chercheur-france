@@ -1,74 +1,16 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { useQuery } from '@tanstack/react-query';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBoothContext } from '@/hooks/useBoothContext';
+import BoothSalonCockpit from '@/features/booth/cockpit/BoothSalonCockpit';
 import BoothTeamPanel from '@/components/booth/BoothTeamPanel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { boothErrorMessage, listWorkspaces, type BoothContextItem, type BoothPhase } from '@/lib/booth/rpc';
-
-const PHASE_LABEL: Record<BoothPhase, string | null> = {
-  before: 'Avant le salon',
-  during: 'Pendant le salon',
-  after: 'Après le salon',
-  unknown: null,
-};
-
-const fmt = (d: string | null) => (d ? format(new Date(d), 'd MMM yyyy', { locale: fr }) : null);
-
-function Workspaces({ exhibitorId }: { exhibitorId: string }) {
-  const q = useQuery({ queryKey: ['booth-workspaces', exhibitorId], queryFn: () => listWorkspaces(exhibitorId) });
-  if (q.isLoading) return <Skeleton className="h-16 w-full" />;
-  if (q.isError)
-    return (
-      <div className="text-sm space-y-2">
-        <p className="text-destructive">{boothErrorMessage(q.error)}</p>
-        <Button size="sm" variant="outline" onClick={() => q.refetch()}>
-          Réessayer
-        </Button>
-      </div>
-    );
-  const items = (q.data?.items ?? []).filter((w) => !w.archived);
-  if (items.length === 0)
-    return (
-      <p className="text-sm text-muted-foreground">
-        Aucun salon ouvert pour l'instant. Votre responsable crée les espaces salon.
-      </p>
-    );
-  return (
-    <ul className="space-y-2">
-      {items.map((w) => {
-        const dates = [fmt(w.date_debut), fmt(w.date_fin)].filter(Boolean).join(' au ');
-        const phase = PHASE_LABEL[w.phase];
-        return (
-          <li key={w.workspace_id} className="rounded-md border p-3 space-y-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-medium text-foreground">{w.nom_event}</span>
-              {phase && <Badge variant="secondary">{phase}</Badge>}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {[w.ville, dates, w.stand_label ? `Stand ${w.stand_label}` : null].filter(Boolean).join(' · ')}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {w.interactions_count} rencontre{w.interactions_count > 1 ? 's' : ''}
-            </p>
-            <Button asChild size="sm" className="mt-1 min-h-[44px]">
-              <Link to={`/salon/${w.workspace_id}`}>Ouvrir le mode salon</Link>
-            </Button>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
+import { type BoothContextItem } from '@/lib/booth/rpc';
 
 function CompanyCard({ c }: { c: BoothContextItem }) {
   return (
@@ -92,7 +34,7 @@ function CompanyCard({ c }: { c: BoothContextItem }) {
           </div>
         ) : (
           <>
-            <Workspaces exhibitorId={c.exhibitor_id} />
+            <BoothSalonCockpit exhibitorId={c.exhibitor_id} />
             {c.is_fiche_manager && c.exhibitor_slug && (
               <Link
                 to={`/exposants/${c.exhibitor_slug}/gerer?section=leads`}

@@ -32,6 +32,7 @@ import {
 } from '@/lib/booth/rpc';
 import BoothTeamPanel from '@/components/booth/BoothTeamPanel';
 import BoothCompareSalons from '@/components/booth/BoothCompareSalons';
+import BoothSalonCockpit, { TEAM_ANCHOR_ID } from '@/features/booth/cockpit/BoothSalonCockpit';
 
 interface Props {
   exhibitorId: string;
@@ -269,10 +270,12 @@ interface EventChoice {
 
 function CreateWorkspaceDialog({
   exhibitorId,
+  initialEventId,
   onClose,
   onDone,
 }: {
   exhibitorId: string;
+  initialEventId?: string;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -283,6 +286,12 @@ function CreateWorkspaceDialog({
   const [selected, setSelected] = useState<EventChoice | null>(null);
   const [stand, setStand] = useState('');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!initialEventId || selected) return;
+    const p = upcoming.find((u) => u.event.id === initialEventId);
+    if (p) setSelected({ id: p.event.id, nom_event: p.event.nom_event, ville: p.event.ville, date_debut: p.event.date_debut });
+  }, [initialEventId, upcoming, selected]);
 
   const { data: results = [], isFetching } = useQuery({
     queryKey: ['booth-search-events', debounced],
@@ -463,10 +472,13 @@ function ApprovedView({ exhibitorId, access }: { exhibitorId: string; access: Bo
     queryFn: () => listWorkspaces(exhibitorId),
   });
   const [editing, setEditing] = useState<BoothWorkspace | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState<boolean | string>(false);
   const [showArchived, setShowArchived] = useState(false);
 
-  const refresh = () => qc.invalidateQueries({ queryKey: ['booth-workspaces', exhibitorId] });
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ['booth-workspaces', exhibitorId] });
+    qc.invalidateQueries({ queryKey: ['booth-summary', exhibitorId] });
+  };
   const items = wsQuery.data?.items ?? [];
   const isManager = wsQuery.data?.role === 'manager';
   const activeItems = items.filter((w) => !w.archived);
@@ -510,63 +522,36 @@ function ApprovedView({ exhibitorId, access }: { exhibitorId: string; access: Bo
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 flex-wrap">
-          <CardTitle className="text-base">Vos espaces salon</CardTitle>
-          {isManager && (
-            <Button size="sm" onClick={() => setCreating(true)}>
-              <Plus className="h-4 w-4 mr-1.5" />
-              Créer l'espace d'un salon
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {wsQuery.isLoading ? (
-            <>
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
-            </>
-          ) : wsQuery.isError ? (
-            <ErrorBox error={wsQuery.error} onRetry={() => wsQuery.refetch()} />
-          ) : (
-            <>
-              {activeItems.length === 0 && (
-                <p className="text-sm text-muted-foreground">Aucun espace salon pour l'instant.</p>
-              )}
-              {activeItems.map((ws) => (
+      <BoothSalonCockpit
+        exhibitorId={exhibitorId}
+        onPrepare={isManager ? (id) => setCreating(id) : undefined}
+        onCreate={isManager ? () => setCreating(true) : undefined}
+        onEdit={isManager ? setEditing : undefined}
+      />
+      {archivedItems.length > 0 && (
+        <div>
+          <button
+            type="button"
+            className="min-h-[44px] text-sm text-muted-foreground hover:text-foreground"
+            onClick={() => setShowArchived((v) => !v)}
+          >
+            Archivés ({archivedItems.length}) {showArchived ? '▲' : '▼'}
+          </button>
+          {showArchived && (
+            <div className="mt-2 space-y-2 opacity-80">
+              {archivedItems.map((ws) => (
                 <WorkspaceRow key={ws.workspace_id} ws={ws} isManager={isManager} onEdit={() => setEditing(ws)} />
               ))}
-              {archivedItems.length > 0 && (
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    className="text-sm text-muted-foreground hover:text-foreground"
-                    onClick={() => setShowArchived((v) => !v)}
-                  >
-                    Archivés ({archivedItems.length}) {showArchived ? '▲' : '▼'}
-                  </button>
-                  {showArchived && (
-                    <div className="mt-2 space-y-2 opacity-80">
-                      {archivedItems.map((ws) => (
-                        <WorkspaceRow
-                          key={ws.workspace_id}
-                          ws={ws}
-                          isManager={isManager}
-                          onEdit={() => setEditing(ws)}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      )}
 
       {isManager && (wsQuery.data?.items.length ?? 0) > 0 && <BoothCompareSalons exhibitorId={exhibitorId} />}
 
-      <BoothTeamPanel exhibitorId={exhibitorId} isPaid={access.is_paid} />
+      <div id={TEAM_ANCHOR_ID}>
+        <BoothTeamPanel exhibitorId={exhibitorId} isPaid={access.is_paid} />
+      </div>
 
       <div className="rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 dark:bg-blue-950/30 dark:text-blue-200 dark:border-blue-800">
         Ouvrez le mode salon sur votre téléphone. Ajoutez la page à votre écran d'accueil pour la retrouver en un geste.
@@ -574,7 +559,12 @@ function ApprovedView({ exhibitorId, access }: { exhibitorId: string; access: Bo
 
       {editing && <EditWorkspaceDialog ws={editing} onClose={() => setEditing(null)} onSaved={refresh} />}
       {creating && (
-        <CreateWorkspaceDialog exhibitorId={exhibitorId} onClose={() => setCreating(false)} onDone={refresh} />
+        <CreateWorkspaceDialog
+          exhibitorId={exhibitorId}
+          initialEventId={typeof creating === 'string' ? creating : undefined}
+          onClose={() => setCreating(false)}
+          onDone={refresh}
+        />
       )}
     </div>
   );

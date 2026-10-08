@@ -217,6 +217,20 @@ export default function SalonMode() {
   }, [user, workspaceId, screen]);
 
   const isManager = cache?.role === 'manager';
+  const ecranRead = useRef(false);
+  useEffect(() => {
+    if (ecranRead.current || !cache) return;
+    ecranRead.current = true;
+    const url = new URL(window.location.href);
+    const v = url.searchParams.get('ecran');
+    if (!v) return;
+    url.searchParams.delete('ecran');
+    window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+    if (v === 'tableau') setScreen('dashboard');
+    else if (v === 'actions') { setActionsBack('home'); setScreen('actions'); }
+    else if (v === 'bilan' && cache.role === 'manager') { setOutcomeBack('home'); setScreen('outcome'); }
+    else if (v === 'rencontres') { setListBack('home'); setScreen('list'); }
+  }, [cache]);
   const exhibitorIdForDup = cache?.exhibitorId;
   useEffect(() => {
     if (screen !== 'home' || !isManager || !exhibitorIdForDup || !sync.online) return;
