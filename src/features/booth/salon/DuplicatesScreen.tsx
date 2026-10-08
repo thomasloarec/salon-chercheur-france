@@ -64,7 +64,7 @@ function GroupCard({
         ))}
       </div>
       <Button
-        className="min-h-[48px] w-full"
+        className="min-h-[48px] w-full md:w-auto md:min-w-[200px]"
         disabled={!keep || busy}
         onClick={() => keep && onMerge(keep, group.contacts.filter((c) => c.id !== keep).map((c) => c.id))}
       >

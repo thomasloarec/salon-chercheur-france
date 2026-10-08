@@ -40,6 +40,9 @@ import { registerSalonSW, useOfflineReady } from '@/features/booth/offline/regis
 import { LAST_WORKSPACE_KEY } from '@/pages/SalonStart';
 import { useSalonAppMeta } from '@/features/booth/offline/useSalonAppMeta';
 import InstallBanner from '@/features/booth/offline/InstallBanner';
+import ScreenContainer, { SCREEN_WIDTH } from '@/features/booth/layout/ScreenContainer';
+import { isMeeting, ownerId } from '@/features/booth/dashboard/metrics';
+import { fullName } from '@/features/booth/salon/labels';
 import { purgeOrphanCards, removeCard, useCardQueueRunner, useCards } from '@/features/booth/card/cardQueue';
 
 const dayInTz = (d: Date, tz: string) => {
@@ -136,7 +139,7 @@ export default function SalonMode() {
   const [actionsBack, setActionsBack] = useState<'home' | 'dashboard'>('home');
   const [listFilter, setListFilter] = useState<ListFilter | null>(null);
   const [listBack, setListBack] = useState<'home' | 'dashboard'>('home');
-  const [detailBack, setDetailBack] = useState<'list' | 'debrief' | 'actions'>('list');
+  const [detailBack, setDetailBack] = useState<'list' | 'debrief' | 'actions' | 'home'>('list');
   const [dupCount, setDupCount] = useState(0);
   const [flowInitial, setFlowInitial] = useState<MeetingDraft>(emptyDraft());
   const [flowKey, setFlowKey] = useState(0);
@@ -295,6 +298,7 @@ export default function SalonMode() {
       </Helmet>
 
       <header className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border bg-background px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <div className={`flex w-full items-center justify-between gap-2 ${SCREEN_WIDTH} md:px-3`}>
         <Button asChild variant="ghost" className="min-h-[44px] px-2">
           <Link to="/leads">
             <ArrowLeft className="mr-1 h-5 w-5" /> Mes salons
@@ -311,6 +315,7 @@ export default function SalonMode() {
             onOpenRejected={() => setRejectedOpen(true)}
           />
         )}
+        </div>
       </header>
 
       {!persistent && (
@@ -350,7 +355,9 @@ export default function SalonMode() {
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-16 w-full" />
         </div>
-      ) : screen === 'flow' && user ? (
+      ) : (
+        <ScreenContainer>
+      {screen === 'flow' && user ? (
         <NewMeetingFlow
           key={flowKey}
           cache={cache}
@@ -409,7 +416,8 @@ export default function SalonMode() {
           onOpen={(id) => { setDetailId(id); setDetailBack('debrief'); setScreen('detail'); }}
         />
       ) : (
-        <main className="flex flex-1 flex-col gap-5 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <main className="flex flex-1 flex-col gap-5 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-0 lg:grid lg:grid-cols-[380px_minmax(0,1fr)] lg:items-start lg:gap-8">
+          <div className="contents lg:flex lg:flex-col lg:gap-5">
           {status === 'stale' && (
             <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
               Données du {timeFmt(cache.saved_at)}
@@ -453,10 +461,10 @@ export default function SalonMode() {
             )}
           </div>
 
-          <div className="mt-auto flex flex-col gap-3">
+          <div className="mt-auto flex flex-col gap-3 md:grid md:grid-cols-2 lg:flex lg:flex-col">
             {!ws.archived && savedDraft && (
-              <div className="flex flex-col gap-2 rounded-xl border border-primary/40 bg-primary/5 p-3">
-                <Button size="lg" variant="secondary" className="min-h-[56px] w-full text-base" onClick={() => startFlow(savedDraft)}>
+              <div className="flex flex-col gap-2 rounded-xl border border-primary/40 bg-primary/5 p-3 md:col-span-2">
+                <Button size="lg" variant="secondary" className="min-h-[56px] w-full text-base md:min-h-[48px]" onClick={() => startFlow(savedDraft)}>
                   Reprendre la rencontre en cours{savedDraft.name ? ` (${savedDraft.name})` : ''}
                 </Button>
                 <Button
@@ -477,53 +485,57 @@ export default function SalonMode() {
               </div>
             )}
             {cache.role === 'manager' && ws.phase === 'after' && (
-              <Button size="lg" className="min-h-[64px] w-full text-lg font-semibold" onClick={() => { setOutcomeBack('home'); setScreen('outcome'); }}>
+              <Button size="lg" className="min-h-[64px] w-full text-lg font-semibold md:col-span-2" onClick={() => { setOutcomeBack('home'); setScreen('outcome'); }}>
                 Bilan du salon
               </Button>
             )}
             {!ws.archived && (
-              <Button size="lg" variant={cache.role === 'manager' && ws.phase === 'after' ? 'outline' : 'default'} className="min-h-[64px] w-full text-lg font-semibold" onClick={() => startFlow(emptyDraft())}>
+              <Button size="lg" variant={cache.role === 'manager' && ws.phase === 'after' ? 'outline' : 'default'} className="min-h-[64px] w-full text-lg font-semibold md:col-span-2" onClick={() => startFlow(emptyDraft())}>
                 Nouvelle rencontre
               </Button>
             )}
             <Button
               size="lg"
               variant="outline"
-              className="min-h-[56px] w-full text-base"
+              className="min-h-[56px] w-full text-base md:min-h-[48px]"
               onClick={() => { setCardFilter(null); setListFilter(null); setListBack('home'); setScreen('list'); }}
             >
               Rencontres du salon
             </Button>
-            <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base" onClick={() => setScreen('dashboard')}>
+            <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base md:min-h-[48px]" onClick={() => setScreen('dashboard')}>
               Tableau de bord
             </Button>
             {cache.role === 'manager' && ws.phase !== 'after' && (
-              <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base" onClick={() => { setOutcomeBack('home'); setScreen('outcome'); }}>
+              <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base md:min-h-[48px]" onClick={() => { setOutcomeBack('home'); setScreen('outcome'); }}>
                 Bilan du salon
               </Button>
             )}
             {user && openActions(cache, user.id).length > 0 && (
-              <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base" onClick={() => { setActionsBack('home'); setScreen('actions'); }}>
+              <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base md:min-h-[48px]" onClick={() => { setActionsBack('home'); setScreen('actions'); }}>
                 Actions à faire ({openActions(cache, user.id).length})
               </Button>
             )}
             {cardsPending > 0 && (
-              <Button variant="link" className="min-h-[44px]" onClick={() => { setCardFilter('pending'); setListFilter(null); setListBack('home'); setScreen('list'); }}>
+              <Button variant="link" className="min-h-[44px] md:col-span-2 lg:self-start" onClick={() => { setCardFilter('pending'); setListFilter(null); setListBack('home'); setScreen('list'); }}>
                 {cardsPending} carte{cardsPending > 1 ? 's' : ''} en attente de lecture
               </Button>
             )}
             {cardsReview > 0 && (
-              <Button variant="link" className="min-h-[44px]" onClick={() => { setCardFilter('review'); setListFilter(null); setListBack('home'); setScreen('list'); }}>
+              <Button variant="link" className="min-h-[44px] md:col-span-2 lg:self-start" onClick={() => { setCardFilter('review'); setListFilter(null); setListBack('home'); setScreen('list'); }}>
                 {cardsReview} carte{cardsReview > 1 ? 's' : ''} à vérifier
               </Button>
             )}
             {cache.role === 'manager' && dupCount > 0 && (
-              <Button variant="link" className="min-h-[44px]" onClick={() => setScreen('duplicates')}>
+              <Button variant="link" className="min-h-[44px] md:col-span-2 lg:self-start" onClick={() => setScreen('duplicates')}>
                 Doublons ({dupCount})
               </Button>
             )}
           </div>
+          </div>
+          <RecentMeetings cache={cache} me={user?.id ?? null} onOpen={(id) => { setDetailId(id); setDetailBack('home'); setScreen('detail'); }} onAll={() => { setCardFilter(null); setListFilter(null); setListBack('home'); setScreen('list'); }} />
         </main>
+      )}
+        </ScreenContainer>
       )}
 
       <Sheet open={rejectedOpen} onOpenChange={setRejectedOpen}>
@@ -574,5 +586,44 @@ export default function SalonMode() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+function RecentMeetings({ cache, me, onOpen, onAll }: { cache: BoothCache; me: string | null; onOpen: (id: string) => void; onAll: () => void }) {
+  const rows = useMemo(() => {
+    if (!me) return [];
+    const contacts = new Map(cache.contacts.map((c) => [c.id, c]));
+    return cache.interactions
+      .filter((i) => isMeeting(i, cache.workspaceId) && (cache.role === 'manager' || ownerId(i, me) === me))
+      .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at))
+      .slice(0, 8)
+      .map((i) => {
+        const c = contacts.get(i.contact_id) ?? null;
+        const label = [c?.company_name?.trim(), fullName(c)].filter(Boolean).join(' · ') || primaryLabel(c as unknown as Record<string, string | null> | null);
+        return { id: i.id, label, at: i.occurred_at };
+      });
+  }, [cache, me]);
+
+  return (
+    <section className="hidden lg:block lg:rounded-xl lg:border lg:border-border lg:p-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="font-semibold">Dernières rencontres</h2>
+        <Button variant="link" className="min-h-[44px] px-0" onClick={onAll}>Voir toutes les rencontres</Button>
+      </div>
+      {rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Vos rencontres du salon apparaîtront ici.</p>
+      ) : (
+        <ul className="divide-y divide-border">
+          {rows.map((r) => (
+            <li key={r.id}>
+              <button type="button" onClick={() => onOpen(r.id)} className="flex min-h-[44px] w-full items-center justify-between gap-3 py-2 text-left hover:bg-muted">
+                <span className="truncate font-medium">{r.label}</span>
+                <span className="shrink-0 text-sm tabular-nums text-muted-foreground">{timeFmt(r.at)}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

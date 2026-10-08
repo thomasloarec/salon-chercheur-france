@@ -55,9 +55,9 @@ function AmountInput({
     if (n !== value) onCommit(n);
   };
   return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <Input inputMode="decimal" className="min-h-[44px]" value={v} onChange={(e) => setV(e.target.value)} onBlur={commit} placeholder={placeholder} />
+    <label className="flex flex-col gap-1 text-sm md:flex-row md:items-center md:gap-3">
+      <span className="text-muted-foreground md:w-36 md:shrink-0">{label}</span>
+      <Input inputMode="decimal" className="min-h-[44px] md:max-w-[220px]" value={v} onChange={(e) => setV(e.target.value)} onBlur={commit} placeholder={placeholder} />
     </label>
   );
 }
@@ -130,9 +130,9 @@ export default function OutcomeScreen({
       <style>{`@media print { body * { visibility: hidden !important; } .outcome-print, .outcome-print * { visibility: visible !important; } .outcome-print { position: absolute; left: 0; top: 0; width: 100%; } }`}</style>
       {header}
       <div className="space-y-4 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <div className="outcome-print space-y-4">
+        <div className="outcome-print space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0 print:!block print:space-y-4">
           <h2 className="hidden text-xl font-bold print:block">Bilan · {cache.workspace.nom_event}</h2>
-          <section className="rounded-xl border border-border p-4">
+          <section className="rounded-xl border border-border p-4 lg:sticky lg:top-20 print:static">
             <h3 className="mb-2 font-semibold">Résultats</h3>
             <dl className="text-sm">
               <Row label="Pipeline" value={formatEuros(o.pipeline, cur)} />
@@ -201,7 +201,7 @@ export default function OutcomeScreen({
                             <AmountInput key={`a${p.id}${p.amount}`} label="Montant estimé" value={p.amount} onCommit={(n) => void update(p.id, { amount: n })} />
                             <div className="space-y-2">
                               <p className="text-sm text-muted-foreground">Chance de signer</p>
-                              <div className="flex flex-wrap gap-2">
+                              <div className="flex flex-wrap gap-2 md:flex-nowrap md:overflow-x-auto">
                                 {PROBAS.map((v) => (
                                   <Button
                                     key={v}
@@ -235,7 +235,7 @@ export default function OutcomeScreen({
                             {p.won_amount === null && p.amount !== null && (
                               <Button
                                 variant="outline"
-                                className="min-h-[44px] w-full"
+                                className="min-h-[44px] w-full md:w-auto"
                                 onClick={() => void update(p.id, { won_amount: p.amount })}
                               >
                                 Reprendre le montant estimé ({formatEuros(p.amount, cur)})
@@ -255,18 +255,20 @@ export default function OutcomeScreen({
           </section>
         </div>
 
-        <section className="space-y-3 rounded-xl border border-border p-4 print:hidden">
+        <section className="space-y-3 rounded-xl border border-border p-4 print:hidden lg:ml-[calc(50%+0.75rem)]">
           <h3 className="font-semibold">Exporter</h3>
           {!online && <p className="text-sm text-muted-foreground">L'export nécessite une connexion.</p>}
-          <Button size="lg" className="min-h-[52px] w-full" disabled={!online || busy !== null} onClick={() => void doExport('xlsx')}>
+          <div className="space-y-3 md:flex md:flex-wrap md:gap-3 md:space-y-0">
+          <Button size="lg" className="min-h-[52px] w-full md:w-auto md:min-w-[200px] md:min-h-[48px]" disabled={!online || busy !== null} onClick={() => void doExport('xlsx')}>
             {busy === 'xlsx' ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />} Exporter en Excel
           </Button>
-          <Button size="lg" variant="outline" className="min-h-[52px] w-full" disabled={!online || busy !== null} onClick={() => void doExport('csv')}>
+          <Button size="lg" variant="outline" className="min-h-[52px] w-full md:w-auto md:min-w-[200px] md:min-h-[48px]" disabled={!online || busy !== null} onClick={() => void doExport('csv')}>
             {busy === 'csv' ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />} Exporter en CSV
           </Button>
+          </div>
         </section>
 
-        <Button size="lg" variant="secondary" className="min-h-[52px] w-full print:hidden" onClick={() => window.print()}>
+        <Button size="lg" variant="secondary" className="min-h-[52px] w-full print:hidden md:w-auto md:min-w-[200px] md:min-h-[48px] lg:ml-[calc(50%+0.75rem)]" onClick={() => window.print()}>
           <Printer className="mr-2 h-5 w-5" /> Imprimer le bilan
         </Button>
       </div>

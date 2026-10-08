@@ -116,7 +116,7 @@ export default function DebriefScreen({
 
   const Row = ({ i, children }: { i: Interaction; children?: React.ReactNode }) => (
     <li>
-      <button type="button" onClick={() => onOpen(i.id)} className="min-h-[44px] w-full rounded-lg border border-border p-3 text-left active:bg-muted">
+      <button type="button" onClick={() => onOpen(i.id)} className="min-h-[44px] w-full rounded-lg border border-border p-3 text-left active:bg-muted md:flex md:items-center md:justify-between md:gap-4">
         <p className="font-medium">{who(i)}</p>
         {children}
       </button>
@@ -212,7 +212,7 @@ export default function DebriefScreen({
           </section>
         )}
 
-        <Button size="lg" className="min-h-[56px] w-full text-base" onClick={() => void share()}>
+        <Button size="lg" className="min-h-[56px] w-full text-base md:w-auto md:min-w-[200px] md:min-h-[48px]" onClick={() => void share()}>
           <Share2 className="mr-2 h-5 w-5" /> Partager le débrief
         </Button>
       </div>

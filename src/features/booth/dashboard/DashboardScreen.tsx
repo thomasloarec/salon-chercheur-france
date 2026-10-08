@@ -21,7 +21,7 @@ function Tile({ value, label, sub, subWarn, onClick }: { value: string; label: s
     <button
       type="button"
       onClick={onClick}
-      className="flex min-h-[96px] flex-col items-start justify-center rounded-xl border border-border bg-card p-4 text-left active:bg-muted"
+      className="flex min-h-[96px] flex-col md:min-h-0 items-start justify-center rounded-xl border border-border bg-card p-4 text-left active:bg-muted"
     >
       <span className="text-3xl font-bold leading-none tabular-nums">{value}</span>
       <span className="mt-1 text-sm text-muted-foreground">{label}</span>
@@ -37,7 +37,7 @@ function Bars({ rows }: { rows: { label: string; count: number }[] }) {
       {rows.map((r) => (
         <li key={r.label} className="flex items-center gap-3 text-sm">
           <span className="w-24 shrink-0 text-muted-foreground">{r.label}</span>
-          <span className="h-3 flex-1 overflow-hidden rounded-full bg-muted">
+          <span className="h-3 flex-1 overflow-hidden rounded-full bg-muted md:max-w-[480px]">
             <span className="block h-full rounded-full bg-primary" style={{ width: `${(r.count / max) * 100}%` }} />
           </span>
           <span className="w-8 text-right tabular-nums">{r.count}</span>
@@ -107,6 +107,7 @@ export default function DashboardScreen({
     <div className="flex flex-1 flex-col">
       {header}
       <div className="space-y-4 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="space-y-4 md:flex md:flex-wrap md:items-start md:gap-2 md:space-y-0">
         <DayChips days={days} value={day} onChange={setDay} />
         <div className="flex gap-2 overflow-x-auto pb-1">
           {scopes.map(({ s, label }) => (
@@ -121,8 +122,9 @@ export default function DashboardScreen({
             </Button>
           ))}
         </div>
+        </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
           <Tile value={String(m.meetings)} label="Rencontres" onClick={() => onOpenList({ ids: m.ids.all, label: 'Rencontres' })} />
           <Tile value={String(m.people)} label="Personnes rencontrées" onClick={() => onOpenList({ ids: m.ids.all, label: 'Personnes rencontrées' })} />
           <Tile value={String(m.hot)} label="Prospects chauds" onClick={() => onOpenList({ ids: m.ids.hot, label: 'Prospects chauds' })} />
@@ -143,18 +145,22 @@ export default function DashboardScreen({
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Calculé sur ce téléphone, mis à jour à {timeInTz(syncRef, tz)}.
+          Calculé sur cet appareil, mis à jour à {timeInTz(syncRef, tz)}.
           {pendingCount > 0 ? ` Inclut ${pendingCount} saisie${pendingCount > 1 ? 's' : ''} pas encore envoyée${pendingCount > 1 ? 's' : ''}.` : ''}
         </p>
 
-        <Button size="lg" variant="secondary" className="min-h-[56px] w-full text-base" onClick={onDebrief}>
+        <div className="space-y-4 md:flex md:flex-row md:flex-wrap md:gap-3 md:space-y-0">
+        <Button size="lg" variant="secondary" className="min-h-[56px] w-full text-base md:w-auto md:min-w-[200px] md:min-h-[48px]" onClick={onDebrief}>
           <ClipboardList className="mr-2 h-5 w-5" /> Débrief du jour
         </Button>
         {isManager && onOutcome && (
-          <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base" onClick={onOutcome}>
+          <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base md:w-auto md:min-w-[200px] md:min-h-[48px]" onClick={onOutcome}>
             Bilan du salon
           </Button>
         )}
+        </div>
+
+        <div className="space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0">
 
         <section className="rounded-xl border border-border p-4">
           <h3 className="mb-3 font-semibold">Potentiel des prospects</h3>
@@ -223,6 +229,7 @@ export default function DashboardScreen({
             </section>
           </>
         )}
+        </div>
       </div>
     </div>
   );
