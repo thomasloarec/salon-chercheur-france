@@ -6,7 +6,7 @@ import { fr } from 'date-fns/locale';
 import { Check, Circle, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,6 +22,7 @@ import { buildCockpit, type CockpitCard } from './cockpit';
 
 interface Props {
   exhibitorId: string;
+  embedded?: boolean;
   onPrepare?: (eventId: string) => void;
   onCreate?: () => void;
   onEdit?: (ws: BoothWorkspace) => void;
@@ -45,6 +46,22 @@ const fmtDate = (d: string | null) => {
 };
 const fmtRange = (a: string | null, b: string | null) =>
   !a ? '' : !b || a.slice(0, 10) === b.slice(0, 10) ? fmtDate(a) : `${fmtDate(a)} au ${fmtDate(b)}`;
+const fmtMobileRange = (a: string | null, b: string | null) => {
+  if (!a) return '';
+  if (!b || a.slice(0, 10) === b.slice(0, 10)) return fmtDate(a);
+  try {
+    const start = new Date(a);
+    const end = new Date(b);
+    const sameYear = start.getFullYear() === end.getFullYear();
+    const sameMonth = sameYear && start.getMonth() === end.getMonth();
+    return `${format(start, sameMonth ? 'd' : sameYear ? 'd MMM' : 'd MMM yyyy', { locale: fr })} au ${fmtDate(b)}`;
+  } catch {
+    return fmtRange(a, b);
+  }
+};
+const cockpitButton = 'w-full h-auto min-h-[44px] whitespace-normal text-center leading-snug py-2 md:w-auto md:h-10 md:whitespace-nowrap md:leading-normal';
+const smallCockpitButton = `${cockpitButton} md:h-9 md:py-0`;
+const statusBadge = 'whitespace-nowrap text-xs shrink-0';
 const euro = (n: number | null | undefined) =>
   new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n ?? 0);
 const plural = (n: number, s: string, p = `${s}s`) => `${n} ${n > 1 ? p : s}`;
@@ -55,7 +72,7 @@ const inDays = (n: number | undefined) =>
 function CardHead({ c, pill }: { c: CockpitCard; pill: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-2">
-      <div className="min-w-0">
+      <div className="min-w-0 max-w-full break-words">
         {c.event.slug ? (
           <Link to={`/events/${c.event.slug}`} className="font-medium text-foreground hover:underline">
             {c.event.nom_event}
@@ -64,7 +81,8 @@ function CardHead({ c, pill }: { c: CockpitCard; pill: React.ReactNode }) {
           <span className="font-medium text-foreground">{c.event.nom_event}</span>
         )}
         <p className="text-xs text-muted-foreground">
-          {[c.event.ville, fmtRange(c.event.date_debut, c.event.date_fin)].filter(Boolean).join(' · ')}
+          <span className="md:hidden">{[c.event.ville, fmtMobileRange(c.event.date_debut, c.event.date_fin)].filter(Boolean).join(' · ')}</span>
+          <span className="hidden md:inline">{[c.event.ville, fmtRange(c.event.date_debut, c.event.date_fin)].filter(Boolean).join(' · ')}</span>
         </p>
       </div>
       {pill}
@@ -74,37 +92,37 @@ function CardHead({ c, pill }: { c: CockpitCard; pill: React.ReactNode }) {
 
 function CheckRow({ ok, label, onClick }: { ok: boolean; label: string; onClick?: () => void }) {
   const icon = ok ? (
-    <Check className="h-4 w-4 shrink-0 text-primary" />
+    <Check className="mt-0.5 h-4 w-4 shrink-0 md:mt-0 text-primary" />
   ) : (
-    <Circle className="h-4 w-4 shrink-0 text-muted-foreground" />
+    <Circle className="mt-0.5 h-4 w-4 shrink-0 md:mt-0 text-muted-foreground" />
   );
   if (!ok && onClick) {
     return (
       <li>
-        <button type="button" onClick={onClick} className="flex min-h-[44px] w-full items-center gap-2 text-left text-sm text-primary hover:underline">
+        <Button variant="link" type="button" onClick={onClick} className="h-auto min-h-[44px] w-full items-start justify-start gap-2 whitespace-normal px-0 py-2 text-left text-sm leading-snug md:items-center md:leading-normal">
           {icon}
-          {label}
-        </button>
+          <span className="min-w-0">{label}</span>
+        </Button>
       </li>
     );
   }
   return (
-    <li className="flex min-h-[44px] items-center gap-2 text-sm text-foreground">
+    <li className="flex min-h-[44px] items-start gap-2 py-2 text-sm leading-snug text-foreground md:items-center md:py-0 md:leading-normal">
       {icon}
-      {label}
+      <span className="min-w-0">{label}</span>
     </li>
   );
 }
 
 function SalonLink({ id, label, variant = 'default', className = '' }: { id: string; label: string; variant?: 'default' | 'outline'; className?: string }) {
   return (
-    <Button asChild variant={variant} className={`min-h-[44px] ${className}`}>
+    <Button asChild variant={variant} className={`${cockpitButton} ${className}`}>
       <Link to={id}>{label}</Link>
     </Button>
   );
 }
 
-export default function BoothSalonCockpit({ exhibitorId, onPrepare, onCreate, onEdit }: Props) {
+export default function BoothSalonCockpit({ exhibitorId, embedded = false, onPrepare, onCreate, onEdit }: Props) {
   const wsQuery = useQuery({ queryKey: ['booth-workspaces', exhibitorId], queryFn: () => listWorkspaces(exhibitorId) });
   const isManager = wsQuery.data?.role === 'manager';
 
@@ -167,13 +185,13 @@ export default function BoothSalonCockpit({ exhibitorId, onPrepare, onCreate, on
 
     if (c.kind === 'prepare') {
       return (
-        <div key={key} className="space-y-3 rounded-md border border-border p-4">
-          <CardHead c={c} pill={<Badge variant="secondary">À préparer</Badge>} />
+        <div key={key} className="space-y-3 rounded-md border border-border p-3 md:p-4">
+          <CardHead c={c} pill={<Badge variant="secondary" className={statusBadge}>À préparer</Badge>} />
           <p className="text-sm text-muted-foreground">
             Vous exposez {c.daysUntil === 0 ? "aujourd'hui" : c.daysUntil === 1 ? 'demain' : `dans ${c.daysUntil ?? '?'} jours`}. Préparez l'espace du salon pour que votre équipe y enregistre ses rencontres.
           </p>
           {onPrepare && (
-            <Button className="min-h-[44px] w-full md:w-auto" onClick={() => onPrepare(c.event.id)}>
+            <Button className={cockpitButton} onClick={() => onPrepare(c.event.id)}>
               Préparer ce salon
             </Button>
           )}
@@ -183,15 +201,15 @@ export default function BoothSalonCockpit({ exhibitorId, onPrepare, onCreate, on
     if (!w) return null;
     const salon = `/salon/${w.workspace_id}`;
     const editBtn = isManager && onEdit && (
-      <Button variant="outline" className="min-h-[44px]" onClick={() => onEdit(w)}>
+      <Button variant="outline" className={cockpitButton} onClick={() => onEdit(w)}>
         Modifier
       </Button>
     );
 
     if (c.kind === 'before') {
       return (
-        <div key={key} className="space-y-3 rounded-md border border-border p-4">
-          <CardHead c={c} pill={<Badge variant="secondary">{inDays(c.daysUntil)}</Badge>} />
+        <div key={key} className="space-y-3 rounded-md border border-border p-3 md:p-4">
+          <CardHead c={c} pill={<Badge variant="secondary" className={statusBadge}>{inDays(c.daysUntil)}</Badge>} />
           {isManager && (
             <ul>
               <CheckRow ok={!!w.stand_label} label={w.stand_label ? `Stand : ${w.stand_label}` : 'Stand à renseigner'} onClick={onEdit ? () => onEdit(w) : undefined} />
@@ -202,7 +220,7 @@ export default function BoothSalonCockpit({ exhibitorId, onPrepare, onCreate, on
           <p className="text-sm text-muted-foreground">Installez le mode salon sur chaque téléphone avant le salon.</p>
           <div className="flex flex-col gap-2 md:flex-row md:flex-wrap">
             <SalonLink id={salon} label="Ouvrir le mode salon" />
-            <Button variant="outline" className="min-h-[44px]" onClick={() => copyLink(w.workspace_id)}>
+            <Button variant="outline" className={cockpitButton} onClick={() => copyLink(w.workspace_id)}>
               Copier le lien du mode salon
             </Button>
             {editBtn}
@@ -214,18 +232,21 @@ export default function BoothSalonCockpit({ exhibitorId, onPrepare, onCreate, on
     if (c.kind === 'during') {
       const day = c.dayIndex && c.dayCount ? ` · Jour ${c.dayIndex} sur ${c.dayCount}` : '';
       return (
-        <div key={key} className="space-y-3 rounded-md border-2 border-primary p-4 lg:col-span-2">
-          <CardHead c={c} pill={<Badge>En cours{day}</Badge>} />
+        <div key={key} className="space-y-3 rounded-md border-2 border-primary p-3 md:p-4 lg:col-span-2">
+          <CardHead c={c} pill={<Badge className={statusBadge}>En cours{day}</Badge>} />
           {s ? (
-            <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="grid grid-cols-1 gap-1 sm:grid-cols-3 sm:gap-2 sm:text-center">
               {[
-                [s.meetings, 'rencontres'],
-                [s.hot, 'prospects chauds'],
-                [s.actions_open, 'actions à faire'],
-              ].map(([n, l]) => (
-                <div key={l as string} className="rounded-md bg-muted/50 p-2">
-                  <div className="text-xl font-semibold text-foreground">{n}</div>
-                  <div className="text-xs text-muted-foreground">{l}</div>
+                { count: s.meetings, singular: 'rencontre', plural: 'rencontres' },
+                { count: s.hot, singular: 'prospect chaud', plural: 'prospects chauds' },
+                { count: s.actions_open, singular: 'action à faire', plural: 'actions à faire' },
+              ].map(({ count, singular, plural: label }) => (
+                <div key={label} className="flex min-w-0 items-start gap-3 sm:block sm:rounded-md sm:bg-muted/50 sm:p-2">
+                  <div className="shrink-0 text-lg font-semibold text-foreground sm:text-xl">{count}</div>
+                  <div className="min-w-0 self-center break-words text-sm leading-tight text-muted-foreground sm:text-xs">
+                    <span className="sm:hidden">{count > 1 ? label : singular}</span>
+                    <span className="hidden sm:inline">{label}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -249,10 +270,10 @@ export default function BoothSalonCockpit({ exhibitorId, onPrepare, onCreate, on
     const hasActions = s ? s.actions_open > 0 : true;
     const roi = s && w.total_cost && w.total_cost > 0 && (s.won_amount ?? 0) > 0 ? (s.won_amount ?? 0) / w.total_cost : null;
     return (
-      <div key={key} className="space-y-3 rounded-md border border-border p-4">
+      <div key={key} className="space-y-3 rounded-md border border-border p-3 md:p-4">
         <CardHead
           c={c}
-          pill={c.done ? <Badge className="bg-primary/10 text-primary hover:bg-primary/10">Bilan à jour</Badge> : <Badge variant="secondary">{since}</Badge>}
+          pill={c.done ? <Badge className={`${statusBadge} bg-primary/10 text-primary hover:bg-primary/10`}>Bilan à jour</Badge> : <Badge variant="secondary" className={statusBadge}>{since}</Badge>}
         />
         {isManager && s && (
           <div className="space-y-1 text-sm text-foreground">
@@ -264,9 +285,13 @@ export default function BoothSalonCockpit({ exhibitorId, onPrepare, onCreate, on
                 </>
               )}
             </p>
-            <p>
-              Projets : {s.projects} · pipeline pondéré {euro(s.weighted_amount)} · gagné {euro(s.won_amount)}
-            </p>
+            {s.projects > 0 && (
+              <p>
+                Projets : {s.projects}
+                {(s.weighted_amount ?? 0) > 0 && <> · pipeline pondéré {euro(s.weighted_amount)}</>}
+                {(s.won_amount ?? 0) > 0 && <> · gagné {euro(s.won_amount)}</>}
+              </p>
+            )}
             {roi != null && <p>Retour : × {roi.toLocaleString('fr-FR', { maximumFractionDigits: 1 })}</p>}
           </div>
         )}
@@ -292,18 +317,19 @@ export default function BoothSalonCockpit({ exhibitorId, onPrepare, onCreate, on
     );
   };
 
-  return (
-    <Card>
-      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
-        <CardTitle className="text-base">Vos salons</CardTitle>
+  const header = (
+    <>
+        <h2 className="text-base font-semibold leading-none">Vos salons</h2>
         {isManager && onCreate && (
-          <Button size="sm" className="min-h-[44px]" onClick={onCreate}>
+          <Button size="sm" className={smallCockpitButton} onClick={onCreate}>
             <Plus className="mr-1.5 h-4 w-4" />
             Créer l'espace d'un salon
           </Button>
         )}
-      </CardHeader>
-      <CardContent className="space-y-4">
+    </>
+  );
+  const content = (
+    <>
         {wsQuery.isLoading ? (
           <div className="space-y-3">
             <Skeleton className="h-28 w-full" />
@@ -312,7 +338,7 @@ export default function BoothSalonCockpit({ exhibitorId, onPrepare, onCreate, on
         ) : wsQuery.isError ? (
           <div className="space-y-2 text-sm">
             <p className="text-destructive">{boothErrorMessage(wsQuery.error)}</p>
-            <Button size="sm" variant="outline" className="min-h-[44px]" onClick={() => wsQuery.refetch()}>
+            <Button size="sm" variant="outline" className={smallCockpitButton} onClick={() => wsQuery.refetch()}>
               Réessayer
             </Button>
           </div>
@@ -337,7 +363,20 @@ export default function BoothSalonCockpit({ exhibitorId, onPrepare, onCreate, on
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">{cards.map(renderCard)}</div>
           </>
         )}
-      </CardContent>
+    </>
+  );
+  if (embedded) {
+    return (
+      <section className="min-w-0 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">{header}</div>
+        <div className="space-y-4">{content}</div>
+      </section>
+    );
+  }
+  return (
+    <Card>
+      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 px-4 md:px-6">{header}</CardHeader>
+      <CardContent className="space-y-4 px-4 md:px-6">{content}</CardContent>
     </Card>
   );
 }
