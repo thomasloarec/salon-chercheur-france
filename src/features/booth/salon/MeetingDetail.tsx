@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import VoiceDictation from '../voice/VoiceDictation';
+import type { VoiceRecording } from '../voice/useVoiceRecorder';
+import { blobToBase64 } from '../voice/base64';
+import { addVoice, appendToInteractionNote, linkVoiceNoteLater, removeVoice, useVoiceItems } from '../voice/voiceQueue';
+import { boothErrorMessage, voiceNote } from '@/lib/booth/rpc';
+import { newId } from '../sync/engine';
 import { Button } from '@/components/ui/button';
 import PersonBlock from './PersonBlock';
 import { dayTimeLabel, primaryLabel, secondaryLabel } from './display';
@@ -71,6 +77,8 @@ export default function MeetingDetail({
     : undefined;
   const [note, setNote] = useState(i?.note ?? '');
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [voiceBusy, setVoiceBusy] = useState(false);
+  const voiceItems = useVoiceItems(me, cache.workspaceId);
 
   useEffect(() => setNote(i?.note ?? ''), [i?.note]);
   const [refused, setRefused] = useState(false);
@@ -103,6 +111,39 @@ export default function MeetingDetail({
   const canEditContact = !!c && (isManager || !c.created_by || c.created_by === me);
   const update = (data: Partial<Interaction> & Record<string, unknown>) =>
     enqueue(me, cache.exhibitorId, 'interaction', i.id, data);
+  const voiceMine = voiceItems.filter((v) => v.interactionId === i.id);
+  const dictate = async (r: VoiceRecording) => {
+    const noteId = newId();
+    let audioBase64: string;
+    try {
+      audioBase64 = await blobToBase64(r.blob);
+    } catch {
+      toast({ description: 'L\u2019enregistrement n\u2019a pas pu être lu. Réessayez.', variant: 'destructive' });
+      return;
+    }
+    const queue = async () => {
+      await addVoice({ noteId, userId: me, exhibitorId: cache.exhibitorId, workspaceId: cache.workspaceId, interactionId: i.id, base64: audioBase64, mediaType: r.mediaType, durationMs: r.durationMs });
+      toast({ description: 'Note enregistrée. Elle sera transcrite au retour du réseau.' });
+    };
+    if (!navigator.onLine) return void (await queue());
+    setVoiceBusy(true);
+    try {
+      const res = await voiceNote({ workspaceId: cache.workspaceId, noteId, mode: 'note', audioBase64, mediaType: r.mediaType, durationMs: r.durationMs });
+      const text = (res.transcript ?? '').trim();
+      if (res.status !== 'ok' || !text) {
+        toast({ description: 'Rien n\u2019a été entendu. Réessayez.' });
+        return;
+      }
+      await appendToInteractionNote(me, cache.exhibitorId, cache.workspaceId, i.id, text);
+      linkVoiceNoteLater(me, noteId, i.id);
+    } catch (e) {
+      const m = String((e as Error)?.message ?? '');
+      if (m.includes('BOOTH_NETWORK')) await queue();
+      else toast({ description: boothErrorMessage(e), variant: 'destructive' });
+    } finally {
+      setVoiceBusy(false);
+    }
+  };
   const { date, time } = fmtDateTime(i.occurred_at);
   const others = cache.interactions
     .filter((o) => o.id !== i.id && o.contact_id === i.contact_id && (o.workspace_id === cache.workspaceId || !o.workspace_id) && isCompleted(o))
@@ -213,6 +254,24 @@ export default function MeetingDetail({
           )}
           <div className="space-y-2 py-2">
             <p className="text-sm text-muted-foreground">Note</p>
+            {voiceMine.filter((v) => v.state === 'pending').length > 0 && (
+              <p className="rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground">Note vocale en attente</p>
+            )}
+            {voiceMine.filter((v) => v.state === 'blocked').map((v) => (
+              <div key={v.noteId} className="space-y-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                <p className="font-medium text-destructive">Note vocale non transcrite</p>
+                <p className="text-muted-foreground">{boothErrorMessage(v.error)}</p>
+                <Button variant="outline" className="min-h-[44px] w-full md:w-auto" onClick={() => void removeVoice(me, cache.workspaceId, v.noteId)}>
+                  Supprimer l'enregistrement
+                </Button>
+              </div>
+            ))}
+            {canEdit && cache.full_features && (
+              <>
+                <VoiceDictation label="Dicter la note" disabled={voiceBusy} onRecorded={(r) => void dictate(r)} />
+                {voiceBusy && <p className="flex items-center text-sm"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Transcription…</p>}
+              </>
+            )}
             {canEdit ? (
               <>
                 <Textarea maxLength={2000} rows={4} value={note} onChange={(e) => setNote(e.target.value)} />
