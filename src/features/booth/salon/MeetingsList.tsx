@@ -1,3 +1,4 @@
+import { useVoiceItems } from '../voice/voiceQueue';
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, CalendarClock, CloudUpload, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,8 @@ export default function MeetingsList({
   }, [me, cache.exhibitorId]);
 
   const cards = useCards(me, cache.workspaceId);
+  const voiceItems = useVoiceItems(me, cache.workspaceId);
+  const voiceByInteraction = useMemo(() => new Map(voiceItems.map((v) => [v.interactionId, v.state])), [voiceItems]);
   const cardByContact = useMemo(() => new Map(cards.filter((c) => c.contactId).map((c) => [c.contactId!, c.state])), [cards]);
 
   const contacts = useMemo(() => new Map(cache.contacts.map((c) => [c.id, c])), [cache.contacts]);
@@ -237,6 +240,11 @@ export default function MeetingsList({
                         {cardByContact.get(i.contact_id) && (
                           <span className={`rounded-full px-2 py-0.5 text-xs ${CARD_BADGE[cardByContact.get(i.contact_id)!].cls}`}>
                             {CARD_BADGE[cardByContact.get(i.contact_id)!].label}
+                          </span>
+                        )}
+                        {voiceByInteraction.get(i.id) && (
+                          <span className={`rounded-full px-2 py-0.5 text-xs ${voiceByInteraction.get(i.id) === 'blocked' ? 'bg-destructive/15 text-destructive' : 'bg-secondary text-secondary-foreground'}`}>
+                            {voiceByInteraction.get(i.id) === 'blocked' ? 'Note vocale non transcrite' : 'Note vocale en attente'}
                           </span>
                         )}
                         {i.potential && (
