@@ -130,6 +130,93 @@ export default function NewMeetingFlow({
   const [cardMsg, setCardMsg] = useState<string | null>(null);
   const [qrPresent, setQrPresent] = useState(false);
   const scanToken = useRef(0);
+  const [voiceBusy, setVoiceBusy] = useState(false);
+  const [voiceInfo, setVoiceInfo] = useState<string | null>(null);
+  const { remaining, update: setRemaining } = useVoiceRemaining(userId, wsId, online, !!cache.full_features);
+
+  // Dictée de la rencontre : réseau obligatoire, l'audio n'est jamais conservé.
+  const dictateMeeting = async (r: VoiceRecording) => {
+    setVoiceInfo(null);
+    setVoiceBusy(true);
+    const noteId = newId();
+    try {
+      const audioBase64 = await blobToBase64(r.blob);
+      const res = await voiceNote({ workspaceId: wsId, noteId, mode: 'capture', audioBase64, mediaType: r.mediaType, durationMs: r.durationMs });
+      setRemaining(res.remaining_month);
+      if (res.status !== 'ok') {
+        setVoiceInfo('Rien n\u2019a été entendu. Réessayez.');
+        return;
+      }
+      const filled = applyVoiceFields(d, res.fields, res.transcript);
+      const confidence: Record<string, 'high' | 'medium' | 'low'> = {};
+      for (const [k, v] of Object.entries(res.confidence ?? {})) confidence[k.replace(/^contact\./, '')] = v;
+      setD({
+        ...filled,
+        contactId: null,
+        captureSource: 'voice',
+        cardScanId: null,
+        cardQueued: false,
+        cardConfidence: confidence,
+        voiceNoteIds: [...(d.voiceNoteIds ?? []), noteId],
+        step: 'verify',
+        history: [...d.history, d.step],
+      });
+    } catch (e) {
+      const m = String((e as Error)?.message ?? '');
+      setVoiceInfo(m.includes('BOOTH_NETWORK') ? 'La dictée n\u2019a pas abouti. Réessayez ou saisissez à la main.' : boothErrorMessage(e));
+    } finally {
+      setVoiceBusy(false);
+    }
+  };
+
+  // Dictée de la note : immédiate avec réseau, mise en file sans réseau.
+  const dictateNote = async (r: VoiceRecording) => {
+    setVoiceInfo(null);
+    const noteId = newId();
+    const interactionId = d.interactionId ?? newId();
+    let audioBase64: string;
+    try {
+      audioBase64 = await blobToBase64(r.blob);
+    } catch {
+      setVoiceInfo('L\u2019enregistrement n\u2019a pas pu être lu. Réessayez.');
+      return;
+    }
+    const queue = async () => {
+      await addVoice({ noteId, userId, exhibitorId: cache.exhibitorId, workspaceId: wsId, interactionId, base64: audioBase64, mediaType: r.mediaType, durationMs: r.durationMs });
+      const next = { ...d, interactionId };
+      setD(next);
+      await saveDraft(userId, wsId, next).catch(() => undefined);
+      setVoiceInfo('Note enregistrée. Elle sera transcrite au retour du réseau.');
+    };
+    if (!navigator.onLine) return void (await queue());
+    setVoiceBusy(true);
+    try {
+      const res = await voiceNote({ workspaceId: wsId, noteId, mode: 'note', audioBase64, mediaType: r.mediaType, durationMs: r.durationMs });
+      setRemaining(res.remaining_month);
+      const text = (res.transcript ?? '').trim();
+      if (res.status !== 'ok' || !text) {
+        setVoiceInfo('Rien n\u2019a été entendu. Réessayez.');
+        return;
+      }
+      setD((prev) => ({
+        ...prev,
+        note: (prev.note.trim() ? `${prev.note.trim()}\n${text}` : text).slice(0, 2000),
+        voiceNoteIds: [...(prev.voiceNoteIds ?? []), noteId],
+      }));
+    } catch (e) {
+      const m = String((e as Error)?.message ?? '');
+      if (m.includes('BOOTH_NETWORK')) await queue();
+      else setVoiceInfo(boothErrorMessage(e));
+    } finally {
+      setVoiceBusy(false);
+    }
+  };
+
+  const ContinueBtn = ({ onClick }: { onClick: () => void }) => (
+    <Button size="lg" data-primary="" className="mt-auto min-h-[56px] w-full text-base md:w-auto md:min-w-[200px] md:self-end" onClick={onClick}>
+      Continuer
+    </Button>
+  );
 
   // Pas de lecture de cartes en parallèle tant que le parcours est ouvert
   useEffect(() => {
@@ -289,7 +376,7 @@ export default function NewMeetingFlow({
   };
 
   const conf = (...keys: string[]) => {
-    if (d.captureSource !== 'card' || !d.cardConfidence) return false;
+    if ((d.captureSource !== 'card' && d.captureSource !== 'voice') || !d.cardConfidence) return false;
     return keys.some((k) => d.cardConfidence?.[k] === 'medium' || d.cardConfidence?.[k] === 'low');
   };
   const warnCls = (w: boolean) => (w ? ' border-2 border-warning' : '');
@@ -523,7 +610,7 @@ export default function NewMeetingFlow({
         if (f.coordMode === 'phone' && f.coordValue.trim()) data.phone = f.coordValue.trim();
         await enqueue(userId, cache.exhibitorId, 'contact', contactId, data);
       }
-      const interactionId = newId();
+      const interactionId = f.interactionId ?? newId();
       if (f.cardScanId && f.cardQueued) {
         await updateCard(userId, wsId, f.cardScanId, { contactId, interactionId });
       } else if (f.cardScanId) linkCardScanLater(userId, f.cardScanId, contactId);
@@ -542,6 +629,7 @@ export default function NewMeetingFlow({
         capture_source: f.captureSource,
         ...(f.inbound_lead_id ? { inbound_lead_id: f.inbound_lead_id } : {}),
       });
+      for (const nid of f.voiceNoteIds ?? []) linkVoiceNoteLater(userId, nid, interactionId);
       if (f.concrete) {
         const amount = f.amount.trim() ? Number(f.amount.replace(/\s/g, '').replace(',', '.')) : null;
         await enqueue(userId, cache.exhibitorId, 'opportunity', newId(), {
@@ -724,6 +812,17 @@ export default function NewMeetingFlow({
                 <Camera className="mr-2 h-5 w-5" /> Photo de la carte ou du badge
               </Button>
             )}
+            {cache.full_features && (
+              <VoiceDictation
+                label="Dicter la rencontre"
+                hint="Dites qui, quelle entreprise, son besoin et ce que vous allez faire."
+                disabled={!online || voiceBusy}
+                disabledText={!online ? 'La dictée qui remplit la fiche demande du réseau. Sans réseau, dictez votre note à l\u2019étape Détails.' : undefined}
+                footer={remainingLabel(remaining) && <p className="text-xs text-muted-foreground">{remainingLabel(remaining)}</p>}
+                onRecorded={(r) => void dictateMeeting(r)}
+              />
+            )}
+            {voiceInfo && <p className="rounded-md bg-muted p-3 text-sm text-foreground">{voiceInfo}</p>}
             {kindPicker && (
               <div className="grid grid-cols-2 gap-3">
                 <Button variant="secondary" className="min-h-[56px] text-base" onClick={() => openCamera('card')}>Carte de visite</Button>
@@ -944,6 +1043,7 @@ export default function NewMeetingFlow({
                 </Choice>
               ))}
             </div>
+            {d.relationship && <ContinueBtn onClick={() => go(d.relationship === 'customer' ? 'topic' : 'pot')} />}
           </>
         )}
 
@@ -966,6 +1066,13 @@ export default function NewMeetingFlow({
                 </Choice>
               ))}
             </div>
+            {d.potential && !saving && (
+              <ContinueBtn
+                onClick={() =>
+                  d.potential === 'none' ? void save({ next_action: 'none', due: null, concrete: false }) : go('concrete')
+                }
+              />
+            )}
             {saving && <Loader2 className="mx-auto h-6 w-6 animate-spin" />}
           </>
         )}
@@ -989,6 +1096,9 @@ export default function NewMeetingFlow({
                 </Choice>
               ))}
             </div>
+            {d.customer_topic && (
+              <ContinueBtn onClick={() => (d.customer_topic === 'new_project' ? go('concrete') : go('action', { concrete: false }))} />
+            )}
           </>
         )}
 
@@ -1003,6 +1113,7 @@ export default function NewMeetingFlow({
                 Pas encore
               </Choice>
             </div>
+            {d.concrete !== null && <ContinueBtn onClick={() => go('action')} />}
           </>
         )}
 
@@ -1016,6 +1127,11 @@ export default function NewMeetingFlow({
                 </Choice>
               ))}
             </div>
+            {d.next_action === 'none' && (
+              <Button size="lg" data-primary="" className="mt-auto min-h-[56px] w-full text-base md:w-auto md:min-w-[200px] md:self-end" onClick={() => go('details', { due: null })}>
+                Continuer
+              </Button>
+            )}
             {d.next_action && d.next_action !== 'none' && (
               <>
                 <div className="space-y-2">
@@ -1095,6 +1211,11 @@ export default function NewMeetingFlow({
                 </div>
               </>
             )}
+            {cache.full_features && (
+              <VoiceDictation label="Dicter la note" disabled={voiceBusy} onRecorded={(r) => void dictateNote(r)} />
+            )}
+            {voiceBusy && <p className="flex items-center text-sm"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Transcription…</p>}
+            {voiceInfo && <p className="rounded-md bg-muted p-3 text-sm text-foreground">{voiceInfo}</p>}
             <Textarea
               placeholder="Note"
               maxLength={2000}
