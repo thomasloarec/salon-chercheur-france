@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'bun:test';
 import { buildCockpit, type CockpitUpcoming } from '../cockpit';
 import type { BoothWorkspace, BoothWorkspaceSummaryItem } from '@/lib/booth/rpc';
 
