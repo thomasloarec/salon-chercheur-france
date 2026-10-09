@@ -103,16 +103,20 @@ function SyncPill({
   onOpenRejected: () => void;
 }) {
   const [showTime, setShowTime] = useState(false);
-  let cls = 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30';
+  let cls = 'bg-booth-sync-bg text-mint-deep border-transparent';
+  let dot = true;
   let label = 'Synchronisé';
   if (rejectedCount > 0) {
-    cls = 'bg-destructive/15 text-destructive border-destructive/30';
+    cls = 'bg-destructive/10 text-destructive border-destructive/30';
+    dot = false;
     label = `À reprendre (${rejectedCount})`;
   } else if (!online) {
     cls = 'bg-muted text-muted-foreground border-border';
+    dot = false;
     label = `Hors connexion · ${pendingCount} en attente`;
   } else if (pendingCount > 0) {
-    cls = 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30';
+    cls = 'bg-flame-surface text-foreground border-flame-soft';
+    dot = false;
     label = `${pendingCount} en attente`;
   }
   return (
@@ -127,6 +131,15 @@ function SyncPill({
       aria-live="polite"
     >
       {syncing ? (
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+      ) : dot ? (
+        <span className="h-2 w-2 rounded-full bg-mint-bright" aria-hidden="true" />
+      ) : rejectedCount === 0 && online ? (
+        <RefreshCw className="h-4 w-4" aria-hidden="true" />
+      ) : !online ? (
+        <CloudOff className="h-4 w-4" aria-hidden="true" />
+      ) : null}
+      {false && (
         <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
       ) : !online ? (
         <CloudOff className="h-4 w-4" aria-hidden="true" />
@@ -340,13 +353,11 @@ export default function SalonMode() {
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
 
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border bg-background px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <div className={`flex w-full items-center justify-between gap-2 ${SCREEN_WIDTH} md:px-3`}>
-        <Button asChild variant="ghost" className="min-h-[44px] px-2">
-          <Link to="/leads">
-            <ArrowLeft className="mr-1 h-5 w-5" /> Mes salons
-          </Link>
-        </Button>
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border bg-background px-3 pt-[env(safe-area-inset-top)]">
+        <div className={`flex h-14 w-full items-center justify-between gap-2 ${SCREEN_WIDTH} md:px-3`}>
+        <Link to="/leads" className="-ml-1 inline-flex min-h-[44px] items-center gap-1 rounded-lg px-1 text-base font-medium">
+          <ArrowLeft className="h-5 w-5" aria-hidden="true" /> Mes salons
+        </Link>
         {cache && (
           <SyncPill
             pendingCount={sync.pendingCount + voicePending}
@@ -362,7 +373,7 @@ export default function SalonMode() {
       </header>
 
       {!persistent && (
-        <div className="border-b border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+        <div className="border-b border-flame-soft bg-flame-surface px-4 py-3 text-sm text-foreground">
           Votre navigateur ne permet pas de garder les saisies sur cet appareil. Gardez la page ouverte jusqu'à la
           synchronisation.
         </div>
@@ -488,107 +499,43 @@ export default function SalonMode() {
             </p>
           )}
           {ws.archived && (
-            <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+            <div className="rounded-xl border border-flame-soft bg-flame-surface px-4 py-3 text-sm font-medium text-foreground">
               Ce salon est archivé : consultation seule
             </div>
           )}
 
           <div>
-            <h1 className="text-2xl font-semibold tracking-[-0.02em] leading-tight">
-              {ws.nom_event}
-              {dayLabel(ws) ? ` · ${dayLabel(ws)}` : ''}
-            </h1>
-            {offlineReady && (
-              <p className="mt-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">Disponible sans réseau</p>
-            )}
-            {ws.stand_label && <p className="mt-1 text-base text-muted-foreground">Stand {ws.stand_label}</p>}
+            {homeSubtitle(ws, todayYmd) && <p className="text-[13px] font-medium text-muted-foreground">{homeSubtitle(ws, todayYmd)}</p>}
+            <h1 className="mt-0.5 break-words text-[26px] font-semibold leading-tight tracking-[-0.01em]">{ws.nom_event}</h1>
+            {offlineReady && <p className="mt-1 text-xs font-medium text-mint-deep">Disponible sans réseau</p>}
           </div>
 
           <InstallBanner pendingCount={sync.pendingCount + sync.rejectedCount} />
 
-          <div className={`grid gap-3 ${cache.role === 'manager' ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-3xl font-semibold">{counts.mine}</p>
-              <p className="text-sm text-muted-foreground">Vos rencontres aujourd'hui</p>
-            </div>
-            {cache.role === 'manager' && (
-              <div className="rounded-xl border border-border bg-card p-4">
-                <p className="text-3xl font-semibold">{counts.team}</p>
-                <p className="text-sm text-muted-foreground">Équipe aujourd'hui</p>
-              </div>
-            )}
-          </div>
+          <GoalCard
+            input={{ team: counts.team, mine: counts.mine, hot: counts.hot, goal: ws.daily_goal ?? null, isManager, archived: ws.archived }}
+            workspaceId={workspaceId}
+            todayYmd={todayYmd}
+            onEdit={() => setGoalOpen(true)}
+          />
 
-          <div className="mt-auto flex flex-col gap-3 md:grid md:grid-cols-2 lg:flex lg:flex-col">
-            {!ws.archived && savedDraft && (
-              <div className="flex flex-col gap-2 rounded-xl border border-primary/40 bg-primary/5 p-3 md:col-span-2">
-                <Button size="lg" variant="secondary" className="min-h-[56px] w-full text-base md:min-h-[48px]" onClick={() => startFlow(savedDraft)}>
-                  Reprendre la rencontre en cours{savedDraft.name ? ` (${savedDraft.name})` : ''}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    if (user) {
-                      void clearDraft(user.id, workspaceId);
-                      if (savedDraft.cardQueued && savedDraft.cardScanId && !savedDraft.contactId) {
-                        void removeCard(user.id, workspaceId, savedDraft.cardScanId);
-                      }
-                    }
-                    setSavedDraft(null);
-                  }}
-                >
-                  Effacer ce brouillon
-                </Button>
-              </div>
-            )}
-            {cache.role === 'manager' && ws.phase === 'after' && (
-              <Button size="lg" className="min-h-[64px] w-full text-lg font-semibold md:col-span-2" onClick={() => { setOutcomeBack('home'); setScreen('outcome'); }}>
-                Bilan du salon
-              </Button>
-            )}
-            {!ws.archived && (
-              <Button size="lg" variant={cache.role === 'manager' && ws.phase === 'after' ? 'outline' : 'default'} className="min-h-[64px] w-full text-lg font-semibold md:col-span-2" onClick={() => startFlow(emptyDraft())}>
-                Nouvelle rencontre
-              </Button>
-            )}
-            <Button
-              size="lg"
-              variant="outline"
-              className="min-h-[56px] w-full text-base md:min-h-[48px]"
-              onClick={() => { setCardFilter(null); setListFilter(null); setListBack('home'); setScreen('list'); }}
-            >
-              Rencontres du salon
-            </Button>
-            <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base md:min-h-[48px]" onClick={() => setScreen('dashboard')}>
-              Tableau de bord
-            </Button>
-            {cache.role === 'manager' && ws.phase !== 'after' && (
-              <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base md:min-h-[48px]" onClick={() => { setOutcomeBack('home'); setScreen('outcome'); }}>
-                Bilan du salon
-              </Button>
-            )}
-            {user && openActions(cache, user.id).length > 0 && (
-              <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base md:min-h-[48px]" onClick={() => { setActionsBack('home'); setScreen('actions'); }}>
-                Actions à faire ({openActions(cache, user.id).length})
-              </Button>
-            )}
-            {cardsPending > 0 && (
-              <Button variant="link" className="min-h-[44px] md:col-span-2 lg:self-start" onClick={() => { setCardFilter('pending'); setListFilter(null); setListBack('home'); setScreen('list'); }}>
-                {cardsPending} carte{cardsPending > 1 ? 's' : ''} en attente de lecture
-              </Button>
-            )}
-            {cardsReview > 0 && (
-              <Button variant="link" className="min-h-[44px] md:col-span-2 lg:self-start" onClick={() => { setCardFilter('review'); setListFilter(null); setListBack('home'); setScreen('list'); }}>
-                {cardsReview} carte{cardsReview > 1 ? 's' : ''} à vérifier
-              </Button>
-            )}
-            {cache.role === 'manager' && dupCount > 0 && (
-              <Button variant="link" className="min-h-[44px] md:col-span-2 lg:self-start" onClick={() => setScreen('duplicates')}>
-                Doublons ({dupCount})
-              </Button>
-            )}
-          </div>
+          {!ws.archived && savedDraft && (
+            <DraftCard label={draftLabel(savedDraft)} onResume={() => startFlow(savedDraft)} onClear={clearSavedDraft} />
+          )}
+
+          {!ws.archived && (
+            <AppButton onClick={() => requestStart(null)}>
+              <Plus className="h-5 w-5" aria-hidden="true" /> Nouvelle rencontre
+            </AppButton>
+          )}
+
+          <QuickTiles
+            modes={quickTiles({ voice: !!cache.full_features && voiceSupported, card: cardAvailable, archived: ws.archived })}
+            online={sync.online}
+            onPick={(m) => requestStart(m)}
+          />
+
+          <HomeMenu rows={menuRows} />
           </div>
           <RecentMeetings cache={cache} me={user?.id ?? null} onOpen={(id) => openDetail(id, 'home')} onAll={() => { setDetailId(null); setCardFilter(null); setListFilter(null); setListBack('home'); setScreen('list'); }} />
         </main>
