@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import Chip from '../ui/Chip';
-import { ArrowLeft, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown } from 'lucide-react';
+import { EmptyState, CheckIllustration } from '../ui/illustrations';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -59,6 +60,7 @@ export default function ActionsScreen({
   const today = todayInTz(tz);
   const [member, setMember] = useState<string | null>(null);
   const [showDone, setShowDone] = useState(false);
+  const [doneIds, setDoneIds] = useState<Set<string>>(new Set());
   const [reassignOne, setReassignOne] = useState<Interaction | null>(null);
   const [groupFrom, setGroupFrom] = useState<string | null>(null);
   const [groupTo, setGroupTo] = useState<string | null>(null);
@@ -104,6 +106,11 @@ export default function ActionsScreen({
     return [c?.company_name?.trim(), fullName(c)].filter(Boolean).join(' · ') || 'Contact sans nom';
   };
   const update = (id: string, data: Record<string, unknown>) => enqueue(me, cache.exhibitorId, 'interaction', id, data);
+  // Action faite : la ligne se barre et la coche apparaît (200 ms) avant l'envoi.
+  const markDone = (id: string) => {
+    setDoneIds((p) => new Set(p).add(id));
+    window.setTimeout(() => void update(id, { next_action_done: true }), 260);
+  };
   const canDone = (i: Interaction) => isManager || responsibleOf(i, me) === me || i.created_by === me;
   const label = (u: string) => (u === me ? 'Moi' : memberName(cache, u));
 
@@ -111,9 +118,12 @@ export default function ActionsScreen({
     const d = i.next_action_due ? dueYmd(i.next_action_due, tz) : null;
     const late = !!d && d < today;
     return (
-      <li className="rounded-lg border border-border p-3 md:flex md:items-center md:gap-4">
+      <li className={`rounded-xl border border-border bg-background p-3 transition-opacity duration-200 md:flex md:items-center md:gap-4 ${doneIds.has(i.id) ? 'opacity-70' : ''}`}>
         <button type="button" className="min-h-[44px] w-full text-left md:grid md:min-w-0 md:flex-1 md:grid-cols-3 md:items-center md:gap-4" onClick={() => onOpen(i.id)}>
-          <p className="font-medium">{ACTION_LABEL[i.next_action]}</p>
+          <p className="flex items-center gap-1.5 font-medium">
+            <span className={`transition-[text-decoration-color] duration-200 ${doneIds.has(i.id) ? 'line-through decoration-muted-foreground/60' : ''}`}>{ACTION_LABEL[i.next_action]}</span>
+            <Check aria-hidden="true" className={`h-4 w-4 shrink-0 text-mint transition-all duration-200 ${doneIds.has(i.id) ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`} />
+          </p>
           <p className="text-sm">{who(i)}</p>
           <p className="text-xs text-muted-foreground">
             <span className={late ? 'font-medium text-destructive' : ''}>{d ? `Échéance ${shortDate(d)}${late ? ' · en retard' : ''}` : 'Sans échéance'}</span>
@@ -123,12 +133,12 @@ export default function ActionsScreen({
         </button>
         <div className="mt-2 flex gap-2 md:mt-0 md:shrink-0">
           {canDone(i) && (
-            <Button className="min-h-[44px] flex-1 md:flex-none md:min-w-[120px]" onClick={() => void update(i.id, { next_action_done: true })}>
+            <Button className="min-h-[44px] flex-1 rounded-xl md:flex-none md:min-w-[120px]" disabled={doneIds.has(i.id)} onClick={() => markDone(i.id)}>
               Fait
             </Button>
           )}
           {isManager && cache.team.length > 1 && (
-            <Button variant="outline" className="min-h-[44px] flex-1 md:flex-none md:min-w-[120px]" onClick={() => setReassignOne(i)}>
+            <Button variant="outline" className="min-h-[44px] flex-1 rounded-xl md:flex-none md:min-w-[120px]" onClick={() => setReassignOne(i)}>
               Réattribuer
             </Button>
           )}
@@ -162,7 +172,7 @@ export default function ActionsScreen({
           </div>
         )}
 
-        {open.length === 0 && <p className="text-sm text-muted-foreground">Aucune action à faire.</p>}
+        {open.length === 0 && <EmptyState art={<CheckIllustration />} title="Tout est fait." />}
 
         {isManager
           ? groups.map(([u, list]) => (
