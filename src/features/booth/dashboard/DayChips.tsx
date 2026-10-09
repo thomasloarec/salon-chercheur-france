@@ -17,7 +17,7 @@ export function useSalonDays(cache: BoothCache, includeToday = false) {
       const d = salonDay(new Date().toISOString(), ws);
       m.set(d.key, d);
     }
-    return [...m.values()].sort((a, b) => a.key.localeCompare(b.key));
+    return [...m.values()].sort((a, b) => (a.key ?? '').localeCompare(b.key ?? ''));
   }, [cache.interactions, cache.workspaceId, ws, includeToday]);
 }
 

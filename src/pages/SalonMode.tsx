@@ -653,7 +653,7 @@ function RecentMeetings({ cache, me, onOpen, onAll }: { cache: BoothCache; me: s
     const contacts = new Map(cache.contacts.map((c) => [c.id, c]));
     return cache.interactions
       .filter((i) => isMeeting(i, cache.workspaceId) && (cache.role === 'manager' || ownerId(i, me) === me))
-      .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at))
+      .sort((a, b) => (b.occurred_at ?? '').localeCompare(a.occurred_at ?? ''))
       .slice(0, 8)
       .map((i) => {
         const c = contacts.get(i.contact_id) ?? null;

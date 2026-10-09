@@ -152,7 +152,7 @@ export function computeMetrics(cache: MetricsCache, opts: MetricsOptions): Metri
       m.set(k, (m.get(k) ?? 0) + 1);
     }
     series = [...m.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
+      .sort(([a], [b]) => (a ?? '').localeCompare(b ?? ''))
       .map(([key, count]) => ({ key, label: key, count }));
   } else {
     seriesMode = 'hour';

@@ -24,6 +24,7 @@ export function headLabel(company: string, name: string) {
 /* ---------- Journées du salon ---------- */
 
 export function ymdInTz(iso: string, tz: string | null | undefined) {
+  if (!iso || Number.isNaN(Date.parse(iso))) return '';
   try {
     return new Intl.DateTimeFormat('en-CA', { timeZone: tz || undefined, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso));
   } catch {

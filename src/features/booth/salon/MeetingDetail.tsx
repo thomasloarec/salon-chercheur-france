@@ -147,7 +147,7 @@ export default function MeetingDetail({
   const { date, time } = fmtDateTime(i.occurred_at);
   const others = cache.interactions
     .filter((o) => o.id !== i.id && o.contact_id === i.contact_id && (o.workspace_id === cache.workspaceId || !o.workspace_id) && isCompleted(o))
-    .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at));
+    .sort((a, b) => (b.occurred_at ?? '').localeCompare(a.occurred_at ?? ''));
 
   return (
     <div className="flex flex-1 flex-col">
