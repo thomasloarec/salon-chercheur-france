@@ -38,7 +38,20 @@ export default {
 				foreground: 'hsl(var(--foreground))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					foreground: 'hsl(var(--primary-foreground))',
+					deep: 'hsl(var(--lx-violet-deep))'
+				},
+				success: {
+					DEFAULT: 'hsl(var(--lx-mint))',
+					deep: 'hsl(var(--lx-mint-deep))',
+					bright: 'hsl(var(--lx-mint-bright))',
+					surface: 'hsl(var(--lx-mint-surface))'
+				},
+				flame: {
+					DEFAULT: 'hsl(var(--lx-flame))',
+					deep: 'hsl(var(--lx-flame-deep))',
+					surface: 'hsl(var(--lx-flame-surface))',
+					soft: 'hsl(var(--lx-flame-soft))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',

@@ -92,7 +92,7 @@ export default function OutcomeScreen({
       <Button variant="ghost" className="min-h-[44px] px-2" onClick={onBack}>
         <ArrowLeft className="mr-1 h-5 w-5" /> Retour
       </Button>
-      <h2 className="text-lg font-semibold">Bilan du salon</h2>
+      <h2 className="text-lg font-extrabold tracking-[-0.02em]">Bilan du salon</h2>
     </div>
   );
 
@@ -131,7 +131,7 @@ export default function OutcomeScreen({
       {header}
       <div className="space-y-4 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="outcome-print space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0 print:!block print:space-y-4">
-          <h2 className="hidden text-xl font-bold print:block">Bilan · {cache.workspace.nom_event}</h2>
+          <h2 className="hidden text-xl font-extrabold tracking-[-0.02em] print:block">Bilan · {cache.workspace.nom_event}</h2>
           <section className="rounded-xl border border-border p-4 lg:sticky lg:top-20 print:static">
             <h3 className="mb-2 font-semibold">Résultats</h3>
             <dl className="text-sm">

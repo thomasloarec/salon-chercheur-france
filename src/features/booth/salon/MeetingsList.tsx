@@ -16,7 +16,8 @@ const CARD_BADGE: Record<CardState, { label: string; cls: string }> = {
 };
 
 import { dayTimeLabel, longDate, primaryLabel, salonDay, secondaryLabel } from './display';
-import { ACTION, POTENTIAL, POTENTIAL_CLASS, fullName, initials, isCompleted, ownerOf } from './labels';
+import PotentialBadge from '../ui/PotentialBadge';
+import { ACTION, fullName, initials, isCompleted, ownerOf } from './labels';
 
 export default function MeetingsList({
   cache,
@@ -114,7 +115,7 @@ export default function MeetingsList({
         <Button variant="ghost" className="min-h-[44px] px-2" onClick={onBack}>
           <ArrowLeft className="mr-1 h-5 w-5" /> Accueil
         </Button>
-        <h2 className="text-lg font-semibold">Rencontres du salon</h2>
+        <h2 className="text-lg font-extrabold tracking-[-0.02em]">Rencontres du salon</h2>
       </div>
       <div className="space-y-3 px-4 pb-4">
         {inbound.length > 0 && (
@@ -248,7 +249,7 @@ export default function MeetingsList({
                           </span>
                         )}
                         {i.potential && (
-                          <span className={`rounded-full px-2 py-0.5 text-xs ${POTENTIAL_CLASS[i.potential]}`}>{POTENTIAL[i.potential]}</span>
+                          <PotentialBadge value={i.potential} />
                         )}
                         {i.next_action && i.next_action !== 'none' && (
                           <span className={`rounded-full px-2 py-0.5 text-xs ${i.next_action_done_at ? 'bg-muted text-muted-foreground line-through' : 'bg-secondary text-secondary-foreground'}`}>

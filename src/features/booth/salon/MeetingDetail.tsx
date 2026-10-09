@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import PotentialBadge from '../ui/PotentialBadge';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import VoiceDictation from '../voice/VoiceDictation';
 import type { VoiceRecording } from '../voice/useVoiceRecorder';
@@ -159,7 +160,7 @@ export default function MeetingDetail({
       <div className={`space-y-5 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] ${split ? '' : 'lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0'}`}>
         <div className="space-y-5">
         <div>
-          <h2 className="text-2xl font-bold">{primaryLabel(c)}</h2>
+          <h2 className="text-2xl font-extrabold tracking-[-0.02em]">{primaryLabel(c)}</h2>
           {secondaryLabel(c) && <p className="text-muted-foreground">{secondaryLabel(c)}</p>}
           <p className="mt-1 text-sm font-medium">{dayTimeLabel(i.occurred_at, cache.workspace)}</p>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -193,7 +194,10 @@ export default function MeetingDetail({
           {i.customer_topic && <Row label="Sujet">{TOPIC[i.customer_topic]}</Row>}
           {i.relationship !== 'customer' && (
             <div className="py-2">
-              <p className="mb-1.5 text-sm text-muted-foreground">Potentiel</p>
+              <p className="mb-1.5 flex items-center gap-2 text-sm text-muted-foreground">
+                Potentiel
+                {i.potential && <PotentialBadge value={i.potential} />}
+              </p>
               <div className="flex flex-wrap gap-2">
                 {(Object.keys(POTENTIAL) as NonNullable<Interaction['potential']>[]).map((p) => (
                   <Chip key={p} disabled={!canEdit} selected={i.potential === p} onClick={() => void update({ potential: p })}>

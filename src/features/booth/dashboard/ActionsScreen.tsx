@@ -144,7 +144,7 @@ export default function ActionsScreen({
         <Button variant="ghost" className="min-h-[44px] px-2" onClick={onBack}>
           <ArrowLeft className="mr-1 h-5 w-5" /> Retour
         </Button>
-        <h2 className="text-lg font-semibold">Actions à faire</h2>
+        <h2 className="text-lg font-extrabold tracking-[-0.02em]">Actions à faire</h2>
       </div>
       <div className="space-y-4 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         {isManager && cache.team.length > 1 && (

@@ -319,7 +319,7 @@ export default function BoothSalonCockpit({ exhibitorId, embedded = false, onPre
 
   const header = (
     <>
-        <h2 className="text-base font-semibold leading-none">Vos salons</h2>
+        <h2 className="text-base font-extrabold tracking-[-0.02em] leading-none">Vos salons</h2>
         {isManager && onCreate && (
           <Button size="sm" className={smallCockpitButton} onClick={onCreate}>
             <Plus className="mr-1.5 h-4 w-4" />

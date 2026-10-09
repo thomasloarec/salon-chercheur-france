@@ -56,6 +56,18 @@
     --danger-surface: 352 74% 96%;
     --danger-foreground: var(--lx-danger); /* 4,79:1 sur blanc — le rouge PEUT porter du texte */
 
+    /* Lotexpo Leads (mode salon) : menthe, flamme, violet de relief.
+       La flamme ne porte jamais de texte fin : texte navy dessus. */
+    --lx-mint: 158 87% 30%;          /* #0A8F5F */
+    --lx-mint-deep: 158 89% 22%;     /* #066A46 */
+    --lx-mint-bright: 155 60% 52.4%; /* #3CCF91 */
+    --lx-mint-surface: 152 45% 93.5%;/* #E7F6EF */
+    --lx-flame: 17 100% 63.5%;       /* #FF7A45 */
+    --lx-flame-deep: 17 75% 48.6%;   /* #D9541F */
+    --lx-flame-surface: 20 100% 96.5%;/* #FFF3ED */
+    --lx-flame-soft: 19 100% 93.3%;  /* #FFE8DD */
+    --lx-violet-deep: 249 67% 52%;   /* #4B33D6 */
+
     /* ═══════════════════════════════════════════════════════════════════
        SÉMANTIQUE — contrat shadcn.
        ═══════════════════════════════════════════════════════════════════ */
