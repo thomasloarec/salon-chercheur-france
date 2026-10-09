@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import Chip from '../ui/Chip';
 import { ArrowLeft, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { BoothCache } from '../sync/cache';
@@ -111,15 +112,10 @@ export default function DashboardScreen({
         <DayChips days={days} value={day} onChange={setDay} />
         <div className="flex gap-2 overflow-x-auto pb-1">
           {scopes.map(({ s, label }) => (
-            <Button
-              key={scopeKey(s)}
-              size="sm"
-              variant={scopeKey(scope) === scopeKey(s) ? 'default' : 'outline'}
-              className="min-h-[44px] shrink-0 rounded-full"
-              onClick={() => setScope(s)}
-            >
+            <Chip key={scopeKey(s)}
+              selected={scopeKey(scope) === scopeKey(s)} onClick={() => setScope(s)}>
               {label}
-            </Button>
+            </Chip>
           ))}
         </div>
         </div>

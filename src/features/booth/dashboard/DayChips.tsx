@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import Chip from '../ui/Chip';
 import { Button } from '@/components/ui/button';
 import type { BoothCache } from '../sync/cache';
 import { salonDay, shortDate } from '../salon/display';
@@ -41,14 +42,14 @@ export default function DayChips({
   return (
     <div className="flex gap-2 overflow-x-auto pb-1">
       {allowAll && (
-        <Button size="sm" variant={value === 'all' ? 'default' : 'outline'} className="min-h-[44px] shrink-0 rounded-full" onClick={() => onChange('all')}>
+        <Chip selected={value === 'all'} onClick={() => onChange('all')}>
           Tous les jours
-        </Button>
+        </Chip>
       )}
       {days.map((d) => (
-        <Button key={d.key} size="sm" variant={value === d.key ? 'default' : 'outline'} className="min-h-[44px] shrink-0 rounded-full" onClick={() => onChange(d.key)}>
+        <Chip key={d.key} selected={value === d.key} onClick={() => onChange(d.key)}>
           {dayChipLabel(d)}
-        </Button>
+        </Chip>
       ))}
     </div>
   );

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import Chip from '../ui/Chip';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -149,19 +150,14 @@ export default function ActionsScreen({
       <div className="space-y-4 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         {isManager && cache.team.length > 1 && (
           <div className="flex gap-2 overflow-x-auto pb-1">
-            <Button size="sm" variant={member === null ? 'default' : 'outline'} className="min-h-[44px] shrink-0 rounded-full" onClick={() => setMember(null)}>
+            <Chip selected={member === null} onClick={() => setMember(null)}>
               Toute l'équipe
-            </Button>
+            </Chip>
             {cache.team.map((m) => (
-              <Button
-                key={m.user_id}
-                size="sm"
-                variant={member === m.user_id ? 'default' : 'outline'}
-                className="min-h-[44px] shrink-0 rounded-full"
-                onClick={() => setMember(m.user_id)}
-              >
+              <Chip key={m.user_id}
+                selected={member === m.user_id} onClick={() => setMember(m.user_id)}>
                 {label(m.user_id)}
-              </Button>
+              </Chip>
             ))}
           </div>
         )}

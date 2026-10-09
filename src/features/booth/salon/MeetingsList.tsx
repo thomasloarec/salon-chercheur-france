@@ -1,4 +1,5 @@
 import { useVoiceItems } from '../voice/voiceQueue';
+import Chip from '../ui/Chip';
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, CalendarClock, CloudUpload, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -176,15 +177,10 @@ export default function MeetingsList({
         {isManager && cache.team.length > 1 && (
           <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Par membre">
             {cache.team.map((m) => (
-              <Button
-                key={m.user_id}
-                size="sm"
-                variant={member === m.user_id ? 'default' : 'outline'}
-                className="min-h-[44px] shrink-0 rounded-full"
-                onClick={() => setMember(member === m.user_id ? null : m.user_id)}
-              >
+              <Chip key={m.user_id}
+                selected={member === m.user_id} onClick={() => setMember(member === m.user_id ? null : m.user_id)}>
                 {m.user_id === me ? 'Moi' : m.name || m.email || 'Membre'}
-              </Button>
+              </Chip>
             ))}
           </div>
         )}
@@ -201,13 +197,13 @@ export default function MeetingsList({
 
         {allDays.length > 1 && (
           <div className="flex gap-2 overflow-x-auto pb-1">
-            <Button size="sm" variant={day === null ? 'default' : 'outline'} className="min-h-[40px] shrink-0 rounded-full" onClick={() => setDay(null)}>
+            <Chip selected={day === null} onClick={() => setDay(null)}>
               Tous les jours
-            </Button>
+            </Chip>
             {allDays.map((d) => (
-              <Button key={d.key} size="sm" variant={day === d.key ? 'default' : 'outline'} className="min-h-[40px] shrink-0 rounded-full" onClick={() => setDay(d.key)}>
+              <Chip key={d.key} selected={day === d.key} onClick={() => setDay(d.key)}>
                 {d.short && !d.short.includes('salon') ? d.short : `${d.short} ${new Date(`${d.key}T12:00:00Z`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'UTC' })}`.trim()}
-              </Button>
+              </Chip>
             ))}
           </div>
         )}
