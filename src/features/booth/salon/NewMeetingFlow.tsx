@@ -906,7 +906,7 @@ export default function NewMeetingFlow({
         )}
         {d.step === 'who' && !meetingWait && (
           <>
-            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Qui ?</h2>
+            <h2 className="text-[26px] font-semibold leading-tight tracking-[-0.01em]">Qui ?</h2>
             <Button
               type="button"
               variant="outline"
@@ -1014,15 +1014,12 @@ export default function NewMeetingFlow({
                 </ul>
               )}
             </div>
-            <Button
-              size="lg"
-              className="mt-auto min-h-[56px] w-full text-base md:w-auto md:min-w-[200px] md:self-end"
- data-primary=""
+            <AppButton data-primary="" className="mt-auto md:w-auto md:min-w-[200px] md:self-end"
               disabled={!d.name.trim() && !d.company.trim()}
               onClick={() => go('coord')}
             >
               Continuer
-            </Button>
+            </AppButton>
           </>
         )}
 
@@ -1033,7 +1030,7 @@ export default function NewMeetingFlow({
                 Fiche remplie à partir de votre dictée. Vérifiez les champs.
               </p>
             )}
-            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Vérifiez avant de continuer</h2>
+            <h2 className="text-[26px] font-semibold leading-tight tracking-[-0.01em]">Vérifiez avant de continuer</h2>
             {duplicate ? (
               dupBlock
             ) : (
@@ -1087,15 +1084,12 @@ export default function NewMeetingFlow({
                 />
                 <Warn on={conf(phoneConfKey)} />
                 {d.linkedinUrl && <p className="truncate text-xs text-muted-foreground">LinkedIn : {d.linkedinUrl}</p>}
-                <Button
-                  size="lg"
-                  className="mt-auto min-h-[56px] w-full text-base md:w-auto md:min-w-[200px] md:self-end"
- data-primary=""
+                <AppButton data-primary="" className="mt-auto md:w-auto md:min-w-[200px] md:self-end"
                   disabled={!d.name.trim() && !d.company.trim()}
                   onClick={verifyContinue}
                 >
                   Continuer
-                </Button>
+                </AppButton>
               </>
             )}
           </>
@@ -1103,7 +1097,7 @@ export default function NewMeetingFlow({
 
         {d.step === 'coord' && (
           <>
-            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Coordonnées</h2>
+            <h2 className="text-[26px] font-semibold leading-tight tracking-[-0.01em]">Coordonnées</h2>
             {duplicate ? (
               dupBlock
             ) : (
@@ -1128,15 +1122,12 @@ export default function NewMeetingFlow({
                       value={d.coordValue}
                       onChange={(e) => patch({ coordValue: e.target.value })}
                     />
-                    <Button
-                      size="lg"
-                      className="mt-auto min-h-[56px] w-full text-base md:w-auto md:min-w-[200px] md:self-end"
- data-primary=""
+                    <AppButton data-primary="" className="mt-auto md:w-auto md:min-w-[200px] md:self-end"
                       disabled={!d.coordValue.trim()}
                       onClick={checkDuplicateAndContinue}
                     >
                       Continuer
-                    </Button>
+                    </AppButton>
                   </>
                 )}
               </>
@@ -1151,7 +1142,7 @@ export default function NewMeetingFlow({
                 Carte enregistrée. Elle sera lue automatiquement dès le retour du réseau.
               </p>
             )}
-            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Relation</h2>
+            <h2 className="text-[26px] font-semibold leading-tight tracking-[-0.01em]">Relation</h2>
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {(Object.keys(RELATIONSHIP) as Interaction['relationship'][]).map((r, idx) => (
                 <Choice
@@ -1171,7 +1162,7 @@ export default function NewMeetingFlow({
 
         {d.step === 'pot' && (
           <>
-            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Potentiel</h2>
+            <h2 className="text-[26px] font-semibold leading-tight tracking-[-0.01em]">Potentiel</h2>
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {(Object.keys(POTENTIAL) as NonNullable<Interaction['potential']>[]).map((p, idx) => (
                 <Choice
@@ -1203,7 +1194,7 @@ export default function NewMeetingFlow({
 
         {d.step === 'topic' && (
           <>
-            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Sujet</h2>
+            <h2 className="text-[26px] font-semibold leading-tight tracking-[-0.01em]">Sujet</h2>
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {(Object.keys(TOPIC) as NonNullable<Interaction['customer_topic']>[]).map((t, idx) => (
                 <Choice
@@ -1228,7 +1219,7 @@ export default function NewMeetingFlow({
 
         {d.step === 'concrete' && (
           <>
-            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Projet concret ?</h2>
+            <h2 className="text-[26px] font-semibold leading-tight tracking-[-0.01em]">Projet concret ?</h2>
             <div className="grid gap-3">
               <Choice n={0} tone="success" selected={d.concrete === true} onClick={() => go('action', { concrete: true })}>
                 Oui
@@ -1243,8 +1234,8 @@ export default function NewMeetingFlow({
 
         {d.step === 'action' && (
           <>
-            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Prochaine action</h2>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+            <h2 className="text-[26px] font-semibold leading-tight tracking-[-0.01em]">Prochaine action</h2>
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {(Object.keys(ACTION) as Interaction['next_action'][]).map((a, idx) => (
                 <Choice n={idx} key={a} icon={ACTION_ICON[a]} tone={a === 'none' ? 'neutral' : 'primary'} selected={d.next_action === a} onClick={() => pickAction(a)}>
                   {ACTION[a]}
@@ -1252,9 +1243,9 @@ export default function NewMeetingFlow({
               ))}
             </div>
             {d.next_action === 'none' && (
-              <Button size="lg" data-primary="" className="mt-auto min-h-[56px] w-full text-base md:w-auto md:min-w-[200px] md:self-end" onClick={() => go('details', { due: null })}>
+              <AppButton data-primary="" className="mt-auto md:w-auto md:min-w-[200px] md:self-end" onClick={() => go('details', { due: null })}>
                 Continuer
-              </Button>
+              </AppButton>
             )}
             {d.next_action && d.next_action !== 'none' && (
               <>
@@ -1292,9 +1283,9 @@ export default function NewMeetingFlow({
                     </div>
                   </div>
                 )}
-                <Button size="lg" data-primary="" className="mt-auto min-h-[56px] w-full text-base md:w-auto md:min-w-[200px] md:self-end" disabled={!d.due} onClick={() => go('details')}>
+                <AppButton data-primary="" className="mt-auto md:w-auto md:min-w-[200px] md:self-end" disabled={!d.due} onClick={() => go('details')}>
                   Continuer
-                </Button>
+                </AppButton>
               </>
             )}
           </>
@@ -1302,7 +1293,7 @@ export default function NewMeetingFlow({
 
         {d.step === 'details' && (
           <>
-            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Détails</h2>
+            <h2 className="text-[26px] font-semibold leading-tight tracking-[-0.01em]">Détails</h2>
             <p className="-mt-2 text-sm text-muted-foreground">Facultatif</p>
             {d.concrete && (
               <>
@@ -1354,10 +1345,10 @@ export default function NewMeetingFlow({
               onChange={(e) => patch({ note: e.target.value })}
             />
             <div className="sticky bottom-0 mt-auto bg-background pb-2 pt-2 md:flex md:justify-end">
-              <Button size="lg" data-primary="" className="min-h-[64px] w-full text-lg font-semibold md:w-auto md:min-w-[200px]" disabled={saving} onClick={() => void save()}>
+              <AppButton data-primary="" className="md:w-auto md:min-w-[200px]" disabled={saving} onClick={() => void save()}>
                 {saving && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
                 Enregistrer
-              </Button>
+              </AppButton>
             </div>
           </>
         )}
