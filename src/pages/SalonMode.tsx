@@ -2,7 +2,14 @@ import { primaryLabel, secondaryLabel } from '@/features/booth/salon/display';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, CloudOff, Loader2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, CloudOff, Loader2, Plus, RefreshCw } from 'lucide-react';
+import GoalCard from '@/features/booth/home/GoalCard';
+import GoalSheet from '@/features/booth/home/GoalSheet';
+import { DraftCard, HomeMenu, QuickTiles, ResumeSheet, type MenuRow } from '@/features/booth/home/HomeParts';
+import { homeSubtitle, quickTiles, resolveResume, startDecision, type ResumeChoice, type StartMode } from '@/features/booth/home/goal';
+import AppButton from '@/features/booth/ui/ChunkyButton';
+import { useCardScanAvailable } from '@/features/booth/card/useCardScanAvailable';
+import { pickAudioMime } from '@/features/booth/voice/mime';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -289,11 +296,39 @@ export default function SalonMode() {
     }
   }, [cacheReady, userIdForPurge, workspaceId]);
 
-  const startFlow = (initial: MeetingDraft) => {
+  const [flowMode, setFlowMode] = useState<StartMode | null>(null);
+  const [goalOpen, setGoalOpen] = useState(false);
+  const [resumeFor, setResumeFor] = useState<{ mode: StartMode | null } | null>(null);
+  const startFlow = (initial: MeetingDraft, mode: StartMode | null = null) => {
     setCameraRetry(null);
+    setFlowMode(mode);
     setFlowInitial(initial);
     setFlowKey((k) => k + 1);
     setScreen('flow');
+  };
+  const clearSavedDraft = () => {
+    if (user && savedDraft) {
+      void clearDraft(user.id, workspaceId);
+      if (savedDraft.cardQueued && savedDraft.cardScanId && !savedDraft.contactId) {
+        void removeCard(user.id, workspaceId, savedDraft.cardScanId);
+      }
+    }
+    setSavedDraft(null);
+  };
+  // « Nouvelle rencontre » ou tuile : une feuille demande quoi faire si une rencontre est en cours.
+  const requestStart = (mode: StartMode | null) => {
+    if (startDecision(!!savedDraft) === 'sheet') setResumeFor({ mode });
+    else startFlow(emptyDraft(), mode);
+  };
+  const onResumeChoice = (choice: ResumeChoice) => {
+    const mode = resumeFor?.mode ?? null;
+    setResumeFor(null);
+    const a = resolveResume(choice, mode);
+    if (a.open === 'draft' && savedDraft) startFlow(savedDraft);
+    else if (a.open === 'new') {
+      if (a.clearDraft) clearSavedDraft();
+      startFlow(emptyDraft(), a.mode);
+    }
   };
   const startInbound = (l: BoothInboundLead) =>
     startFlow({
@@ -317,13 +352,17 @@ export default function SalonMode() {
   }, [hasPending]);
 
   const counts = useMemo(() => {
-    if (!cache || !user) return { mine: 0, team: 0 };
+    if (!cache || !user) return { mine: 0, team: 0, hot: 0 };
     const tz = cache.workspace.timezone || 'Europe/Paris';
     const today = dayInTz(new Date(), tz);
     const todays = cache.interactions.filter(
       (i) => isCompleted(i) && i.occurred_at && dayInTz(new Date(i.occurred_at), tz) === today,
     );
-    return { mine: todays.filter((i) => ownerOf(i, user.id) === user.id).length, team: todays.length };
+    return {
+      mine: todays.filter((i) => ownerOf(i, user.id) === user.id).length,
+      team: todays.length,
+      hot: todays.filter((i) => i.potential === 'hot').length,
+    };
   }, [cache, user]);
 
   const contactName = (item: OutboxItem) => {
@@ -338,6 +377,22 @@ export default function SalonMode() {
   };
 
   const ws = cache?.workspace;
+  const todayYmd = dayInTz(new Date(), ws?.timezone || 'Europe/Paris');
+  const cardAvailable = useCardScanAvailable(user?.id ?? '', cache?.exhibitorId ?? '', workspaceId, sync.online);
+  const voiceSupported = typeof window !== 'undefined' && typeof MediaRecorder !== 'undefined' && !!navigator.mediaDevices?.getUserMedia && pickAudioMime() !== null;
+  const actionsCount = cache && user ? openActions(cache, user.id).length : 0;
+  const goList = (filter: 'pending' | 'review' | null) => { setCardFilter(filter); setListFilter(null); setListBack('home'); setScreen('list'); };
+  const menuRows: MenuRow[] = !cache || !ws
+    ? []
+    : [
+        { key: 'list', label: 'Rencontres du salon', count: cache.interactions.filter((i) => isMeeting(i, cache.workspaceId)).length, onClick: () => goList(null) },
+        ...(actionsCount > 0 ? [{ key: 'actions', label: 'Actions à faire', count: actionsCount, badge: true, onClick: () => { setActionsBack('home'); setScreen('actions'); } }] : []),
+        { key: 'dash', label: 'Tableau de bord', onClick: () => setScreen('dashboard') },
+        ...(isManager ? [{ key: 'outcome', label: 'Bilan du salon', onClick: () => { setOutcomeBack('home'); setScreen('outcome'); } }] : []),
+        ...(isManager && dupCount > 0 ? [{ key: 'dup', label: `Doublons (${dupCount})`, onClick: () => setScreen('duplicates') }] : []),
+        ...(cardsPending > 0 ? [{ key: 'cp', label: `${cardsPending} carte${cardsPending > 1 ? 's' : ''} en attente de lecture`, onClick: () => goList('pending') }] : []),
+        ...(cardsReview > 0 ? [{ key: 'cr', label: `${cardsReview} carte${cardsReview > 1 ? 's' : ''} à vérifier`, onClick: () => goList('review') }] : []),
+      ];
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-booth-canvas text-foreground">
@@ -412,6 +467,7 @@ export default function SalonMode() {
           online={sync.online}
           initial={flowInitial}
           cameraRetry={cameraRetry}
+          startMode={flowMode}
           onHome={() => setScreen('home')}
         />
       ) : screen === 'list' && user ? (
@@ -433,10 +489,11 @@ export default function SalonMode() {
             setScreen('detail');
           }}
           onInbound={startInbound}
+          onNew={() => requestStart(null)}
         />
         </div>
         {isLg && (
-          <div className="hidden lg:block lg:min-w-0 lg:rounded-xl lg:border lg:border-border">
+          <div className="hidden lg:block lg:min-w-0 lg:rounded-xl lg:border lg:border-border lg:bg-background">
             {detailId && cache.interactions.some((x) => x.id === detailId) ? (
               <MeetingDetail key={detailId} cache={cache} me={user.id} interactionId={detailId} split onBack={() => setDetailId(null)} />
             ) : (
@@ -565,6 +622,11 @@ export default function SalonMode() {
         </SheetContent>
       </Sheet>
 
+      {user && ws && (
+        <GoalSheet open={goalOpen} onOpenChange={setGoalOpen} userId={user.id} workspaceId={workspaceId} current={ws.daily_goal ?? null} online={sync.online} />
+      )}
+      <ResumeSheet open={!!resumeFor} name={savedDraft ? draftLabel(savedDraft) : ''} onChoice={onResumeChoice} />
+
       <AlertDialog open={!!toAbandon} onOpenChange={(o) => !o && setToAbandon(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -587,6 +649,8 @@ export default function SalonMode() {
   );
 }
 
+export const draftLabel = (d: MeetingDraft) => [d.name?.trim(), d.company?.trim()].filter(Boolean).join(' · ');
+
 function RecentMeetings({ cache, me, onOpen, onAll }: { cache: BoothCache; me: string | null; onOpen: (id: string) => void; onAll: () => void }) {
   const rows = useMemo(() => {
     if (!me) return [];
@@ -603,7 +667,7 @@ function RecentMeetings({ cache, me, onOpen, onAll }: { cache: BoothCache; me: s
   }, [cache, me]);
 
   return (
-    <section className="hidden lg:block lg:rounded-xl lg:border lg:border-border lg:p-4">
+    <section className="hidden lg:block lg:rounded-xl lg:border lg:border-border lg:bg-background lg:p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h2 className="font-semibold tracking-[-0.02em]">Dernières rencontres</h2>
         <Button variant="link" className="min-h-[44px] px-0" onClick={onAll}>Voir toutes les rencontres</Button>
