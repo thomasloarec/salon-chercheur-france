@@ -53,6 +53,17 @@ export default {
 					surface: 'hsl(var(--lx-flame-surface))',
 					soft: 'hsl(var(--lx-flame-soft))'
 				},
+				booth: {
+					canvas: 'hsl(var(--lx-canvas))',
+					pill: 'hsl(var(--lx-pill))',
+					line: 'hsl(var(--lx-line-strong))',
+					choice: 'hsl(var(--lx-choice))',
+					sky: 'hsl(var(--lx-sky-surface))',
+					'hot-bg': 'hsl(var(--lx-hot-bg))',
+					'good-bg': 'hsl(var(--lx-good-bg))',
+					'explore-bg': 'hsl(var(--lx-explore-bg))',
+					'explore-fg': 'hsl(var(--lx-explore-fg))'
+				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
 					foreground: 'hsl(var(--secondary-foreground))'
