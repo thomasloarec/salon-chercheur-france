@@ -2239,6 +2239,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           currency: string
+          daily_goal: number | null
           event_id: string
           exhibitor_id: string
           id: string
@@ -2252,6 +2253,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          daily_goal?: number | null
           event_id: string
           exhibitor_id: string
           id?: string
@@ -2265,6 +2267,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           currency?: string
+          daily_goal?: number | null
           event_id?: string
           exhibitor_id?: string
           id?: string
@@ -16553,6 +16556,10 @@ export type Database = {
       }
       booth_search_contacts: {
         Args: { p_exhibitor_id: string; p_limit?: number; p_query: string }
+        Returns: Json
+      }
+      booth_set_daily_goal: {
+        Args: { p_goal: number; p_workspace_id: string }
         Returns: Json
       }
       booth_sync: {
