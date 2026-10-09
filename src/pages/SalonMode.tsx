@@ -494,7 +494,7 @@ export default function SalonMode() {
           )}
 
           <div>
-            <h1 className="text-2xl font-bold leading-tight">
+            <h1 className="text-2xl font-extrabold tracking-[-0.02em] leading-tight">
               {ws.nom_event}
               {dayLabel(ws) ? ` · ${dayLabel(ws)}` : ''}
             </h1>
@@ -665,7 +665,7 @@ function RecentMeetings({ cache, me, onOpen, onAll }: { cache: BoothCache; me: s
   return (
     <section className="hidden lg:block lg:rounded-xl lg:border lg:border-border lg:p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="font-semibold">Dernières rencontres</h2>
+        <h2 className="font-extrabold tracking-[-0.02em]">Dernières rencontres</h2>
         <Button variant="link" className="min-h-[44px] px-0" onClick={onAll}>Voir toutes les rencontres</Button>
       </div>
       {rows.length === 0 ? (

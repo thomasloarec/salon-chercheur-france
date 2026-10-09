@@ -82,7 +82,7 @@ export default function DashboardScreen({
       <Button variant="ghost" className="min-h-[44px] px-2" onClick={onBack}>
         <ArrowLeft className="mr-1 h-5 w-5" /> Accueil
       </Button>
-      <h2 className="text-lg font-semibold">Tableau de bord</h2>
+      <h2 className="text-lg font-extrabold tracking-[-0.02em]">Tableau de bord</h2>
     </div>
   );
 

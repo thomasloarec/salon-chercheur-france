@@ -10,7 +10,7 @@ const POTENTIAL_TONE: Record<NonNullable<Interaction['potential']>, ChoiceTone> 
   explore: 'info',
   none: 'neutral',
 };
-import { ArrowLeft, Building2, Camera, Loader2, Mic, QrCode } from 'lucide-react';
+import { ArrowLeft, Building2, Camera, Loader2, Mail, Mic, Phone, QrCode } from 'lucide-react';
 import { createRequestGate } from './requestGate';
 import { prepareCardImage } from '../card/image';
 import { addCard, pauseCardQueue, processCardQueue, PROVISIONAL_COMPANY, removeCard, updateCard } from '../card/cardQueue';
@@ -841,7 +841,7 @@ export default function NewMeetingFlow({
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 motion-safe:animate-pulse">
               <Mic className="h-10 w-10 text-primary" aria-hidden="true" />
             </div>
-            <h2 className="text-2xl font-bold">Je prépare la fiche…</h2>
+            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Je prépare la fiche…</h2>
             <p className="text-lg font-medium">{waitPhase === 0 ? 'Écoute de votre dictée' : 'Remplissage de la fiche'}</p>
             <p className="max-w-sm text-base text-muted-foreground">Quelques secondes. Vous pourrez tout vérifier et corriger.</p>
             <Button variant="outline" className="min-h-[56px] w-full max-w-sm text-base" onClick={cancelDictation}>
@@ -851,7 +851,7 @@ export default function NewMeetingFlow({
         )}
         {d.step === 'who' && !meetingWait && (
           <>
-            <h2 className="text-2xl font-bold">Qui ?</h2>
+            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Qui ?</h2>
             <Button
               type="button"
               variant="outline"
@@ -978,7 +978,7 @@ export default function NewMeetingFlow({
                 Fiche remplie à partir de votre dictée. Vérifiez les champs.
               </p>
             )}
-            <h2 className="text-2xl font-bold">Vérifiez avant de continuer</h2>
+            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Vérifiez avant de continuer</h2>
             {duplicate ? (
               dupBlock
             ) : (
@@ -1048,7 +1048,7 @@ export default function NewMeetingFlow({
 
         {d.step === 'coord' && (
           <>
-            <h2 className="text-2xl font-bold">Coordonnées</h2>
+            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Coordonnées</h2>
             {duplicate ? (
               dupBlock
             ) : (
@@ -1096,7 +1096,7 @@ export default function NewMeetingFlow({
                 Carte enregistrée. Elle sera lue automatiquement dès le retour du réseau.
               </p>
             )}
-            <h2 className="text-2xl font-bold">Relation</h2>
+            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Relation</h2>
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {(Object.keys(RELATIONSHIP) as Interaction['relationship'][]).map((r, idx) => (
                 <Choice
@@ -1116,7 +1116,7 @@ export default function NewMeetingFlow({
 
         {d.step === 'pot' && (
           <>
-            <h2 className="text-2xl font-bold">Potentiel</h2>
+            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Potentiel</h2>
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {(Object.keys(POTENTIAL) as NonNullable<Interaction['potential']>[]).map((p, idx) => (
                 <Choice
@@ -1148,7 +1148,7 @@ export default function NewMeetingFlow({
 
         {d.step === 'topic' && (
           <>
-            <h2 className="text-2xl font-bold">Sujet</h2>
+            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Sujet</h2>
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {(Object.keys(TOPIC) as NonNullable<Interaction['customer_topic']>[]).map((t, idx) => (
                 <Choice
@@ -1173,7 +1173,7 @@ export default function NewMeetingFlow({
 
         {d.step === 'concrete' && (
           <>
-            <h2 className="text-2xl font-bold">Projet concret ?</h2>
+            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Projet concret ?</h2>
             <div className="grid gap-3">
               <Choice n={0} tone="success" selected={d.concrete === true} onClick={() => go('action', { concrete: true })}>
                 Oui
@@ -1188,7 +1188,7 @@ export default function NewMeetingFlow({
 
         {d.step === 'action' && (
           <>
-            <h2 className="text-2xl font-bold">Prochaine action</h2>
+            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Prochaine action</h2>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
               {(Object.keys(ACTION) as Interaction['next_action'][]).map((a, idx) => (
                 <Choice n={idx} key={a} icon={ACTION_ICON[a]} tone={a === 'none' ? 'neutral' : 'primary'} selected={d.next_action === a} onClick={() => pickAction(a)}>
@@ -1247,7 +1247,7 @@ export default function NewMeetingFlow({
 
         {d.step === 'details' && (
           <>
-            <h2 className="text-2xl font-bold">Détails</h2>
+            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Détails</h2>
             <p className="-mt-2 text-sm text-muted-foreground">Facultatif</p>
             {d.concrete && (
               <>
