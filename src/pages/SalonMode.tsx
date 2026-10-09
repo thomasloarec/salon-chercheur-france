@@ -134,13 +134,6 @@ function SyncPill({
         <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
       ) : dot ? (
         <span className="h-2 w-2 rounded-full bg-mint-bright" aria-hidden="true" />
-      ) : rejectedCount === 0 && online ? (
-        <RefreshCw className="h-4 w-4" aria-hidden="true" />
-      ) : !online ? (
-        <CloudOff className="h-4 w-4" aria-hidden="true" />
-      ) : null}
-      {false && (
-        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
       ) : !online ? (
         <CloudOff className="h-4 w-4" aria-hidden="true" />
       ) : (
