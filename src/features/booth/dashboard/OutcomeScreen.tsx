@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ArrowLeft, Download, Loader2, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import AppButton from '../ui/ChunkyButton';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 import { boothErrorMessage } from '@/lib/booth/rpc';
@@ -259,18 +260,18 @@ export default function OutcomeScreen({
           <h3 className="font-semibold">Exporter</h3>
           {!online && <p className="text-sm text-muted-foreground">L'export nécessite une connexion.</p>}
           <div className="space-y-3 md:flex md:flex-wrap md:gap-3 md:space-y-0">
-          <Button size="lg" className="min-h-[52px] w-full md:w-auto md:min-w-[200px] md:min-h-[48px]" disabled={!online || busy !== null} onClick={() => void doExport('xlsx')}>
+          <AppButton className="md:w-auto md:min-w-[200px]" disabled={!online || busy !== null} onClick={() => void doExport('xlsx')}>
             {busy === 'xlsx' ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />} Exporter en Excel
-          </Button>
-          <Button size="lg" variant="outline" className="min-h-[52px] w-full md:w-auto md:min-w-[200px] md:min-h-[48px]" disabled={!online || busy !== null} onClick={() => void doExport('csv')}>
+          </AppButton>
+          <AppButton variant="secondary" className="md:w-auto md:min-w-[200px]" disabled={!online || busy !== null} onClick={() => void doExport('csv')}>
             {busy === 'csv' ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />} Exporter en CSV
-          </Button>
+          </AppButton>
           </div>
         </section>
 
-        <Button size="lg" variant="secondary" className="min-h-[52px] w-full print:hidden md:w-auto md:min-w-[200px] md:min-h-[48px] lg:ml-[calc(50%+0.75rem)]" onClick={() => window.print()}>
+        <AppButton variant="secondary" className="print:hidden md:w-auto md:min-w-[200px] lg:ml-[calc(50%+0.75rem)]" onClick={() => window.print()}>
           <Printer className="mr-2 h-5 w-5" /> Imprimer le bilan
-        </Button>
+        </AppButton>
       </div>
     </div>
   );
