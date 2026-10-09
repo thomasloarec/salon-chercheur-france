@@ -1,5 +1,8 @@
 import { useVoiceItems } from '../voice/voiceQueue';
 import Chip from '../ui/Chip';
+import { Link } from 'react-router-dom';
+import AppButton from '../ui/ChunkyButton';
+import { EmptyState, SearchIllustration, StandIllustration } from '../ui/illustrations';
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, CalendarClock, CloudUpload, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,7 +34,9 @@ export default function MeetingsList({
   idFilter = null,
   onClearIdFilter,
   selectedId = null,
+  onNew,
 }: {
+  onNew?: () => void;
   selectedId?: string | null;
   idFilter?: { ids: string[]; label: string } | null;
   onClearIdFilter?: () => void;
@@ -161,16 +166,11 @@ export default function MeetingsList({
           </div>
         )}
         <div className="space-y-3 md:flex md:flex-wrap md:items-center md:gap-2 md:space-y-0">
-        <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1 md:w-64 md:shrink-0">
+        <div className="flex gap-2 md:shrink-0">
           {(['mine', 'team'] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={`min-h-[44px] rounded-md text-sm font-medium ${tab === t ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
-              onClick={() => { setTab(t); setMember(null); }}
-            >
+            <Chip key={t} selected={tab === t} onClick={() => { setTab(t); setMember(null); }}>
               {t === 'mine' ? 'Les miennes' : 'Équipe'}
-            </button>
+            </Chip>
           ))}
         </div>
 
@@ -210,14 +210,29 @@ export default function MeetingsList({
         </div>
 
         {groups.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">Aucune rencontre pour l'instant.</p>
+          rows.length === 0 && !query.trim() && !day && !member && !idFilter && !cardFilter ? (
+            <EmptyState
+              art={<StandIllustration />}
+              title="Votre stand est prêt. Première rencontre ?"
+              text="Scannez un badge, photographiez une carte ou dictez en 20 secondes. Tout fonctionne aussi sans réseau."
+            >
+              {onNew && !cache.workspace.archived && <AppButton onClick={onNew}>Nouvelle rencontre</AppButton>}
+              {isManager && (
+                <Link to="/leads" className="inline-flex min-h-[44px] items-center text-sm font-medium text-primary underline underline-offset-2">
+                  Inviter un collègue sur le stand
+                </Link>
+              )}
+            </EmptyState>
+          ) : (
+            <EmptyState art={<SearchIllustration />} title="Aucun résultat" />
+          )
         ) : (
           groups.map((g) => (
           <div key={g.day.key} className="space-y-2">
           <p className="text-sm font-semibold">
             {[g.day.short, longDate(g.day.key), `${g.items.length} rencontre${g.items.length > 1 ? 's' : ''}`].filter(Boolean).join(' · ')}
           </p>
-          <ul className="divide-y divide-border rounded-lg border border-border">
+          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-background">
             {g.items.map((i) => {
               const c = contacts.get(i.contact_id);
               const pending = pendingIds.has(i.id) || pendingIds.has(i.contact_id);
