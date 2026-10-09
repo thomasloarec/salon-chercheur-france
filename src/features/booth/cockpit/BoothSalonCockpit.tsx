@@ -59,7 +59,7 @@ const fmtMobileRange = (a: string | null, b: string | null) => {
     return fmtRange(a, b);
   }
 };
-const cockpitButton = 'w-full h-auto min-h-[44px] whitespace-normal text-center leading-snug py-2 md:w-auto md:h-10 md:whitespace-nowrap md:leading-normal';
+const cockpitButton = 'w-full h-auto min-h-[44px] whitespace-normal text-center leading-snug py-2 rounded-xl font-medium md:w-auto md:h-10 md:whitespace-nowrap md:leading-normal';
 const smallCockpitButton = `${cockpitButton} md:h-9 md:py-0`;
 const statusBadge = 'whitespace-nowrap text-xs shrink-0';
 const euro = (n: number | null | undefined) =>
