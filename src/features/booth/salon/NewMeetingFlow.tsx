@@ -1,4 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { LucideIcon } from 'lucide-react';
+import ChoiceCard, { type ChoiceTone } from '../ui/ChoiceCard';
+import ChunkyButton from '../ui/ChunkyButton';
+import { ACTION_ICON, POTENTIAL_ICON, RELATIONSHIP_ICON } from '../ui/icons';
+
+const POTENTIAL_TONE: Record<NonNullable<Interaction['potential']>, ChoiceTone> = {
+  hot: 'flame',
+  good: 'primary',
+  explore: 'info',
+  none: 'neutral',
+};
 import { ArrowLeft, Building2, Camera, Loader2, Mic, QrCode } from 'lucide-react';
 import { createRequestGate } from './requestGate';
 import { prepareCardImage } from '../card/image';
@@ -55,18 +66,25 @@ interface Suggestion {
   relationship: Interaction['relationship'] | null;
 }
 
-function Choice({ selected, onClick, children, n }: { selected?: boolean; onClick: () => void; children: React.ReactNode; n?: number }) {
+function Choice({
+  selected,
+  onClick,
+  children,
+  n,
+  tone,
+  icon,
+}: {
+  selected?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  n: number;
+  tone?: ChoiceTone;
+  icon?: LucideIcon;
+}) {
   return (
-    <Button
-      type="button"
-      variant={selected ? 'default' : 'outline'}
-      className="min-h-[56px] w-full justify-start text-base lg:relative"
-      onClick={onClick}
-      data-choice=""
-    >
+    <ChoiceCard index={n} selected={selected} tone={tone} icon={icon} onClick={onClick}>
       {children}
-      {n !== undefined && n < 9 && <span className="hidden lg:absolute lg:right-2 lg:top-1 lg:inline lg:text-[10px] lg:opacity-60" aria-hidden="true">{n + 1}</span>}
-    </Button>
+    </ChoiceCard>
   );
 }
 
@@ -240,9 +258,9 @@ export default function NewMeetingFlow({
   };
 
   const ContinueBtn = ({ onClick }: { onClick: () => void }) => (
-    <Button size="lg" data-primary="" className="mt-auto min-h-[56px] w-full text-base md:w-auto md:min-w-[200px] md:self-end" onClick={onClick}>
+    <ChunkyButton data-primary="" className="mt-auto md:w-auto md:min-w-[200px] md:self-end" onClick={onClick}>
       Continuer
-    </Button>
+    </ChunkyButton>
   );
 
   // Pas de lecture de cartes en parallèle tant que le parcours est ouvert
@@ -698,8 +716,9 @@ export default function NewMeetingFlow({
         if (b) { e.preventDefault(); b.click(); }
         return;
       }
-      if (/^[1-9]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey && tag !== 'INPUT' && tag !== 'TEXTAREA') {
-        const b = panel.querySelectorAll<HTMLButtonElement>('[data-choice]')[Number(e.key) - 1];
+      if (/^[1-9a-zA-Z]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey && tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT' && !t?.isContentEditable) {
+        const idx = /^[1-9]$/.test(e.key) ? Number(e.key) - 1 : e.key.toUpperCase().charCodeAt(0) - 65;
+        const b = panel.querySelectorAll<HTMLButtonElement>('[data-choice]')[idx];
         if (b) { e.preventDefault(); b.click(); }
       }
     };
@@ -749,6 +768,7 @@ export default function NewMeetingFlow({
     <div className="space-y-3 rounded-lg border border-border p-4">
       <p className="font-medium">Ce contact existe déjà : {duplicate.label}</p>
       <Choice
+        n={0}
         selected
         onClick={() => {
           const dup = duplicate;
@@ -759,6 +779,7 @@ export default function NewMeetingFlow({
         Utiliser cette fiche (recommandé)
       </Choice>
       <Choice
+        n={1}
         onClick={() => {
           setDuplicate(null);
           go(d.step === 'verify' && !d.coordValue.trim() && !d.phoneExtra.trim() ? 'coord' : 'rel');
@@ -1033,13 +1054,13 @@ export default function NewMeetingFlow({
             ) : (
               <>
                 <div className="grid gap-3">
-                  <Choice selected={d.coordMode === 'email'} onClick={() => patch({ coordMode: 'email', coordValue: '' })}>
+                  <Choice n={0} icon={Mail} selected={d.coordMode === 'email'} onClick={() => patch({ coordMode: 'email', coordValue: '' })}>
                     Email
                   </Choice>
-                  <Choice selected={d.coordMode === 'phone'} onClick={() => patch({ coordMode: 'phone', coordValue: '' })}>
+                  <Choice n={1} icon={Phone} selected={d.coordMode === 'phone'} onClick={() => patch({ coordMode: 'phone', coordValue: '' })}>
                     Téléphone
                   </Choice>
-                  <Choice onClick={() => go('rel', { coordMode: 'none', coordValue: '' })}>Pas maintenant</Choice>
+                  <Choice n={2} tone="neutral" onClick={() => go('rel', { coordMode: 'none', coordValue: '' })}>Pas maintenant</Choice>
                 </div>
                 {(d.coordMode === 'email' || d.coordMode === 'phone') && (
                   <>
@@ -1081,6 +1102,7 @@ export default function NewMeetingFlow({
                 <Choice
                   n={idx}
                   key={r}
+                  icon={RELATIONSHIP_ICON[r]}
                   selected={d.relationship === r}
                   onClick={() => go(r === 'customer' ? 'topic' : 'pot', { relationship: r })}
                 >
@@ -1100,6 +1122,8 @@ export default function NewMeetingFlow({
                 <Choice
                   n={idx}
                   key={p}
+                  icon={POTENTIAL_ICON[p]}
+                  tone={POTENTIAL_TONE[p]}
                   selected={d.potential === p}
                   onClick={() => {
                     if (p === 'none') {
@@ -1151,7 +1175,7 @@ export default function NewMeetingFlow({
           <>
             <h2 className="text-2xl font-bold">Projet concret ?</h2>
             <div className="grid gap-3">
-              <Choice n={0} selected={d.concrete === true} onClick={() => go('action', { concrete: true })}>
+              <Choice n={0} tone="success" selected={d.concrete === true} onClick={() => go('action', { concrete: true })}>
                 Oui
               </Choice>
               <Choice n={1} selected={d.concrete === false} onClick={() => go('action', { concrete: false })}>
@@ -1167,7 +1191,7 @@ export default function NewMeetingFlow({
             <h2 className="text-2xl font-bold">Prochaine action</h2>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
               {(Object.keys(ACTION) as Interaction['next_action'][]).map((a, idx) => (
-                <Choice n={idx} key={a} selected={d.next_action === a} onClick={() => pickAction(a)}>
+                <Choice n={idx} key={a} icon={ACTION_ICON[a]} tone={a === 'none' ? 'neutral' : 'primary'} selected={d.next_action === a} onClick={() => pickAction(a)}>
                   {ACTION[a]}
                 </Choice>
               ))}
