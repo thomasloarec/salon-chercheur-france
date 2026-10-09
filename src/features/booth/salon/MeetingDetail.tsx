@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import AppButton from '../ui/ChunkyButton';
+import BoothChip from '../ui/Chip';
 import PotentialBadge from '../ui/PotentialBadge';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import VoiceDictation from '../voice/VoiceDictation';
@@ -50,9 +52,9 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 function Chip({ selected, onClick, children, disabled }: { selected?: boolean; onClick: () => void; children: React.ReactNode; disabled?: boolean }) {
   return (
-    <Button type="button" size="sm" disabled={disabled} variant={selected ? 'default' : 'outline'} className="min-h-[40px] rounded-full" onClick={onClick}>
+    <BoothChip disabled={disabled} selected={selected} onClick={onClick} className="disabled:opacity-60">
       {children}
-    </Button>
+    </BoothChip>
   );
 }
 
@@ -100,7 +102,7 @@ export default function MeetingDetail({
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
         <p className="text-muted-foreground">Rencontre introuvable.</p>
-        <Button onClick={onBack}>Retour</Button>
+        <AppButton className="max-w-sm" onClick={onBack}>Retour</AppButton>
       </div>
     );
   }
@@ -188,7 +190,7 @@ export default function MeetingDetail({
         </div>
 
         <div className="space-y-5">
-        <section className="rounded-lg border border-border p-3">
+        <section className="rounded-xl border border-border bg-background p-3">
           <h3 className="mb-2 text-sm font-semibold">Rencontre</h3>
           <Row label="Relation">{RELATIONSHIP[i.relationship] ?? 'Non renseignée'}</Row>
           {i.customer_topic && <Row label="Sujet">{TOPIC[i.customer_topic]}</Row>}
@@ -249,9 +251,9 @@ export default function MeetingDetail({
                 <p className="text-sm font-medium text-muted-foreground">Action faite</p>
               ) : (
                 canMarkDone && (
-                  <Button variant="outline" className="min-h-[48px] w-full md:w-auto md:min-w-[200px]" onClick={() => void update({ next_action_done: true })}>
+                  <AppButton variant="secondary" className="md:w-auto md:min-w-[200px]" onClick={() => void update({ next_action_done: true })}>
                     {canEdit ? 'Action faite' : 'Marquer comme faite'}
-                  </Button>
+                  </AppButton>
                 )
               )}
             </div>
@@ -310,7 +312,7 @@ export default function MeetingDetail({
         </section>
 
         {opp && (
-          <section className="rounded-lg border border-border p-3">
+          <section className="rounded-xl border border-border bg-background p-3">
             <h3 className="mb-2 text-sm font-semibold">Opportunité</h3>
             {opp.title && <Row label="Titre">{opp.title}</Row>}
             {opp.value_band && <Row label="Valeur">{VALUE_BAND[opp.value_band]}</Row>}

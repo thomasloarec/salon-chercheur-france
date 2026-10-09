@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ArrowLeft, Download, Loader2, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import AppButton from '../ui/ChunkyButton';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 import { boothErrorMessage } from '@/lib/booth/rpc';
@@ -132,7 +133,7 @@ export default function OutcomeScreen({
       <div className="space-y-4 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="outcome-print space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0 print:!block print:space-y-4">
           <h2 className="hidden text-xl font-semibold tracking-[-0.02em] print:block">Bilan · {cache.workspace.nom_event}</h2>
-          <section className="rounded-xl border border-border p-4 lg:sticky lg:top-20 print:static">
+          <section className="rounded-xl border border-border bg-background p-4 lg:sticky lg:top-20 print:static">
             <h3 className="mb-2 font-semibold">Résultats</h3>
             <dl className="text-sm">
               <Row label="Pipeline" value={formatEuros(o.pipeline, cur)} />
@@ -148,7 +149,7 @@ export default function OutcomeScreen({
             </dl>
           </section>
 
-          <section className="rounded-xl border border-border p-4">
+          <section className="rounded-xl border border-border bg-background p-4">
             <h3 className="mb-2 font-semibold">Projets à compléter</h3>
             {projects.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aucun projet pour ce salon.</p>
@@ -255,22 +256,22 @@ export default function OutcomeScreen({
           </section>
         </div>
 
-        <section className="space-y-3 rounded-xl border border-border p-4 print:hidden lg:ml-[calc(50%+0.75rem)]">
+        <section className="space-y-3 rounded-xl border border-border bg-background p-4 print:hidden lg:ml-[calc(50%+0.75rem)]">
           <h3 className="font-semibold">Exporter</h3>
           {!online && <p className="text-sm text-muted-foreground">L'export nécessite une connexion.</p>}
           <div className="space-y-3 md:flex md:flex-wrap md:gap-3 md:space-y-0">
-          <Button size="lg" className="min-h-[52px] w-full md:w-auto md:min-w-[200px] md:min-h-[48px]" disabled={!online || busy !== null} onClick={() => void doExport('xlsx')}>
+          <AppButton className="md:w-auto md:min-w-[200px]" disabled={!online || busy !== null} onClick={() => void doExport('xlsx')}>
             {busy === 'xlsx' ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />} Exporter en Excel
-          </Button>
-          <Button size="lg" variant="outline" className="min-h-[52px] w-full md:w-auto md:min-w-[200px] md:min-h-[48px]" disabled={!online || busy !== null} onClick={() => void doExport('csv')}>
+          </AppButton>
+          <AppButton variant="secondary" className="md:w-auto md:min-w-[200px]" disabled={!online || busy !== null} onClick={() => void doExport('csv')}>
             {busy === 'csv' ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />} Exporter en CSV
-          </Button>
+          </AppButton>
           </div>
         </section>
 
-        <Button size="lg" variant="secondary" className="min-h-[52px] w-full print:hidden md:w-auto md:min-w-[200px] md:min-h-[48px] lg:ml-[calc(50%+0.75rem)]" onClick={() => window.print()}>
+        <AppButton variant="secondary" className="print:hidden md:w-auto md:min-w-[200px] lg:ml-[calc(50%+0.75rem)]" onClick={() => window.print()}>
           <Printer className="mr-2 h-5 w-5" /> Imprimer le bilan
-        </Button>
+        </AppButton>
       </div>
     </div>
   );

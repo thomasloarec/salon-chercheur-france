@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import AppButton from '../ui/ChunkyButton';
 import { Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -134,7 +135,7 @@ export default function PersonBlock({ cache, me, contact: c, canEdit }: { cache:
   );
 
   return (
-    <section className="rounded-lg border border-border p-3">
+    <section className="rounded-xl border border-border bg-background p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold">Personne rencontrée</h3>
         {canEdit && (
@@ -247,9 +248,9 @@ export default function PersonBlock({ cache, me, contact: c, canEdit }: { cache:
             {input('phone', 'Téléphone', { type: 'tel', inputMode: 'tel' })}
             {input('linkedin_url', 'LinkedIn', { inputMode: 'url' })}
             {err && <p className="text-sm text-destructive">{err}</p>}
-            <Button className="min-h-[48px] w-full" onClick={() => void save()}>
+            <AppButton onClick={() => void save()}>
               Enregistrer
-            </Button>
+            </AppButton>
           </div>
         </SheetContent>
       </Sheet>

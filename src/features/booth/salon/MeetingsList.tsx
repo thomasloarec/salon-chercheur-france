@@ -1,4 +1,8 @@
 import { useVoiceItems } from '../voice/voiceQueue';
+import Chip from '../ui/Chip';
+import { Link } from 'react-router-dom';
+import AppButton from '../ui/ChunkyButton';
+import { EmptyState, SearchIllustration, StandIllustration } from '../ui/illustrations';
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, CalendarClock, CloudUpload, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -30,7 +34,9 @@ export default function MeetingsList({
   idFilter = null,
   onClearIdFilter,
   selectedId = null,
+  onNew,
 }: {
+  onNew?: () => void;
   selectedId?: string | null;
   idFilter?: { ids: string[]; label: string } | null;
   onClearIdFilter?: () => void;
@@ -148,43 +154,33 @@ export default function MeetingsList({
         )}
 
         {idFilter && (
-          <div className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-background p-3 text-sm">
             <span>{idFilter.label}</span>
             <Button size="sm" variant="ghost" className="min-h-[44px]" onClick={onClearIdFilter}>Tout afficher</Button>
           </div>
         )}
         {cardFilter && (
-          <div className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-background p-3 text-sm">
             <span>{cardFilter === 'pending' ? 'Cartes en attente de lecture' : 'Cartes à vérifier'}</span>
             <Button size="sm" variant="ghost" className="min-h-[40px]" onClick={onClearCardFilter}>Tout afficher</Button>
           </div>
         )}
         <div className="space-y-3 md:flex md:flex-wrap md:items-center md:gap-2 md:space-y-0">
-        <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1 md:w-64 md:shrink-0">
+        <div className="flex gap-2 md:shrink-0">
           {(['mine', 'team'] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={`min-h-[44px] rounded-md text-sm font-medium ${tab === t ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
-              onClick={() => { setTab(t); setMember(null); }}
-            >
+            <Chip key={t} selected={tab === t} onClick={() => { setTab(t); setMember(null); }}>
               {t === 'mine' ? 'Les miennes' : 'Équipe'}
-            </button>
+            </Chip>
           ))}
         </div>
 
         {isManager && cache.team.length > 1 && (
           <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Par membre">
             {cache.team.map((m) => (
-              <Button
-                key={m.user_id}
-                size="sm"
-                variant={member === m.user_id ? 'default' : 'outline'}
-                className="min-h-[44px] shrink-0 rounded-full"
-                onClick={() => setMember(member === m.user_id ? null : m.user_id)}
-              >
+              <Chip key={m.user_id}
+                selected={member === m.user_id} onClick={() => setMember(member === m.user_id ? null : m.user_id)}>
                 {m.user_id === me ? 'Moi' : m.name || m.email || 'Membre'}
-              </Button>
+              </Chip>
             ))}
           </div>
         )}
@@ -201,27 +197,42 @@ export default function MeetingsList({
 
         {allDays.length > 1 && (
           <div className="flex gap-2 overflow-x-auto pb-1">
-            <Button size="sm" variant={day === null ? 'default' : 'outline'} className="min-h-[40px] shrink-0 rounded-full" onClick={() => setDay(null)}>
+            <Chip selected={day === null} onClick={() => setDay(null)}>
               Tous les jours
-            </Button>
+            </Chip>
             {allDays.map((d) => (
-              <Button key={d.key} size="sm" variant={day === d.key ? 'default' : 'outline'} className="min-h-[40px] shrink-0 rounded-full" onClick={() => setDay(d.key)}>
+              <Chip key={d.key} selected={day === d.key} onClick={() => setDay(d.key)}>
                 {d.short && !d.short.includes('salon') ? d.short : `${d.short} ${new Date(`${d.key}T12:00:00Z`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'UTC' })}`.trim()}
-              </Button>
+              </Chip>
             ))}
           </div>
         )}
         </div>
 
         {groups.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">Aucune rencontre pour l'instant.</p>
+          !cache.interactions.some((x) => x.workspace_id === cache.workspaceId && isCompleted(x)) ? (
+            <EmptyState
+              art={<StandIllustration />}
+              title="Votre stand est prêt. Première rencontre ?"
+              text="Scannez un badge, photographiez une carte ou dictez en 20 secondes. Tout fonctionne aussi sans réseau."
+            >
+              {onNew && !cache.workspace.archived && <AppButton onClick={onNew}>Nouvelle rencontre</AppButton>}
+              {isManager && (
+                <Link to="/leads" className="inline-flex min-h-[44px] items-center text-sm font-medium text-primary underline underline-offset-2">
+                  Inviter un collègue sur le stand
+                </Link>
+              )}
+            </EmptyState>
+          ) : (
+            <EmptyState art={<SearchIllustration />} title="Aucun résultat" />
+          )
         ) : (
           groups.map((g) => (
           <div key={g.day.key} className="space-y-2">
           <p className="text-sm font-semibold">
             {[g.day.short, longDate(g.day.key), `${g.items.length} rencontre${g.items.length > 1 ? 's' : ''}`].filter(Boolean).join(' · ')}
           </p>
-          <ul className="divide-y divide-border rounded-lg border border-border">
+          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-background">
             {g.items.map((i) => {
               const c = contacts.get(i.contact_id);
               const pending = pendingIds.has(i.id) || pendingIds.has(i.contact_id);

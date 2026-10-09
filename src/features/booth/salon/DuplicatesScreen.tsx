@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import AppButton from '../ui/ChunkyButton';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -42,7 +43,7 @@ function GroupCard({
   const [keep, setKeep] = useState<string | null>(defaultKeep(group.contacts));
   useEffect(() => setKeep(defaultKeep(group.contacts)), [group.contacts]);
   return (
-    <div className="space-y-3 rounded-lg border border-border p-3">
+    <div className="space-y-3 rounded-xl border border-border bg-background p-3">
       <p className="text-sm font-semibold">
         {group.match === 'email' ? 'Même email' : 'Même téléphone'} : <span className="font-normal">{group.value}</span>
       </p>
@@ -63,14 +64,14 @@ function GroupCard({
           </button>
         ))}
       </div>
-      <Button
-        className="min-h-[48px] w-full md:w-auto md:min-w-[200px]"
+      <AppButton
+        className="md:w-auto md:min-w-[200px]"
         disabled={!keep || busy}
         onClick={() => keep && onMerge(keep, group.contacts.filter((c) => c.id !== keep).map((c) => c.id))}
       >
         {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         Fusionner
-      </Button>
+      </AppButton>
     </div>
   );
 }

@@ -2,7 +2,14 @@ import { primaryLabel, secondaryLabel } from '@/features/booth/salon/display';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, CloudOff, Loader2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, CloudOff, Loader2, Plus, RefreshCw } from 'lucide-react';
+import GoalCard from '@/features/booth/home/GoalCard';
+import GoalSheet from '@/features/booth/home/GoalSheet';
+import { DraftCard, HomeMenu, QuickTiles, ResumeSheet, type MenuRow } from '@/features/booth/home/HomeParts';
+import { homeSubtitle, quickTiles, resolveResume, startDecision, type ResumeChoice, type StartMode } from '@/features/booth/home/goal';
+import AppButton from '@/features/booth/ui/ChunkyButton';
+import { useCardScanAvailable } from '@/features/booth/card/useCardScanAvailable';
+import { pickAudioMime } from '@/features/booth/voice/mime';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -71,18 +78,6 @@ function useMinWidth(px: number) {
 }
 const timeFmt = (iso: string) => new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
-function dayLabel(ws: BoothCache['workspace']) {
-  if (!ws.date_debut) return null;
-  const tz = ws.timezone || 'Europe/Paris';
-  const today = toUtc(dayInTz(new Date(), tz));
-  const start = toUtc(ws.date_debut);
-  const end = toUtc(ws.date_fin || ws.date_debut);
-  const DAY = 86_400_000;
-  if (today < start) return `J-${Math.round((start - today) / DAY)}`;
-  if (today > end) return 'Après le salon';
-  return `Jour ${Math.round((today - start) / DAY) + 1}`;
-}
-
 const KIND_LABEL = { contact: 'Contact', interaction: 'Rencontre', opportunity: 'Opportunité' } as const;
 
 function SyncPill({
@@ -103,16 +98,20 @@ function SyncPill({
   onOpenRejected: () => void;
 }) {
   const [showTime, setShowTime] = useState(false);
-  let cls = 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30';
+  let cls = 'bg-booth-sync-bg text-mint-deep border-transparent';
+  let dot = true;
   let label = 'Synchronisé';
   if (rejectedCount > 0) {
-    cls = 'bg-destructive/15 text-destructive border-destructive/30';
+    cls = 'bg-destructive/10 text-destructive border-destructive/30';
+    dot = false;
     label = `À reprendre (${rejectedCount})`;
   } else if (!online) {
     cls = 'bg-muted text-muted-foreground border-border';
+    dot = false;
     label = `Hors connexion · ${pendingCount} en attente`;
   } else if (pendingCount > 0) {
-    cls = 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30';
+    cls = 'bg-flame-surface text-foreground border-flame-soft';
+    dot = false;
     label = `${pendingCount} en attente`;
   }
   return (
@@ -128,6 +127,8 @@ function SyncPill({
     >
       {syncing ? (
         <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+      ) : dot ? (
+        <span className="h-2 w-2 rounded-full bg-mint-bright" aria-hidden="true" />
       ) : !online ? (
         <CloudOff className="h-4 w-4" aria-hidden="true" />
       ) : (
@@ -283,11 +284,39 @@ export default function SalonMode() {
     }
   }, [cacheReady, userIdForPurge, workspaceId]);
 
-  const startFlow = (initial: MeetingDraft) => {
+  const [flowMode, setFlowMode] = useState<StartMode | null>(null);
+  const [goalOpen, setGoalOpen] = useState(false);
+  const [resumeFor, setResumeFor] = useState<{ mode: StartMode | null } | null>(null);
+  const startFlow = (initial: MeetingDraft, mode: StartMode | null = null) => {
     setCameraRetry(null);
+    setFlowMode(mode);
     setFlowInitial(initial);
     setFlowKey((k) => k + 1);
     setScreen('flow');
+  };
+  const clearSavedDraft = () => {
+    if (user && savedDraft) {
+      void clearDraft(user.id, workspaceId);
+      if (savedDraft.cardQueued && savedDraft.cardScanId && !savedDraft.contactId) {
+        void removeCard(user.id, workspaceId, savedDraft.cardScanId);
+      }
+    }
+    setSavedDraft(null);
+  };
+  // « Nouvelle rencontre » ou tuile : une feuille demande quoi faire si une rencontre est en cours.
+  const requestStart = (mode: StartMode | null) => {
+    if (startDecision(!!savedDraft) === 'sheet') setResumeFor({ mode });
+    else startFlow(emptyDraft(), mode);
+  };
+  const onResumeChoice = (choice: ResumeChoice) => {
+    const mode = resumeFor?.mode ?? null;
+    setResumeFor(null);
+    const a = resolveResume(choice, mode);
+    if (a.open === 'draft' && savedDraft) startFlow(savedDraft);
+    else if (a.open === 'new') {
+      if (a.clearDraft) clearSavedDraft();
+      startFlow(emptyDraft(), a.mode);
+    }
   };
   const startInbound = (l: BoothInboundLead) =>
     startFlow({
@@ -311,13 +340,17 @@ export default function SalonMode() {
   }, [hasPending]);
 
   const counts = useMemo(() => {
-    if (!cache || !user) return { mine: 0, team: 0 };
+    if (!cache || !user) return { mine: 0, team: 0, hot: 0 };
     const tz = cache.workspace.timezone || 'Europe/Paris';
     const today = dayInTz(new Date(), tz);
     const todays = cache.interactions.filter(
       (i) => isCompleted(i) && i.occurred_at && dayInTz(new Date(i.occurred_at), tz) === today,
     );
-    return { mine: todays.filter((i) => ownerOf(i, user.id) === user.id).length, team: todays.length };
+    return {
+      mine: todays.filter((i) => ownerOf(i, user.id) === user.id).length,
+      team: todays.length,
+      hot: todays.filter((i) => i.potential === 'hot').length,
+    };
   }, [cache, user]);
 
   const contactName = (item: OutboxItem) => {
@@ -332,6 +365,22 @@ export default function SalonMode() {
   };
 
   const ws = cache?.workspace;
+  const todayYmd = dayInTz(new Date(), ws?.timezone || 'Europe/Paris');
+  const cardAvailable = useCardScanAvailable(user?.id ?? '', cache?.exhibitorId ?? '', workspaceId, sync.online && !!cache?.exhibitorId);
+  const voiceSupported = typeof window !== 'undefined' && typeof MediaRecorder !== 'undefined' && !!navigator.mediaDevices?.getUserMedia && pickAudioMime((t) => MediaRecorder.isTypeSupported?.(t) ?? false) !== null;
+  const actionsCount = cache && user ? openActions(cache, user.id).length : 0;
+  const goList = (filter: 'pending' | 'review' | null) => { setCardFilter(filter); setListFilter(null); setListBack('home'); setScreen('list'); };
+  const menuRows: MenuRow[] = !cache || !ws
+    ? []
+    : [
+        { key: 'list', label: 'Rencontres du salon', count: cache.interactions.filter((i) => isMeeting(i, cache.workspaceId)).length, onClick: () => goList(null) },
+        ...(actionsCount > 0 ? [{ key: 'actions', label: 'Actions à faire', count: actionsCount, badge: true, onClick: () => { setActionsBack('home'); setScreen('actions'); } }] : []),
+        { key: 'dash', label: 'Tableau de bord', onClick: () => setScreen('dashboard') },
+        ...(isManager ? [{ key: 'outcome', label: 'Bilan du salon', onClick: () => { setOutcomeBack('home'); setScreen('outcome'); } }] : []),
+        ...(isManager && dupCount > 0 ? [{ key: 'dup', label: `Doublons (${dupCount})`, onClick: () => setScreen('duplicates') }] : []),
+        ...(cardsPending > 0 ? [{ key: 'cp', label: `${cardsPending} carte${cardsPending > 1 ? 's' : ''} en attente de lecture`, onClick: () => goList('pending') }] : []),
+        ...(cardsReview > 0 ? [{ key: 'cr', label: `${cardsReview} carte${cardsReview > 1 ? 's' : ''} à vérifier`, onClick: () => goList('review') }] : []),
+      ];
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-booth-canvas text-foreground">
@@ -340,13 +389,11 @@ export default function SalonMode() {
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
 
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border bg-background px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <div className={`flex w-full items-center justify-between gap-2 ${SCREEN_WIDTH} md:px-3`}>
-        <Button asChild variant="ghost" className="min-h-[44px] px-2">
-          <Link to="/leads">
-            <ArrowLeft className="mr-1 h-5 w-5" /> Mes salons
-          </Link>
-        </Button>
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border bg-background px-3 pt-[env(safe-area-inset-top)]">
+        <div className={`flex h-14 w-full items-center justify-between gap-2 ${SCREEN_WIDTH} md:px-3`}>
+        <Link to="/leads" className="-ml-1 inline-flex min-h-[44px] items-center gap-1 rounded-lg px-1 text-base font-medium">
+          <ArrowLeft className="h-5 w-5" aria-hidden="true" /> Mes salons
+        </Link>
         {cache && (
           <SyncPill
             pendingCount={sync.pendingCount + voicePending}
@@ -362,7 +409,7 @@ export default function SalonMode() {
       </header>
 
       {!persistent && (
-        <div className="border-b border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+        <div className="border-b border-flame-soft bg-flame-surface px-4 py-3 text-sm text-foreground">
           Votre navigateur ne permet pas de garder les saisies sur cet appareil. Gardez la page ouverte jusqu'à la
           synchronisation.
         </div>
@@ -408,6 +455,7 @@ export default function SalonMode() {
           online={sync.online}
           initial={flowInitial}
           cameraRetry={cameraRetry}
+          startMode={flowMode}
           onHome={() => setScreen('home')}
         />
       ) : screen === 'list' && user ? (
@@ -429,10 +477,11 @@ export default function SalonMode() {
             setScreen('detail');
           }}
           onInbound={startInbound}
+          onNew={() => requestStart(null)}
         />
         </div>
         {isLg && (
-          <div className="hidden lg:block lg:min-w-0 lg:rounded-xl lg:border lg:border-border">
+          <div className="hidden lg:block lg:min-w-0 lg:rounded-xl lg:border lg:border-border lg:bg-background">
             {detailId && cache.interactions.some((x) => x.id === detailId) ? (
               <MeetingDetail key={detailId} cache={cache} me={user.id} interactionId={detailId} split onBack={() => setDetailId(null)} />
             ) : (
@@ -488,107 +537,43 @@ export default function SalonMode() {
             </p>
           )}
           {ws.archived && (
-            <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+            <div className="rounded-xl border border-flame-soft bg-flame-surface px-4 py-3 text-sm font-medium text-foreground">
               Ce salon est archivé : consultation seule
             </div>
           )}
 
           <div>
-            <h1 className="text-2xl font-semibold tracking-[-0.02em] leading-tight">
-              {ws.nom_event}
-              {dayLabel(ws) ? ` · ${dayLabel(ws)}` : ''}
-            </h1>
-            {offlineReady && (
-              <p className="mt-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">Disponible sans réseau</p>
-            )}
-            {ws.stand_label && <p className="mt-1 text-base text-muted-foreground">Stand {ws.stand_label}</p>}
+            {homeSubtitle(ws, todayYmd) && <p className="text-[13px] font-medium text-muted-foreground">{homeSubtitle(ws, todayYmd)}</p>}
+            <h1 className="mt-0.5 break-words text-[26px] font-semibold leading-tight tracking-[-0.01em]">{ws.nom_event}</h1>
+            {offlineReady && <p className="mt-1 text-xs font-medium text-mint-deep">Disponible sans réseau</p>}
           </div>
 
           <InstallBanner pendingCount={sync.pendingCount + sync.rejectedCount} />
 
-          <div className={`grid gap-3 ${cache.role === 'manager' ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-3xl font-semibold">{counts.mine}</p>
-              <p className="text-sm text-muted-foreground">Vos rencontres aujourd'hui</p>
-            </div>
-            {cache.role === 'manager' && (
-              <div className="rounded-xl border border-border bg-card p-4">
-                <p className="text-3xl font-semibold">{counts.team}</p>
-                <p className="text-sm text-muted-foreground">Équipe aujourd'hui</p>
-              </div>
-            )}
-          </div>
+          <GoalCard
+            input={{ team: counts.team, mine: counts.mine, hot: counts.hot, goal: ws.daily_goal ?? null, isManager, archived: ws.archived }}
+            workspaceId={workspaceId}
+            todayYmd={todayYmd}
+            onEdit={() => setGoalOpen(true)}
+          />
 
-          <div className="mt-auto flex flex-col gap-3 md:grid md:grid-cols-2 lg:flex lg:flex-col">
-            {!ws.archived && savedDraft && (
-              <div className="flex flex-col gap-2 rounded-xl border border-primary/40 bg-primary/5 p-3 md:col-span-2">
-                <Button size="lg" variant="secondary" className="min-h-[56px] w-full text-base md:min-h-[48px]" onClick={() => startFlow(savedDraft)}>
-                  Reprendre la rencontre en cours{savedDraft.name ? ` (${savedDraft.name})` : ''}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    if (user) {
-                      void clearDraft(user.id, workspaceId);
-                      if (savedDraft.cardQueued && savedDraft.cardScanId && !savedDraft.contactId) {
-                        void removeCard(user.id, workspaceId, savedDraft.cardScanId);
-                      }
-                    }
-                    setSavedDraft(null);
-                  }}
-                >
-                  Effacer ce brouillon
-                </Button>
-              </div>
-            )}
-            {cache.role === 'manager' && ws.phase === 'after' && (
-              <Button size="lg" className="min-h-[64px] w-full text-lg font-semibold md:col-span-2" onClick={() => { setOutcomeBack('home'); setScreen('outcome'); }}>
-                Bilan du salon
-              </Button>
-            )}
-            {!ws.archived && (
-              <Button size="lg" variant={cache.role === 'manager' && ws.phase === 'after' ? 'outline' : 'default'} className="min-h-[64px] w-full text-lg font-semibold md:col-span-2" onClick={() => startFlow(emptyDraft())}>
-                Nouvelle rencontre
-              </Button>
-            )}
-            <Button
-              size="lg"
-              variant="outline"
-              className="min-h-[56px] w-full text-base md:min-h-[48px]"
-              onClick={() => { setCardFilter(null); setListFilter(null); setListBack('home'); setScreen('list'); }}
-            >
-              Rencontres du salon
-            </Button>
-            <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base md:min-h-[48px]" onClick={() => setScreen('dashboard')}>
-              Tableau de bord
-            </Button>
-            {cache.role === 'manager' && ws.phase !== 'after' && (
-              <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base md:min-h-[48px]" onClick={() => { setOutcomeBack('home'); setScreen('outcome'); }}>
-                Bilan du salon
-              </Button>
-            )}
-            {user && openActions(cache, user.id).length > 0 && (
-              <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base md:min-h-[48px]" onClick={() => { setActionsBack('home'); setScreen('actions'); }}>
-                Actions à faire ({openActions(cache, user.id).length})
-              </Button>
-            )}
-            {cardsPending > 0 && (
-              <Button variant="link" className="min-h-[44px] md:col-span-2 lg:self-start" onClick={() => { setCardFilter('pending'); setListFilter(null); setListBack('home'); setScreen('list'); }}>
-                {cardsPending} carte{cardsPending > 1 ? 's' : ''} en attente de lecture
-              </Button>
-            )}
-            {cardsReview > 0 && (
-              <Button variant="link" className="min-h-[44px] md:col-span-2 lg:self-start" onClick={() => { setCardFilter('review'); setListFilter(null); setListBack('home'); setScreen('list'); }}>
-                {cardsReview} carte{cardsReview > 1 ? 's' : ''} à vérifier
-              </Button>
-            )}
-            {cache.role === 'manager' && dupCount > 0 && (
-              <Button variant="link" className="min-h-[44px] md:col-span-2 lg:self-start" onClick={() => setScreen('duplicates')}>
-                Doublons ({dupCount})
-              </Button>
-            )}
-          </div>
+          {!ws.archived && savedDraft && (
+            <DraftCard label={draftLabel(savedDraft)} onResume={() => startFlow(savedDraft)} onClear={clearSavedDraft} />
+          )}
+
+          {!ws.archived && (
+            <AppButton onClick={() => requestStart(null)}>
+              <Plus className="h-5 w-5" aria-hidden="true" /> Nouvelle rencontre
+            </AppButton>
+          )}
+
+          <QuickTiles
+            modes={quickTiles({ voice: !!cache.full_features && voiceSupported, card: cardAvailable, archived: ws.archived })}
+            online={sync.online}
+            onPick={(m) => requestStart(m)}
+          />
+
+          <HomeMenu rows={menuRows} />
           </div>
           <RecentMeetings cache={cache} me={user?.id ?? null} onOpen={(id) => openDetail(id, 'home')} onAll={() => { setDetailId(null); setCardFilter(null); setListFilter(null); setListBack('home'); setScreen('list'); }} />
         </main>
@@ -625,6 +610,11 @@ export default function SalonMode() {
         </SheetContent>
       </Sheet>
 
+      {user && ws && (
+        <GoalSheet open={goalOpen} onOpenChange={setGoalOpen} userId={user.id} workspaceId={workspaceId} current={ws.daily_goal ?? null} online={sync.online} />
+      )}
+      <ResumeSheet open={!!resumeFor} name={savedDraft ? draftLabel(savedDraft) : ''} onChoice={onResumeChoice} />
+
       <AlertDialog open={!!toAbandon} onOpenChange={(o) => !o && setToAbandon(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -647,6 +637,8 @@ export default function SalonMode() {
   );
 }
 
+export const draftLabel = (d: MeetingDraft) => [d.name?.trim(), d.company?.trim()].filter(Boolean).join(' · ');
+
 function RecentMeetings({ cache, me, onOpen, onAll }: { cache: BoothCache; me: string | null; onOpen: (id: string) => void; onAll: () => void }) {
   const rows = useMemo(() => {
     if (!me) return [];
@@ -663,7 +655,7 @@ function RecentMeetings({ cache, me, onOpen, onAll }: { cache: BoothCache; me: s
   }, [cache, me]);
 
   return (
-    <section className="hidden lg:block lg:rounded-xl lg:border lg:border-border lg:p-4">
+    <section className="hidden lg:block lg:rounded-xl lg:border lg:border-border lg:bg-background lg:p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h2 className="font-semibold tracking-[-0.02em]">Dernières rencontres</h2>
         <Button variant="link" className="min-h-[44px] px-0" onClick={onAll}>Voir toutes les rencontres</Button>

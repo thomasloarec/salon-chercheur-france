@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Mic, Square, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useVoiceRecorder, VOICE_COUNTDOWN_FROM_MS, VOICE_MAX_MS, type VoiceRecording } from './useVoiceRecorder';
@@ -16,8 +16,11 @@ export default function VoiceDictation({
   disabledText,
   footer,
   className = '',
+  autoStart = false,
   onRecorded,
 }: {
+  /** Lance l'enregistrement dès l'affichage (ouverture directe en dictée). */
+  autoStart?: boolean;
   label: string;
   hint?: string;
   disabled?: boolean;
@@ -28,6 +31,13 @@ export default function VoiceDictation({
 }) {
   const rec = useVoiceRecorder(onRecorded);
   const [help, setHelp] = useState(false);
+  const autoDone = useRef(false);
+  useEffect(() => {
+    if (!autoStart || autoDone.current || disabled || !rec.supported) return;
+    autoDone.current = true;
+    void rec.start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart, disabled, rec.supported]);
   if (!rec.supported) return null;
 
   if (rec.state === 'recording') {

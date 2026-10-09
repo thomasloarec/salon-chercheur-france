@@ -62,7 +62,13 @@ export default {
 					'hot-bg': 'hsl(var(--lx-hot-bg))',
 					'good-bg': 'hsl(var(--lx-good-bg))',
 					'explore-bg': 'hsl(var(--lx-explore-bg))',
-					'explore-fg': 'hsl(var(--lx-explore-fg))'
+					'explore-fg': 'hsl(var(--lx-explore-fg))',
+					navy: 'hsl(var(--lx-navy))',
+					'sync-bg': 'hsl(var(--lx-sync-bg))',
+					'goal-track': 'hsl(var(--lx-goal-track))',
+					'on-navy': 'hsl(var(--lx-on-navy-soft))',
+					'sky-text': 'hsl(var(--lx-sky))',
+					'draft-line': 'hsl(var(--lx-draft-line))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
