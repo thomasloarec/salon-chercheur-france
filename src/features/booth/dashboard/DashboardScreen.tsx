@@ -23,7 +23,7 @@ function Tile({ value, label, sub, subWarn, onClick }: { value: string; label: s
       onClick={onClick}
       className="flex min-h-[96px] flex-col md:min-h-0 items-start justify-center rounded-xl border border-border bg-card p-4 text-left active:bg-muted"
     >
-      <span className="text-3xl font-bold leading-none tabular-nums">{value}</span>
+      <span className="text-3xl font-semibold leading-none tabular-nums">{value}</span>
       <span className="mt-1 text-sm text-muted-foreground">{label}</span>
       {sub && <span className={`mt-0.5 text-xs font-medium ${subWarn ? 'text-warning-foreground' : 'text-muted-foreground'}`}>{sub}</span>}
     </button>
@@ -82,7 +82,7 @@ export default function DashboardScreen({
       <Button variant="ghost" className="min-h-[44px] px-2" onClick={onBack}>
         <ArrowLeft className="mr-1 h-5 w-5" /> Accueil
       </Button>
-      <h2 className="text-lg font-extrabold tracking-[-0.02em]">Tableau de bord</h2>
+      <h2 className="text-lg font-semibold tracking-[-0.02em]">Tableau de bord</h2>
     </div>
   );
 

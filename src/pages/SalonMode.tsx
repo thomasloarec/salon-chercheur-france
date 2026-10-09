@@ -334,7 +334,7 @@ export default function SalonMode() {
   const ws = cache?.workspace;
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
+    <div className="flex min-h-[100dvh] flex-col bg-booth-canvas text-foreground">
       <Helmet>
         <title>Mode salon · Lotexpo</title>
         <meta name="robots" content="noindex,nofollow" />
@@ -494,7 +494,7 @@ export default function SalonMode() {
           )}
 
           <div>
-            <h1 className="text-2xl font-extrabold tracking-[-0.02em] leading-tight">
+            <h1 className="text-2xl font-semibold tracking-[-0.02em] leading-tight">
               {ws.nom_event}
               {dayLabel(ws) ? ` · ${dayLabel(ws)}` : ''}
             </h1>
@@ -508,12 +508,12 @@ export default function SalonMode() {
 
           <div className={`grid gap-3 ${cache.role === 'manager' ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-3xl font-bold">{counts.mine}</p>
+              <p className="text-3xl font-semibold">{counts.mine}</p>
               <p className="text-sm text-muted-foreground">Vos rencontres aujourd'hui</p>
             </div>
             {cache.role === 'manager' && (
               <div className="rounded-xl border border-border bg-card p-4">
-                <p className="text-3xl font-bold">{counts.team}</p>
+                <p className="text-3xl font-semibold">{counts.team}</p>
                 <p className="text-sm text-muted-foreground">Équipe aujourd'hui</p>
               </div>
             )}
@@ -665,7 +665,7 @@ function RecentMeetings({ cache, me, onOpen, onAll }: { cache: BoothCache; me: s
   return (
     <section className="hidden lg:block lg:rounded-xl lg:border lg:border-border lg:p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="font-extrabold tracking-[-0.02em]">Dernières rencontres</h2>
+        <h2 className="font-semibold tracking-[-0.02em]">Dernières rencontres</h2>
         <Button variant="link" className="min-h-[44px] px-0" onClick={onAll}>Voir toutes les rencontres</Button>
       </div>
       {rows.length === 0 ? (

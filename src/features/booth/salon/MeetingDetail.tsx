@@ -160,7 +160,7 @@ export default function MeetingDetail({
       <div className={`space-y-5 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] ${split ? '' : 'lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0'}`}>
         <div className="space-y-5">
         <div>
-          <h2 className="text-2xl font-extrabold tracking-[-0.02em]">{primaryLabel(c)}</h2>
+          <h2 className="text-2xl font-semibold tracking-[-0.02em]">{primaryLabel(c)}</h2>
           {secondaryLabel(c) && <p className="text-muted-foreground">{secondaryLabel(c)}</p>}
           <p className="mt-1 text-sm font-medium">{dayTimeLabel(i.occurred_at, cache.workspace)}</p>
           <p className="mt-1 text-xs text-muted-foreground">

@@ -232,7 +232,7 @@ export default function BoothSalonCockpit({ exhibitorId, embedded = false, onPre
     if (c.kind === 'during') {
       const day = c.dayIndex && c.dayCount ? ` · Jour ${c.dayIndex} sur ${c.dayCount}` : '';
       return (
-        <div key={key} className="space-y-3 rounded-md border-2 border-primary p-3 md:p-4 lg:col-span-2">
+        <div key={key} className="space-y-3 rounded-md border border-primary p-3 md:p-4 lg:col-span-2">
           <CardHead c={c} pill={<Badge className={statusBadge}>En cours{day}</Badge>} />
           {s ? (
             <div className="grid grid-cols-1 gap-1 sm:grid-cols-3 sm:gap-2 sm:text-center">
@@ -319,7 +319,7 @@ export default function BoothSalonCockpit({ exhibitorId, embedded = false, onPre
 
   const header = (
     <>
-        <h2 className="text-base font-extrabold tracking-[-0.02em] leading-none">Vos salons</h2>
+        <h2 className="text-base font-semibold tracking-[-0.02em] leading-none">Vos salons</h2>
         {isManager && onCreate && (
           <Button size="sm" className={smallCockpitButton} onClick={onCreate}>
             <Plus className="mr-1.5 h-4 w-4" />

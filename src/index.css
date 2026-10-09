@@ -67,6 +67,17 @@
     --lx-flame-surface: 20 100% 96.5%;/* #FFF3ED */
     --lx-flame-soft: 19 100% 93.3%;  /* #FFE8DD */
     --lx-violet-deep: 249 67% 52%;   /* #4B33D6 */
+    /* Lotexpo Leads, style pro (D2-1) */
+    --lx-canvas: 220 23% 97.5%;      /* #F7F8FA fond des écrans */
+    --lx-pill: 228 17% 95.5%;        /* #F1F2F5 pastille d'icône */
+    --lx-line-strong: 220 17% 85.9%; /* #D5D9E1 bordure bouton secondaire */
+    --lx-choice: 252 100% 98%;       /* #F6F4FF choix sélectionné */
+    --lx-sky-surface: 205 100% 94.5%;/* #E3F3FF pastille d'initiales */
+    --lx-hot-bg: 21 100% 95.9%;      /* #FFF1EA badge Chaud */
+    --lx-good-bg: 248 100% 96.9%;    /* #F1EFFF badge Intéressant */
+    --lx-explore-bg: 222 100% 95.7%; /* #E9F0FF badge À creuser */
+    --lx-explore-fg: 224 76% 48%;    /* #1D4ED8 texte À creuser */
+    --lx-shadow: 225 59.3% 10.6%;    /* navy pour les ombres légères */
 
     /* ═══════════════════════════════════════════════════════════════════
        SÉMANTIQUE — contrat shadcn.

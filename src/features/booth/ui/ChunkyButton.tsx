@@ -5,32 +5,32 @@ import { cn } from '@/lib/utils';
 export type ChunkyVariant = 'primary' | 'secondary' | 'success';
 
 const VARIANT: Record<ChunkyVariant, string> = {
-  primary: 'bg-primary text-primary-foreground shadow-[0_5px_0_hsl(var(--lx-violet-deep))]',
-  secondary: 'border-2 border-border bg-background text-foreground shadow-[0_4px_0_hsl(var(--border))]',
-  success: 'bg-success text-primary-foreground shadow-[0_5px_0_hsl(var(--lx-mint-deep))]',
+  primary: 'bg-primary font-semibold text-primary-foreground shadow-[0_1px_2px_hsl(var(--lx-shadow)/0.12)] min-h-[52px] lg:min-h-[54px]',
+  secondary: 'border border-booth-line bg-background font-medium text-foreground shadow-[0_1px_2px_hsl(var(--lx-shadow)/0.05)] min-h-[48px]',
+  success: 'bg-success font-semibold text-primary-foreground shadow-[0_1px_2px_hsl(var(--lx-shadow)/0.12)] min-h-[52px] lg:min-h-[54px]',
 };
 
 export interface ChunkyButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ChunkyVariant;
+  /** Conservé pour compatibilité : la hauteur dépend désormais de la variante. */
   size?: 'md' | 'lg';
   loading?: boolean;
 }
 
-/** Bouton « en relief » : l'ombre disparaît et le bouton descend de 4 px à la pression. */
+/** Bouton plat du mode salon : légère réduction (0,98) à la pression, sans déplacement. */
 const ChunkyButton = forwardRef<HTMLButtonElement, ChunkyButtonProps>(
-  ({ variant = 'primary', size = 'md', loading = false, disabled, className, children, type = 'button', ...rest }, ref) => (
+  ({ variant = 'primary', size: _size, loading = false, disabled, className, children, type = 'button', ...rest }, ref) => (
     <button
       ref={ref}
       type={type}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cn(
-        'inline-flex w-full items-center justify-center gap-2 whitespace-normal px-6 text-center text-lg font-extrabold leading-snug',
-        'transition-[transform,box-shadow] duration-[80ms] ease-out motion-reduce:transition-none',
+        'inline-flex w-full items-center justify-center gap-2 whitespace-normal rounded-xl px-6 py-2 text-center text-base leading-snug',
+        'transition-transform duration-[80ms] ease-out motion-reduce:transition-none',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-        'enabled:active:translate-y-[4px] enabled:active:shadow-none',
+        'enabled:active:scale-[0.98]',
         'disabled:cursor-not-allowed disabled:opacity-50',
-        size === 'lg' ? 'min-h-[64px] rounded-[18px]' : 'min-h-[56px] rounded-2xl',
         VARIANT[variant],
         className,
       )}
@@ -42,4 +42,5 @@ const ChunkyButton = forwardRef<HTMLButtonElement, ChunkyButtonProps>(
   ),
 );
 ChunkyButton.displayName = 'ChunkyButton';
+export const AppButton = ChunkyButton;
 export default ChunkyButton;

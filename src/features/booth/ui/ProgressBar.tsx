@@ -1,10 +1,12 @@
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 import { SPRING, useCalmMotion } from './motion';
 
-/** value entre 0 et 1. */
-export default function ProgressBar({ value, label = 'Progression' }: { value: number; label?: string }) {
+/** value entre 0 et 1. Passe en menthe à la dernière étape. */
+export default function ProgressBar({ value, label = 'Progression', done }: { value: number; label?: string; done?: boolean }) {
   const calm = useCalmMotion();
   const pct = Math.round(Math.min(1, Math.max(0, value)) * 100);
+  const last = done ?? pct >= 100;
   return (
     <div
       role="progressbar"
@@ -12,10 +14,10 @@ export default function ProgressBar({ value, label = 'Progression' }: { value: n
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={pct}
-      className="h-4 w-full overflow-hidden rounded-full bg-secondary"
+      className="h-1.5 w-full overflow-hidden rounded-full bg-border"
     >
       <motion.div
-        className="h-full rounded-full bg-success shadow-[inset_0_-4px_0_hsl(var(--lx-mint-deep))]"
+        className={cn('h-full rounded-full', last ? 'bg-success' : 'bg-primary')}
         initial={false}
         animate={{ width: `${pct}%` }}
         transition={calm ? { duration: 0 } : SPRING}
