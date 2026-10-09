@@ -57,6 +57,10 @@ async function call<T>(fn: string, args: Record<string, unknown>): Promise<T> {
   return data as T;
 }
 
+/** Objectif du jour (manager). null efface l'objectif. */
+export const setDailyGoal = (workspaceId: string, goal: number | null) =>
+  call<unknown>('booth_set_daily_goal', { p_workspace_id: workspaceId, p_goal: goal });
+
 export const getAccess = (exhibitorId: string) =>
   call<BoothAccess>('booth_get_access', { p_exhibitor_id: exhibitorId });
 
@@ -269,6 +273,8 @@ export interface BoothBootstrapWorkspace {
   total_cost: number | null;
   archived: boolean;
   phase: BoothPhase;
+  /** Objectif de rencontres par jour pour l'équipe, null si aucun. */
+  daily_goal?: number | null;
 }
 
 export interface BoothTeammate {
