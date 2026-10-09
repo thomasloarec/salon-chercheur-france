@@ -78,18 +78,6 @@ function useMinWidth(px: number) {
 }
 const timeFmt = (iso: string) => new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
-function dayLabel(ws: BoothCache['workspace']) {
-  if (!ws.date_debut) return null;
-  const tz = ws.timezone || 'Europe/Paris';
-  const today = toUtc(dayInTz(new Date(), tz));
-  const start = toUtc(ws.date_debut);
-  const end = toUtc(ws.date_fin || ws.date_debut);
-  const DAY = 86_400_000;
-  if (today < start) return `J-${Math.round((start - today) / DAY)}`;
-  if (today > end) return 'Après le salon';
-  return `Jour ${Math.round((today - start) / DAY) + 1}`;
-}
-
 const KIND_LABEL = { contact: 'Contact', interaction: 'Rencontre', opportunity: 'Opportunité' } as const;
 
 function SyncPill({
@@ -378,7 +366,7 @@ export default function SalonMode() {
 
   const ws = cache?.workspace;
   const todayYmd = dayInTz(new Date(), ws?.timezone || 'Europe/Paris');
-  const cardAvailable = useCardScanAvailable(user?.id ?? '', cache?.exhibitorId ?? '', workspaceId, sync.online);
+  const cardAvailable = useCardScanAvailable(user?.id ?? '', cache?.exhibitorId ?? '', workspaceId, sync.online && !!cache?.exhibitorId);
   const voiceSupported = typeof window !== 'undefined' && typeof MediaRecorder !== 'undefined' && !!navigator.mediaDevices?.getUserMedia && pickAudioMime((t) => MediaRecorder.isTypeSupported?.(t) ?? false) !== null;
   const actionsCount = cache && user ? openActions(cache, user.id).length : 0;
   const goList = (filter: 'pending' | 'review' | null) => { setCardFilter(filter); setListFilter(null); setListBack('home'); setScreen('list'); };
