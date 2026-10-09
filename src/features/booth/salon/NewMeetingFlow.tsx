@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Building2, Camera, Loader2, QrCode } from 'lucide-react';
+import { ArrowLeft, Building2, Camera, Loader2, Mic, QrCode } from 'lucide-react';
+import { createRequestGate } from './requestGate';
 import { prepareCardImage } from '../card/image';
 import { addCard, pauseCardQueue, processCardQueue, PROVISIONAL_COMPANY, removeCard, updateCard } from '../card/cardQueue';
 
@@ -133,16 +134,37 @@ export default function NewMeetingFlow({
   const [voiceBusy, setVoiceBusy] = useState(false);
   const [voiceInfo, setVoiceInfo] = useState<string | null>(null);
   const { remaining, update: setRemaining } = useVoiceRemaining(userId, wsId, online, !!cache.full_features);
+  const meetingGate = useRef(createRequestGate()).current;
+  const [meetingWait, setMeetingWait] = useState(false);
+  const [waitPhase, setWaitPhase] = useState(0);
+  const [voiceFilled, setVoiceFilled] = useState(false);
+  useEffect(() => {
+    if (!meetingWait) return;
+    setWaitPhase(0);
+    const t = window.setTimeout(() => setWaitPhase(1), 2000);
+    return () => window.clearTimeout(t);
+  }, [meetingWait]);
+  useEffect(() => {
+    if (d.step !== 'verify') setVoiceFilled(false);
+  }, [d.step]);
+  const cancelDictation = () => {
+    meetingGate.cancel();
+    setMeetingWait(false);
+    setVoiceBusy(false);
+  };
 
   // Dictée de la rencontre : réseau obligatoire, l'audio n'est jamais conservé.
   const dictateMeeting = async (r: VoiceRecording) => {
+    const token = meetingGate.next();
     setVoiceInfo(null);
     setVoiceBusy(true);
+    setMeetingWait(true);
     const noteId = newId();
     try {
       const audioBase64 = await blobToBase64(r.blob);
       const res = await voiceNote({ workspaceId: wsId, noteId, mode: 'capture', audioBase64, mediaType: r.mediaType, durationMs: r.durationMs });
       setRemaining(res.remaining_month);
+      if (!meetingGate.isCurrent(token)) return;
       if (res.status !== 'ok') {
         setVoiceInfo('Rien n\u2019a été entendu. Réessayez.');
         return;
@@ -161,11 +183,16 @@ export default function NewMeetingFlow({
         step: 'verify',
         history: [...d.history, d.step],
       });
+      setVoiceFilled(true);
     } catch (e) {
+      if (!meetingGate.isCurrent(token)) return;
       const m = String((e as Error)?.message ?? '');
       setVoiceInfo(m.includes('BOOTH_NETWORK') ? 'La dictée n\u2019a pas abouti. Réessayez ou saisissez à la main.' : boothErrorMessage(e));
     } finally {
-      setVoiceBusy(false);
+      if (meetingGate.isCurrent(token)) {
+        setVoiceBusy(false);
+        setMeetingWait(false);
+      }
     }
   };
 
@@ -788,7 +815,20 @@ export default function NewMeetingFlow({
       </div>
 
       <div ref={panelRef} className="flex flex-1 flex-col gap-4 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        {d.step === 'who' && (
+        {d.step === 'who' && meetingWait && (
+          <div role="status" aria-live="polite" className="flex flex-1 flex-col items-center justify-center gap-5 py-10 text-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 motion-safe:animate-pulse">
+              <Mic className="h-10 w-10 text-primary" aria-hidden="true" />
+            </div>
+            <h2 className="text-2xl font-bold">Je prépare la fiche…</h2>
+            <p className="text-lg font-medium">{waitPhase === 0 ? 'Écoute de votre dictée' : 'Remplissage de la fiche'}</p>
+            <p className="max-w-sm text-base text-muted-foreground">Quelques secondes. Vous pourrez tout vérifier et corriger.</p>
+            <Button variant="outline" className="min-h-[56px] w-full max-w-sm text-base" onClick={cancelDictation}>
+              Annuler et saisir à la main
+            </Button>
+          </div>
+        )}
+        {d.step === 'who' && !meetingWait && (
           <>
             <h2 className="text-2xl font-bold">Qui ?</h2>
             <Button
@@ -912,6 +952,11 @@ export default function NewMeetingFlow({
 
         {d.step === 'verify' && (
           <>
+            {voiceFilled && (
+              <p className="rounded-md bg-muted px-3 py-2 text-sm text-foreground">
+                Fiche remplie à partir de votre dictée. Vérifiez les champs.
+              </p>
+            )}
             <h2 className="text-2xl font-bold">Vérifiez avant de continuer</h2>
             {duplicate ? (
               dupBlock
@@ -1214,13 +1259,18 @@ export default function NewMeetingFlow({
             {cache.full_features && (
               <VoiceDictation label="Dicter la note" disabled={voiceBusy} onRecorded={(r) => void dictateNote(r)} />
             )}
-            {voiceBusy && <p className="flex items-center text-sm"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Transcription…</p>}
+            {voiceBusy && (
+              <p className="flex items-center text-sm" role="status" aria-live="polite">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:hidden" /> Je transcris votre note…
+              </p>
+            )}
             {voiceInfo && <p className="rounded-md bg-muted p-3 text-sm text-foreground">{voiceInfo}</p>}
             <Textarea
               placeholder="Note"
               maxLength={2000}
               rows={5}
               className="text-base"
+              disabled={voiceBusy}
               value={d.note}
               onChange={(e) => patch({ note: e.target.value })}
             />
