@@ -186,7 +186,7 @@ export default function DebriefScreen({
 
   const Row = ({ i, children }: { i: Interaction; children?: React.ReactNode }) => (
     <li>
-      <button type="button" onClick={() => onOpen(i.id)} className="min-h-[44px] w-full rounded-lg border border-border p-3 text-left active:bg-muted md:flex md:items-center md:justify-between md:gap-4">
+      <button type="button" onClick={() => onOpen(i.id)} className="min-h-[44px] w-full rounded-xl border border-border bg-background p-3 text-left active:bg-muted md:flex md:items-center md:justify-between md:gap-4">
         <p className="font-medium">{who(i)}</p>
         {children}
       </button>
@@ -307,7 +307,7 @@ export default function DebriefScreen({
         )}
         </div>
         {(ai || aiLoading || aiError) && (
-          <section className="space-y-4 rounded-lg border border-border p-4" aria-live="polite">
+          <section className="space-y-4 rounded-xl border border-border bg-background p-4" aria-live="polite">
             {aiLoading ? (
               <p className="flex items-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Rédaction de la synthèse…</p>
             ) : aiError ? (
@@ -323,7 +323,7 @@ export default function DebriefScreen({
                     <h4 className="mb-2 font-semibold">À traiter en priorité</h4>
                     <ul className="space-y-2">
                       {ai.summary.priorities.map((p, k) => (
-                        <li key={k} className="rounded-md border border-border p-3 text-sm">
+                        <li key={k} className="rounded-xl border border-border bg-background p-3 text-sm">
                           <p className="font-medium">{[p.company, p.person].filter(Boolean).join(' · ')}</p>
                           {p.reason && <p className="text-muted-foreground">{p.reason}</p>}
                           {p.action && <p>{p.action}</p>}
@@ -337,7 +337,7 @@ export default function DebriefScreen({
                     <h4 className="mb-2 font-semibold">Actions à faire</h4>
                     <ul className="space-y-2">
                       {ai.summary.followups.map((f, k) => (
-                        <li key={k} className="rounded-md border border-border p-3 text-sm">
+                        <li key={k} className="rounded-xl border border-border bg-background p-3 text-sm">
                           <p className="font-medium">{f.company}</p>
                           <p>{f.action}</p>
                           <p className="text-muted-foreground">{[f.due, f.followed_by].filter(Boolean).join(' · ')}</p>

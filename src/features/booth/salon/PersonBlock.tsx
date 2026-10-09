@@ -134,7 +134,7 @@ export default function PersonBlock({ cache, me, contact: c, canEdit }: { cache:
   );
 
   return (
-    <section className="rounded-lg border border-border p-3">
+    <section className="rounded-xl border border-border bg-background p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold">Personne rencontrée</h3>
         {canEdit && (

@@ -185,7 +185,7 @@ export default function BoothSalonCockpit({ exhibitorId, embedded = false, onPre
 
     if (c.kind === 'prepare') {
       return (
-        <div key={key} className="space-y-3 rounded-md border border-border p-3 md:p-4">
+        <div key={key} className="space-y-3 rounded-xl border border-border bg-background p-3 md:p-4">
           <CardHead c={c} pill={<Badge variant="secondary" className={statusBadge}>À préparer</Badge>} />
           <p className="text-sm text-muted-foreground">
             Vous exposez {c.daysUntil === 0 ? "aujourd'hui" : c.daysUntil === 1 ? 'demain' : `dans ${c.daysUntil ?? '?'} jours`}. Préparez l'espace du salon pour que votre équipe y enregistre ses rencontres.
@@ -208,7 +208,7 @@ export default function BoothSalonCockpit({ exhibitorId, embedded = false, onPre
 
     if (c.kind === 'before') {
       return (
-        <div key={key} className="space-y-3 rounded-md border border-border p-3 md:p-4">
+        <div key={key} className="space-y-3 rounded-xl border border-border bg-background p-3 md:p-4">
           <CardHead c={c} pill={<Badge variant="secondary" className={statusBadge}>{inDays(c.daysUntil)}</Badge>} />
           {isManager && (
             <ul>
@@ -270,7 +270,7 @@ export default function BoothSalonCockpit({ exhibitorId, embedded = false, onPre
     const hasActions = s ? s.actions_open > 0 : true;
     const roi = s && w.total_cost && w.total_cost > 0 && (s.won_amount ?? 0) > 0 ? (s.won_amount ?? 0) / w.total_cost : null;
     return (
-      <div key={key} className="space-y-3 rounded-md border border-border p-3 md:p-4">
+      <div key={key} className="space-y-3 rounded-xl border border-border bg-background p-3 md:p-4">
         <CardHead
           c={c}
           pill={c.done ? <Badge className={`${statusBadge} bg-primary/10 text-primary hover:bg-primary/10`}>Bilan à jour</Badge> : <Badge variant="secondary" className={statusBadge}>{since}</Badge>}

@@ -154,13 +154,13 @@ export default function MeetingsList({
         )}
 
         {idFilter && (
-          <div className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-background p-3 text-sm">
             <span>{idFilter.label}</span>
             <Button size="sm" variant="ghost" className="min-h-[44px]" onClick={onClearIdFilter}>Tout afficher</Button>
           </div>
         )}
         {cardFilter && (
-          <div className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-background p-3 text-sm">
             <span>{cardFilter === 'pending' ? 'Cartes en attente de lecture' : 'Cartes à vérifier'}</span>
             <Button size="sm" variant="ghost" className="min-h-[40px]" onClick={onClearCardFilter}>Tout afficher</Button>
           </div>

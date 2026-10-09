@@ -132,7 +132,7 @@ export default function OutcomeScreen({
       <div className="space-y-4 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="outcome-print space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0 print:!block print:space-y-4">
           <h2 className="hidden text-xl font-semibold tracking-[-0.02em] print:block">Bilan · {cache.workspace.nom_event}</h2>
-          <section className="rounded-xl border border-border p-4 lg:sticky lg:top-20 print:static">
+          <section className="rounded-xl border border-border bg-background p-4 lg:sticky lg:top-20 print:static">
             <h3 className="mb-2 font-semibold">Résultats</h3>
             <dl className="text-sm">
               <Row label="Pipeline" value={formatEuros(o.pipeline, cur)} />
@@ -148,7 +148,7 @@ export default function OutcomeScreen({
             </dl>
           </section>
 
-          <section className="rounded-xl border border-border p-4">
+          <section className="rounded-xl border border-border bg-background p-4">
             <h3 className="mb-2 font-semibold">Projets à compléter</h3>
             {projects.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aucun projet pour ce salon.</p>
@@ -255,7 +255,7 @@ export default function OutcomeScreen({
           </section>
         </div>
 
-        <section className="space-y-3 rounded-xl border border-border p-4 print:hidden lg:ml-[calc(50%+0.75rem)]">
+        <section className="space-y-3 rounded-xl border border-border bg-background p-4 print:hidden lg:ml-[calc(50%+0.75rem)]">
           <h3 className="font-semibold">Exporter</h3>
           {!online && <p className="text-sm text-muted-foreground">L'export nécessite une connexion.</p>}
           <div className="space-y-3 md:flex md:flex-wrap md:gap-3 md:space-y-0">

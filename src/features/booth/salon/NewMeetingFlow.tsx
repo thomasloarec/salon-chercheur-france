@@ -792,7 +792,7 @@ export default function NewMeetingFlow({
   }
 
   const dupBlock = duplicate && (
-    <div className="space-y-3 rounded-lg border border-border p-4">
+    <div className="space-y-3 rounded-xl border border-border bg-background p-4">
       <p className="font-medium">Ce contact existe déjà : {duplicate.label}</p>
       <Choice
         n={0}

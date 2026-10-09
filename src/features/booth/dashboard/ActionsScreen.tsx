@@ -212,7 +212,7 @@ export default function ActionsScreen({
               <ul className="mt-2 space-y-2">
                 {doneToday.map((i) => (
                   <li key={i.id}>
-                    <button type="button" className="min-h-[44px] w-full rounded-lg border border-border p-3 text-left text-muted-foreground" onClick={() => onOpen(i.id)}>
+                    <button type="button" className="min-h-[44px] w-full rounded-xl border border-border bg-background p-3 text-left text-muted-foreground" onClick={() => onOpen(i.id)}>
                       <p className="line-through">{ACTION_LABEL[i.next_action]}</p>
                       <p className="text-sm">{who(i)} · {label(responsibleOf(i, me))}</p>
                     </button>

@@ -42,7 +42,7 @@ function GroupCard({
   const [keep, setKeep] = useState<string | null>(defaultKeep(group.contacts));
   useEffect(() => setKeep(defaultKeep(group.contacts)), [group.contacts]);
   return (
-    <div className="space-y-3 rounded-lg border border-border p-3">
+    <div className="space-y-3 rounded-xl border border-border bg-background p-3">
       <p className="text-sm font-semibold">
         {group.match === 'email' ? 'Même email' : 'Même téléphone'} : <span className="font-normal">{group.value}</span>
       </p>

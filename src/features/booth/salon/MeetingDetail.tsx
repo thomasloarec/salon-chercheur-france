@@ -188,7 +188,7 @@ export default function MeetingDetail({
         </div>
 
         <div className="space-y-5">
-        <section className="rounded-lg border border-border p-3">
+        <section className="rounded-xl border border-border bg-background p-3">
           <h3 className="mb-2 text-sm font-semibold">Rencontre</h3>
           <Row label="Relation">{RELATIONSHIP[i.relationship] ?? 'Non renseignée'}</Row>
           {i.customer_topic && <Row label="Sujet">{TOPIC[i.customer_topic]}</Row>}
@@ -310,7 +310,7 @@ export default function MeetingDetail({
         </section>
 
         {opp && (
-          <section className="rounded-lg border border-border p-3">
+          <section className="rounded-xl border border-border bg-background p-3">
             <h3 className="mb-2 text-sm font-semibold">Opportunité</h3>
             {opp.title && <Row label="Titre">{opp.title}</Row>}
             {opp.value_band && <Row label="Valeur">{VALUE_BAND[opp.value_band]}</Row>}
