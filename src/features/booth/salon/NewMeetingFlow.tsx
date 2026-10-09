@@ -1,8 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
+import { motion } from 'framer-motion';
 import ChoiceCard, { type ChoiceTone } from '../ui/ChoiceCard';
-import ChunkyButton from '../ui/ChunkyButton';
+import { AppButton } from '../ui/ChunkyButton';
+import ProgressBar from '../ui/ProgressBar';
+import PotentialBadge from '../ui/PotentialBadge';
+import { haptic, useCalmMotion } from '../ui/motion';
 import { ACTION_ICON, POTENTIAL_ICON, RELATIONSHIP_ICON } from '../ui/icons';
+import MeetingSaved from './MeetingSaved';
+import { stepCounter } from './flowSteps';
+import { addSaved, dayStats, type DayStats } from './savedStats';
+
+const REMINDER_STEPS = new Set(['rel', 'pot', 'topic', 'concrete', 'action', 'details']);
+const initials = (s: string) =>
+  s.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('') || '?';
+const shortDay = (v: string) => {
+  const [y, m, dd] = v.slice(0, 10).split('-').map(Number);
+  return new Date(y, m - 1, dd).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+};
 
 const POTENTIAL_TONE: Record<NonNullable<Interaction['potential']>, ChoiceTone> = {
   hot: 'flame',
@@ -82,7 +97,7 @@ function Choice({
   icon?: LucideIcon;
 }) {
   return (
-    <ChoiceCard index={n} selected={selected} tone={tone} icon={icon} onClick={onClick}>
+    <ChoiceCard index={n} selected={selected} tone={tone} icon={icon} onClick={() => { haptic(10); onClick(); }}>
       {children}
     </ChoiceCard>
   );
@@ -156,6 +171,14 @@ export default function NewMeetingFlow({
   const [meetingWait, setMeetingWait] = useState(false);
   const [waitPhase, setWaitPhase] = useState(0);
   const [voiceFilled, setVoiceFilled] = useState(false);
+  const [savedStats, setSavedStats] = useState<{ before: DayStats; after: DayStats } | null>(null);
+  const calm = useCalmMotion();
+  const histLen = d.history.length;
+  const prevHistLen = useRef(histLen);
+  const stepDir = histLen >= prevHistLen.current ? 1 : -1;
+  useEffect(() => {
+    prevHistLen.current = histLen;
+  });
   useEffect(() => {
     if (!meetingWait) return;
     setWaitPhase(0);
@@ -258,9 +281,9 @@ export default function NewMeetingFlow({
   };
 
   const ContinueBtn = ({ onClick }: { onClick: () => void }) => (
-    <ChunkyButton data-primary="" className="mt-auto md:w-auto md:min-w-[200px] md:self-end" onClick={onClick}>
+    <AppButton data-primary="" className="mt-auto md:w-auto md:min-w-[200px] md:self-end" onClick={onClick}>
       Continuer
-    </ChunkyButton>
+    </AppButton>
   );
 
   // Pas de lecture de cartes en parallèle tant que le parcours est ouvert
@@ -688,6 +711,8 @@ export default function NewMeetingFlow({
         });
       }
       await clearDraft(userId, wsId);
+      const before = dayStats(cache.interactions, wsId, me, interactionId);
+      setSavedStats({ before, after: addSaved(before, f.relationship === 'customer' ? null : f.potential) });
       setD((prev) => ({ ...prev, ...override, step: 'done', history: [] }));
     } finally {
       setSaving(false);
@@ -736,31 +761,34 @@ export default function NewMeetingFlow({
   }, [d.step]);
 
   const phoneConfKey = d.cardConfidence?.mobile ? 'mobile' : 'phone';
-  const progress = Math.max(0, ORDER.indexOf(d.step === 'topic' ? 'pot' : d.step)) / (ORDER.length - 1);
+  const counter = stepCounter(d);
+  const progress = counter.index / counter.total;
   const title = headLabel(d.company, d.name);
 
   if (d.step === 'done') {
-    const parts = [
-      `${title || 'Contact'} enregistré`,
+    const company = d.company.trim();
+    const line1 = [d.name.trim(), company].filter(Boolean).join(' · ') || 'Contact';
+    const a = d.next_action ?? 'none';
+    const line2 = [
       d.relationship === 'customer'
         ? d.customer_topic && TOPIC[d.customer_topic]
         : d.potential && POTENTIAL[d.potential],
-      ACTION[d.next_action ?? 'none'],
-    ].filter(Boolean);
+      a !== 'none' && d.due ? `${ACTION[a]} le ${shortDay(d.due)}` : ACTION[a],
+    ]
+      .filter(Boolean)
+      .join(' · ');
+    const empty: DayStats = { mine: 0, hot: 0, team: 0 };
+    const goal = (cache.workspace as { daily_goal?: number | null }).daily_goal ?? null;
     return (
-      <div className="flex flex-1 flex-col md:bg-muted/40 md:px-4 md:py-6">
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6 text-center md:mx-auto md:w-full md:max-w-xl md:flex-none md:rounded-xl md:border md:border-border md:bg-background md:py-12">
-        <p className="text-xl font-semibold text-foreground">{parts.join(' · ')}</p>
-        <div className="contents md:flex md:flex-row md:items-center md:justify-center md:gap-3">
-        <Button size="lg" className="min-h-[64px] w-full max-w-sm text-lg font-semibold md:w-auto md:min-w-[200px]" onClick={() => { setPhotoUrl(null); setQrPresent(false); setD(emptyDraft()); }}>
-          Prochaine rencontre
-        </Button>
-        <Button variant="link" onClick={onHome}>
-          Retour à l'accueil
-        </Button>
-        </div>
-      </div>
-      </div>
+      <MeetingSaved
+        line1={line1}
+        line2={line2}
+        before={savedStats?.before ?? empty}
+        after={savedStats?.after ?? empty}
+        goal={goal}
+        onNext={() => { setPhotoUrl(null); setQrPresent(false); setSavedStats(null); setD(emptyDraft()); }}
+        onHome={onHome}
+      />
     );
   }
 
@@ -825,23 +853,50 @@ export default function NewMeetingFlow({
           </Button>
         </div>
       )}
-      <div className="h-1 w-full bg-muted">
-        <div className="h-1 bg-primary transition-all" style={{ width: `${progress * 100}%` }} />
-      </div>
-      <div className="flex items-center gap-2 px-2 py-2">
-        <Button variant="ghost" className="min-h-[44px] px-2" onClick={back}>
-          <ArrowLeft className="mr-1 h-5 w-5" /> Retour
+      <div className="flex items-center gap-3 px-2 py-2">
+        <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0" aria-label="Retour" onClick={back}>
+          <ArrowLeft className="h-5 w-5" />
         </Button>
-        {title && d.step !== 'who' && <span className="truncate text-sm text-muted-foreground">{title}</span>}
+        <div className="flex-1">
+          <ProgressBar value={progress} done={counter.index === counter.total} label="Étapes de la rencontre" />
+        </div>
+        <span className="shrink-0 pr-2 text-[13px] tabular-nums text-muted-foreground">
+          {counter.index}/{counter.total}
+        </span>
       </div>
 
-      <div ref={panelRef} className="flex flex-1 flex-col gap-4 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div ref={panelRef} className="flex flex-1 flex-col px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <motion.div
+        key={d.step}
+        className="flex flex-1 flex-col gap-4"
+        initial={calm ? { opacity: 0 } : { opacity: 0, y: 16 * stepDir }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: calm ? 0.12 : 0.2, ease: 'easeOut' }}
+      >
+        {REMINDER_STEPS.has(d.step) && (title || d.name) && (
+          <div className="flex items-center gap-3">
+            <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-booth-sky text-[13px] font-medium text-foreground">
+              {initials(d.name || d.company)}
+            </span>
+            <p className="min-w-0 flex-1 truncate text-sm">
+              <span className="font-medium">{d.name.trim() || d.company.trim()}</span>
+              {d.name.trim() && d.company.trim() && <span className="text-muted-foreground"> · {d.company.trim()}</span>}
+            </p>
+            {d.potential && d.relationship !== 'customer' && <PotentialBadge value={d.potential} className="shrink-0" />}
+          </div>
+        )}
         {d.step === 'who' && meetingWait && (
           <div role="status" aria-live="polite" className="flex flex-1 flex-col items-center justify-center gap-5 py-10 text-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 motion-safe:animate-pulse">
-              <Mic className="h-10 w-10 text-primary" aria-hidden="true" />
+            <div className="relative flex h-20 w-20 items-center justify-center">
+              <motion.span
+                aria-hidden="true"
+                className="absolute inset-0 rounded-full bg-primary/10"
+                animate={calm ? undefined : { scale: [1, 1.06, 1] }}
+                transition={calm ? undefined : { duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <Mic className="relative h-10 w-10 text-primary" aria-hidden="true" />
             </div>
-            <h2 className="text-2xl font-extrabold tracking-[-0.02em]">Je prépare la fiche…</h2>
+            <h2 className="text-[26px] font-semibold leading-tight tracking-[-0.01em]">Je prépare la fiche…</h2>
             <p className="text-lg font-medium">{waitPhase === 0 ? 'Écoute de votre dictée' : 'Remplissage de la fiche'}</p>
             <p className="max-w-sm text-base text-muted-foreground">Quelques secondes. Vous pourrez tout vérifier et corriger.</p>
             <Button variant="outline" className="min-h-[56px] w-full max-w-sm text-base" onClick={cancelDictation}>
@@ -1306,6 +1361,7 @@ export default function NewMeetingFlow({
             </div>
           </>
         )}
+      </motion.div>
       </div>
     </div>
     </div>
