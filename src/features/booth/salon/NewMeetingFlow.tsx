@@ -51,6 +51,7 @@ import type { BoothCache } from '../sync/cache';
 import { enqueue, newId } from '../sync/engine';
 import { clearDraft, emptyDraft, saveDraft, type FlowStep, type MeetingDraft } from './draft';
 import VoiceDictation from '../voice/VoiceDictation';
+import type { StartMode } from '../home/goal';
 import type { VoiceRecording } from '../voice/useVoiceRecorder';
 import { blobToBase64 } from '../voice/base64';
 import { applyVoiceFields } from '../voice/applyVoiceFields';
@@ -133,7 +134,10 @@ export default function NewMeetingFlow({
   initial,
   onHome,
   cameraRetry = null,
+  startMode = null,
 }: {
+  /** Ouverture directe depuis une tuile de l'accueil. */
+  startMode?: StartMode | null;
   cache: BoothCache;
   me: string;
   online: boolean;
@@ -300,6 +304,19 @@ export default function NewMeetingFlow({
     if (!el) return;
     el.addEventListener('cancel', clearCameraPending);
     return () => el.removeEventListener('cancel', clearCameraPending);
+  }, []);
+
+  // Ouverture directe : badge → lecteur QR ; carte → choix carte ou badge mis en avant
+  // (l'iPhone exige un toucher pour ouvrir l'appareil photo).
+  useEffect(() => {
+    if (startMode === 'badge') {
+      setScanMsg(null);
+      setScanning(true);
+    } else if (startMode === 'card') {
+      setCardMsg(null);
+      setKindPicker(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -934,6 +951,7 @@ export default function NewMeetingFlow({
                 disabled={!online || voiceBusy}
                 disabledText={!online ? 'La dictée qui remplit la fiche demande du réseau. Sans réseau, dictez votre note à l\u2019étape Détails.' : undefined}
                 footer={remainingLabel(remaining) && <p className="text-xs text-muted-foreground">{remainingLabel(remaining)}</p>}
+                autoStart={startMode === 'dictate' && d.history.length === 0}
                 onRecorded={(r) => void dictateMeeting(r)}
               />
             )}
