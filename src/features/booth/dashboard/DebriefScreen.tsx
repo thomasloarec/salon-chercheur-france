@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Copy, Loader2, RefreshCw, Share2, Sparkles } from 'lucide-react';
 import { boothErrorMessage, debriefSummary, type BoothDebriefSummary } from '@/lib/booth/rpc';
 import { Button } from '@/components/ui/button';
+import AppButton from '../ui/ChunkyButton';
+import { CalendarIllustration, EmptyState } from '../ui/illustrations';
 import { toast } from '@/hooks/use-toast';
 import type { BoothCache } from '../sync/cache';
 import type { Interaction } from '@/lib/booth/types';
@@ -204,6 +206,10 @@ export default function DebriefScreen({
         <DayChips days={days} value={day} onChange={setDay} allowAll={false} />
         <p className="text-lg font-semibold">{summary}</p>
 
+        {m.meetings === 0 ? (
+          <EmptyState art={<CalendarIllustration />} title="Aucune rencontre ce jour-là" />
+        ) : (
+        <>
         <section>
           <h3 className="mb-2 font-semibold">À rappeler en priorité</h3>
           {data.priority.length === 0 ? (
@@ -269,7 +275,7 @@ export default function DebriefScreen({
             {m.byMember.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aucune rencontre.</p>
             ) : (
-              <ul className="divide-y divide-border rounded-lg border border-border">
+              <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-background">
                 {m.byMember.map((r) => (
                   <li key={r.userId} className="flex justify-between px-3 py-2 text-sm">
                     <span>{memberName(cache, r.userId)}</span>
@@ -280,21 +286,22 @@ export default function DebriefScreen({
             )}
           </section>
         )}
+        </>
+        )}
 
-        <Button size="lg" className="min-h-[56px] w-full text-base md:w-auto md:min-w-[200px] md:min-h-[48px]" onClick={() => void share()}>
-          <Share2 className="mr-2 h-5 w-5" /> Partager le débrief
-        </Button>
+        <AppButton className="md:w-auto md:min-w-[200px]" onClick={() => void share()}>
+          <Share2 className="h-5 w-5" /> Partager le débrief
+        </AppButton>
         {cache.full_features && (
           <div className="space-y-1">
-            <Button
-              size="lg"
-              variant="outline"
-              className="min-h-[56px] w-full text-base md:w-auto md:min-w-[200px] md:min-h-[48px]"
+            <AppButton
+              variant="secondary"
+              className="md:w-auto md:min-w-[200px]"
               disabled={!online || aiLoading}
               onClick={() => void runSummary()}
             >
-              <Sparkles className="mr-2 h-5 w-5" /> Synthèse IA
-            </Button>
+              <Sparkles className="h-5 w-5" /> Synthèse IA
+            </AppButton>
             {!online && <p className="text-xs text-muted-foreground">La synthèse demande du réseau.</p>}
           </div>
         )}
