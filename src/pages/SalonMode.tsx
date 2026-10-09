@@ -379,7 +379,7 @@ export default function SalonMode() {
   const ws = cache?.workspace;
   const todayYmd = dayInTz(new Date(), ws?.timezone || 'Europe/Paris');
   const cardAvailable = useCardScanAvailable(user?.id ?? '', cache?.exhibitorId ?? '', workspaceId, sync.online);
-  const voiceSupported = typeof window !== 'undefined' && typeof MediaRecorder !== 'undefined' && !!navigator.mediaDevices?.getUserMedia && pickAudioMime() !== null;
+  const voiceSupported = typeof window !== 'undefined' && typeof MediaRecorder !== 'undefined' && !!navigator.mediaDevices?.getUserMedia && pickAudioMime((t) => MediaRecorder.isTypeSupported?.(t) ?? false) !== null;
   const actionsCount = cache && user ? openActions(cache, user.id).length : 0;
   const goList = (filter: 'pending' | 'review' | null) => { setCardFilter(filter); setListFilter(null); setListBack('home'); setScreen('list'); };
   const menuRows: MenuRow[] = !cache || !ws
