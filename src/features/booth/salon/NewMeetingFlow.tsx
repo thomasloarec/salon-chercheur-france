@@ -1027,7 +1027,7 @@ export default function NewMeetingFlow({
 
         {d.step === 'coord' && (
           <>
-            <h2 className="text-2xl font-bold">Coordonnée</h2>
+            <h2 className="text-2xl font-bold">Coordonnées</h2>
             {duplicate ? (
               dupBlock
             ) : (
