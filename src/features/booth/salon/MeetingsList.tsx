@@ -210,7 +210,7 @@ export default function MeetingsList({
         </div>
 
         {groups.length === 0 ? (
-          rows.length === 0 && !query.trim() && !day && !member && !idFilter && !cardFilter ? (
+          !cache.interactions.some((x) => x.workspace_id === cache.workspaceId && isCompleted(x)) ? (
             <EmptyState
               art={<StandIllustration />}
               title="Votre stand est prêt. Première rencontre ?"
