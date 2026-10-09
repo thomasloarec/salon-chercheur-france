@@ -2,6 +2,14 @@ import { useMemo, useState } from 'react';
 import Chip from '../ui/Chip';
 import { ArrowLeft, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
+import CountUp from '../ui/CountUp';
+import PotentialBadge from '../ui/PotentialBadge';
+import AppButton from '../ui/ChunkyButton';
+import { useCalmMotion } from '../ui/motion';
+import type { Interaction } from '@/lib/booth/types';
+
+type Potential = NonNullable<Interaction['potential']>;
 import type { BoothCache } from '../sync/cache';
 import { shortDate, timeInTz } from '../salon/display';
 import { computeMetrics, formatEuros, type Scope } from './metrics';
@@ -17,29 +25,37 @@ export const memberName = (cache: BoothCache, userId: string) => {
   return t?.name || t?.email || 'Membre';
 };
 
-function Tile({ value, label, sub, subWarn, onClick }: { value: string; label: string; sub?: string; subWarn?: boolean; onClick?: () => void }) {
+function Tile({ value, label, sub, subWarn, onClick }: { value: number; label: string; sub?: string; subWarn?: boolean; onClick?: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex min-h-[96px] flex-col md:min-h-0 items-start justify-center rounded-xl border border-border bg-card p-4 text-left active:bg-muted"
+      className="flex min-h-[96px] flex-col md:min-h-0 items-start justify-center rounded-xl border border-border bg-background p-4 text-left active:bg-muted"
     >
-      <span className="text-3xl font-semibold leading-none tabular-nums">{value}</span>
-      <span className="mt-1 text-sm text-muted-foreground">{label}</span>
+      <span className="text-[28px] font-semibold leading-none"><CountUp from={0} to={value} /></span>
+      <span className="mt-1 text-sm font-medium text-muted-foreground">{label}</span>
       {sub && <span className={`mt-0.5 text-xs font-medium ${subWarn ? 'text-warning-foreground' : 'text-muted-foreground'}`}>{sub}</span>}
     </button>
   );
 }
 
-function Bars({ rows }: { rows: { label: string; count: number }[] }) {
+const POT_BAR: Record<string, string> = { hot: 'bg-flame', good: 'bg-primary', explore: 'bg-booth-explore-fg', none: 'bg-muted-foreground' };
+
+function Bars({ rows }: { rows: { label: string; count: number; potential?: Potential }[] }) {
+  const calm = useCalmMotion();
   const max = Math.max(1, ...rows.map((r) => r.count));
   return (
     <ul className="space-y-2">
-      {rows.map((r) => (
+      {rows.map((r, idx) => (
         <li key={r.label} className="flex items-center gap-3 text-sm">
-          <span className="w-24 shrink-0 text-muted-foreground">{r.label}</span>
-          <span className="h-3 flex-1 overflow-hidden rounded-full bg-muted md:max-w-[480px]">
-            <span className="block h-full rounded-full bg-primary" style={{ width: `${(r.count / max) * 100}%` }} />
+          <span className="w-28 shrink-0">{r.potential ? <PotentialBadge value={r.potential} /> : <span className="text-muted-foreground">{r.label}</span>}</span>
+          <span className="h-3 flex-1 overflow-hidden rounded-full bg-booth-pill md:max-w-[480px]">
+            <motion.span
+              className={`block h-full rounded-full ${r.potential ? POT_BAR[r.potential] : 'bg-primary'}`}
+              initial={calm ? false : { width: 0 }}
+              animate={{ width: `${(r.count / max) * 100}%` }}
+              transition={calm ? { duration: 0 } : { duration: 0.5, delay: idx * 0.04, ease: 'easeOut' }}
+            />
           </span>
           <span className="w-8 text-right tabular-nums">{r.count}</span>
         </li>
@@ -121,23 +137,23 @@ export default function DashboardScreen({
         </div>
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-          <Tile value={String(m.meetings)} label="Rencontres" onClick={() => onOpenList({ ids: m.ids.all, label: 'Rencontres' })} />
-          <Tile value={String(m.people)} label="Personnes rencontrées" onClick={() => onOpenList({ ids: m.ids.all, label: 'Personnes rencontrées' })} />
-          <Tile value={String(m.hot)} label="Prospects chauds" onClick={() => onOpenList({ ids: m.ids.hot, label: 'Prospects chauds' })} />
+          <Tile value={m.meetings} label="Rencontres" onClick={() => onOpenList({ ids: m.ids.all, label: 'Rencontres' })} />
+          <Tile value={m.people} label="Personnes rencontrées" onClick={() => onOpenList({ ids: m.ids.all, label: 'Personnes rencontrées' })} />
+          <Tile value={m.hot} label="Prospects chauds" onClick={() => onOpenList({ ids: m.ids.hot, label: 'Prospects chauds' })} />
           <Tile
-            value={String(m.projects)}
+            value={m.projects}
             label="Projets concrets"
             sub={[m.projectsAmount > 0 ? formatEuros(m.projectsAmount, cur) : '', m.projectsWithoutAmount > 0 ? `dont ${m.projectsWithoutAmount} sans montant` : ''].filter(Boolean).join(' · ') || undefined}
             onClick={() => onOpenList({ ids: m.ids.withProject, label: 'Projets concrets' })}
           />
           <Tile
-            value={String(m.actionsTodo)}
+            value={m.actionsTodo}
             label="Actions à faire"
             sub={m.actionsOverdue > 0 ? `dont ${m.actionsOverdue} en retard` : undefined}
             subWarn
             onClick={onActions}
           />
-          <Tile value={String(m.customers)} label="Clients rencontrés" onClick={() => onOpenList({ ids: m.ids.customers, label: 'Clients rencontrés' })} />
+          <Tile value={m.customers} label="Clients rencontrés" onClick={() => onOpenList({ ids: m.ids.customers, label: 'Clients rencontrés' })} />
         </div>
 
         <p className="text-xs text-muted-foreground">
@@ -146,31 +162,31 @@ export default function DashboardScreen({
         </p>
 
         <div className="space-y-4 md:flex md:flex-row md:flex-wrap md:gap-3 md:space-y-0">
-        <Button size="lg" variant="secondary" className="min-h-[56px] w-full text-base md:w-auto md:min-w-[200px] md:min-h-[48px]" onClick={onDebrief}>
-          <ClipboardList className="mr-2 h-5 w-5" /> Débrief du jour
-        </Button>
+        <AppButton className="md:w-auto md:min-w-[200px]" onClick={onDebrief}>
+          <ClipboardList className="h-5 w-5" /> Débrief du jour
+        </AppButton>
         {isManager && onOutcome && (
-          <Button size="lg" variant="outline" className="min-h-[56px] w-full text-base md:w-auto md:min-w-[200px] md:min-h-[48px]" onClick={onOutcome}>
+          <AppButton variant="secondary" className="md:w-auto md:min-w-[200px]" onClick={onOutcome}>
             Bilan du salon
-          </Button>
+          </AppButton>
         )}
         </div>
 
         <div className="space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0">
 
-        <section className="rounded-xl border border-border p-4">
+        <section className="rounded-xl border border-border bg-background p-4">
           <h3 className="mb-3 font-semibold">Potentiel des prospects</h3>
           <Bars
             rows={[
-              { label: 'Chaud', count: m.potential.hot },
-              { label: 'Bon', count: m.potential.good },
-              { label: 'À explorer', count: m.potential.explore },
-              { label: 'Aucun', count: m.potential.none },
+              { label: 'Chaud', count: m.potential.hot, potential: 'hot' },
+              { label: 'Bon', count: m.potential.good, potential: 'good' },
+              { label: 'À explorer', count: m.potential.explore, potential: 'explore' },
+              { label: 'Aucun', count: m.potential.none, potential: 'none' },
             ]}
           />
         </section>
 
-        <section className="rounded-xl border border-border p-4">
+        <section className="rounded-xl border border-border bg-background p-4">
           <h3 className="mb-3 font-semibold">{m.seriesMode === 'day' ? 'Rencontres par jour' : 'Rencontres par heure'}</h3>
           {m.series.length === 0 ? (
             <p className="text-sm text-muted-foreground">Aucune rencontre.</p>
@@ -181,7 +197,7 @@ export default function DashboardScreen({
 
         {isManager && (
           <>
-            <section className="rounded-xl border border-border p-4">
+            <section className="rounded-xl border border-border bg-background p-4">
               <h3 className="mb-3 font-semibold">Par membre</h3>
               {m.byMember.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Aucune rencontre.</p>
@@ -211,7 +227,7 @@ export default function DashboardScreen({
               )}
             </section>
 
-            <section className="rounded-xl border border-border p-4">
+            <section className="rounded-xl border border-border bg-background p-4">
               <h3 className="mb-3 font-semibold">Rentabilité</h3>
               {m.totalCost === null ? (
                 <p className="text-sm text-muted-foreground">Renseignez le coût du salon dans l'espace exposant pour voir la rentabilité.</p>
