@@ -34,8 +34,22 @@ export function onBoothChange(fn: Listener) {
 }
 export const emitBoothChange = () => listeners.forEach((f) => f());
 
-export const readCache = (userId: string, workspaceId: string) =>
-  get<BoothCache>('cache', cacheKey(userId, workspaceId));
+/** Retire les rencontres et projets qui n'appartiennent pas à ce salon (ou sans salon). */
+export function sanitizeCache(c: BoothCache): { cache: BoothCache; removed: boolean } {
+  const own = <T extends { workspace_id?: string | null }>(r: T) => !!r && r.workspace_id === c.workspaceId;
+  const interactions = (c.interactions ?? []).filter(own);
+  const opportunities = (c.opportunities ?? []).filter(own);
+  const removed = interactions.length !== (c.interactions ?? []).length || opportunities.length !== (c.opportunities ?? []).length;
+  return { cache: removed ? { ...c, interactions, opportunities } : c, removed };
+}
+
+export async function readCache(userId: string, workspaceId: string) {
+  const raw = await get<BoothCache>('cache', cacheKey(userId, workspaceId));
+  if (!raw) return raw;
+  const { cache, removed } = sanitizeCache(raw);
+  if (removed) void put('cache', cache).catch(() => undefined);
+  return cache;
+}
 
 export async function writeCache(c: BoothCache) {
   await put('cache', c);
@@ -93,7 +107,7 @@ export function mergeBootstrap(
     saved_at: new Date().toISOString(),
   };
   const contacts = b.contacts?.items ?? [];
-  return {
+  return sanitizeCache({
     ...base,
     exhibitorId: b.workspace.exhibitor_id,
     workspace: b.workspace,
@@ -109,7 +123,7 @@ export function mergeBootstrap(
     full_features: b.full_features,
     next_since: b.next_since ?? base.next_since,
     saved_at: new Date().toISOString(),
-  };
+  }).cache;
 }
 
 async function cachesForExhibitor(userId: string, exhibitorId: string) {
@@ -132,7 +146,7 @@ export async function applyLocalRow(
     const list = c[name] as unknown as AnyRow[];
     const idx = list.findIndex((r) => r.id === id);
     const wsId = data.workspace_id as string | undefined;
-    if (idx < 0 && kind !== 'contact' && wsId && wsId !== c.workspaceId) continue;
+    if (idx < 0 && kind !== 'contact' && wsId !== c.workspaceId) continue;
     const next = [...list];
     if (kind === 'contact' && (data.archived_at || data.merged_into_id)) {
       if (idx >= 0) next.splice(idx, 1);

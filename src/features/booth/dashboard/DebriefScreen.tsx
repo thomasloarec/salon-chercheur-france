@@ -44,7 +44,7 @@ export default function DebriefScreen({
     const meetings = cache.interactions.filter((i) => ids.has(i.id));
     const priority = meetings
       .filter((i) => i.potential === 'hot' || projectIds.has(i.id))
-      .sort((a, b) => Number(b.potential === 'hot') - Number(a.potential === 'hot') || b.occurred_at.localeCompare(a.occurred_at));
+      .sort((a, b) => Number(b.potential === 'hot') - Number(a.potential === 'hot') || (b.occurred_at ?? '').localeCompare(a.occurred_at ?? ''));
 
     const tomorrow = addDays(today, 1);
     const actions = cache.interactions

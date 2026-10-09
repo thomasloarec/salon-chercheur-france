@@ -27,7 +27,7 @@ import { primaryLabel, secondaryLabel } from './display';
 
 const defaultKeep = (contacts: BoothDuplicateContact[]) =>
   [...contacts].sort(
-    (a, b) => (b.interactions_count ?? 0) - (a.interactions_count ?? 0) || a.created_at.localeCompare(b.created_at),
+    (a, b) => (b.interactions_count ?? 0) - (a.interactions_count ?? 0) || (a.created_at ?? '').localeCompare(b.created_at ?? ''),
   )[0]?.id ?? null;
 
 function GroupCard({

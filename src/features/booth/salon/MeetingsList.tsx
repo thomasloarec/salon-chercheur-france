@@ -84,7 +84,7 @@ export default function MeetingsList({
         const c = contacts.get(i.contact_id);
         return [fullName(c), c?.company_name, c?.email].some((v) => (v ?? '').toLowerCase().includes(q));
       })
-      .sort((a, b) => b.occurred_at.localeCompare(a.occurred_at));
+      .sort((a, b) => (b.occurred_at ?? '').localeCompare(a.occurred_at ?? ''));
   }, [cache.interactions, cache.workspaceId, tab, me, query, contacts, cardFilter, cardByContact, idFilter, idSet, member]);
 
   const ws = cache.workspace;
@@ -94,7 +94,7 @@ export default function MeetingsList({
       const d = salonDay(i.occurred_at, ws);
       m.set(d.key, d);
     }
-    return [...m.values()].sort((a, b) => a.key.localeCompare(b.key));
+    return [...m.values()].sort((a, b) => (a.key ?? '').localeCompare(b.key ?? ''));
   }, [cache.interactions, cache.workspaceId, ws]);
 
   const groups = useMemo(() => {
@@ -105,7 +105,7 @@ export default function MeetingsList({
       if (!g.has(d.key)) g.set(d.key, { day: d, items: [] });
       g.get(d.key)!.items.push(i);
     }
-    return [...g.values()].sort((a, b) => b.day.key.localeCompare(a.day.key));
+    return [...g.values()].sort((a, b) => (b.day.key ?? '').localeCompare(a.day.key ?? ''));
   }, [rows, ws, day]);
 
   return (
