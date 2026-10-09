@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import AppButton from '../ui/ChunkyButton';
-import Chip from '../ui/Chip';
+import BoothChip from '../ui/Chip';
 import PotentialBadge from '../ui/PotentialBadge';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import VoiceDictation from '../voice/VoiceDictation';
@@ -52,9 +52,9 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 function Chip({ selected, onClick, children, disabled }: { selected?: boolean; onClick: () => void; children: React.ReactNode; disabled?: boolean }) {
   return (
-    <Chip disabled={disabled} selected={selected} onClick={onClick}>
+    <BoothChip disabled={disabled} selected={selected} onClick={onClick} className="disabled:opacity-60">
       {children}
-    </Chip>
+    </BoothChip>
   );
 }
 
