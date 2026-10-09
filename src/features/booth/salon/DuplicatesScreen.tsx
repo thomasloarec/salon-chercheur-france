@@ -144,7 +144,7 @@ export default function DuplicatesScreen({
         <Button variant="ghost" className="min-h-[44px] px-2" onClick={onBack}>
           <ArrowLeft className="mr-1 h-5 w-5" /> Accueil
         </Button>
-        <h2 className="text-lg font-extrabold tracking-[-0.02em]">Doublons</h2>
+        <h2 className="text-lg font-semibold tracking-[-0.02em]">Doublons</h2>
       </div>
       <div className="space-y-3 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         {!online ? (

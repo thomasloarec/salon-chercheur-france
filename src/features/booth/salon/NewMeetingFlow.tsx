@@ -71,7 +71,6 @@ import {
   ymd,
 } from './labels';
 
-const ORDER: FlowStep[] = ['who', 'verify', 'coord', 'rel', 'pot', 'concrete', 'action', 'details', 'done'];
 
 interface Suggestion {
   id: string;
@@ -447,7 +446,7 @@ export default function NewMeetingFlow({
     if ((d.captureSource !== 'card' && d.captureSource !== 'voice') || !d.cardConfidence) return false;
     return keys.some((k) => d.cardConfidence?.[k] === 'medium' || d.cardConfidence?.[k] === 'low');
   };
-  const warnCls = (w: boolean) => (w ? ' border-2 border-warning' : '');
+  const warnCls = (w: boolean) => (w ? ' border border-warning' : '');
   const Warn = ({ on }: { on: boolean }) => (on ? <p className="-mt-2 text-xs font-medium text-warning-foreground">À vérifier</p> : null);
 
   const patch = (p: Partial<MeetingDraft>) => setD((prev) => ({ ...prev, ...p }));
