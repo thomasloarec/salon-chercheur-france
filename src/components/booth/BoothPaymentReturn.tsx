@@ -19,8 +19,6 @@ export function OnboardingCard({ url }: { url: string | null | undefined }) {
         <a href={url} target="_blank" rel="noopener noreferrer">Réserver ma prise en main</a>
       </Button>
     </div>
-    <OnboardingCard url={billing.data?.onboarding_booking_url} />
-    </div>
   );
 }
 
@@ -80,6 +78,8 @@ export default function BoothPaymentReturn({ exhibitorId }: { exhibitorId: strin
       >
         Inviter mon équipe
       </Button>
+    </div>
+    <OnboardingCard url={billing.data?.onboarding_booking_url} />
     </div>
   );
 }
