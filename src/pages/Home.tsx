@@ -59,7 +59,6 @@ function useInView<T extends HTMLElement>(threshold = 0.2) {
 
 
 const floorTo = (n: number, step: number) => Math.floor(n / step) * step;
-const frThousands = (n: number) => n.toLocaleString('fr-FR');
 
 const LOOP_CARDS = [
   { icon: Users, title: 'Les visiteurs', text: "Perdus dans une offre illisible, ils ne savent plus quel salon mérite le déplacement. Alors ils viennent moins." },
