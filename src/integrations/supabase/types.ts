@@ -1713,6 +1713,45 @@ export type Database = {
           },
         ]
       }
+      booth_billing_settings: {
+        Row: {
+          annual_amount_cents: number
+          annual_price_id: string
+          currency: string
+          id: boolean
+          pass_amount_cents: number
+          pass_grace_days: number
+          pass_price_id: string
+          stripe_livemode: boolean
+          updated_at: string
+          vat_mode: string
+        }
+        Insert: {
+          annual_amount_cents: number
+          annual_price_id: string
+          currency?: string
+          id?: boolean
+          pass_amount_cents: number
+          pass_grace_days?: number
+          pass_price_id: string
+          stripe_livemode?: boolean
+          updated_at?: string
+          vat_mode?: string
+        }
+        Update: {
+          annual_amount_cents?: number
+          annual_price_id?: string
+          currency?: string
+          id?: boolean
+          pass_amount_cents?: number
+          pass_grace_days?: number
+          pass_price_id?: string
+          stripe_livemode?: boolean
+          updated_at?: string
+          vat_mode?: string
+        }
+        Relationships: []
+      }
       booth_card_scans: {
         Row: {
           attempts: number
@@ -2142,6 +2181,160 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "booth_workspaces"
             referencedColumns: ["id", "exhibitor_id"]
+          },
+        ]
+      }
+      booth_payments: {
+        Row: {
+          amount_cents: number
+          buyer_email: string | null
+          buyer_user_id: string
+          created_at: string
+          currency: string
+          event_id: string | null
+          exhibitor_id: string
+          id: string
+          invoice_pdf: string | null
+          invoice_url: string | null
+          livemode: boolean
+          paid_at: string | null
+          plan: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_invoice_id: string | null
+          stripe_payment_intent: string | null
+          stripe_session_id: string | null
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          amount_cents: number
+          buyer_email?: string | null
+          buyer_user_id: string
+          created_at?: string
+          currency: string
+          event_id?: string | null
+          exhibitor_id: string
+          id?: string
+          invoice_pdf?: string | null
+          invoice_url?: string | null
+          livemode: boolean
+          paid_at?: string | null
+          plan: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          buyer_email?: string | null
+          buyer_user_id?: string
+          created_at?: string
+          currency?: string
+          event_id?: string | null
+          exhibitor_id?: string
+          id?: string
+          invoice_pdf?: string | null
+          invoice_url?: string | null
+          livemode?: boolean
+          paid_at?: string | null
+          plan?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_invoice_id?: string | null
+          stripe_payment_intent?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booth_payments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "admin_events_exhibitor_coverage"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_payments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "crm_radar_participations_view"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "booth_payments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "event_salon_concept"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "booth_payments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_payments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events_geo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_payments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_salons_email_missing"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "booth_payments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_outreach_eligible"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_payments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_veille_exposants_file"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_payments_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitor_completion"
+            referencedColumns: ["exhibitor_id"]
+          },
+          {
+            foreignKeyName: "booth_payments_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_payments_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booth_payments_exhibitor_id_fkey"
+            columns: ["exhibitor_id"]
+            isOneToOne: false
+            referencedRelation: "participations_with_exhibitors"
+            referencedColumns: ["exhibitor_uuid"]
           },
         ]
       }
@@ -15803,6 +15996,31 @@ export type Database = {
         Returns: boolean
       }
       _booth_norm_phone: { Args: { p: string }; Returns: string }
+      _booth_payment_attach: {
+        Args: { p_payment_id: string; p_session_id: string }
+        Returns: undefined
+      }
+      _booth_payment_expire: {
+        Args: { p_session_id: string }
+        Returns: undefined
+      }
+      _booth_payment_refunded: {
+        Args: { p_payment_intent: string }
+        Returns: Json
+      }
+      _booth_payment_settle: {
+        Args: {
+          p_amount_total: number
+          p_currency: string
+          p_customer_id: string
+          p_invoice_id: string
+          p_invoice_pdf: string
+          p_invoice_url: string
+          p_payment_intent: string
+          p_session_id: string
+        }
+        Returns: Json
+      }
       _booth_require_user: { Args: never; Returns: string }
       _booth_resolve_contact: {
         Args: { p_contact_id: string; p_exhibitor_id: string }
@@ -16566,6 +16784,10 @@ export type Database = {
         }
         Returns: Json
       }
+      booth_billing_overview: {
+        Args: { p_exhibitor_id: string }
+        Returns: Json
+      }
       booth_bootstrap: {
         Args: { p_since?: string; p_workspace_id: string }
         Returns: Json
@@ -16577,6 +16799,10 @@ export type Database = {
       }
       booth_card_scan_link: {
         Args: { p_contact_id: string; p_scan_id: string }
+        Returns: Json
+      }
+      booth_checkout_prepare: {
+        Args: { p_event_id?: string; p_exhibitor_id: string; p_plan: string }
         Returns: Json
       }
       booth_create_workspace: {
