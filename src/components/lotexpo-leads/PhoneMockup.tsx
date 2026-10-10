@@ -1,6 +1,6 @@
 import {
   Mic, QrCode, Camera, Plus, Check, Phone, FileText, Receipt, CalendarDays, Ban, ChevronRight, ChevronLeft,
-  ListChecks, Users, LayoutDashboard, BarChart3, WifiOff,
+  ListChecks, Users, LayoutDashboard, WifiOff,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PotentialBadge from '@/features/booth/ui/PotentialBadge';
@@ -190,4 +190,3 @@ export function SavedPhone({ width = 260 }: { width?: number }) {
   );
 }
 
-export { BarChart3 };
