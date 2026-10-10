@@ -11,7 +11,9 @@ import { CountUp } from '@/components/ui/count-up';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import PhoneMockup, { ActionPhone, SavedPhone } from '@/components/lotexpo-leads/PhoneMockup';
+import { HomePhone, ActionPhone, SavedPhone } from '@/components/lotexpo-leads/PhoneMockup';
+import { BrowserFrame } from '@/components/lotexpo-leads/DeviceFrames';
+import DesktopHomeMock from '@/components/lotexpo-leads/DesktopHomeMock';
 import LeadsPricingCards from '@/components/lotexpo-leads/LeadsPricingCards';
 import { joinBeta, manageLink } from '@/components/lotexpo-leads/joinBeta';
 import { useAuth } from '@/contexts/AuthContext';
@@ -149,7 +151,11 @@ export default function LotexpoLeads() {
               </div>
             </Reveal>
             <Reveal delay={150}>
-              <PhoneMockup />
+              <div className="relative hidden min-h-[540px] pl-36 pt-4 lg:block">
+                <BrowserFrame><DesktopHomeMock /></BrowserFrame>
+                <div className="absolute bottom-0 left-0"><HomePhone width={240} /></div>
+              </div>
+              <div className="lg:hidden"><HomePhone width={280} /></div>
             </Reveal>
           </div>
         </section>
@@ -215,10 +221,33 @@ export default function LotexpoLeads() {
                 </Reveal>
               ))}
             </div>
-            <div className="mt-10 hidden justify-center gap-10 lg:flex">
-              <ActionPhone />
-              <SavedPhone />
+            <div className="mt-12 hidden flex-wrap justify-center gap-8 md:flex">
+              {[
+                { el: <HomePhone width={260} />, c: '1. Capturer' },
+                { el: <ActionPhone width={260} />, c: '2. Qualifier' },
+                { el: <SavedPhone width={260} />, c: '3. Suivre' },
+              ].map((x, i) => (
+                <Reveal key={x.c} delay={i * 100} className="flex flex-col items-center">
+                  {x.el}
+                  <p className="mt-4 font-medium">{x.c}</p>
+                </Reveal>
+              ))}
             </div>
+            <div className="mt-10 flex justify-center md:hidden"><ActionPhone width={260} /></div>
+          </div>
+        </section>
+
+        {/* 4 bis. Téléphone et ordinateur */}
+        <section className="bg-secondary/40 px-6 py-14 md:py-20">
+          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1fr_1.4fr]">
+            <Reveal>
+              <h2 className="text-2xl font-semibold leading-tight md:text-3xl">Au stand sur le téléphone, au bureau sur l'ordinateur</h2>
+              <p className="mt-4 text-lg text-muted-foreground">Le manager suit le salon en direct depuis son ordinateur : objectif du jour, rencontres de toute l'équipe, actions à faire, puis le bilan et l'export.</p>
+              <Button className={cn(PRIMARY, 'mt-7')} onClick={onJoin}>{ctaLabel}</Button>
+            </Reveal>
+            <Reveal delay={150}>
+              <BrowserFrame><DesktopHomeMock /></BrowserFrame>
+            </Reveal>
           </div>
         </section>
 
