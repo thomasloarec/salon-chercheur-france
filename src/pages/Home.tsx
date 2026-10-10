@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/carousel';
 import { usePublicStats } from '@/hooks/usePublicStats';
 import { useUpcomingEvents } from '@/hooks/useUpcomingEvents';
+import { CountUp } from '@/components/ui/count-up';
 
 /* ================================================================== */
 /* Utils : reduced motion, in-view, typewriter, count-up               */
@@ -65,28 +66,6 @@ const LOOP_CARDS = [
   { icon: Store, title: 'Les exposants', text: "Engager des milliers d'euros sans certitude de rencontrer leur public devient trop risqué. Alors ils investissent moins." },
   { icon: Building2, title: 'Les salons', text: "Moins de visiteurs qualifiés, moins d'exposants engagés : la promesse de faire se rencontrer un écosystème ne tient plus." },
 ];
-
-function CountUp({ target }: { target: number }) {
-  const reduced = usePrefersReducedMotion();
-  const [ref, inView] = useInView<HTMLSpanElement>(0.4);
-  const [value, setValue] = useState(0);
-  useEffect(() => {
-    if (!inView || target <= 0) return;
-    if (reduced) { setValue(target); return; }
-    const start = performance.now();
-    let raf = 0;
-    const step = (now: number) => {
-      const p = Math.min((now - start) / 1300, 1);
-      const e = 1 - Math.pow(1 - p, 3);
-      setValue(Math.round(target * e));
-      if (p < 1) raf = requestAnimationFrame(step);
-      else setValue(target);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [inView, target, reduced]);
-  return <span ref={ref}>{value > 0 ? `${frThousands(value)}+` : '0'}</span>;
-}
 
 /* Révélation au scroll */
 function Reveal({ children, className = '', delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
