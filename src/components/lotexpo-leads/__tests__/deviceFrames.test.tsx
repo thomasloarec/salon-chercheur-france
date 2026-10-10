@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { PhoneFrame, BrowserFrame, phoneHeight, browserHeight } from '../DeviceFrames';
+import { PhoneFrame, BrowserFrame, phoneHeight, browserHeight, measuredWidth } from '../DeviceFrames';
 import DesktopHomeMock from '../DesktopHomeMock';
 import { HomePhone, ActionPhone, SavedPhone } from '../PhoneMockup';
 
@@ -15,7 +15,15 @@ describe('cadres', () => {
   it('BrowserFrame garde le ratio 800/1280', () => {
     for (const w of [400, 640, 900]) expect(browserHeight(w) / w).toBeCloseTo(800 / 1280, 6);
     const html = renderToStaticMarkup(<BrowserFrame>a</BrowserFrame>);
-    expect(html).toContain('width:640px;height:400px');
+    expect(html).toContain('width:100%;height:212.5px');
+  });
+  it('BrowserFrame dans un conteneur de 335 px : largeur 100 % et hauteur 335 × 800 / 1280', () => {
+    // Mesure simulée : ResizeObserver renvoie 335 px, valeur passée en largeur initiale.
+    const w = measuredWidth(335);
+    expect(w).toBe(335);
+    const html = renderToStaticMarkup(<BrowserFrame defaultWidth={w}>a</BrowserFrame>);
+    expect(html).toContain(`width:100%;height:${(335 * 800) / 1280}px`);
+    expect(measuredWidth(1400)).toBe(900);
   });
   it('DesktopHomeMock rend 7 lignes', () => {
     expect(renderToStaticMarkup(<DesktopHomeMock />).match(/data-row=""/g)).toHaveLength(7);
