@@ -41,6 +41,11 @@ export function useInView<T extends HTMLElement>(threshold = 0.12) {
   return [ref, inView] as const;
 }
 
+/** Délai de transition : seulement à l'apparition, jamais si reduced motion. */
+export function revealDelay(shown: boolean, reduced: boolean, delay = 0): string {
+  return shown && !reduced ? `${delay}ms` : '0ms';
+}
+
 interface RevealProps {
   children: React.ReactNode;
   className?: string;
@@ -62,7 +67,7 @@ export const Reveal: React.FC<RevealProps> = ({ children, className, delay = 0 }
   return (
     <div
       ref={ref}
-      style={{ transitionDelay: shown && !reduced ? `${delay}ms` : '0ms' }}
+      style={{ transitionDelay: revealDelay(shown, reduced, delay) }}
       className={cn(
         'empty:hidden transition-[opacity,transform] duration-[450ms] ease-out motion-reduce:transition-none',
         shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-[10px]',

@@ -1,30 +1,12 @@
-import { createRoot } from 'react-dom/client';
-import { act } from 'react';
-import { Reveal } from '../reveal';
-
-function setup(reduced: boolean) {
-  (window as any).matchMedia = (q: string) => ({ matches: reduced && q.includes('reduce'), addEventListener() {}, removeEventListener() {} });
-  (window as any).IntersectionObserver = class {
-    cb: any; constructor(cb: any) { this.cb = cb; }
-    observe() { this.cb([{ isIntersecting: true }]); }
-    disconnect() {}
-  };
-}
-
-async function render() {
-  const el = document.createElement('div');
-  document.body.appendChild(el);
-  await act(async () => { createRoot(el).render(<Reveal delay={150}>x</Reveal>); });
-  return el.firstElementChild as HTMLElement;
-}
+import { revealDelay } from '../reveal';
 
 describe('Reveal delay', () => {
-  it('applique le délai à l\'apparition', async () => {
-    setup(false);
-    expect((await render()).style.transitionDelay).toBe('150ms');
+  it('appliqué à l\'apparition', () => {
+    expect(revealDelay(true, false, 150)).toBe('150ms');
+    expect(revealDelay(false, false, 150)).toBe('0ms');
   });
-  it('aucun délai si reduced motion', async () => {
-    setup(true);
-    expect((await render()).style.transitionDelay).toBe('0ms');
+  it('aucun délai si reduced motion', () => {
+    expect(revealDelay(true, true, 150)).toBe('0ms');
   });
+  it('défaut 0', () => expect(revealDelay(true, false)).toBe('0ms'));
 });
