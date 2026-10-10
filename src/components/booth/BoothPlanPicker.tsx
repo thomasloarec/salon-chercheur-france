@@ -55,6 +55,11 @@ export function addSearchedEvent(list: PlanPickerEvent[], ev: PlanPickerEvent) {
   return { events, selected: ev.id };
 }
 
+/** Libellé d'option : salon déjà couvert par un Pass payé. */
+export function passOptionLabel(name: string, paid: boolean) {
+  return paid ? `${name} · Pass déjà payé` : name;
+}
+
 type SearchFn = (q: string) => Promise<PlanPickerEvent[]>;
 
 const defaultSearch: SearchFn = async (q) => {
@@ -126,13 +131,20 @@ export function BoothPlanPickerView({
   onPay,
   search = defaultSearch,
 }: ViewProps) {
-  const [eventId, setEventId] = useState<string | null>(initialEventId);
+  const paidEventIds = new Set(
+    overview.payments
+      .filter((p) => p.plan === 'pass' && p.status === 'paid' && p.event_id)
+      .map((p) => p.event_id as string),
+  );
+  const safeInitial = initialEventId && !paidEventIds.has(initialEventId) ? initialEventId : null;
+  const [eventId, setEventId] = useState<string | null>(safeInitial);
   const [extra, setExtra] = useState<PlanPickerEvent[]>([]);
   const [searching, setSearching] = useState(false);
   useEffect(() => {
-    if (!eventId && initialEventId) setEventId(initialEventId);
-  }, [initialEventId, eventId]);
+    if (!eventId && safeInitial) setEventId(safeInitial);
+  }, [safeInitial, eventId]);
   const list = extra.reduce((acc, e) => addSearchedEvent(acc, e).events, upcoming);
+  const selectedPaid = !!eventId && paidEventIds.has(eventId);
   const [busy, setBusy] = useState<BoothCheckoutPlan | null>(null);
   const [error, setError] = useState<{ plan: BoothCheckoutPlan | 'any'; msg: string } | null>(
     initialError ? { plan: 'any', msg: boothErrorMessage(initialError) } : null,
@@ -180,8 +192,8 @@ export function BoothPlanPickerView({
                 </SelectTrigger>
                 <SelectContent>
                   {list.map((e) => (
-                    <SelectItem key={e.id} value={e.id}>
-                      {e.name}
+                    <SelectItem key={e.id} value={e.id} disabled={paidEventIds.has(e.id)}>
+                      {passOptionLabel(e.name, paidEventIds.has(e.id))}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -206,12 +218,13 @@ export function BoothPlanPickerView({
             </p>
             <Button
               className="mt-auto h-auto min-h-[44px] w-full whitespace-normal rounded-xl"
-              disabled={!eventId || !!busy || !onPay}
+              disabled={!eventId || selectedPaid || !!busy || !onPay}
               onClick={() => pay('pass')}
               data-plan="pass"
             >
               {busy === 'pass' ? 'Ouverture du paiement…' : `Payer ${pass}`}
             </Button>
+            {selectedPaid && <p className="text-sm text-muted-foreground">Pass déjà payé pour ce salon.</p>}
             {errFor('pass')}
           </div>
         )}
