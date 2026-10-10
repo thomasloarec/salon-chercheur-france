@@ -174,6 +174,7 @@ export interface BoothBillingOverview {
   pass_amount_cents: number;
   annual_amount_cents: number;
   pass_grace_days: number;
+  onboarding_booking_url?: string | null;
   payments: BoothBillingPayment[];
 }
 

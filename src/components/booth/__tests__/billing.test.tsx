@@ -73,3 +73,39 @@ describe('leadsPlans', () => {
     expect(txt).not.toMatch(/\bHT\b/);
   });
 });
+
+describe('Lot P2', () => {
+  const { OnboardingCard } = require('../BoothPaymentReturn');
+  const { openCheckoutUrl } = require('../billing');
+  it('prix publics à jour', () => {
+    const prices = LEADS_PLANS.map((p) => p.price).join(' ');
+    expect(prices).toContain('190 €');
+    expect(prices).toContain('570 €');
+    for (const old of ['290', '1 490', '1490', '720']) expect(prices).not.toContain(old);
+  });
+  it('carte Annuel : prix de 3 Pass', () => {
+    const h = renderToStaticMarkup(<BoothPlanPickerView overview={ov} upcoming={ev} />);
+    expect(h).toContain('Le prix de 3 Pass salon, pour tous vos salons de');
+  });
+  it('carte de prise en main avec lien, rien sans', () => {
+    const h = renderToStaticMarkup(<OnboardingCard url="https://cal.com/x" />);
+    expect(h).toContain('30 minutes pour bien démarrer');
+    expect(h).toContain('target="_blank"');
+    expect(h).toContain('noopener');
+    expect(renderToStaticMarkup(<OnboardingCard url={null} />)).toBe('');
+    expect(renderToStaticMarkup(<OnboardingCard url="" />)).toBe('');
+  });
+  it('paiement dans un cadre : nouvel onglet', () => {
+    const assigned: string[] = [];
+    const top = {};
+    const w = { self: {}, top, open: () => null, location: { assign: (u: string) => assigned.push(u) } };
+    expect(openCheckoutUrl('u', w as never)).toBe(false);
+    const w2 = { ...w, self: top };
+    expect(openCheckoutUrl('u', w2 as never)).toBe(true);
+    expect(assigned).toEqual(['u']);
+  });
+  it('type de notification booth_payment_paid reconnu', () => {
+    const src = require('fs').readFileSync('src/components/notifications/NotificationCard.tsx', 'utf8');
+    expect(src).toContain("'booth_payment_paid': '💶'");
+  });
+});

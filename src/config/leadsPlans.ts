@@ -46,7 +46,7 @@ export const LEADS_PLANS: LeadsPlan[] = [
   {
     id: 'salon',
     name: 'Pass salon',
-    price: '290 €',
+    price: '190 €',
     priceUnit: 'par salon',
     tagline: 'Pour toute l\'équipe sur un salon.',
     seats: 15,
@@ -58,9 +58,9 @@ export const LEADS_PLANS: LeadsPlan[] = [
   {
     id: 'annual',
     name: 'Annuel',
-    price: '1 490 €',
+    price: '570 €',
     priceUnit: 'par an',
-    tagline: 'Pour les exposants qui font plusieurs salons.',
+    tagline: "Tous vos salons de l'année, pour le prix de 3 Pass.",
     seats: 15,
     seatsLabel: "Jusqu'à 15 utilisateurs",
     includes: upTo('onboarding'),

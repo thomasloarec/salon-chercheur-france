@@ -1,10 +1,26 @@
 import { useEffect, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
-import { getAccess } from '@/lib/booth/rpc';
+import { getAccess, getBillingOverview } from '@/lib/booth/rpc';
 import { TEAM_ANCHOR_ID } from '@/features/booth/cockpit/BoothSalonCockpit';
 import { accessOpened, readPaymentReturn, startPaymentPolling, type PaymentReturn } from './billing';
+
+/** Carte de prise en main : rien si le lien est vide. */
+export function OnboardingCard({ url }: { url: string | null | undefined }) {
+  if (!url) return null;
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 md:p-5">
+      <p className="font-semibold text-foreground">30 minutes pour bien démarrer</p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Thomas, fondateur de Lotexpo, vous présente l'outil et prépare votre premier salon avec vous : paramétrage, équipe, objectif du jour, export.
+      </p>
+      <Button asChild variant="outline" className="mt-3 h-auto min-h-[44px] w-full whitespace-normal rounded-xl sm:w-auto">
+        <a href={url} target="_blank" rel="noopener noreferrer">Réserver ma prise en main</a>
+      </Button>
+    </div>
+  );
+}
 
 type Phase = 'waiting' | 'opened' | 'timeout' | 'cancelled';
 
@@ -32,6 +48,13 @@ export default function BoothPaymentReturn({ exhibitorId }: { exhibitorId: strin
     );
   }, [ret, exhibitorId, qc]);
 
+  const billing = useQuery({
+    queryKey: ['booth-billing', exhibitorId],
+    queryFn: () => getBillingOverview(exhibitorId),
+    retry: false,
+    enabled: phase === 'opened',
+  });
+
   if (!phase) return null;
   const ok = 'rounded-xl border border-success-bright/40 bg-booth-good-bg p-4 text-sm font-medium text-foreground';
   const neutral = 'rounded-xl border border-border bg-muted/50 p-4 text-sm font-medium text-foreground';
@@ -45,6 +68,7 @@ export default function BoothPaymentReturn({ exhibitorId }: { exhibitorId: strin
       </div>
     );
   return (
+    <div className="space-y-3">
     <div role="status" className={`${ok} flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`}>
       <span>Votre accès est ouvert. Invitez votre équipe.</span>
       <Button
@@ -54,6 +78,8 @@ export default function BoothPaymentReturn({ exhibitorId }: { exhibitorId: strin
       >
         Inviter mon équipe
       </Button>
+    </div>
+    <OnboardingCard url={billing.data?.onboarding_booking_url} />
     </div>
   );
 }

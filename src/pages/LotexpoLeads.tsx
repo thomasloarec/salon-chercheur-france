@@ -40,7 +40,7 @@ function SeatComparison() {
   const reduced = useReducedMotion();
   const cols = [
     { title: 'Licences par utilisateur', featured: false, bar: 'bg-flame/50', width: (w: number) => w, right: (n: number) => `${n} licences`, foot: "Le coût suit la taille de l'équipe." },
-    { title: 'Lotexpo Leads', featured: true, bar: 'bg-primary', width: () => 30, right: () => '290 €', foot: 'Le même prix par salon, de 1 à 15 personnes.' },
+    { title: 'Lotexpo Leads', featured: true, bar: 'bg-primary', width: () => 30, right: () => '190 €', foot: 'Le même prix par salon, de 1 à 15 personnes.' },
   ];
   return (
     <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -335,6 +335,9 @@ export default function LotexpoLeads() {
               </Button>
             </div>
             <LeadsPricingCards onJoin={onJoin} ctaLabel={ctaLabel} hasLeadsAccess={hasLeadsAccess} />
+            <p className="mt-4 text-sm text-muted-foreground">
+              L'Annuel coûte le prix de 3 Pass salon et couvre tous vos salons de l'année : moins cher dès votre 4e salon.
+            </p>
           </Reveal>
         </section>
 
