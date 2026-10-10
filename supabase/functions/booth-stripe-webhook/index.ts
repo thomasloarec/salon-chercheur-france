@@ -196,6 +196,25 @@ async function settle(db: any, s: Session) {
     tags: [{ name: 'type', value: 'booth_payment_admin' }],
   });
 
+  // Doublon : deux pages de paiement ouvertes pour le même salon, les deux payées
+  if (r.duplicate) {
+    await safeSend({
+      to: ADMIN_EMAIL,
+      subject: `⚠️ Pass payé deux fois : ${exName}${eventName ? ` (${eventName})` : ''}`,
+      html: renderEmailShell({
+        title: 'Pass payé deux fois',
+        preheader: 'Un remboursement est à faire dans Stripe.',
+        bodyBlocks: [
+          heading('Pass payé deux fois'),
+          paragraph(`<strong>${escapeHtml(exName)}</strong> a payé un second Pass pour le même salon (deux pages de paiement ouvertes en même temps). Remboursez ce paiement dans Stripe (Paiements, puis le paiement de ${escapeHtml(euros(r.amount_cents))}, puis « Rembourser »). Le remboursement sera enregistré automatiquement.`),
+          dataTable([...rows, ['Paiement Lotexpo', String(r.payment_id)]]),
+        ],
+        footer: {},
+      }),
+      tags: [{ name: 'type', value: 'booth_payment_duplicate' }],
+    });
+  }
+
   // Notification in-app aux admins Lotexpo (indépendante des emails)
   try {
     const { data: admins } = await db.from('user_roles').select('user_id').eq('role', 'admin');
