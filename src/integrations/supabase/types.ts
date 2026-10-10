@@ -1719,6 +1719,7 @@ export type Database = {
           annual_price_id: string
           currency: string
           id: boolean
+          onboarding_booking_url: string | null
           pass_amount_cents: number
           pass_grace_days: number
           pass_price_id: string
@@ -1731,6 +1732,7 @@ export type Database = {
           annual_price_id: string
           currency?: string
           id?: boolean
+          onboarding_booking_url?: string | null
           pass_amount_cents: number
           pass_grace_days?: number
           pass_price_id: string
@@ -1743,6 +1745,7 @@ export type Database = {
           annual_price_id?: string
           currency?: string
           id?: boolean
+          onboarding_booking_url?: string | null
           pass_amount_cents?: number
           pass_grace_days?: number
           pass_price_id?: string
