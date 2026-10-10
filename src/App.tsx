@@ -95,6 +95,7 @@ import AdminBlogEdit from '@/pages/AdminBlogEdit';
 import Blog from '@/pages/Blog';
 import BlogArticle from '@/pages/BlogArticle';
 import Organisateurs from '@/pages/Organisateurs';
+import LotexpoLeads from '@/pages/LotexpoLeads';
 import NotFound from '@/pages/NotFound';
 import DesinscriptionConfirmee from '@/pages/DesinscriptionConfirmee';
 import DesinscriptionAssistant from '@/pages/DesinscriptionAssistant';
@@ -162,6 +163,7 @@ function App() {
                 <Route path="/" element={<Home />} />
               <Route path="/salons" element={<Events />} />
               <Route path="/organisateurs" element={<Organisateurs />} />
+              <Route path="/lotexpo-leads" element={<LotexpoLeads />} />
               <Route path="/events/:slug" element={<EventPage />} />
               <Route path="/events/:slug/gerer" element={<OrganizerSalonPage />} />
             <Route path="/nouveautes" element={<NouveautesV2 />} />

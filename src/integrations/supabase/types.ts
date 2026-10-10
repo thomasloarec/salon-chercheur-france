@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      _backup_blog_articles_20261010: {
+        Row: {
+          article_type: string | null
+          body_text: string | null
+          created_at: string | null
+          created_by: string | null
+          event_ids: Json | null
+          faq: Json | null
+          h1_title: string | null
+          header_image_url: string | null
+          id: string | null
+          intro_text: string | null
+          is_auto_generated: boolean | null
+          meta_description: string | null
+          meta_title: string | null
+          published_at: string | null
+          sector_slug: string | null
+          slug: string | null
+          status: string | null
+          target_month: string | null
+          title: string | null
+          updated_at: string | null
+          why_visit_text: string | null
+        }
+        Insert: {
+          article_type?: string | null
+          body_text?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          event_ids?: Json | null
+          faq?: Json | null
+          h1_title?: string | null
+          header_image_url?: string | null
+          id?: string | null
+          intro_text?: string | null
+          is_auto_generated?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
+          published_at?: string | null
+          sector_slug?: string | null
+          slug?: string | null
+          status?: string | null
+          target_month?: string | null
+          title?: string | null
+          updated_at?: string | null
+          why_visit_text?: string | null
+        }
+        Update: {
+          article_type?: string | null
+          body_text?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          event_ids?: Json | null
+          faq?: Json | null
+          h1_title?: string | null
+          header_image_url?: string | null
+          id?: string | null
+          intro_text?: string | null
+          is_auto_generated?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
+          published_at?: string | null
+          sector_slug?: string | null
+          slug?: string | null
+          status?: string | null
+          target_month?: string | null
+          title?: string | null
+          updated_at?: string | null
+          why_visit_text?: string | null
+        }
+        Relationships: []
+      }
       _backup_outreach_sportair_20260724: {
         Row: {
           campaign_status: string | null
