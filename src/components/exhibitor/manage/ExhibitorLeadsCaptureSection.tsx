@@ -602,31 +602,43 @@ export default function ExhibitorLeadsCaptureSection({ exhibitorId }: Props) {
   }
 
   const access = accessQuery.data;
+  const banner = <BoothPaymentReturn exhibitorId={exhibitorId} />;
 
   if (access.status === 'approved') {
-    return <ApprovedView exhibitorId={exhibitorId} access={access} />;
+    return (
+      <div className="space-y-4">
+        {banner}
+        <ApprovedView exhibitorId={exhibitorId} access={access} paymentVisible={paymentVisible} />
+      </div>
+    );
   }
 
   if (access.status === 'requested' && !editingRequest) {
     return (
-      <Card>
-        <CardContent className="pt-6 space-y-3 text-sm">
-          <div className="rounded-md border border-border bg-muted/40 p-4 text-foreground">
-            Demande envoyée le {fmtDate(access.requested_at)}. Nous vous répondons par email.
-          </div>
-          <button
-            type="button"
-            className="text-primary underline-offset-4 hover:underline"
-            onClick={() => setEditingRequest(true)}
-          >
-            Modifier ma demande
-          </button>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        {banner}
+        <Card>
+          <CardContent className="pt-6 space-y-3 text-sm">
+            <div className="rounded-md border border-border bg-muted/40 p-4 text-foreground">
+              Demande envoyée le {fmtDate(access.requested_at)}. Nous vous répondons par email.
+            </div>
+            <button
+              type="button"
+              className="text-primary underline-offset-4 hover:underline"
+              onClick={() => setEditingRequest(true)}
+            >
+              Modifier ma demande
+            </button>
+          </CardContent>
+        </Card>
+        {paymentVisible && <StartNowCard exhibitorId={exhibitorId} />}
+      </div>
     );
   }
 
   return (
+    <div className="space-y-4">
+      {banner}
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <Card>
         <CardHeader>
@@ -668,6 +680,26 @@ export default function ExhibitorLeadsCaptureSection({ exhibitorId }: Props) {
           <RequestForm exhibitorId={exhibitorId} access={access} onDone={refresh} />
         </CardContent>
       </Card>
+      {paymentVisible && access.status !== 'revoked' && (
+        <div className="md:col-span-2">
+          <StartNowCard exhibitorId={exhibitorId} />
+        </div>
+      )}
     </div>
+    </div>
+  );
+}
+
+function StartNowCard({ exhibitorId }: { exhibitorId: string }) {
+  const upcoming = useUpcoming(exhibitorId);
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Ou démarrez tout de suite</CardTitle>
+      </CardHeader>
+      <CardContent className="px-4 md:px-6">
+        <BoothPlanPicker exhibitorId={exhibitorId} upcoming={toPickerEvents(upcoming)} />
+      </CardContent>
+    </Card>
   );
 }
