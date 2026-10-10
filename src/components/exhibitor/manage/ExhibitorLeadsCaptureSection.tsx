@@ -33,6 +33,11 @@ import {
 import BoothTeamPanel from '@/components/booth/BoothTeamPanel';
 import BoothCompareSalons from '@/components/booth/BoothCompareSalons';
 import BoothSalonCockpit, { TEAM_ANCHOR_ID } from '@/features/booth/cockpit/BoothSalonCockpit';
+import BoothPlanPicker, { type PlanPickerEvent } from '@/components/booth/BoothPlanPicker';
+import BoothInvoices from '@/components/booth/BoothInvoices';
+import BoothPaymentReturn from '@/components/booth/BoothPaymentReturn';
+import { annualEndingSoon } from '@/components/booth/billing';
+import { isLeadsPaymentVisible } from '@/lib/booth/config';
 
 interface Props {
   exhibitorId: string;
@@ -89,6 +94,9 @@ function useUpcoming(exhibitorId: string) {
       .filter((p) => (seen.has(p.event.id) ? false : (seen.add(p.event.id), true)));
   }, [data]);
 }
+
+const toPickerEvents = (u: ReturnType<typeof useUpcoming>): PlanPickerEvent[] =>
+  u.map((p) => ({ id: p.event.id, name: p.event.nom_event }));
 
 /* ---------- A / B : formulaire de demande ---------- */
 
@@ -464,7 +472,15 @@ function WorkspaceRow({
   );
 }
 
-function ApprovedView({ exhibitorId, access }: { exhibitorId: string; access: BoothAccess }) {
+function ApprovedView({
+  exhibitorId,
+  access,
+  paymentVisible,
+}: {
+  exhibitorId: string;
+  access: BoothAccess;
+  paymentVisible: boolean;
+}) {
   const qc = useQueryClient();
   const upcoming = useUpcoming(exhibitorId);
   const wsQuery = useQuery({
@@ -489,6 +505,15 @@ function ApprovedView({ exhibitorId, access }: { exhibitorId: string; access: Bo
     upcoming.find((p) => p.event.id === access.plan_event_id)?.event.nom_event;
 
   const validUntil = access.plan_valid_until ? `valable jusqu'au ${fmtDate(access.plan_valid_until)}` : null;
+
+  let pickerMode: 'both' | 'annual' | null = null;
+  if (paymentVisible) {
+    if (!access.is_paid || access.plan === 'beta' || access.plan === 'free' || access.plan === 'pass' || !access.plan) {
+      pickerMode = 'both';
+    } else if (access.plan === 'annual' && annualEndingSoon(access.plan_valid_until)) {
+      pickerMode = 'annual';
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -519,8 +544,25 @@ function ApprovedView({ exhibitorId, access }: { exhibitorId: string; access: Bo
               Votre formule a expiré. Les membres invités n'ont plus accès.
             </div>
           )}
+          {pickerMode && (
+            <div className="space-y-3 pt-2">
+              {access.plan === 'beta' && access.is_paid && (
+                <p className="text-muted-foreground">
+                  Vous profitez de la bêta gratuite. Vous pouvez dès maintenant choisir une formule pour vos prochains salons.
+                </p>
+              )}
+              {pickerMode === 'annual' && <p className="font-semibold text-foreground">Prolonger votre Annuel</p>}
+              <BoothPlanPicker
+                exhibitorId={exhibitorId}
+                upcoming={toPickerEvents(upcoming)}
+                show={pickerMode}
+                annualActive={access.plan === 'annual' && access.is_paid}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
+      {paymentVisible && <BoothInvoices exhibitorId={exhibitorId} />}
 
       <BoothSalonCockpit
         exhibitorId={exhibitorId}
@@ -572,8 +614,9 @@ function ApprovedView({ exhibitorId, access }: { exhibitorId: string; access: Bo
 
 /* ---------- Section ---------- */
 
-export default function ExhibitorLeadsCaptureSection({ exhibitorId }: Props) {
+export default function ExhibitorLeadsCaptureSection({ exhibitorId, isAdmin }: Props) {
   const qc = useQueryClient();
+  const paymentVisible = isLeadsPaymentVisible(isAdmin);
   const accessQuery = useQuery({
     queryKey: ['booth-access', exhibitorId],
     queryFn: () => getAccess(exhibitorId),
