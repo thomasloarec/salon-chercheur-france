@@ -18,7 +18,11 @@ export default function VoiceDictation({
   className = '',
   autoStart = false,
   onRecorded,
+  onCancel,
+  onDenied,
 }: {
+  onCancel?: () => void;
+  onDenied?: () => void;
   /** Lance l'enregistrement dès l'affichage (ouverture directe en dictée). */
   autoStart?: boolean;
   label: string;
@@ -38,6 +42,11 @@ export default function VoiceDictation({
     void rec.start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart, disabled, rec.supported]);
+  const deniedRef = useRef(onDenied);
+  deniedRef.current = onDenied;
+  useEffect(() => {
+    if (rec.state === 'denied') deniedRef.current?.();
+  }, [rec.state]);
   if (!rec.supported) return null;
 
   if (rec.state === 'recording') {
@@ -55,7 +64,7 @@ export default function VoiceDictation({
           <Square className="mr-2 h-5 w-5" /> Terminer
         </Button>
         {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
-        <Button variant="ghost" className="min-h-[44px]" onClick={rec.cancel}>
+        <Button variant="ghost" className="min-h-[44px]" onClick={() => { rec.cancel(); onCancel?.(); }}>
           <X className="mr-1 h-4 w-4" /> Annuler
         </Button>
       </div>

@@ -32,6 +32,7 @@ import { isPersistentStorage, onStorageAvailabilityChange } from '@/features/boo
 import type { BoothCache } from '@/features/booth/sync/cache';
 import type { BoothInboundLead } from '@/lib/booth/rpc';
 import NewMeetingFlow, { CAMERA_PENDING_KEY } from '@/features/booth/salon/NewMeetingFlow';
+import { openCardCamera } from '@/features/booth/home/directStart';
 import { useVoiceItems, useVoiceQueueRunner } from '@/features/booth/voice/voiceQueue';
 import { flushCardLinks } from '@/features/booth/card/useCardScanAvailable';
 import MeetingsList from '@/features/booth/salon/MeetingsList';
@@ -285,10 +286,28 @@ export default function SalonMode() {
   }, [cacheReady, userIdForPurge, workspaceId]);
 
   const [flowMode, setFlowMode] = useState<StartMode | null>(null);
+  const [flowPhoto, setFlowPhoto] = useState<File | null>(null);
+  const homePhotoRef = useRef<HTMLInputElement>(null);
+  // Tuile « Carte » : appareil photo ouvert dans le même toucher (pas d'attente avant click).
+  const openHomeCamera = () => {
+    let st: Storage | null = null;
+    try { st = localStorage; } catch { /* ignoré */ }
+    openCardCamera(homePhotoRef.current, workspaceId, st);
+  };
+  const clearHomeCameraPending = () => {
+    try { localStorage.removeItem(CAMERA_PENDING_KEY); } catch { /* ignoré */ }
+  };
+  useEffect(() => {
+    const el = homePhotoRef.current;
+    if (!el) return;
+    el.addEventListener('cancel', clearHomeCameraPending);
+    return () => el.removeEventListener('cancel', clearHomeCameraPending);
+  });
   const [goalOpen, setGoalOpen] = useState(false);
   const [resumeFor, setResumeFor] = useState<{ mode: StartMode | null } | null>(null);
-  const startFlow = (initial: MeetingDraft, mode: StartMode | null = null) => {
+  const startFlow = (initial: MeetingDraft, mode: StartMode | null = null, photo: File | null = null) => {
     setCameraRetry(null);
+    setFlowPhoto(photo);
     setFlowMode(mode);
     setFlowInitial(initial);
     setFlowKey((k) => k + 1);
@@ -306,6 +325,7 @@ export default function SalonMode() {
   // « Nouvelle rencontre » ou tuile : une feuille demande quoi faire si une rencontre est en cours.
   const requestStart = (mode: StartMode | null) => {
     if (startDecision(!!savedDraft) === 'sheet') setResumeFor({ mode });
+    else if (mode === 'card') openHomeCamera();
     else startFlow(emptyDraft(), mode);
   };
   const onResumeChoice = (choice: ResumeChoice) => {
@@ -315,7 +335,8 @@ export default function SalonMode() {
     if (a.open === 'draft' && savedDraft) startFlow(savedDraft);
     else if (a.open === 'new') {
       if (a.clearDraft) clearSavedDraft();
-      startFlow(emptyDraft(), a.mode);
+      if (a.mode === 'card') openHomeCamera();
+      else startFlow(emptyDraft(), a.mode);
     }
   };
   const startInbound = (l: BoothInboundLead) =>
@@ -456,6 +477,7 @@ export default function SalonMode() {
           initial={flowInitial}
           cameraRetry={cameraRetry}
           startMode={flowMode}
+          initialPhoto={flowPhoto}
           onHome={() => setScreen('home')}
         />
       ) : screen === 'list' && user ? (
@@ -613,6 +635,23 @@ export default function SalonMode() {
       {user && ws && (
         <GoalSheet open={goalOpen} onOpenChange={setGoalOpen} userId={user.id} workspaceId={workspaceId} current={ws.daily_goal ?? null} online={sync.online} />
       )}
+      <input
+        ref={homePhotoRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        data-home-photo=""
+        onChange={(e) => {
+          const f = e.target.files?.[0] ?? null;
+          e.target.value = '';
+          if (!f) {
+            clearHomeCameraPending();
+            return;
+          }
+          startFlow(emptyDraft(), 'card', f);
+        }}
+      />
       <ResumeSheet open={!!resumeFor} name={savedDraft ? draftLabel(savedDraft) : ''} onChoice={onResumeChoice} />
 
       <AlertDialog open={!!toAbandon} onOpenChange={(o) => !o && setToAbandon(null)}>
