@@ -148,6 +148,57 @@ export async function inviteMember(
   return data as BoothInviteResult;
 }
 
+/* ---------- Paiement en ligne ---------- */
+
+export type BoothCheckoutPlan = 'pass' | 'annual';
+
+export interface BoothBillingPayment {
+  id: string;
+  plan: BoothCheckoutPlan;
+  status: 'paid' | 'refunded';
+  event_id: string | null;
+  event_name: string | null;
+  amount_cents: number;
+  currency: string;
+  paid_at: string | null;
+  valid_until: string | null;
+  invoice_url: string | null;
+  invoice_pdf: string | null;
+  created_at: string;
+}
+
+export interface BoothBillingOverview {
+  livemode: boolean;
+  vat_mode: 'franchise' | 'vat';
+  currency: string;
+  pass_amount_cents: number;
+  annual_amount_cents: number;
+  pass_grace_days: number;
+  payments: BoothBillingPayment[];
+}
+
+export async function getBillingOverview(exhibitorId: string): Promise<BoothBillingOverview> {
+  const { data, error } = await rpc('booth_billing_overview', { p_exhibitor_id: exhibitorId });
+  if (error) throw new Error(error.message || 'BOOTH_ERROR');
+  return data as BoothBillingOverview;
+}
+
+export async function startCheckout(
+  exhibitorId: string,
+  plan: BoothCheckoutPlan,
+  eventId: string | null,
+): Promise<{ url: string; payment_id: string }> {
+  const { data, error } = await supabase.functions.invoke('booth-checkout', {
+    body: { exhibitor_id: exhibitorId, plan, event_id: eventId },
+  });
+  if (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const body = await (error as any).context?.json?.().catch(() => null);
+    throw new Error(body?.error || 'BOOTH_ERROR');
+  }
+  return data as { url: string; payment_id: string };
+}
+
 export function boothErrorMessage(error: unknown): string {
   const msg = String((error as { message?: string })?.message ?? error ?? '');
   if (msg.includes('BOOTH_VOICE_QUOTA')) return 'Vous avez utilisé les 300 notes vocales offertes ce mois-ci.';
@@ -165,7 +216,10 @@ export function boothErrorMessage(error: unknown): string {
   if (msg.includes('BOOTH_INVITE_INVALID')) return "Ce lien d'invitation n'est pas valide ou a déjà été utilisé.";
   if (msg.includes('BOOTH_EMAIL_MISMATCH')) return 'Cette invitation a été envoyée à une autre adresse email.';
   if (msg.includes('BOOTH_PLAN_REQUIRED')) return "L'invitation d'équipe est incluse dans la bêta, le Pass Salon et l'Annuel.";
-  if (msg.includes('BOOTH_SEATS_FULL')) return 'Limite atteinte : 15 comptes au maximum, invitations en cours comprises.';
+  if (msg.includes('BOOTH_SEATS_FULL')) return 'Limite atteinte : 15 comptes au total, administrateurs de la fiche et invitations en cours compris.';
+  if (msg.includes('BOOTH_EVENT_PAST')) return 'Ce salon est terminé : choisissez un salon à venir.';
+  if (msg.includes('BOOTH_ALREADY_COVERED')) return 'Votre Annuel en cours couvre déjà ce salon.';
+  if (msg.includes('BOOTH_PAYMENT_UNAVAILABLE')) return 'Le paiement en ligne est momentanément indisponible. Réessayez dans un instant ou écrivez-nous.';
   if (msg.includes('BOOTH_ALREADY_MEMBER')) return 'Cette personne fait déjà partie de l\u2019équipe.';
   if (msg.includes('BOOTH_ACCESS_NOT_APPROVED')) return "L'accès doit d'abord être ouvert.";
   if (msg.includes('BOOTH_FORBIDDEN')) return 'Seuls les gestionnaires principaux de la fiche peuvent faire cette action.';

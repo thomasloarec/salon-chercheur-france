@@ -40,7 +40,7 @@ function SeatComparison() {
   const reduced = useReducedMotion();
   const cols = [
     { title: 'Licences par utilisateur', featured: false, bar: 'bg-flame/50', width: (w: number) => w, right: (n: number) => `${n} licences`, foot: "Le coût suit la taille de l'équipe." },
-    { title: 'Lotexpo Leads', featured: true, bar: 'bg-primary', width: () => 30, right: () => '290 € HT', foot: 'Le même prix par salon, de 1 à 15 personnes.' },
+    { title: 'Lotexpo Leads', featured: true, bar: 'bg-primary', width: () => 30, right: () => '290 €', foot: 'Le même prix par salon, de 1 à 15 personnes.' },
   ];
   return (
     <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">

@@ -264,3 +264,6 @@ verify_jwt = false
 
 [functions.assistant-alerts-unsubscribe]
 verify_jwt = false
+
+[functions.booth-stripe-webhook]
+verify_jwt = false
