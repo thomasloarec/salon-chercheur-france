@@ -44,6 +44,9 @@ export function PhoneFrame({ width = 300, label, children }: { width?: number; l
   );
 }
 
+/** Largeur retenue après mesure du conteneur (900 px au plus). */
+export const measuredWidth = (contentWidth: number) => Math.min(900, Math.round(contentWidth));
+
 /** Fenêtre de navigateur : contenu dessiné à 1280 × 800 puis réduit à la largeur mesurée (max 900). */
 export function BrowserFrame({ label = "Aperçu de l'accueil du salon sur ordinateur", children, defaultWidth = 340 }: { label?: string; children: React.ReactNode; defaultWidth?: number }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -51,7 +54,7 @@ export function BrowserFrame({ label = "Aperçu de l'accueil du salon sur ordina
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(([e]) => setW(Math.min(900, Math.round(e.contentRect.width))));
+    const ro = new ResizeObserver(([e]) => setW(measuredWidth(e.contentRect.width)));
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
