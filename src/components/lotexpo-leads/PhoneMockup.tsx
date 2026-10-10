@@ -1,7 +1,7 @@
 import { Mic, QrCode, Camera, Plus, Check, Phone, FileText, Receipt, CalendarDays } from 'lucide-react';
-import GoalRing from '@/features/booth/home/GoalRing';
+import { motion } from 'framer-motion';
 import PotentialBadge from '@/features/booth/ui/PotentialBadge';
-import { useInView } from '@/components/ui/reveal';
+import { useInView, usePrefersReducedMotion } from '@/components/ui/reveal';
 import { cn } from '@/lib/utils';
 
 function Frame({ children, small, label }: { children: React.ReactNode; small?: boolean; label: string }) {
@@ -15,6 +15,28 @@ function Frame({ children, small, label }: { children: React.ReactNode; small?: 
         <div className="mx-auto mt-2 h-1.5 w-16 rounded-full bg-booth-navy/80" />
         {children}
       </div>
+    </div>
+  );
+}
+
+const C = 2 * Math.PI * 38;
+/** Anneau 9/12 : se remplit une fois en 700 ms à l'arrivée à l'écran. */
+function Ring({ run }: { run: boolean }) {
+  const reduced = usePrefersReducedMotion();
+  const target = C * (1 - 9 / 12);
+  return (
+    <div className="relative h-[84px] w-[84px] shrink-0">
+      <svg width={84} height={84} viewBox="0 0 84 84" className="-rotate-90">
+        <circle cx={42} cy={42} r={38} fill="none" strokeWidth={8} className="stroke-booth-goal-track" />
+        <motion.circle
+          cx={42} cy={42} r={38} fill="none" strokeWidth={8} strokeLinecap="round" strokeDasharray={C}
+          className="stroke-success-bright"
+          initial={reduced ? false : { strokeDashoffset: C }}
+          animate={{ strokeDashoffset: run || reduced ? target : C }}
+          transition={reduced ? { duration: 0 } : { duration: 0.7, ease: 'easeOut' }}
+        />
+      </svg>
+      <span className="absolute inset-0 flex items-center justify-center text-lg font-semibold text-background">9/12</span>
     </div>
   );
 }
@@ -37,7 +59,7 @@ export default function PhoneMockup() {
             <p className="text-lg font-semibold">SEPEM Grenoble</p>
           </div>
           <div className="flex items-center gap-3 rounded-2xl bg-booth-navy p-3">
-            {inView ? <GoalRing value={9} max={12} reached={false} /> : <div className="h-[84px] w-[84px] shrink-0" />}
+            <Ring run={inView} />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-background">Objectif du jour</p>
               <p className="text-xs text-booth-on-navy">Encore 3 rencontres pour l'équipe.</p>
