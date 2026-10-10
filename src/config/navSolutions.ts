@@ -3,6 +3,7 @@ import {
   CalendarHeart,
   Megaphone,
   Radar,
+  ScanLine,
   Sparkles,
   Target,
   type LucideIcon,
@@ -43,6 +44,7 @@ export const NAV_SOLUTION_GROUPS: NavSolutionGroup[] = [
     title: 'Exposants',
     items: [
       { to: '/exposants', label: 'Publier une Nouveauté', icon: Megaphone, description: "Attirez les bons visiteurs avant l'ouverture" },
+      { to: '/lotexpo-leads', label: 'Lotexpo Leads', icon: ScanLine, description: 'Capturez et suivez vos leads sur le stand' },
     ],
   },
   {

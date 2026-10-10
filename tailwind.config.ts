@@ -68,7 +68,10 @@ export default {
 					'goal-track': 'hsl(var(--lx-goal-track))',
 					'on-navy': 'hsl(var(--lx-on-navy-soft))',
 					'sky-text': 'hsl(var(--lx-sky))',
-					'draft-line': 'hsl(var(--lx-draft-line))'
+					'draft-line': 'hsl(var(--lx-draft-line))',
+					'navy-card': 'hsl(var(--lx-navy-card))',
+					'beta-bg': 'hsl(var(--lx-beta-bg))',
+					'beta-line': 'hsl(var(--lx-beta-line))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
