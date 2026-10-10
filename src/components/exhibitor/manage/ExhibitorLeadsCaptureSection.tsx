@@ -491,6 +491,15 @@ function ApprovedView({
   const [creating, setCreating] = useState<boolean | string>(false);
   const [showArchived, setShowArchived] = useState(false);
 
+  const paidPlan = access.is_paid && (access.plan === 'pass' || access.plan === 'annual');
+  const billingQuery = useQuery({
+    queryKey: ['booth-billing', exhibitorId],
+    queryFn: () => getBillingOverview(exhibitorId),
+    retry: false,
+    enabled: paidPlan,
+  });
+  const bookingUrl = paidPlan ? billingQuery.data?.onboarding_booking_url : null;
+
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ['booth-workspaces', exhibitorId] });
     qc.invalidateQueries({ queryKey: ['booth-summary', exhibitorId] });
@@ -539,6 +548,11 @@ function ApprovedView({
               </>
             )}
           </div>
+          {bookingUrl && (
+            <a href={bookingUrl} target="_blank" rel="noopener noreferrer" className="inline-block text-xs text-muted-foreground underline hover:text-foreground">
+              Réserver une prise en main (30 min)
+            </a>
+          )}
           {!access.is_paid && access.plan && access.plan !== 'free' && (
             <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-800">
               Votre formule a expiré. Les membres invités n'ont plus accès.

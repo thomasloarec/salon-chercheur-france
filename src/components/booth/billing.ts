@@ -29,6 +29,24 @@ export async function runCheckout(
   assign(url);
 }
 
+/** Dans un cadre (aperçu), Stripe s'ouvre dans un nouvel onglet. Renvoie false si le navigateur a bloqué l'onglet. */
+export function openCheckoutUrl(
+  url: string,
+  w: Pick<Window, 'self' | 'top' | 'open'> & { location: Pick<Location, 'assign'> },
+): boolean {
+  let framed = true;
+  try {
+    framed = w.self !== w.top;
+  } catch {
+    framed = true;
+  }
+  if (!framed) {
+    w.location.assign(url);
+    return true;
+  }
+  return w.open(url, '_blank', 'noopener') !== null;
+}
+
 /** Accès ouvert après paiement : payé et formule payante. */
 export const accessOpened = (a: Pick<BoothAccess, 'is_paid' | 'plan'> | null | undefined) =>
   !!a && a.is_paid && (a.plan === 'pass' || a.plan === 'annual');

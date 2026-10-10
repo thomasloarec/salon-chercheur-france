@@ -12,7 +12,7 @@ import {
   type BoothBillingOverview,
   type BoothCheckoutPlan,
 } from '@/lib/booth/rpc';
-import { formatCents, runCheckout, vatMention } from './billing';
+import { formatCents, openCheckoutUrl, runCheckout, vatMention } from './billing';
 
 export interface PlanPickerEvent {
   id: string;
@@ -118,6 +118,7 @@ export function BoothPlanPickerView({
             <p className="text-sm font-medium text-muted-foreground">
               12 mois, tous vos salons, jusqu'à 15 utilisateurs, accompagnement au premier salon
             </p>
+            <p className="mt-1 text-xs text-muted-foreground">Le prix de 3 Pass salon, pour tous vos salons de l'année</p>
           </div>
           <Button
             className="mt-auto h-auto min-h-[44px] w-full whitespace-normal rounded-xl"
@@ -152,6 +153,7 @@ interface Props {
 }
 
 export default function BoothPlanPicker({ exhibitorId, upcoming, show, annualActive }: Props) {
+  const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
   const q = useQuery({
     queryKey: ['booth-billing', exhibitorId],
     queryFn: () => getBillingOverview(exhibitorId),
@@ -169,14 +171,23 @@ export default function BoothPlanPicker({ exhibitorId, upcoming, show, annualAct
   }
 
   return (
+    <>
     <BoothPlanPickerView
       overview={q.data}
       upcoming={upcoming}
       show={show}
       annualActive={annualActive}
       onPay={(plan, eventId) =>
-        runCheckout((p, e) => startCheckout(exhibitorId, p, e), plan, eventId, (url) => window.location.assign(url))
+        runCheckout((p, e) => startCheckout(exhibitorId, p, e), plan, eventId, (url) => {
+          if (!openCheckoutUrl(url, window)) setFallbackUrl(url);
+        })
       }
     />
+    {fallbackUrl && (
+      <a href={fallbackUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex min-h-[44px] items-center text-sm font-medium text-primary underline">
+        Ouvrir la page de paiement
+      </a>
+    )}
+    </>
   );
 }
