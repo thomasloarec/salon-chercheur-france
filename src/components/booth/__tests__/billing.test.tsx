@@ -139,3 +139,27 @@ describe('Lot P2b : salons du Pass', () => {
     expect(addSearchedEvent(r.events, { id: 'n', name: 'N' }).events.length).toBe(2);
   });
 });
+
+describe('Lot P4 : Pass déjà payé', () => {
+  const { passOptionLabel } = require('../BoothPlanPicker');
+  const { boothErrorMessage } = require('@/lib/booth/rpc');
+  const pay = (status: string) => ({
+    id: 'p1', plan: 'pass', status, event_id: 'e1', event_name: 'SEPEM', amount_cents: 19000, currency: 'eur', paid_at: null,
+  });
+  const disabledRe = /<button[^>]*disabled=""[^>]*data-plan="pass"/;
+  it('salon payé : bouton désactivé, sélection vide, option marquée', () => {
+    const o = { ...ov, payments: [pay('paid')] } as BoothBillingOverview;
+    const h = renderToStaticMarkup(<BoothPlanPickerView overview={o} upcoming={ev} initialEventId="e1" onPay={async () => {}} />);
+    expect(h).toMatch(disabledRe);
+    expect(h).not.toContain('Pass déjà payé pour ce salon');
+    expect(passOptionLabel('SEPEM', true)).toBe('SEPEM · Pass déjà payé');
+  });
+  it.each(['refunded', 'expired'])('Pass %s ne bloque pas', (s) => {
+    const o = { ...ov, payments: [pay(s)] } as BoothBillingOverview;
+    const h = renderToStaticMarkup(<BoothPlanPickerView overview={o} upcoming={ev} initialEventId="e1" onPay={async () => {}} />);
+    expect(h).not.toMatch(disabledRe);
+  });
+  it('message BOOTH_ALREADY_PAID', () => {
+    expect(boothErrorMessage('BOOTH_ALREADY_PAID')).toBe("Vous avez déjà un Pass pour ce salon. Il couvre toute votre équipe, inutile d'en racheter un.");
+  });
+});

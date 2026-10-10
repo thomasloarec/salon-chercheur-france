@@ -55,6 +55,11 @@ export function addSearchedEvent(list: PlanPickerEvent[], ev: PlanPickerEvent) {
   return { events, selected: ev.id };
 }
 
+/** Libellé d'option : salon déjà couvert par un Pass payé. */
+export function passOptionLabel(name: string, paid: boolean) {
+  return paid ? `${name} · Pass déjà payé` : name;
+}
+
 type SearchFn = (q: string) => Promise<PlanPickerEvent[]>;
 
 const defaultSearch: SearchFn = async (q) => {
@@ -187,8 +192,8 @@ export function BoothPlanPickerView({
                 </SelectTrigger>
                 <SelectContent>
                   {list.map((e) => (
-                    <SelectItem key={e.id} value={e.id}>
-                      {e.name}
+                    <SelectItem key={e.id} value={e.id} disabled={paidEventIds.has(e.id)}>
+                      {passOptionLabel(e.name, paidEventIds.has(e.id))}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -213,12 +218,13 @@ export function BoothPlanPickerView({
             </p>
             <Button
               className="mt-auto h-auto min-h-[44px] w-full whitespace-normal rounded-xl"
-              disabled={!eventId || !!busy || !onPay}
+              disabled={!eventId || selectedPaid || !!busy || !onPay}
               onClick={() => pay('pass')}
               data-plan="pass"
             >
               {busy === 'pass' ? 'Ouverture du paiement…' : `Payer ${pass}`}
             </Button>
+            {selectedPaid && <p className="text-sm text-muted-foreground">Pass déjà payé pour ce salon.</p>}
             {errFor('pass')}
           </div>
         )}
