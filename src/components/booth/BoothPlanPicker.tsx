@@ -126,13 +126,20 @@ export function BoothPlanPickerView({
   onPay,
   search = defaultSearch,
 }: ViewProps) {
-  const [eventId, setEventId] = useState<string | null>(initialEventId);
+  const paidEventIds = new Set(
+    overview.payments
+      .filter((p) => p.plan === 'pass' && p.status === 'paid' && p.event_id)
+      .map((p) => p.event_id as string),
+  );
+  const safeInitial = initialEventId && !paidEventIds.has(initialEventId) ? initialEventId : null;
+  const [eventId, setEventId] = useState<string | null>(safeInitial);
   const [extra, setExtra] = useState<PlanPickerEvent[]>([]);
   const [searching, setSearching] = useState(false);
   useEffect(() => {
-    if (!eventId && initialEventId) setEventId(initialEventId);
-  }, [initialEventId, eventId]);
+    if (!eventId && safeInitial) setEventId(safeInitial);
+  }, [safeInitial, eventId]);
   const list = extra.reduce((acc, e) => addSearchedEvent(acc, e).events, upcoming);
+  const selectedPaid = !!eventId && paidEventIds.has(eventId);
   const [busy, setBusy] = useState<BoothCheckoutPlan | null>(null);
   const [error, setError] = useState<{ plan: BoothCheckoutPlan | 'any'; msg: string } | null>(
     initialError ? { plan: 'any', msg: boothErrorMessage(initialError) } : null,

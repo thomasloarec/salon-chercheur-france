@@ -155,7 +155,7 @@ export type BoothCheckoutPlan = 'pass' | 'annual';
 export interface BoothBillingPayment {
   id: string;
   plan: BoothCheckoutPlan;
-  status: 'paid' | 'refunded';
+  status: 'paid' | 'refunded' | 'expired';
   event_id: string | null;
   event_name: string | null;
   amount_cents: number;
@@ -220,6 +220,7 @@ export function boothErrorMessage(error: unknown): string {
   if (msg.includes('BOOTH_SEATS_FULL')) return 'Limite atteinte : 15 comptes au total, administrateurs de la fiche et invitations en cours compris.';
   if (msg.includes('BOOTH_EVENT_PAST')) return 'Ce salon est terminé : choisissez un salon à venir.';
   if (msg.includes('BOOTH_ALREADY_COVERED')) return 'Votre Annuel en cours couvre déjà ce salon.';
+  if (msg.includes('BOOTH_ALREADY_PAID')) return "Vous avez déjà un Pass pour ce salon. Il couvre toute votre équipe, inutile d'en racheter un.";
   if (msg.includes('BOOTH_PAYMENT_UNAVAILABLE')) return 'Le paiement en ligne est momentanément indisponible. Réessayez dans un instant ou écrivez-nous.';
   if (msg.includes('BOOTH_ALREADY_MEMBER')) return 'Cette personne fait déjà partie de l\u2019équipe.';
   if (msg.includes('BOOTH_ACCESS_NOT_APPROVED')) return "L'accès doit d'abord être ouvert.";
