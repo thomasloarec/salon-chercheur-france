@@ -47,7 +47,7 @@ export const LEADS_PLANS: LeadsPlan[] = [
     id: 'salon',
     name: 'Pass salon',
     price: '290 €',
-    priceUnit: 'HT par salon',
+    priceUnit: 'par salon',
     tagline: 'Pour toute l\'équipe sur un salon.',
     seats: 15,
     seatsLabel: "Jusqu'à 15 utilisateurs",
@@ -59,7 +59,7 @@ export const LEADS_PLANS: LeadsPlan[] = [
     id: 'annual',
     name: 'Annuel',
     price: '1 490 €',
-    priceUnit: 'HT par an',
+    priceUnit: 'par an',
     tagline: 'Pour les exposants qui font plusieurs salons.',
     seats: 15,
     seatsLabel: "Jusqu'à 15 utilisateurs",
@@ -67,4 +67,4 @@ export const LEADS_PLANS: LeadsPlan[] = [
   },
 ];
 
-export const LEADS_PLANS_NOTE = 'Prix hors taxes, indicatifs pendant la bêta. Paiement en ligne à la sortie de la bêta.';
+export const LEADS_PLANS_NOTE = 'Prix nets, TVA non applicable (art. 293 B du CGI). Pendant la bêta, toutes les fonctions sont offertes aux premiers exposants.';
