@@ -97,7 +97,7 @@ function useUpcoming(exhibitorId: string) {
 }
 
 const toPickerEvents = (u: ReturnType<typeof useUpcoming>): PlanPickerEvent[] =>
-  u.map((p) => ({ id: p.event.id, name: p.event.nom_event }));
+  u.map((p) => ({ id: p.event.id, name: p.event.nom_event, date_debut: p.event.date_debut }));
 
 /* ---------- A / B : formulaire de demande ---------- */
 

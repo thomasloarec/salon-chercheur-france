@@ -109,3 +109,33 @@ describe('Lot P2', () => {
     expect(src).toContain("'booth_payment_paid': '💶'");
   });
 });
+
+describe('Lot P2b : salons du Pass', () => {
+  const { mergePlanEvents, addSearchedEvent } = require('../BoothPlanPicker');
+  const today = '2026-10-10';
+  const w = (id: string, o: Record<string, unknown> = {}) => ({ event_id: id, nom_event: id, date_debut: '2026-11-01', date_fin: '2026-11-03', archived: false, ...o });
+  it('salon présent seulement dans les espaces : listé et présélectionné', () => {
+    const r = mergePlanEvents([], [w('sepem')], today);
+    expect(r.events.map((e: { id: string }) => e.id)).toEqual(['sepem']);
+    expect(r.preselect).toBe('sepem');
+    const h = renderToStaticMarkup(<BoothPlanPickerView overview={ov} upcoming={r.events} initialEventId={r.preselect} onPay={async () => {}} />);
+    expect(h).not.toMatch(/<button[^>]*disabled=""[^>]*data-plan="pass"/);
+    expect(h).toContain('Choisissez le salon couvert par ce Pass');
+    expect(h).toContain('Mon salon n&#x27;est pas dans la liste');
+  });
+  it('archivé ou passé exclu', () => {
+    const r = mergePlanEvents([], [w('a', { archived: true }), w('p', { date_debut: '2026-09-01', date_fin: '2026-09-03' })], today);
+    expect(r.events).toEqual([]);
+    expect(r.preselect).toBeNull();
+  });
+  it('pas de doublon, tri par date', () => {
+    const r = mergePlanEvents([{ id: 'x', name: 'X', date_debut: '2026-12-01' }, { id: 'sepem', name: 'SEPEM', date_debut: '2026-11-01' }], [w('sepem')], today);
+    expect(r.events.map((e: { id: string }) => e.id)).toEqual(['sepem', 'x']);
+  });
+  it('salon trouvé par la recherche ajouté et sélectionné', () => {
+    const r = addSearchedEvent([{ id: 'x', name: 'X' }], { id: 'n', name: 'N' });
+    expect(r.selected).toBe('n');
+    expect(r.events.map((e: { id: string }) => e.id)).toContain('n');
+    expect(addSearchedEvent(r.events, { id: 'n', name: 'N' }).events.length).toBe(2);
+  });
+});
