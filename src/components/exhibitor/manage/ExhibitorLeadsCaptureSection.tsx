@@ -24,6 +24,7 @@ import {
   createWorkspace,
   getAccess,
   listWorkspaces,
+  getBillingOverview,
   requestAccess,
   updateWorkspace,
   type BoothAccess,
