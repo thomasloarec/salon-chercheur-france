@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { joinBeta, AUTH_RETURN } from '../joinBeta';
 import LeadsPricingCards from '../LeadsPricingCards';
-import { LEADS_PLANS } from '@/config/leadsPlans';
+import { LEADS_PLANS, LEADS_FEATURES } from '@/config/leadsPlans';
 
 describe('joinBeta', () => {
   it('non connecté', () => {
@@ -31,4 +31,20 @@ describe('tarifs', () => {
       if (p.priceUnit) expect(html).toContain(p.priceUnit);
     }
   });
+});
+
+describe('matrice des tarifs', () => {
+  const html = renderToStaticMarkup(<LeadsPricingCards />);
+  const cards = html.split('data-plan="').slice(1);
+  const expectedExcluded: Record<string, number> = { free: 8, salon: 3, annual: 0 };
+  for (const p of LEADS_PLANS) {
+    it(`plan ${p.id}`, () => {
+      const card = cards.find((c) => c.startsWith(`${p.id}"`))!;
+      const ids = Array.from(card.matchAll(/data-feature="([^"]+)"/g)).map((m) => m[1]);
+      expect(ids).toEqual(LEADS_FEATURES.map((f) => f.id));
+      expect((card.match(/data-excluded/g) ?? []).length).toBe(expectedExcluded[p.id]);
+      expect(card).toContain(p.id === 'free' ? '1 seul utilisateur' : 'Jusqu&#x27;à 15 utilisateurs');
+      expect(Object.keys(p.includes).sort()).toEqual(LEADS_FEATURES.map((f) => f.id).sort());
+    });
+  }
 });
