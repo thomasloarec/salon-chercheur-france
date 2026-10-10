@@ -221,7 +221,7 @@ export default function LotexpoLeads() {
                 </Reveal>
               ))}
             </div>
-            <div className="mt-12 hidden justify-center gap-8 md:flex">
+            <div className="mt-12 hidden flex-wrap justify-center gap-8 md:flex">
               {[
                 { el: <HomePhone width={260} />, c: '1. Capturer' },
                 { el: <ActionPhone width={260} />, c: '2. Qualifier' },
