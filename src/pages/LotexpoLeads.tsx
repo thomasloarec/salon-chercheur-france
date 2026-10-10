@@ -151,7 +151,7 @@ export default function LotexpoLeads() {
               </div>
             </Reveal>
             <Reveal delay={150}>
-              <div className="relative hidden pb-16 pl-24 lg:block">
+              <div className="relative hidden min-h-[540px] pl-36 pt-4 lg:block">
                 <BrowserFrame><DesktopHomeMock /></BrowserFrame>
                 <div className="absolute bottom-0 left-0"><HomePhone width={240} /></div>
               </div>

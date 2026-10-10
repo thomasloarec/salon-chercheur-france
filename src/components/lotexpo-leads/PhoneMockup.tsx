@@ -45,7 +45,7 @@ const LAST: { n: string; c: string; p: Pot; t: string }[] = [
 /** Accueil du salon (390 px de large). */
 export function HomeScreen({ run }: { run: boolean }) {
   return (
-    <div className="flex h-full flex-col gap-4 px-5 pb-8 pt-2">
+    <div className="flex h-full flex-col gap-3 px-5 pb-6 pt-1">
       <div>
         <p className="text-[15px] font-medium text-muted-foreground">Jour 2 sur 3 · Stand B42</p>
         <p className="text-[26px] font-semibold leading-tight">SEPEM Grenoble</p>
@@ -64,7 +64,7 @@ export function HomeScreen({ run }: { run: boolean }) {
       </div>
       <div className="grid grid-cols-3 gap-2">
         {TILES.map(({ i: I, l }) => (
-          <div key={l} className={cn(CARD, 'flex h-12 items-center gap-2 px-2.5 text-[14px] font-medium')}>
+          <div key={l} className={cn(CARD, 'flex h-12 items-center gap-1.5 whitespace-nowrap px-2 text-[13px] font-medium')}>
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-booth-good-bg"><I size={15} className="text-primary" /></span>
             {l}
           </div>
@@ -76,7 +76,7 @@ export function HomeScreen({ run }: { run: boolean }) {
           { i: ListChecks, l: 'Actions à faire', v: '3', pill: true },
           { i: LayoutDashboard, l: 'Tableau de bord' },
         ].map(({ i: I, l, v, pill }) => (
-          <div key={l} className="flex h-12 items-center gap-3 px-4 text-[15px] font-medium">
+          <div key={l} className="flex h-11 items-center gap-3 px-4 text-[15px] font-medium">
             <I size={18} className="text-primary" />
             <span className="flex-1">{l}</span>
             {v && <span className={pill ? 'rounded-full bg-primary px-2 text-[13px] text-primary-foreground' : 'text-muted-foreground'}>{v}</span>}
@@ -88,7 +88,7 @@ export function HomeScreen({ run }: { run: boolean }) {
         <p className="mb-2 text-[15px] font-semibold">Dernières rencontres</p>
         <div className={cn(CARD, 'divide-y divide-border')}>
           {LAST.map((m) => (
-            <div key={m.n} className="flex items-center gap-2 px-4 py-2.5">
+            <div key={m.n} className="flex items-center gap-2 px-4 py-2">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[15px] font-medium">{m.n}</p>
                 <p className="truncate text-[13px] text-muted-foreground">{m.c}</p>
@@ -156,7 +156,7 @@ export function SavedPhone({ width = 260 }: { width?: number }) {
       <PhoneFrame width={width} label="Aperçu de l'écran Rencontre enregistrée">
         <div className="flex h-full flex-col px-5 pb-8 pt-10">
           <div className="flex flex-col items-center">
-            <span className="flex h-24 w-24 items-center justify-center rounded-full bg-mint">
+            <span className="flex h-24 w-24 items-center justify-center rounded-full bg-success-bright">
               <svg width={48} height={48} viewBox="0 0 24 24" fill="none" className="stroke-background" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
                 <motion.path
                   d="M5 12.5l4.5 4.5L19 7.5"
