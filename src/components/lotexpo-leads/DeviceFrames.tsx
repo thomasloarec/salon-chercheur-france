@@ -45,7 +45,7 @@ export function PhoneFrame({ width = 300, label, children }: { width?: number; l
 }
 
 /** Fenêtre de navigateur : contenu dessiné à 1280 × 800 puis réduit à la largeur mesurée (max 900). */
-export function BrowserFrame({ label = "Aperçu de l'accueil du salon sur ordinateur", children, defaultWidth = 640 }: { label?: string; children: React.ReactNode; defaultWidth?: number }) {
+export function BrowserFrame({ label = "Aperçu de l'accueil du salon sur ordinateur", children, defaultWidth = 340 }: { label?: string; children: React.ReactNode; defaultWidth?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(defaultWidth);
   useEffect(() => {
@@ -57,8 +57,8 @@ export function BrowserFrame({ label = "Aperçu de l'accueil du salon sur ordina
   }, []);
   const scale = w / DESK_W;
   return (
-    <div ref={ref} className="w-full max-w-[900px]">
-      <div role="img" aria-label={label} data-frame="browser" className="relative overflow-hidden border border-border bg-card" style={{ width: w, height: browserHeight(w), borderRadius: 14, boxShadow: SHADOW }}>
+    <div ref={ref} className="w-full min-w-0 max-w-[900px]">
+      <div role="img" aria-label={label} data-frame="browser" className="relative overflow-hidden border border-border bg-card" style={{ width: '100%', height: browserHeight(w), borderRadius: 14, boxShadow: SHADOW }}>
         <div aria-hidden="true" className="absolute left-0 top-0" style={{ width: DESK_W, height: DESK_H, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
           <div className="flex items-center gap-4 border-b border-border bg-muted px-4" style={{ height: 40 }}>
             <span className="flex gap-2">

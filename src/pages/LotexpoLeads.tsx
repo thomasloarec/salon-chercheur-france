@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMyExhibitors } from '@/hooks/useMyExhibitors';
 import { useBoothContext } from '@/hooks/useBoothContext';
 import { cn } from '@/lib/utils';
+import { motion, useReducedMotion } from 'framer-motion';
 
 const CANONICAL = 'https://lotexpo.com/lotexpo-leads';
 const TITLE = 'Lotexpo Leads : capture de leads sur salon, hors réseau et avec IA | Lotexpo';
@@ -28,6 +29,48 @@ const DESCRIPTION = 'Scannez badges et cartes de visite, dictez vos rencontres e
 const PRIMARY = 'h-[54px] rounded-xl px-6 text-base font-medium shadow-none';
 const SECONDARY = 'h-[54px] rounded-xl px-6 text-base font-medium';
 const CARD = 'rounded-2xl border border-border bg-card p-6 shadow-sm';
+
+const SEAT_ROWS = [
+  { n: 2, w: 20 },
+  { n: 5, w: 50 },
+  { n: 10, w: 100 },
+];
+
+function SeatComparison() {
+  const reduced = useReducedMotion();
+  const cols = [
+    { title: 'Licences par utilisateur', featured: false, bar: 'bg-flame/50', width: (w: number) => w, right: (n: number) => `${n} licences`, foot: "Le coût suit la taille de l'équipe." },
+    { title: 'Lotexpo Leads', featured: true, bar: 'bg-primary', width: () => 30, right: () => '290 € HT', foot: 'Le même prix par salon, de 1 à 15 personnes.' },
+  ];
+  return (
+    <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+      {cols.map((c) => (
+        <div key={c.title} className={cn('rounded-2xl bg-card p-5', c.featured ? 'border-[1.5px] border-primary' : 'border border-border')}>
+          <h3 className="font-semibold">{c.title}</h3>
+          <ul className="mt-4 space-y-3">
+            {SEAT_ROWS.map((r, i) => (
+              <li key={r.n} className="grid grid-cols-[6.5rem_minmax(0,1fr)_auto] items-center gap-3 text-sm">
+                <span>{r.n} personnes</span>
+                <span className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <motion.span
+                    className={cn('block h-full origin-left rounded-full', c.bar)}
+                    style={{ width: `${c.width(r.w)}%` }}
+                    initial={reduced ? false : { scaleX: 0 }}
+                    whileInView={{ scaleX: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: i * 0.08, ease: 'easeOut' }}
+                  />
+                </span>
+                <span className="whitespace-nowrap font-medium">{c.right(r.n)}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 text-sm text-muted-foreground">{c.foot}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const PROBLEMS = [
   { icon: Contact, t: 'Les contacts se perdent', d: 'Cartes au fond d\'un sac, notes sur un carnet, photos sur trois téléphones différents.' },
@@ -150,8 +193,8 @@ export default function LotexpoLeads() {
                 ))}
               </div>
             </Reveal>
-            <Reveal delay={150}>
-              <div className="relative hidden min-h-[540px] pl-36 pt-4 lg:block">
+            <Reveal delay={150} className="min-w-0">
+              <div className="relative hidden min-h-[540px] min-w-0 pl-36 pt-4 lg:block">
                 <BrowserFrame><DesktopHomeMock /></BrowserFrame>
                 <div className="absolute bottom-0 left-0"><HomePhone width={240} /></div>
               </div>
@@ -239,13 +282,13 @@ export default function LotexpoLeads() {
 
         {/* 4 bis. Téléphone et ordinateur */}
         <section className="bg-secondary/40 px-6 py-14 md:py-20">
-          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1fr_1.4fr]">
-            <Reveal>
-              <h2 className="text-2xl font-semibold leading-tight md:text-3xl">Au stand sur le téléphone, au bureau sur l'ordinateur</h2>
+          <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+            <Reveal className="min-w-0">
+              <h2 className="break-words text-balance text-2xl font-semibold leading-tight md:text-3xl">Au stand sur le téléphone, au bureau sur l'ordinateur</h2>
               <p className="mt-4 text-lg text-muted-foreground">Le manager suit le salon en direct depuis son ordinateur : objectif du jour, rencontres de toute l'équipe, actions à faire, puis le bilan et l'export.</p>
-              <Button className={cn(PRIMARY, 'mt-7')} onClick={onJoin}>{ctaLabel}</Button>
+              <Button className={cn(PRIMARY, 'mt-7 w-full whitespace-normal sm:w-auto')} onClick={onJoin}>{ctaLabel}</Button>
             </Reveal>
-            <Reveal delay={150}>
+            <Reveal delay={150} className="min-w-0">
               <BrowserFrame><DesktopHomeMock /></BrowserFrame>
             </Reveal>
           </div>
@@ -275,10 +318,11 @@ export default function LotexpoLeads() {
         <section id="tarifs" className="scroll-mt-20 bg-background px-6 py-14 md:py-20">
           <span id="beta" className="block scroll-mt-20" />
           <Reveal className="mx-auto max-w-6xl">
-            <SectionHead over="Tarifs" title="Payez le salon, pas chaque commercial." />
+            <SectionHead over="Tarifs" title="Un prix unique, que vous soyez 2 ou 10 sur le stand." />
             <p className="mx-auto -mt-4 mb-8 max-w-2xl text-center text-muted-foreground">
-              Les loueurs de scanners facturent en général chaque licence, salon par salon. Ici, un prix par salon pour toute l'équipe.
+              La plupart des outils de capture de leads sur salon facturent une licence par utilisateur. Plus l'équipe du stand est grande, plus la facture grimpe. Avec Lotexpo Leads, le Pass salon couvre toute l'équipe, jusqu'à 15 personnes, pour un seul prix.
             </p>
+            <SeatComparison />
             <div className="mb-8 flex flex-col items-start gap-4 rounded-2xl border border-booth-beta-line bg-booth-beta-bg p-5 text-success-deep md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="font-medium">Bêta en cours : toutes les fonctions sont offertes aux premiers exposants, sans carte bancaire.</p>

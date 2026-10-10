@@ -44,7 +44,9 @@ const MainLayout = ({ title, rawTitle, description, canonical, children }: MainL
         <main className="flex-1">
           {children}
         </main>
-        <Footer />
+        <div className="-mx-6">
+          <Footer />
+        </div>
       </div>
     </>
   );
