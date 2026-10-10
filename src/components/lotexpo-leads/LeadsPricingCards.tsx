@@ -50,7 +50,7 @@ export default function LeadsPricingCards({ onJoin, ctaLabel, hasLeadsAccess }: 
                   {p.seats === 1 ? "L'administrateur de la fiche exposant" : 'Vous invitez les commerciaux du stand'}
                 </p>
               </div>
-              <ul className="mt-4 text-sm">
+              <ul className="mb-6 mt-4 text-sm">
                 {LEADS_FEATURES.map((f) => {
                   const ok = !!p.includes[f.id];
                   return (
@@ -71,7 +71,7 @@ export default function LeadsPricingCards({ onJoin, ctaLabel, hasLeadsAccess }: 
               <Button
                 onClick={onJoin}
                 variant={p.featured ? 'default' : 'outline'}
-                className="mt-auto h-auto min-h-[44px] w-full whitespace-normal rounded-xl text-base shadow-none [&]:mt-6"
+                className="mt-auto h-auto min-h-[44px] w-full whitespace-normal rounded-xl text-base shadow-none"
               >
                 {hasLeadsAccess && ctaLabel ? ctaLabel : BETA_LABELS[p.id]}
               </Button>
