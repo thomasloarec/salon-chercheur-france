@@ -161,6 +161,9 @@ async function settle(db: any, s: Session) {
   else rows.push(['Accès valable jusqu\'au', dateFr(r.valid_until)]);
   const manageUrl = ex?.slug ? `${SITE_URL}/exposants/${ex.slug}/gerer?section=leads` : SITE_URL;
 
+  const { data: settings } = await db.from('booth_billing_settings').select('onboarding_booking_url').eq('id', true).maybeSingle();
+  const bookingUrl: string | null = settings?.onboarding_booking_url ?? null;
+
   if (r.buyer_email) {
     const blocks = [
       heading('Merci, votre accès est ouvert'),
@@ -169,6 +172,9 @@ async function settle(db: any, s: Session) {
     ];
     if (invoiceUrl) blocks.push(paragraph(`Votre facture : <a href="${escapeHtml(invoiceUrl)}">voir et télécharger la facture</a>.`));
     blocks.push(infoBox('Prochaine étape : invitez vos commerciaux depuis votre espace exposant, section Lotexpo Leads, puis créez l\'espace de votre salon.'));
+    if (bookingUrl) {
+      blocks.push(paragraph(`<strong>30 minutes pour bien démarrer.</strong> Je vous propose une courte visio pour vous présenter l'outil et préparer votre premier salon avec vous : paramétrage, invitation de l'équipe, objectif du jour, export. Choisissez le créneau qui vous arrange : <a href="${escapeHtml(bookingUrl)}">réserver ma prise en main</a>.<br>Thomas, fondateur de Lotexpo`));
+    }
     await safeSend({
       to: r.buyer_email,
       subject: 'Paiement reçu : votre accès à Lotexpo Leads est ouvert',
@@ -189,6 +195,29 @@ async function settle(db: any, s: Session) {
     }),
     tags: [{ name: 'type', value: 'booth_payment_admin' }],
   });
+
+  // Notification in-app aux admins Lotexpo (indépendante des emails)
+  try {
+    const { data: admins } = await db.from('user_roles').select('user_id').eq('role', 'admin');
+    const targets = Array.from(new Set((admins ?? []).map((a: { user_id: string }) => a.user_id)));
+    if (targets.length > 0) {
+      const { error: notifErr } = await db.from('notifications').insert(targets.map((userId) => ({
+        user_id: userId,
+        type: 'booth_payment_paid',
+        category: 'exhibitor_mgmt',
+        title: 'Nouveau paiement Lotexpo Leads',
+        message: `${exName} a payé ${euros(r.amount_cents)} (${planLabel}${eventName ? ` : ${eventName}` : ''}).`,
+        icon: '💶',
+        exhibitor_id: r.exhibitor_id,
+        event_id: r.event_id ?? null,
+        link_url: '/admin/lotexpo-leads',
+        metadata: { booth_payment_id: r.payment_id },
+      })));
+      if (notifErr) console.error(LOG, 'notification in-app refusée', notifErr.message);
+    }
+  } catch (err) {
+    console.error(LOG, 'notification in-app en échec', String(err));
+  }
 
   return json({ ok: true, paid: true });
 }
