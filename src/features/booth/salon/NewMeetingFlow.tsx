@@ -30,7 +30,7 @@ import { createRequestGate } from './requestGate';
 import { prepareCardImage } from '../card/image';
 import { addCard, pauseCardQueue, processCardQueue, PROVISIONAL_COMPANY, removeCard, updateCard } from '../card/cardQueue';
 
-export const CAMERA_PENDING_KEY = 'lotexpo-leads:camera-pending';
+export const CAMERA_PENDING_KEY = CAMERA_PENDING;
 const clearCameraPending = () => {
   try {
     localStorage.removeItem(CAMERA_PENDING_KEY);
@@ -52,6 +52,8 @@ import { enqueue, newId } from '../sync/engine';
 import { clearDraft, emptyDraft, saveDraft, type FlowStep, type MeetingDraft } from './draft';
 import VoiceDictation from '../voice/VoiceDictation';
 import type { StartMode } from '../home/goal';
+import { CAMERA_PENDING, initialWho } from '../home/directStart';
+import { voiceSupported } from '../voice/useVoiceRecorder';
 import type { VoiceRecording } from '../voice/useVoiceRecorder';
 import { blobToBase64 } from '../voice/base64';
 import { applyVoiceFields } from '../voice/applyVoiceFields';
@@ -135,7 +137,10 @@ export default function NewMeetingFlow({
   onHome,
   cameraRetry = null,
   startMode = null,
+  initialPhoto = null,
 }: {
+  /** Photo de carte prise depuis la tuile « Carte » de l'accueil. */
+  initialPhoto?: File | null;
   /** Ouverture directe depuis une tuile de l'accueil. */
   startMode?: StartMode | null;
   cache: BoothCache;
@@ -146,6 +151,10 @@ export default function NewMeetingFlow({
   cameraRetry?: 'card' | 'badge' | null;
 }) {
   const [d, setD] = useState<MeetingDraft>({ ...emptyDraft(), ...initial });
+  const who0 = useRef(
+    initialWho({ startMode, hasPhoto: !!initialPhoto, voiceOk: online && !!cache.full_features && voiceSupported() && (initial.history?.length ?? 0) === 0 }),
+  ).current;
+  const [dictateOnly, setDictateOnly] = useState(who0.dictateOnly);
   const [scanning, setScanning] = useState(false);
   const [scanMsg, setScanMsg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -306,15 +315,14 @@ export default function NewMeetingFlow({
     return () => el.removeEventListener('cancel', clearCameraPending);
   }, []);
 
-  // Ouverture directe : badge → lecteur QR ; carte → choix carte ou badge mis en avant
-  // (l'iPhone exige un toucher pour ouvrir l'appareil photo).
+  // Ouverture directe : badge → lecteur QR ; carte → lecture de la photo prise depuis l'accueil.
   useEffect(() => {
-    if (startMode === 'badge') {
+    if (who0.scanning) {
       setScanMsg(null);
       setScanning(true);
-    } else if (startMode === 'card') {
-      setCardMsg(null);
-      setKindPicker(true);
+    } else if (who0.readPhoto && initialPhoto) {
+      setCardKind('card');
+      void onPhoto(initialPhoto);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -920,7 +928,26 @@ export default function NewMeetingFlow({
             </Button>
           </div>
         )}
-        {d.step === 'who' && !meetingWait && (
+        {d.step === 'who' && !meetingWait && dictateOnly && (
+          <div data-dictate-only="" className="flex flex-1 flex-col justify-center gap-4">
+            <h2 className="text-[26px] font-semibold leading-tight tracking-[-0.01em]">Dictez la rencontre</h2>
+            <VoiceDictation
+              label="Dicter la rencontre"
+              hint="Dites qui, quelle entreprise, son besoin et ce que vous allez faire."
+              autoStart
+              onCancel={() => setDictateOnly(false)}
+              onDenied={() => {
+                setDictateOnly(false);
+                setVoiceInfo('Autorisez le micro pour dicter.');
+              }}
+              onRecorded={(r) => {
+                setDictateOnly(false);
+                void dictateMeeting(r);
+              }}
+            />
+          </div>
+        )}
+        {d.step === 'who' && !meetingWait && !dictateOnly && (
           <>
             <h2 className="text-[26px] font-semibold leading-tight tracking-[-0.01em]">Qui ?</h2>
             <Button
@@ -951,7 +978,6 @@ export default function NewMeetingFlow({
                 disabled={!online || voiceBusy}
                 disabledText={!online ? 'La dictée qui remplit la fiche demande du réseau. Sans réseau, dictez votre note à l\u2019étape Détails.' : undefined}
                 footer={remainingLabel(remaining) && <p className="text-xs text-muted-foreground">{remainingLabel(remaining)}</p>}
-                autoStart={startMode === 'dictate' && d.history.length === 0}
                 onRecorded={(r) => void dictateMeeting(r)}
               />
             )}
@@ -974,7 +1000,7 @@ export default function NewMeetingFlow({
             {scanMsg && <p className="rounded-md bg-muted p-3 text-sm text-foreground">{scanMsg}</p>}
             <div className="space-y-2">
               <Input
-                autoFocus
+                autoFocus={who0.nameAutoFocus}
                 placeholder="Nom (prénom et nom)"
                 className="h-14 text-base"
                 value={d.name}
